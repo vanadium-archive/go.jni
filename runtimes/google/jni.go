@@ -6,9 +6,9 @@ import (
 	"flag"
 	"unsafe"
 
-	"veyron/jni/runtimes/google/ipc"
-	"veyron/jni/runtimes/google/security"
-	"veyron/jni/runtimes/google/util"
+	"veyron.io/jni/runtimes/google/ipc"
+	"veyron.io/jni/runtimes/google/security"
+	"veyron.io/jni/runtimes/google/util"
 )
 
 // #cgo LDFLAGS: -ljniwrapper

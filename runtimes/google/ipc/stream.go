@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"veyron/jni/runtimes/google/util"
+	"veyron.io/jni/runtimes/google/util"
 	"veyron2/ipc"
 )
 

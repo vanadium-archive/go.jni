@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"runtime"
 
-	isecurity "veyron/jni/runtimes/google/security"
-	"veyron/jni/runtimes/google/util"
+	isecurity "veyron.io/jni/runtimes/google/security"
+	"veyron.io/jni/runtimes/google/util"
 	"veyron2/ipc"
 	"veyron2/security"
 )

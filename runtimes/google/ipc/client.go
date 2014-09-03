@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"veyron/jni/runtimes/google/util"
+	"veyron.io/jni/runtimes/google/util"
 	"veyron2/ipc"
 	"veyron2/rt"
 )

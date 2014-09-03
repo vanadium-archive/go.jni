@@ -5,7 +5,7 @@ package security
 import (
 	"runtime"
 
-	"veyron/jni/runtimes/google/util"
+	"veyron.io/jni/runtimes/google/util"
 	inaming "veyron/runtimes/google/naming"
 	"veyron2/naming"
 	"veyron2/security"

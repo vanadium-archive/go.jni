@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"runtime"
 
-	"veyron/jni/runtimes/google/util"
+	"veyron.io/jni/runtimes/google/util"
 	"veyron2/ipc"
 	"veyron2/security"
 	"veyron2/verror"

@@ -6,7 +6,7 @@ import (
 	"crypto/ecdsa"
 	"runtime"
 
-	"veyron/jni/runtimes/google/util"
+	"veyron.io/jni/runtimes/google/util"
 	"veyron2/security"
 )
 

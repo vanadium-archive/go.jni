@@ -7,7 +7,7 @@ import (
 	"time"
 	"unsafe"
 
-	"veyron/jni/runtimes/google/util"
+	"veyron.io/jni/runtimes/google/util"
 	isecurity "veyron/runtimes/google/security"
 	"veyron2/security"
 )
