@@ -3,7 +3,6 @@
 package security
 
 import (
-	"crypto/ecdsa"
 	"runtime"
 
 	"veyron.io/jni/runtimes/google/util"
@@ -67,7 +66,7 @@ func (s *signer) Sign(message []byte) (security.Signature, error) {
 	return sig, nil
 }
 
-func (s *signer) PublicKey() *ecdsa.PublicKey {
+func (s *signer) PublicKey() security.PublicKey {
 	envPtr, freeFunc := util.GetEnv(s.jVM)
 	env := (*C.JNIEnv)(envPtr)
 	defer freeFunc()
@@ -75,7 +74,7 @@ func (s *signer) PublicKey() *ecdsa.PublicKey {
 	jPublicKey := C.jobject(util.CallObjectMethodOrCatch(env, s.jSigner, "publicKey", nil, publicKeySign))
 	// Get the encoded version of the public key.
 	encoded := util.CallByteArrayMethodOrCatch(env, jPublicKey, "getEncoded", nil)
-	key, err := parsePKIXPublicKey(encoded)
+	key, err := security.UnmarshalPublicKey(encoded)
 	if err != nil {
 		panic("couldn't parse Java ECDSA public key: " + err.Error())
 	}

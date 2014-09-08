@@ -5,6 +5,8 @@ package ipc
 import (
 	"encoding/json"
 	"fmt"
+	"log"
+	"reflect"
 	"strings"
 	"time"
 
@@ -73,6 +75,8 @@ func (c *client) StartCall(env *C.JNIEnv, jContext C.jobject, name, method strin
 	}
 	context, _ := rt.R().NewContext().WithTimeout(time.Duration(int(jTimeout)) * time.Millisecond)
 
+	log.Println("Using timeout: ", time.Duration(int(jTimeout))*time.Millisecond)
+
 	// Invoke StartCall
 	call, err := c.client.StartCall(context, name, method, args)
 	if err != nil {
@@ -100,6 +104,7 @@ func (c *clientCall) Finish(env *C.JNIEnv) (C.jobjectArray, error) {
 	} else {
 		resultptrs = c.mArgs.OutPtrs()
 	}
+	log.Println("Finishing call")
 	// argGetter doesn't store the (mandatory) error result, so we add it here.
 	var appErr error
 	if err := c.call.Finish(append(resultptrs, &appErr)...); err != nil {
@@ -115,8 +120,22 @@ func (c *clientCall) Finish(env *C.JNIEnv) (C.jobjectArray, error) {
 		// Remove the pointer from the result.  Simply *resultptr doesn't work
 		// as resultptr is of type interface{}.
 		result := util.DerefOrDie(resultptr)
+
+		// See if the result has a VomEncode method, which converts the result into a VDL type.
+		// If it does, invoke the method as the resulting VDL type is guaranteed to be
+		// JSON-encodeable (while the original result will likely not).
+		value := interface{}(result)
+		if v := reflect.ValueOf(result); v.IsValid() {
+			if m := v.MethodByName("VomEncode"); m.IsValid() && m.Kind() == reflect.Func {
+				if data := m.Call(nil); len(data) == 2 && data[0].CanInterface() {
+					value = data[0].Interface()
+				}
+			}
+		}
+		log.Printf("Native: Marshaling result of type: %T, value: %v", value, value)
 		var err error
-		jsonResults[i], err = json.Marshal(result)
+		jsonResults[i], err = json.Marshal(value)
+		log.Println("Native: Got JSON: ", string(jsonResults[i]))
 		if err != nil {
 			return nil, fmt.Errorf("error marshalling %q into JSON", resultptr)
 		}

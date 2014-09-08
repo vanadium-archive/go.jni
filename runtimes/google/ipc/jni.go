@@ -4,6 +4,7 @@ package ipc
 
 import (
 	"io"
+	"log"
 	"time"
 	"unsafe"
 
@@ -202,6 +203,7 @@ func Java_com_veyron_runtimes_google_Runtime_00024Server_nativeFinalize(env *C.J
 func Java_com_veyron_runtimes_google_Runtime_00024Client_nativeStartCall(env *C.JNIEnv, jClient C.jobject, goClientPtr C.jlong, jContext C.jobject, name C.jstring, method C.jstring, jsonArgs C.jobjectArray, jPath C.jstring, timeoutMillis C.jlong) C.jlong {
 	c := (*client)(util.Ptr(goClientPtr))
 	call, err := c.StartCall(env, jContext, util.GoString(env, name), util.GoString(env, method), jsonArgs, jPath, timeoutMillis)
+	log.Println("Started call")
 	if err != nil {
 		util.JThrowV(env, err)
 		return C.jlong(0)

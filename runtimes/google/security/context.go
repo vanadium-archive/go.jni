@@ -73,7 +73,7 @@ func (c *context) Label() security.Label {
 	return security.Label(util.JIntField(env, jLabel, "value"))
 }
 
-func (c *context) CaveatDischarges() security.CaveatDischargeMap {
+func (c *context) Discharges() map[string]security.Discharge {
 	// TODO(spetrovic): implement this method.
 	return nil
 }
@@ -99,11 +99,7 @@ func (c *context) RemoteID() security.PublicID {
 }
 
 func (c *context) LocalEndpoint() naming.Endpoint {
-	envPtr, freeFunc := util.GetEnv(c.jVM)
-	env := (*C.JNIEnv)(envPtr)
-	defer freeFunc()
-	// TODO(spetrovic): create a Java Endpoint interface.
-	epStr := util.CallStringMethodOrCatch(env, c.jContext, "localEndpoint", nil)
+	epStr := c.callStringMethod("localEndpoint")
 	ep, err := inaming.NewEndpoint(epStr)
 	if err != nil {
 		panic("Couldn't parse endpoint string: " + epStr)
@@ -112,11 +108,7 @@ func (c *context) LocalEndpoint() naming.Endpoint {
 }
 
 func (c *context) RemoteEndpoint() naming.Endpoint {
-	envPtr, freeFunc := util.GetEnv(c.jVM)
-	env := (*C.JNIEnv)(envPtr)
-	defer freeFunc()
-	// TODO(spetrovic): create a Java Endpoint interface.
-	epStr := util.CallStringMethodOrCatch(env, c.jContext, "remoteEndpoint", nil)
+	epStr := c.callStringMethod("remoteEndpoint")
 	ep, err := inaming.NewEndpoint(epStr)
 	if err != nil {
 		panic("Couldn't parse endpoint string: " + epStr)

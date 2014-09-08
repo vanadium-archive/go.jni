@@ -68,17 +68,18 @@ func (id *privateID) PublicID() security.PublicID {
 	return (*(*security.PublicID)(util.Ptr(publicIDPtr)))
 }
 
-func (id *privateID) Bless(blessee security.PublicID, blessingName string, duration time.Duration, caveats []security.ServiceCaveat) (security.PublicID, error) {
+func (id *privateID) Bless(blessee security.PublicID, blessingName string, duration time.Duration, caveats []security.Caveat) (security.PublicID, error) {
+	if len(caveats) > 0 {
+		return nil, fmt.Errorf("Caveats currently not supported in Java.")
+	}
 	envPtr, freeFunc := util.GetEnv(id.jVM)
 	env := (*C.JNIEnv)(envPtr)
 	defer freeFunc()
 	util.GoRef(&blessee) // Un-refed when the Java blessee object created below is finalized.
 	jBlessee := C.jobject(util.NewObjectOrCatch(env, jPublicIDImplClass, []util.Sign{util.LongSign}, &blessee))
 	jDuration := C.jobject(util.NewObjectOrCatch(env, jDurationClass, []util.Sign{util.LongSign}, int64(duration.Seconds()*1000)))
-	jServiceCaveats := newJavaServiceCaveatArray(env, caveats)
-	sCaveatSign := util.ClassSign("com.veyron2.security.ServiceCaveat")
 	durationSign := util.ClassSign("org.joda.time.Duration")
-	jPublicID, err := util.CallObjectMethod(env, id.jPrivateID, "bless", []util.Sign{publicIDSign, util.StringSign, durationSign, util.ArraySign(sCaveatSign)}, publicIDSign, jBlessee, blessingName, jDuration, jServiceCaveats)
+	jPublicID, err := util.CallObjectMethod(env, id.jPrivateID, "bless", []util.Sign{publicIDSign, util.StringSign, durationSign}, publicIDSign, jBlessee, blessingName, jDuration)
 	if err != nil {
 		return nil, err
 	}
@@ -100,6 +101,6 @@ func (id *privateID) Derive(publicID security.PublicID) (security.PrivateID, err
 	return NewPrivateID(env, C.jobject(jPrivateID)), nil
 }
 
-func (id *privateID) MintDischarge(caveat security.ThirdPartyCaveat, context security.Context, duration time.Duration, caveats []security.ServiceCaveat) (security.ThirdPartyDischarge, error) {
+func (id *privateID) MintDischarge(caveat security.ThirdPartyCaveat, context security.Context, duration time.Duration, caveats []security.Caveat) (security.Discharge, error) {
 	return nil, fmt.Errorf("MintDischarge currently not implemented.")
 }

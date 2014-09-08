@@ -3,7 +3,6 @@
 package security
 
 import (
-	"crypto/ecdsa"
 	"runtime"
 
 	"veyron.io/jni/runtimes/google/util"
@@ -51,7 +50,7 @@ func (id *publicID) Names() []string {
 	return util.CallStringArrayMethodOrCatch(env, id.jPublicID, "names", nil)
 }
 
-func (id *publicID) PublicKey() *ecdsa.PublicKey {
+func (id *publicID) PublicKey() security.PublicKey {
 	envPtr, freeFunc := util.GetEnv(id.jVM)
 	env := (*C.JNIEnv)(envPtr)
 	defer freeFunc()
@@ -59,9 +58,9 @@ func (id *publicID) PublicKey() *ecdsa.PublicKey {
 	jPublicKey := C.jobject(util.CallObjectMethodOrCatch(env, id.jPublicID, "publicKey", nil, publicKeySign))
 	// Get the encoded version of the public key.
 	encoded := util.CallByteArrayMethodOrCatch(env, jPublicKey, "getEncoded", nil)
-	key, err := parsePKIXPublicKey(encoded)
+	key, err := security.UnmarshalPublicKey(encoded)
 	if err != nil {
-		panic("couldn't parse Java ECDSA public key: " + err.Error())
+		panic("couldn't parse Java public key: " + err.Error())
 	}
 	return key
 }
@@ -80,18 +79,7 @@ func (id *publicID) Authorize(context security.Context) (security.PublicID, erro
 	return newPublicID(env, C.jobject(jPublicID)), nil
 }
 
-func (id *publicID) ThirdPartyCaveats() []security.ServiceCaveat {
-	envPtr, freeFunc := util.GetEnv(id.jVM)
-	env := (*C.JNIEnv)(envPtr)
-	defer freeFunc()
-	serviceCaveatSign := util.ClassSign("com.veyron2.security.ServiceCaveat")
-	jServiceCaveats := util.CallObjectArrayMethodOrCatch(env, id.jPublicID, "thirdPartyCaveats", nil, util.ArraySign(serviceCaveatSign))
-	sCaveats := make([]security.ServiceCaveat, len(jServiceCaveats))
-	for i, jcaveat := range jServiceCaveats {
-		sCaveats[i] = security.ServiceCaveat{
-			Service: security.BlessingPattern(util.JStringField(env, C.jobject(jcaveat), "service")),
-			Caveat:  newCaveat(env, C.jobject(jcaveat)),
-		}
-	}
-	return sCaveats
+func (id *publicID) ThirdPartyCaveats() []security.ThirdPartyCaveat {
+	// TODO(spetrovic): implement third-party caveats.
+	return nil
 }
