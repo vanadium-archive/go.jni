@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"log"
 	"reflect"
-	"strings"
 	"time"
 
 	"veyron.io/jni/runtimes/google/util"
@@ -41,7 +40,7 @@ func (c *client) StartCall(env *C.JNIEnv, jContext C.jobject, name, method strin
 		argStrs[i] = util.GoString(env, C.GetObjectArrayElement(env, jArgs, C.jsize(i)))
 	}
 	// Get argument instances that correspond to the provided method.
-	vdlPackagePath := strings.Join(strings.Split(util.GoString(env, jPath), ".")[1:], "/")
+	vdlPackagePath := util.GoString(env, jPath)
 	getter, err := newArgGetter([]string{vdlPackagePath})
 	if err != nil {
 		return nil, err
