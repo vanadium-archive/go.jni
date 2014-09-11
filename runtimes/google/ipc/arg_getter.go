@@ -7,7 +7,6 @@ import (
 
 	// Imported VDLs.  Please add a link to all VDLs you care about here,
 	// and add all interfaces you care about to the init() function below.
-	"veyron/examples/fortune"
 	"veyron/services/identity"
 
 	ctx "veyron2/context"
@@ -15,8 +14,6 @@ import (
 )
 
 func init() {
-	registerInterface((*fortune.Fortune)(nil))
-	registerInterface((*fortune.FortuneService)(nil))
 	registerInterface((*identity.OAuthBlesser)(nil))
 }
 
