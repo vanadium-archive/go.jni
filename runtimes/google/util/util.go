@@ -291,6 +291,9 @@ func JStaticStringField(jEnv, jClass interface{}, field string) string {
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func JStringArrayPtr(jEnv interface{}, strs []string) unsafe.Pointer {
+	if strs == nil {
+		return unsafe.Pointer(nil)
+	}
 	env := getEnv(jEnv)
 	ret := C.NewObjectArray(env, C.jsize(len(strs)), jStringClass, nil)
 	for i, str := range strs {
@@ -322,9 +325,14 @@ func GoStringArray(jEnv, jStrArray interface{}) []string {
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func JByteArrayPtr(jEnv interface{}, bytes []byte) unsafe.Pointer {
+	if bytes == nil {
+		return unsafe.Pointer(nil)
+	}
 	env := getEnv(jEnv)
 	ret := C.NewByteArray(env, C.jsize(len(bytes)))
-	C.SetByteArrayRegion(env, ret, 0, C.jsize(len(bytes)), (*C.jbyte)(unsafe.Pointer(&bytes[0])))
+	if len(bytes) > 0 {
+		C.SetByteArrayRegion(env, ret, 0, C.jsize(len(bytes)), (*C.jbyte)(unsafe.Pointer(&bytes[0])))
+	}
 	return unsafe.Pointer(ret)
 }
 

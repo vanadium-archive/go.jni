@@ -48,20 +48,21 @@ type signer struct {
 	jSigner C.jobject
 }
 
-func (s *signer) Sign(message []byte) (security.Signature, error) {
+func (s *signer) Sign(purpose, message []byte) (security.Signature, error) {
 	envPtr, freeFunc := util.GetEnv(s.jVM)
 	env := (*C.JNIEnv)(envPtr)
 	defer freeFunc()
 	signatureSign := util.ClassSign("com.veyron2.security.Signature")
-	jSig, err := util.CallObjectMethod(env, s.jSigner, "sign", []util.Sign{util.ArraySign(util.ByteSign)}, signatureSign, message)
+	jSig, err := util.CallObjectMethod(env, s.jSigner, "sign", []util.Sign{util.ArraySign(util.ByteSign), util.ArraySign(util.ByteSign)}, signatureSign, purpose, message)
 	if err != nil {
 		return security.Signature{}, err
 	}
 	jHash := util.CallObjectMethodOrCatch(env, jSig, "getHash", nil, util.ClassSign("com.veyron2.security.Hash"))
 	sig := security.Signature{
-		Hash: security.Hash(util.CallStringMethodOrCatch(env, jHash, "getValue", nil)),
-		R:    util.CallByteArrayMethodOrCatch(env, jSig, "getR", nil),
-		S:    util.CallByteArrayMethodOrCatch(env, jSig, "getS", nil),
+		Purpose: purpose,
+		Hash:    security.Hash(util.CallStringMethodOrCatch(env, jHash, "getValue", nil)),
+		R:       util.CallByteArrayMethodOrCatch(env, jSig, "getR", nil),
+		S:       util.CallByteArrayMethodOrCatch(env, jSig, "getS", nil),
 	}
 	return sig, nil
 }

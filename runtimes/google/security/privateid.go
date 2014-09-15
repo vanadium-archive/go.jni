@@ -32,15 +32,12 @@ func NewPrivateID(jEnv, jPrivID interface{}) security.PrivateID {
 	if status := C.GetJavaVM(env, &jVM); status != 0 {
 		panic("couldn't get Java VM from the (Java) environment")
 	}
-	// Create Go Signer.
-	signer := newSigner(env, jPrivateID)
 	// Reference Java PrivateID; it will be de-referenced when the Go PrivateID
 	// created below is garbage-collected (through the finalizer callback we
 	// setup just below).
 	jPrivateID = C.NewGlobalRef(env, jPrivateID)
 	// Create Go PrivateID.
 	id := &privateID{
-		Signer:     signer,
 		jVM:        jVM,
 		jPrivateID: jPrivateID,
 	}
@@ -54,7 +51,6 @@ func NewPrivateID(jEnv, jPrivID interface{}) security.PrivateID {
 }
 
 type privateID struct {
-	security.Signer
 	jVM        *C.JavaVM
 	jPrivateID C.jobject
 }
@@ -103,4 +99,38 @@ func (id *privateID) Derive(publicID security.PublicID) (security.PrivateID, err
 
 func (id *privateID) MintDischarge(caveat security.ThirdPartyCaveat, context security.Context, duration time.Duration, caveats []security.Caveat) (security.Discharge, error) {
 	return nil, fmt.Errorf("MintDischarge currently not implemented.")
+}
+
+func (id *privateID) Sign(message []byte) (security.Signature, error) {
+	envPtr, freeFunc := util.GetEnv(id.jVM)
+	env := (*C.JNIEnv)(envPtr)
+	defer freeFunc()
+	signatureSign := util.ClassSign("com.veyron2.security.Signature")
+	jSig, err := util.CallObjectMethod(env, id.jPrivateID, "sign", []util.Sign{util.ArraySign(util.ByteSign)}, signatureSign, message)
+	if err != nil {
+		return security.Signature{}, err
+	}
+	jHash := util.CallObjectMethodOrCatch(env, jSig, "getHash", nil, util.ClassSign("com.veyron2.security.Hash"))
+	sig := security.Signature{
+		Purpose: nil,
+		Hash:    security.Hash(util.CallStringMethodOrCatch(env, jHash, "getValue", nil)),
+		R:       util.CallByteArrayMethodOrCatch(env, jSig, "getR", nil),
+		S:       util.CallByteArrayMethodOrCatch(env, jSig, "getS", nil),
+	}
+	return sig, nil
+}
+
+func (id *privateID) PublicKey() security.PublicKey {
+	envPtr, freeFunc := util.GetEnv(id.jVM)
+	env := (*C.JNIEnv)(envPtr)
+	defer freeFunc()
+	publicKeySign := util.ClassSign("java.security.interfaces.ECPublicKey")
+	jPublicKey := C.jobject(util.CallObjectMethodOrCatch(env, id.jPrivateID, "publicKey", nil, publicKeySign))
+	// Get the encoded version of the public key.
+	encoded := util.CallByteArrayMethodOrCatch(env, jPublicKey, "getEncoded", nil)
+	key, err := security.UnmarshalPublicKey(encoded)
+	if err != nil {
+		panic("couldn't parse Java ECDSA public key: " + err.Error())
+	}
+	return key
 }

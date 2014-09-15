@@ -48,27 +48,6 @@ func Init(jEnv interface{}) {
 	jDurationClass = C.jclass(util.JFindClassPtrOrDie(env, "org/joda/time/Duration"))
 }
 
-//export Java_com_veyron_runtimes_google_security_PublicIDStore_nativeCreate
-func Java_com_veyron_runtimes_google_security_PublicIDStore_nativeCreate(env *C.JNIEnv, jPublicIDStoreClass C.jclass, jParams C.jobject) C.jlong {
-	var params *isecurity.PublicIDStoreParams
-	if jParams != nil {
-		dir := util.JStringField(env, jParams, "dir")
-		jSigner := C.jobject(util.JObjectFieldPtr(env, jParams, "signer"))
-		signer := newSigner(env, jSigner)
-		params = &isecurity.PublicIDStoreParams{
-			Dir:    dir,
-			Signer: signer,
-		}
-	}
-	store, err := isecurity.NewPublicIDStore(params)
-	if err != nil {
-		util.JThrowV(env, err)
-		return C.jlong(0)
-	}
-	util.GoRef(&store) // Un-refed when the Java PublicIDStore is finalized.
-	return C.jlong(util.PtrValue(&store))
-}
-
 //export Java_com_veyron_runtimes_google_security_PublicIDStore_nativeAdd
 func Java_com_veyron_runtimes_google_security_PublicIDStore_nativeAdd(env *C.JNIEnv, jPublicIDStore C.jobject, goPublicIDStorePtr C.jlong, jID C.jobject, jPeerPattern C.jstring) {
 	idPtr := util.CallLongMethodOrCatch(env, jID, "getNativePtr", nil)
