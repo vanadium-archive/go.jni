@@ -4,7 +4,6 @@ package ipc
 
 import (
 	"io"
-	"log"
 	"time"
 	"unsafe"
 
@@ -141,6 +140,14 @@ func Java_com_veyron_runtimes_google_Runtime_nativeGetPublicIDStore(env *C.JNIEn
 	return C.jlong(util.PtrValue(&s))
 }
 
+//export Java_com_veyron_runtimes_google_Runtime_nativeGetNamespace
+func Java_com_veyron_runtimes_google_Runtime_nativeGetNamespace(env *C.JNIEnv, jRuntime C.jobject, goRuntimePtr C.jlong) C.jlong {
+	r := (*veyron2.Runtime)(util.Ptr(goRuntimePtr))
+	n := (*r).Namespace()
+	util.GoRef(&n) // Un-refed when the Java Namespace object is finalized.
+	return C.jlong(util.PtrValue(&n))
+}
+
 //export Java_com_veyron_runtimes_google_Runtime_nativeFinalize
 func Java_com_veyron_runtimes_google_Runtime_nativeFinalize(env *C.JNIEnv, jRuntime C.jobject, goRuntimePtr C.jlong) {
 	util.GoUnref((*veyron2.Runtime)(util.Ptr(goRuntimePtr)))
@@ -203,7 +210,6 @@ func Java_com_veyron_runtimes_google_Runtime_00024Server_nativeFinalize(env *C.J
 func Java_com_veyron_runtimes_google_Runtime_00024Client_nativeStartCall(env *C.JNIEnv, jClient C.jobject, goClientPtr C.jlong, jContext C.jobject, name C.jstring, method C.jstring, jsonArgs C.jobjectArray, jPath C.jstring, timeoutMillis C.jlong) C.jlong {
 	c := (*client)(util.Ptr(goClientPtr))
 	call, err := c.StartCall(env, jContext, util.GoString(env, name), util.GoString(env, method), jsonArgs, jPath, timeoutMillis)
-	log.Println("Started call")
 	if err != nil {
 		util.JThrowV(env, err)
 		return C.jlong(0)

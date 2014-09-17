@@ -89,7 +89,7 @@ func (id *privateID) Derive(publicID security.PublicID) (security.PrivateID, err
 	defer freeFunc()
 	util.GoRef(&publicID) // Un-refed when the Java PublicID object created below is finalized.
 	jPublicID := C.jobject(util.NewObjectOrCatch(env, jPublicIDImplClass, []util.Sign{util.LongSign}, &publicID))
-	privateIDSign := util.ClassSign("com.veyron2.security.PublicID")
+	privateIDSign := util.ClassSign("com.veyron2.security.PrivateID")
 	jPrivateID, err := util.CallObjectMethod(env, id.jPrivateID, "derive", []util.Sign{publicIDSign}, privateIDSign, jPublicID)
 	if err != nil {
 		return nil, err

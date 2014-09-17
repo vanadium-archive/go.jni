@@ -5,7 +5,6 @@ package ipc
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"reflect"
 	"time"
 
@@ -74,8 +73,6 @@ func (c *client) StartCall(env *C.JNIEnv, jContext C.jobject, name, method strin
 	}
 	context, _ := rt.R().NewContext().WithTimeout(time.Duration(int(jTimeout)) * time.Millisecond)
 
-	log.Println("Using timeout: ", time.Duration(int(jTimeout))*time.Millisecond)
-
 	// Invoke StartCall
 	call, err := c.client.StartCall(context, name, method, args)
 	if err != nil {
@@ -103,7 +100,6 @@ func (c *clientCall) Finish(env *C.JNIEnv) (C.jobjectArray, error) {
 	} else {
 		resultptrs = c.mArgs.OutPtrs()
 	}
-	log.Println("Finishing call")
 	// argGetter doesn't store the (mandatory) error result, so we add it here.
 	var appErr error
 	if err := c.call.Finish(append(resultptrs, &appErr)...); err != nil {
@@ -131,10 +127,8 @@ func (c *clientCall) Finish(env *C.JNIEnv) (C.jobjectArray, error) {
 				}
 			}
 		}
-		log.Printf("Native: Marshaling result of type: %T, value: %v", value, value)
 		var err error
 		jsonResults[i], err = json.Marshal(value)
-		log.Println("Native: Got JSON: ", string(jsonResults[i]))
 		if err != nil {
 			return nil, fmt.Errorf("error marshalling %q into JSON", resultptr)
 		}
