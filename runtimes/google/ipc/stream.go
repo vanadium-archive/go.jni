@@ -7,7 +7,7 @@ import (
 	"fmt"
 
 	"veyron.io/jni/runtimes/google/util"
-	"veyron2/ipc"
+	"veyron.io/veyron/veyron2/ipc"
 )
 
 // #include <stdlib.h>

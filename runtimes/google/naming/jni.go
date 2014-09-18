@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"veyron.io/jni/runtimes/google/util"
-	"veyron2/naming"
-	"veyron2/rt"
+	"veyron.io/veyron/veyron2/naming"
+	"veyron.io/veyron/veyron2/rt"
 )
 
 // #cgo LDFLAGS: -ljniwrapper

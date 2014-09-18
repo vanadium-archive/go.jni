@@ -7,7 +7,7 @@ import (
 	"unsafe"
 
 	"veyron.io/jni/runtimes/google/util"
-	"veyron2/security"
+	"veyron.io/veyron/veyron2/security"
 )
 
 // #cgo LDFLAGS: -ljniwrapper

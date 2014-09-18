@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"veyron2/vdl/test_base"
+	"veyron.io/veyron/veyron2/vdl/test_base"
 )
 
 func init() {
@@ -27,7 +27,7 @@ func compareTypes(t *testing.T, method string, got, want []interface{}, argKind 
 }
 
 func TestGetter(t *testing.T) {
-	iface := "veyron2/vdl/test_base/ServiceB"
+	iface := "veyron.io/veyron/veyron2/vdl/test_base/ServiceB"
 	getter, err := newArgGetter([]string{iface})
 	if err != nil {
 		t.Fatalf("couldn't find getter for interface: %v ", iface)

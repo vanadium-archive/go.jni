@@ -9,10 +9,10 @@ import (
 
 	jnisecurity "veyron.io/jni/runtimes/google/security"
 	"veyron.io/jni/runtimes/google/util"
-	"veyron2"
-	ctx "veyron2/context"
-	"veyron2/ipc"
-	"veyron2/rt"
+	"veyron.io/veyron/veyron2"
+	ctx "veyron.io/veyron/veyron2/context"
+	"veyron.io/veyron/veyron2/ipc"
+	"veyron.io/veyron/veyron2/rt"
 )
 
 // #cgo LDFLAGS: -ljniwrapper

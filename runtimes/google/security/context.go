@@ -6,9 +6,9 @@ import (
 	"runtime"
 
 	"veyron.io/jni/runtimes/google/util"
-	inaming "veyron/runtimes/google/naming"
-	"veyron2/naming"
-	"veyron2/security"
+	inaming "veyron.io/veyron/veyron/runtimes/google/naming"
+	"veyron.io/veyron/veyron2/naming"
+	"veyron.io/veyron/veyron2/security"
 )
 
 // #cgo LDFLAGS: -ljniwrapper

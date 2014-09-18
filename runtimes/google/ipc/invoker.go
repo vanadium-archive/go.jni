@@ -8,9 +8,9 @@ import (
 	"runtime"
 
 	"veyron.io/jni/runtimes/google/util"
-	"veyron2/ipc"
-	"veyron2/security"
-	"veyron2/verror"
+	"veyron.io/veyron/veyron2/ipc"
+	"veyron.io/veyron/veyron2/security"
+	"veyron.io/veyron/veyron2/verror"
 )
 
 // #cgo LDFLAGS: -llog -ljniwrapper

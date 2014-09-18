@@ -8,10 +8,10 @@ import (
 	// Imported VDLs.  Please add a link to all VDLs you care about here,
 	// and add all interfaces you care about to the init() function below.
 	"veyron.io/examples/fortune"
-	"veyron/services/identity"
+	"veyron.io/veyron/veyron/services/identity"
 
-	ctx "veyron2/context"
-	"veyron2/ipc"
+	ctx "veyron.io/veyron/veyron2/context"
+	"veyron.io/veyron/veyron2/ipc"
 )
 
 func init() {

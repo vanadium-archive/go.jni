@@ -3,7 +3,7 @@
 package ipc
 
 import (
-	"veyron2/ipc"
+	"veyron.io/veyron/veyron2/ipc"
 )
 
 func newServerCall(call ipc.ServerCall, mArgs *methodArgs) *serverCall {

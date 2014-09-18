@@ -12,7 +12,7 @@ import (
 	"unicode/utf8"
 	"unsafe"
 
-	"veyron2/verror"
+	"veyron.io/veyron/veyron2/verror"
 )
 
 // #cgo LDFLAGS: -ljniwrapper
