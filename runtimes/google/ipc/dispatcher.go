@@ -54,7 +54,7 @@ func (d *dispatcher) Lookup(suffix, method string) (ipc.Invoker, security.Author
 	defer freeFunc()
 
 	// Call Java dispatcher's lookup() method.
-	serviceObjectWithAuthorizerSign := util.ClassSign("com.veyron2.ipc.ServiceObjectWithAuthorizer")
+	serviceObjectWithAuthorizerSign := util.ClassSign("io.veyron.veyron.veyron2.ipc.ServiceObjectWithAuthorizer")
 	tempJObj, err := util.CallObjectMethod(env, d.jDispatcher, "lookup", []util.Sign{util.StringSign}, serviceObjectWithAuthorizerSign, suffix)
 	jObj := C.jobject(tempJObj)
 	if err != nil {
@@ -71,7 +71,7 @@ func (d *dispatcher) Lookup(suffix, method string) (ipc.Invoker, security.Author
 	if jServiceObj == nil {
 		return nil, nil, fmt.Errorf("null service object returned by Java's ServiceObjectWithAuthorizer")
 	}
-	authSign := util.ClassSign("com.veyron2.security.Authorizer")
+	authSign := util.ClassSign("io.veyron.veyron.veyron2.security.Authorizer")
 	jAuth := C.jobject(util.CallObjectMethodOrCatch(env, jObj, "getAuthorizer", nil, authSign))
 
 	// Create Go Invoker and Authorizer.

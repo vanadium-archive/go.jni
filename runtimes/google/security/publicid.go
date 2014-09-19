@@ -70,8 +70,8 @@ func (id *publicID) Authorize(context security.Context) (security.PublicID, erro
 	env := (*C.JNIEnv)(envPtr)
 	defer freeFunc()
 	jContext := newJavaContext(env, context)
-	contextSign := util.ClassSign("com.veyron2.security.Context")
-	publicIDSign := util.ClassSign("com.veyron2.security.PublicID")
+	contextSign := util.ClassSign("io.veyron.veyron.veyron2.security.Context")
+	publicIDSign := util.ClassSign("io.veyron.veyron.veyron2.security.PublicID")
 	jPublicID, err := util.CallObjectMethod(env, id.jPublicID, "authorize", []util.Sign{contextSign}, publicIDSign, jContext)
 	if err != nil {
 		return nil, err

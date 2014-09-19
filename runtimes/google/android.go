@@ -11,7 +11,7 @@ import "syscall"
 // #include <stdlib.h>
 import "C"
 
-//export Java_com_veyron_runtimes_google_android_RedirectStderr_nativeStart
-func Java_com_veyron_runtimes_google_android_RedirectStderr_nativeStart(env *C.JNIEnv, jRuntime C.jclass, fileno C.jint) {
+//export Java_io_veyron_veyron_veyron_runtimes_google_android_RedirectStderr_nativeStart
+func Java_io_veyron_veyron_veyron_runtimes_google_android_RedirectStderr_nativeStart(env *C.JNIEnv, jRuntime C.jclass, fileno C.jint) {
 	syscall.Dup2(int(fileno), syscall.Stderr)
 }

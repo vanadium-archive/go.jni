@@ -89,7 +89,7 @@ func (id *privateID) Derive(publicID security.PublicID) (security.PrivateID, err
 	defer freeFunc()
 	util.GoRef(&publicID) // Un-refed when the Java PublicID object created below is finalized.
 	jPublicID := C.jobject(util.NewObjectOrCatch(env, jPublicIDImplClass, []util.Sign{util.LongSign}, &publicID))
-	privateIDSign := util.ClassSign("com.veyron2.security.PrivateID")
+	privateIDSign := util.ClassSign("io.veyron.veyron.veyron2.security.PrivateID")
 	jPrivateID, err := util.CallObjectMethod(env, id.jPrivateID, "derive", []util.Sign{publicIDSign}, privateIDSign, jPublicID)
 	if err != nil {
 		return nil, err
@@ -105,12 +105,12 @@ func (id *privateID) Sign(message []byte) (security.Signature, error) {
 	envPtr, freeFunc := util.GetEnv(id.jVM)
 	env := (*C.JNIEnv)(envPtr)
 	defer freeFunc()
-	signatureSign := util.ClassSign("com.veyron2.security.Signature")
+	signatureSign := util.ClassSign("io.veyron.veyron.veyron2.security.Signature")
 	jSig, err := util.CallObjectMethod(env, id.jPrivateID, "sign", []util.Sign{util.ArraySign(util.ByteSign)}, signatureSign, message)
 	if err != nil {
 		return security.Signature{}, err
 	}
-	jHash := util.CallObjectMethodOrCatch(env, jSig, "getHash", nil, util.ClassSign("com.veyron2.security.Hash"))
+	jHash := util.CallObjectMethodOrCatch(env, jSig, "getHash", nil, util.ClassSign("io.veyron.veyron.veyron2.security.Hash"))
 	sig := security.Signature{
 		Purpose: nil,
 		Hash:    security.Hash(util.CallStringMethodOrCatch(env, jHash, "getValue", nil)),

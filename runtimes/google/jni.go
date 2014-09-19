@@ -43,8 +43,8 @@ func JNI_OnLoad(jVM *C.JavaVM, reserved unsafe.Pointer) C.jint {
 	return C.JNI_VERSION_1_6
 }
 
-//export Java_com_veyron_runtimes_google_InputChannel_nativeAvailable
-func Java_com_veyron_runtimes_google_InputChannel_nativeAvailable(env *C.JNIEnv, jInputChannel C.jobject, goChanPtr C.jlong) C.jboolean {
+//export Java_io_veyron_veyron_veyron_runtimes_google_InputChannel_nativeAvailable
+func Java_io_veyron_veyron_veyron_runtimes_google_InputChannel_nativeAvailable(env *C.JNIEnv, jInputChannel C.jobject, goChanPtr C.jlong) C.jboolean {
 	ch := *(*chan interface{})(util.Ptr(goChanPtr))
 	if len(ch) > 0 {
 		return C.JNI_TRUE
@@ -52,8 +52,8 @@ func Java_com_veyron_runtimes_google_InputChannel_nativeAvailable(env *C.JNIEnv,
 	return C.JNI_FALSE
 }
 
-//export Java_com_veyron_runtimes_google_InputChannel_nativeReadValue
-func Java_com_veyron_runtimes_google_InputChannel_nativeReadValue(env *C.JNIEnv, jInputChannel C.jobject, goChanPtr C.jlong) C.jstring {
+//export Java_io_veyron_veyron_veyron_runtimes_google_InputChannel_nativeReadValue
+func Java_io_veyron_veyron_veyron_runtimes_google_InputChannel_nativeReadValue(env *C.JNIEnv, jInputChannel C.jobject, goChanPtr C.jlong) C.jstring {
 	ch := *(*chan interface{})(util.Ptr(goChanPtr))
 	val, ok := <-ch
 	if !ok {
@@ -68,8 +68,8 @@ func Java_com_veyron_runtimes_google_InputChannel_nativeReadValue(env *C.JNIEnv,
 	return C.jstring(util.JStringPtr(env, string(bytes)))
 }
 
-//export Java_com_veyron_runtimes_google_InputChannel_nativeFinalize
-func Java_com_veyron_runtimes_google_InputChannel_nativeFinalize(env *C.JNIEnv, jInputChannel C.jobject, goChanPtr C.jlong) {
+//export Java_io_veyron_veyron_veyron_runtimes_google_InputChannel_nativeFinalize
+func Java_io_veyron_veyron_veyron_runtimes_google_InputChannel_nativeFinalize(env *C.JNIEnv, jInputChannel C.jobject, goChanPtr C.jlong) {
 	util.GoUnref((*chan interface{})(util.Ptr(goChanPtr)))
 }
 

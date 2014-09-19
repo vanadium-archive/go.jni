@@ -21,11 +21,11 @@ import (
 import "C"
 
 var (
-	// Global reference for com.veyron.runtimes.google.ipc.Runtime$ServerCall class.
+	// Global reference for io.veyron.veyron.veyron.runtimes.google.ipc.Runtime$ServerCall class.
 	jServerCallClass C.jclass
-	// Global reference for com.veyron.runtimes.google.ipc.VDLInvoker class.
+	// Global reference for io.veyron.veyron.veyron.runtimes.google.ipc.VDLInvoker class.
 	jVDLInvokerClass C.jclass
-	// Global reference for com.veyron2.OptionDefs class.
+	// Global reference for io.veyron.veyron.veyron2.OptionDefs class.
 	jOptionDefsClass C.jclass
 	// Global reference for java.io.EOFException class.
 	jEOFExceptionClass C.jclass
@@ -43,23 +43,23 @@ func Init(jEnv interface{}) {
 	// Cache global references to all Java classes used by the package.  This is
 	// necessary because JNI gets access to the class loader only in the system
 	// thread, so we aren't able to invoke FindClass in other threads.
-	jServerCallClass = C.jclass(util.JFindClassPtrOrDie(env, "com/veyron/runtimes/google/Runtime$ServerCall"))
-	jVDLInvokerClass = C.jclass(util.JFindClassPtrOrDie(env, "com/veyron/runtimes/google/VDLInvoker"))
-	jOptionDefsClass = C.jclass(util.JFindClassPtrOrDie(env, "com/veyron2/OptionDefs"))
+	jServerCallClass = C.jclass(util.JFindClassPtrOrDie(env, "io/veyron/veyron/veyron/runtimes/google/Runtime$ServerCall"))
+	jVDLInvokerClass = C.jclass(util.JFindClassPtrOrDie(env, "io/veyron/veyron/veyron/runtimes/google/VDLInvoker"))
+	jOptionDefsClass = C.jclass(util.JFindClassPtrOrDie(env, "io/veyron/veyron/veyron2/OptionDefs"))
 	jEOFExceptionClass = C.jclass(util.JFindClassPtrOrDie(env, "java/io/EOFException"))
 	jStringClass = C.jclass(util.JFindClassPtrOrDie(env, "java/lang/String"))
 }
 
-//export Java_com_veyron_runtimes_google_Runtime_nativeInit
-func Java_com_veyron_runtimes_google_Runtime_nativeInit(env *C.JNIEnv, jRuntime C.jclass, jOptions C.jobject) C.jlong {
+//export Java_io_veyron_veyron_veyron_runtimes_google_Runtime_nativeInit
+func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_nativeInit(env *C.JNIEnv, jRuntime C.jclass, jOptions C.jobject) C.jlong {
 	opts := goRuntimeOpts(env, jOptions)
 	r := rt.Init(opts...)
 	util.GoRef(&r) // Un-refed when the Java Runtime object is finalized.
 	return C.jlong(util.PtrValue(&r))
 }
 
-//export Java_com_veyron_runtimes_google_Runtime_nativeNewRuntime
-func Java_com_veyron_runtimes_google_Runtime_nativeNewRuntime(env *C.JNIEnv, jRuntime C.jclass, jOptions C.jobject) C.jlong {
+//export Java_io_veyron_veyron_veyron_runtimes_google_Runtime_nativeNewRuntime
+func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_nativeNewRuntime(env *C.JNIEnv, jRuntime C.jclass, jOptions C.jobject) C.jlong {
 	opts := goRuntimeOpts(env, jOptions)
 	r, err := rt.New(opts...)
 	if err != nil {
@@ -89,9 +89,9 @@ func goRuntimeOpts(env *C.JNIEnv, jOptions C.jobject) (ret []veyron2.ROpt) {
 	return
 }
 
-//export Java_com_veyron_runtimes_google_Runtime_nativeNewClient
+//export Java_io_veyron_veyron_veyron_runtimes_google_Runtime_nativeNewClient
 // TODO(mattr): Eliminate timeoutMillis, it is no longer functional.
-func Java_com_veyron_runtimes_google_Runtime_nativeNewClient(env *C.JNIEnv, jRuntime C.jobject, goRuntimePtr C.jlong, timeoutMillis C.jlong) C.jlong {
+func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_nativeNewClient(env *C.JNIEnv, jRuntime C.jobject, goRuntimePtr C.jlong, timeoutMillis C.jlong) C.jlong {
 	r := (*veyron2.Runtime)(util.Ptr(goRuntimePtr))
 	rc, err := (*r).NewClient()
 	if err != nil {
@@ -103,8 +103,8 @@ func Java_com_veyron_runtimes_google_Runtime_nativeNewClient(env *C.JNIEnv, jRun
 	return C.jlong(util.PtrValue(c))
 }
 
-//export Java_com_veyron_runtimes_google_Runtime_nativeNewServer
-func Java_com_veyron_runtimes_google_Runtime_nativeNewServer(env *C.JNIEnv, jRuntime C.jobject, goRuntimePtr C.jlong) C.jlong {
+//export Java_io_veyron_veyron_veyron_runtimes_google_Runtime_nativeNewServer
+func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_nativeNewServer(env *C.JNIEnv, jRuntime C.jobject, goRuntimePtr C.jlong) C.jlong {
 	r := (*veyron2.Runtime)(util.Ptr(goRuntimePtr))
 	s, err := (*r).NewServer()
 	if err != nil {
@@ -115,8 +115,8 @@ func Java_com_veyron_runtimes_google_Runtime_nativeNewServer(env *C.JNIEnv, jRun
 	return C.jlong(util.PtrValue(&s))
 }
 
-//export Java_com_veyron_runtimes_google_Runtime_nativeGetClient
-func Java_com_veyron_runtimes_google_Runtime_nativeGetClient(env *C.JNIEnv, jRuntime C.jobject, goRuntimePtr C.jlong) C.jlong {
+//export Java_io_veyron_veyron_veyron_runtimes_google_Runtime_nativeGetClient
+func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_nativeGetClient(env *C.JNIEnv, jRuntime C.jobject, goRuntimePtr C.jlong) C.jlong {
 	r := (*veyron2.Runtime)(util.Ptr(goRuntimePtr))
 	rc := (*r).Client()
 	c := newClient(rc)
@@ -124,37 +124,37 @@ func Java_com_veyron_runtimes_google_Runtime_nativeGetClient(env *C.JNIEnv, jRun
 	return C.jlong(util.PtrValue(c))
 }
 
-//export Java_com_veyron_runtimes_google_Runtime_nativeNewContext
-func Java_com_veyron_runtimes_google_Runtime_nativeNewContext(env *C.JNIEnv, jRuntime C.jobject, goRuntimePtr C.jlong) C.jlong {
+//export Java_io_veyron_veyron_veyron_runtimes_google_Runtime_nativeNewContext
+func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_nativeNewContext(env *C.JNIEnv, jRuntime C.jobject, goRuntimePtr C.jlong) C.jlong {
 	r := (*veyron2.Runtime)(util.Ptr(goRuntimePtr))
 	c := (*r).NewContext()
 	util.GoRef(&c) // Un-refed when the Java context object is finalized.
 	return C.jlong(util.PtrValue(&c))
 }
 
-//export Java_com_veyron_runtimes_google_Runtime_nativeGetPublicIDStore
-func Java_com_veyron_runtimes_google_Runtime_nativeGetPublicIDStore(env *C.JNIEnv, jRuntime C.jobject, goRuntimePtr C.jlong) C.jlong {
+//export Java_io_veyron_veyron_veyron_runtimes_google_Runtime_nativeGetPublicIDStore
+func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_nativeGetPublicIDStore(env *C.JNIEnv, jRuntime C.jobject, goRuntimePtr C.jlong) C.jlong {
 	r := (*veyron2.Runtime)(util.Ptr(goRuntimePtr))
 	s := (*r).PublicIDStore()
 	util.GoRef(&s) // Un-refed when the Java PublicIDStore object is finalized.
 	return C.jlong(util.PtrValue(&s))
 }
 
-//export Java_com_veyron_runtimes_google_Runtime_nativeGetNamespace
-func Java_com_veyron_runtimes_google_Runtime_nativeGetNamespace(env *C.JNIEnv, jRuntime C.jobject, goRuntimePtr C.jlong) C.jlong {
+//export Java_io_veyron_veyron_veyron_runtimes_google_Runtime_nativeGetNamespace
+func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_nativeGetNamespace(env *C.JNIEnv, jRuntime C.jobject, goRuntimePtr C.jlong) C.jlong {
 	r := (*veyron2.Runtime)(util.Ptr(goRuntimePtr))
 	n := (*r).Namespace()
 	util.GoRef(&n) // Un-refed when the Java Namespace object is finalized.
 	return C.jlong(util.PtrValue(&n))
 }
 
-//export Java_com_veyron_runtimes_google_Runtime_nativeFinalize
-func Java_com_veyron_runtimes_google_Runtime_nativeFinalize(env *C.JNIEnv, jRuntime C.jobject, goRuntimePtr C.jlong) {
+//export Java_io_veyron_veyron_veyron_runtimes_google_Runtime_nativeFinalize
+func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_nativeFinalize(env *C.JNIEnv, jRuntime C.jobject, goRuntimePtr C.jlong) {
 	util.GoUnref((*veyron2.Runtime)(util.Ptr(goRuntimePtr)))
 }
 
-//export Java_com_veyron_runtimes_google_Runtime_00024Server_nativeListen
-func Java_com_veyron_runtimes_google_Runtime_00024Server_nativeListen(env *C.JNIEnv, server C.jobject, goServerPtr C.jlong, protocol C.jstring, address C.jstring) C.jstring {
+//export Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024Server_nativeListen
+func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024Server_nativeListen(env *C.JNIEnv, server C.jobject, goServerPtr C.jlong, protocol C.jstring, address C.jstring) C.jstring {
 	s := (*ipc.Server)(util.Ptr(goServerPtr))
 	ep, err := (*s).Listen(util.GoString(env, protocol), util.GoString(env, address))
 	if err != nil {
@@ -164,8 +164,8 @@ func Java_com_veyron_runtimes_google_Runtime_00024Server_nativeListen(env *C.JNI
 	return C.jstring(util.JStringPtr(env, ep.String()))
 }
 
-//export Java_com_veyron_runtimes_google_Runtime_00024Server_nativeServe
-func Java_com_veyron_runtimes_google_Runtime_00024Server_nativeServe(env *C.JNIEnv, jServer C.jobject, goServerPtr C.jlong, name C.jstring, jDispatcher C.jobject) {
+//export Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024Server_nativeServe
+func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024Server_nativeServe(env *C.JNIEnv, jServer C.jobject, goServerPtr C.jlong, name C.jstring, jDispatcher C.jobject) {
 	s := (*ipc.Server)(util.Ptr(goServerPtr))
 	d, err := newDispatcher(env, jDispatcher)
 	if err != nil {
@@ -178,8 +178,8 @@ func Java_com_veyron_runtimes_google_Runtime_00024Server_nativeServe(env *C.JNIE
 	}
 }
 
-//export Java_com_veyron_runtimes_google_Runtime_00024Server_nativeGetPublishedNames
-func Java_com_veyron_runtimes_google_Runtime_00024Server_nativeGetPublishedNames(env *C.JNIEnv, jServer C.jobject, goServerPtr C.jlong) C.jobjectArray {
+//export Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024Server_nativeGetPublishedNames
+func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024Server_nativeGetPublishedNames(env *C.JNIEnv, jServer C.jobject, goServerPtr C.jlong) C.jobjectArray {
 	names, err := (*(*ipc.Server)(util.Ptr(goServerPtr))).Published()
 	if err != nil {
 		util.JThrowV(env, err)
@@ -192,8 +192,8 @@ func Java_com_veyron_runtimes_google_Runtime_00024Server_nativeGetPublishedNames
 	return ret
 }
 
-//export Java_com_veyron_runtimes_google_Runtime_00024Server_nativeStop
-func Java_com_veyron_runtimes_google_Runtime_00024Server_nativeStop(env *C.JNIEnv, server C.jobject, goServerPtr C.jlong) {
+//export Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024Server_nativeStop
+func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024Server_nativeStop(env *C.JNIEnv, server C.jobject, goServerPtr C.jlong) {
 	s := (*ipc.Server)(util.Ptr(goServerPtr))
 	if err := (*s).Stop(); err != nil {
 		util.JThrowV(env, err)
@@ -201,13 +201,13 @@ func Java_com_veyron_runtimes_google_Runtime_00024Server_nativeStop(env *C.JNIEn
 	}
 }
 
-//export Java_com_veyron_runtimes_google_Runtime_00024Server_nativeFinalize
-func Java_com_veyron_runtimes_google_Runtime_00024Server_nativeFinalize(env *C.JNIEnv, server C.jobject, goServerPtr C.jlong) {
+//export Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024Server_nativeFinalize
+func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024Server_nativeFinalize(env *C.JNIEnv, server C.jobject, goServerPtr C.jlong) {
 	util.GoUnref((*ipc.Server)(util.Ptr(goServerPtr)))
 }
 
-//export Java_com_veyron_runtimes_google_Runtime_00024Client_nativeStartCall
-func Java_com_veyron_runtimes_google_Runtime_00024Client_nativeStartCall(env *C.JNIEnv, jClient C.jobject, goClientPtr C.jlong, jContext C.jobject, name C.jstring, method C.jstring, jsonArgs C.jobjectArray, jPath C.jstring, timeoutMillis C.jlong) C.jlong {
+//export Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024Client_nativeStartCall
+func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024Client_nativeStartCall(env *C.JNIEnv, jClient C.jobject, goClientPtr C.jlong, jContext C.jobject, name C.jstring, method C.jstring, jsonArgs C.jobjectArray, jPath C.jstring, timeoutMillis C.jlong) C.jlong {
 	c := (*client)(util.Ptr(goClientPtr))
 	call, err := c.StartCall(env, jContext, util.GoString(env, name), util.GoString(env, method), jsonArgs, jPath, timeoutMillis)
 	if err != nil {
@@ -218,28 +218,28 @@ func Java_com_veyron_runtimes_google_Runtime_00024Client_nativeStartCall(env *C.
 	return C.jlong(util.PtrValue(call))
 }
 
-//export Java_com_veyron_runtimes_google_Runtime_00024Client_nativeClose
-func Java_com_veyron_runtimes_google_Runtime_00024Client_nativeClose(env *C.JNIEnv, jClient C.jobject, goClientPtr C.jlong) {
+//export Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024Client_nativeClose
+func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024Client_nativeClose(env *C.JNIEnv, jClient C.jobject, goClientPtr C.jlong) {
 	(*client)(util.Ptr(goClientPtr)).Close()
 }
 
-//export Java_com_veyron_runtimes_google_Runtime_00024Client_nativeFinalize
-func Java_com_veyron_runtimes_google_Runtime_00024Client_nativeFinalize(env *C.JNIEnv, jClient C.jobject, goClientPtr C.jlong) {
+//export Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024Client_nativeFinalize
+func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024Client_nativeFinalize(env *C.JNIEnv, jClient C.jobject, goClientPtr C.jlong) {
 	util.GoUnref((*client)(util.Ptr(goClientPtr)))
 }
 
-//export Java_com_veyron_runtimes_google_Runtime_00024Context_nativeFinalize
-func Java_com_veyron_runtimes_google_Runtime_00024Context_nativeFinalize(env *C.JNIEnv, jClient C.jobject, goContextPtr C.jlong) {
+//export Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024Context_nativeFinalize
+func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024Context_nativeFinalize(env *C.JNIEnv, jClient C.jobject, goContextPtr C.jlong) {
 	util.GoUnref((*ctx.T)(util.Ptr(goContextPtr)))
 }
 
-//export Java_com_veyron_runtimes_google_Runtime_00024Stream_nativeSend
-func Java_com_veyron_runtimes_google_Runtime_00024Stream_nativeSend(env *C.JNIEnv, jStream C.jobject, goStreamPtr C.jlong, jItem C.jstring) {
+//export Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024Stream_nativeSend
+func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024Stream_nativeSend(env *C.JNIEnv, jStream C.jobject, goStreamPtr C.jlong, jItem C.jstring) {
 	(*stream)(util.Ptr(goStreamPtr)).Send(env, jItem)
 }
 
-//export Java_com_veyron_runtimes_google_Runtime_00024Stream_nativeRecv
-func Java_com_veyron_runtimes_google_Runtime_00024Stream_nativeRecv(env *C.JNIEnv, jStream C.jobject, goStreamPtr C.jlong) C.jstring {
+//export Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024Stream_nativeRecv
+func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024Stream_nativeRecv(env *C.JNIEnv, jStream C.jobject, goStreamPtr C.jlong) C.jstring {
 	ret, err := (*stream)(util.Ptr(goStreamPtr)).Recv(env)
 	if err != nil {
 		if err == io.EOF {
@@ -252,8 +252,8 @@ func Java_com_veyron_runtimes_google_Runtime_00024Stream_nativeRecv(env *C.JNIEn
 	return ret
 }
 
-//export Java_com_veyron_runtimes_google_Runtime_00024ClientCall_nativeFinish
-func Java_com_veyron_runtimes_google_Runtime_00024ClientCall_nativeFinish(env *C.JNIEnv, jClientCall C.jobject, goClientCallPtr C.jlong) C.jobjectArray {
+//export Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024ClientCall_nativeFinish
+func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024ClientCall_nativeFinish(env *C.JNIEnv, jClientCall C.jobject, goClientCallPtr C.jlong) C.jobjectArray {
 	ret, err := (*clientCall)(util.Ptr(goClientCallPtr)).Finish(env)
 	if err != nil {
 		util.JThrowV(env, err)
@@ -262,25 +262,25 @@ func Java_com_veyron_runtimes_google_Runtime_00024ClientCall_nativeFinish(env *C
 	return ret
 }
 
-//export Java_com_veyron_runtimes_google_Runtime_00024ClientCall_nativeCancel
-func Java_com_veyron_runtimes_google_Runtime_00024ClientCall_nativeCancel(env *C.JNIEnv, jClientCall C.jobject, goClientCallPtr C.jlong) {
+//export Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024ClientCall_nativeCancel
+func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024ClientCall_nativeCancel(env *C.JNIEnv, jClientCall C.jobject, goClientCallPtr C.jlong) {
 	(*clientCall)(util.Ptr(goClientCallPtr)).Cancel()
 }
 
-//export Java_com_veyron_runtimes_google_Runtime_00024ClientCall_nativeFinalize
-func Java_com_veyron_runtimes_google_Runtime_00024ClientCall_nativeFinalize(env *C.JNIEnv, jClientCall C.jobject, goClientCallPtr C.jlong) {
+//export Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024ClientCall_nativeFinalize
+func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024ClientCall_nativeFinalize(env *C.JNIEnv, jClientCall C.jobject, goClientCallPtr C.jlong) {
 	util.GoUnref((*clientCall)(util.Ptr(goClientCallPtr)))
 }
 
-//export Java_com_veyron_runtimes_google_Runtime_00024ServerCall_nativeBlessing
-func Java_com_veyron_runtimes_google_Runtime_00024ServerCall_nativeBlessing(env *C.JNIEnv, jServerCall C.jobject, goServerCallPtr C.jlong) C.jlong {
+//export Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024ServerCall_nativeBlessing
+func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024ServerCall_nativeBlessing(env *C.JNIEnv, jServerCall C.jobject, goServerCallPtr C.jlong) C.jlong {
 	id := (*serverCall)(util.Ptr(goServerCallPtr)).Blessing()
 	util.GoRef(&id) // Un-refed when the Java PublicID object is finalized.
 	return C.jlong(util.PtrValue(&id))
 }
 
-//export Java_com_veyron_runtimes_google_Runtime_00024ServerCall_nativeDeadline
-func Java_com_veyron_runtimes_google_Runtime_00024ServerCall_nativeDeadline(env *C.JNIEnv, jServerCall C.jobject, goServerCallPtr C.jlong) C.jlong {
+//export Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024ServerCall_nativeDeadline
+func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024ServerCall_nativeDeadline(env *C.JNIEnv, jServerCall C.jobject, goServerCallPtr C.jlong) C.jlong {
 	s := (*serverCall)(util.Ptr(goServerCallPtr))
 	var d time.Time
 	if s == nil {
@@ -293,8 +293,8 @@ func Java_com_veyron_runtimes_google_Runtime_00024ServerCall_nativeDeadline(env 
 	return C.jlong(d.UnixNano() / 1000)
 }
 
-//export Java_com_veyron_runtimes_google_Runtime_00024ServerCall_nativeClosed
-func Java_com_veyron_runtimes_google_Runtime_00024ServerCall_nativeClosed(env *C.JNIEnv, jServerCall C.jobject, goServerCallPtr C.jlong) C.jboolean {
+//export Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024ServerCall_nativeClosed
+func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024ServerCall_nativeClosed(env *C.JNIEnv, jServerCall C.jobject, goServerCallPtr C.jlong) C.jboolean {
 	s := (*serverCall)(util.Ptr(goServerCallPtr))
 	select {
 	case <-s.Done():

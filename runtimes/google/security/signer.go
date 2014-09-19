@@ -52,12 +52,12 @@ func (s *signer) Sign(purpose, message []byte) (security.Signature, error) {
 	envPtr, freeFunc := util.GetEnv(s.jVM)
 	env := (*C.JNIEnv)(envPtr)
 	defer freeFunc()
-	signatureSign := util.ClassSign("com.veyron2.security.Signature")
+	signatureSign := util.ClassSign("io.veyron.veyron.veyron2.security.Signature")
 	jSig, err := util.CallObjectMethod(env, s.jSigner, "sign", []util.Sign{util.ArraySign(util.ByteSign), util.ArraySign(util.ByteSign)}, signatureSign, purpose, message)
 	if err != nil {
 		return security.Signature{}, err
 	}
-	jHash := util.CallObjectMethodOrCatch(env, jSig, "getHash", nil, util.ClassSign("com.veyron2.security.Hash"))
+	jHash := util.CallObjectMethodOrCatch(env, jSig, "getHash", nil, util.ClassSign("io.veyron.veyron.veyron2.security.Hash"))
 	sig := security.Signature{
 		Purpose: purpose,
 		Hash:    security.Hash(util.CallStringMethodOrCatch(env, jHash, "getValue", nil)),

@@ -21,8 +21,8 @@ import "C"
 // interface and then cast into the package-local environment type.
 func Init(jEnv interface{}) {}
 
-//export Java_com_veyron_runtimes_google_naming_Namespace_nativeGlob
-func Java_com_veyron_runtimes_google_naming_Namespace_nativeGlob(env *C.JNIEnv, jNamespace C.jobject, goNamespacePtr C.jlong, jContext C.jobject, pattern C.jstring) C.jlong {
+//export Java_io_veyron_veyron_veyron_runtimes_google_naming_Namespace_nativeGlob
+func Java_io_veyron_veyron_veyron_runtimes_google_naming_Namespace_nativeGlob(env *C.JNIEnv, jNamespace C.jobject, goNamespacePtr C.jlong, jContext C.jobject, pattern C.jstring) C.jlong {
 	n := *(*naming.Namespace)(util.Ptr(goNamespacePtr))
 	// TODO(spetrovic): Implement context correctly in Java and use it here.
 	ctx, _ := rt.R().NewContext().WithTimeout(20 * time.Second)
@@ -56,7 +56,7 @@ func Java_com_veyron_runtimes_google_naming_Namespace_nativeGlob(env *C.JNIEnv, 
 	return C.jlong(util.PtrValue(&retChan))
 }
 
-//export Java_com_veyron_runtimes_google_naming_Namespace_nativeFinalize
-func Java_com_veyron_runtimes_google_naming_Namespace_nativeFinalize(env *C.JNIEnv, jNamespace C.jobject, goNamespacePtr C.jlong) {
+//export Java_io_veyron_veyron_veyron_runtimes_google_naming_Namespace_nativeFinalize
+func Java_io_veyron_veyron_veyron_runtimes_google_naming_Namespace_nativeFinalize(env *C.JNIEnv, jNamespace C.jobject, goNamespacePtr C.jlong) {
 	util.GoUnref((*naming.Namespace)(util.Ptr(goNamespacePtr)))
 }

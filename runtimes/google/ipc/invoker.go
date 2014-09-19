@@ -73,7 +73,7 @@ func (i *invoker) Prepare(method string, numArgs int) (argptrs []interface{}, la
 	argptrs = mArgs.InPtrs()
 
 	// Get the security label.
-	labelSign := util.ClassSign("com.veyron2.security.Label")
+	labelSign := util.ClassSign("io.veyron.veyron.veyron2.security.Label")
 	jLabel, err := util.CallObjectMethod(env, i.jInvoker, "getSecurityLabel", []util.Sign{util.StringSign}, labelSign, util.CamelCase(method))
 	if err != nil {
 		return nil, security.Label(0), err
@@ -109,8 +109,8 @@ func (i *invoker) Invoke(method string, call ipc.ServerCall, argptrs []interface
 		return
 	}
 	// Invoke the method.
-	callSign := util.ClassSign("com.veyron2.ipc.ServerCall")
-	replySign := util.ClassSign("com.veyron.runtimes.google.VDLInvoker$InvokeReply")
+	callSign := util.ClassSign("io.veyron.veyron.veyron2.ipc.ServerCall")
+	replySign := util.ClassSign("io.veyron.veyron.veyron.runtimes.google.VDLInvoker$InvokeReply")
 	jReply, err := util.CallObjectMethod(env, i.jInvoker, "invoke", []util.Sign{util.StringSign, callSign, util.ArraySign(util.StringSign)}, replySign, util.CamelCase(method), jServerCall, jArgs)
 	if err != nil {
 		return nil, fmt.Errorf("error invoking Java method %q: %v", method, err)

@@ -12,7 +12,7 @@ import (
 	"unsafe"
 )
 
-var ctag *C.char = C.CString("com.veyron.runtimes.google.ipc")
+var ctag *C.char = C.CString("io.veyron.veyron.veyron.runtimes.google.ipc")
 
 // androidWriter writes it's output using Android's Log() function.
 type androidWriter struct {

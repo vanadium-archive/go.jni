@@ -29,7 +29,7 @@ import (
 import "C"
 
 var (
-	// Global reference for com.veyron2.ipc.VeyronException class.
+	// Global reference for io.veyron.veyron.veyron2.ipc.VeyronException class.
 	jVeyronExceptionClass C.jclass
 	// Global reference for java.lang.Throwable class.
 	jThrowableClass C.jclass
@@ -45,7 +45,7 @@ var (
 // and then cast into their package local types.
 func Init(jEnv interface{}) {
 	env := getEnv(jEnv)
-	jVeyronExceptionClass = C.jclass(JFindClassPtrOrDie(env, "com/veyron2/ipc/VeyronException"))
+	jVeyronExceptionClass = C.jclass(JFindClassPtrOrDie(env, "io/veyron/veyron/veyron2/ipc/VeyronException"))
 	jThrowableClass = C.jclass(JFindClassPtrOrDie(env, "java/lang/Throwable"))
 	jStringClass = C.jclass(JFindClassPtrOrDie(env, "java/lang/String"))
 }
