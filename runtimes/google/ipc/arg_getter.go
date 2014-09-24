@@ -15,6 +15,7 @@ import (
 )
 
 func init() {
+	registerUniversalInterface()
 	registerInterface((*fortune.Fortune)(nil))
 	registerInterface((*fortune.FortuneService)(nil))
 	registerInterface((*identity.OAuthBlesser)(nil))
@@ -22,6 +23,30 @@ func init() {
 
 // A list of all registered serviceArgGetter-s.
 var register map[string]*serviceArgGetter = make(map[string]*serviceArgGetter)
+
+// registerUniversalInterface registers universal methods (see UniversalServiceMethods)
+// under empty VDL path. This makes the universal methods invokeable even without
+// a corresponding VDL file being registered here.
+func registerUniversalInterface() {
+	methods := make(map[string][]*methodArgs)
+	addUniversalMethods(methods)
+	register[""] = &serviceArgGetter{
+		methods: methods,
+		vdlPath: "",
+	}
+}
+
+// addUniversalMethods add universal methods (see UniversalServiceMethods) to
+// the provided method map.
+func addUniversalMethods(methods map[string][]*methodArgs) {
+	// Signature method.
+	methods["Signature"] = []*methodArgs{
+		&methodArgs{
+			inTypes:  nil,
+			outTypes: []reflect.Type{reflect.TypeOf((*ipc.ServiceSignature)(nil)).Elem()},
+		},
+	}
+}
 
 // registerInterface registers the provided VDL client or server interface
 // so that its methods' arguments can be created on-the-fly.
@@ -31,9 +56,6 @@ func registerInterface(ifacePtr interface{}) {
 		panic(fmt.Sprintf("expected pointer type for %q, got: %v", ifacePtr, t.Kind()))
 	}
 	t = t.Elem()
-	if t.Kind() != reflect.Interface {
-		panic(fmt.Sprintf("expected interface type for %q, got: %v", ifacePtr, t.Kind()))
-	}
 
 	contextType := reflect.TypeOf((*ctx.T)(nil)).Elem()
 	serverContextType := reflect.TypeOf((*ipc.ServerContext)(nil)).Elem()
@@ -76,6 +98,7 @@ func registerInterface(ifacePtr interface{}) {
 		}
 		methods[m.Name] = append(methods[m.Name], &mArgs)
 	}
+	addUniversalMethods(methods)
 	path := path.Join(t.PkgPath(), t.Name())
 	register[path] = &serviceArgGetter{
 		methods: methods,
