@@ -107,6 +107,16 @@ func (c *context) LocalEndpoint() naming.Endpoint {
 	return ep
 }
 
+func (c *context) LocalPrincipal() security.Principal {
+	// TODO(spetrovic): Implement this.
+	return nil
+}
+
+func (c *context) RemoteBlessings() security.Blessings {
+	// TODO(spetrovic): Implement this.
+	return nil
+}
+
 func (c *context) RemoteEndpoint() naming.Endpoint {
 	epStr := c.callStringMethod("remoteEndpoint")
 	ep, err := inaming.NewEndpoint(epStr)
