@@ -112,6 +112,11 @@ func (c *context) LocalPrincipal() security.Principal {
 	return nil
 }
 
+func (c *context) LocalBlessings() security.Blessings {
+	// TODO(spetrovic): Implement this.
+	return nil
+}
+
 func (c *context) RemoteBlessings() security.Blessings {
 	// TODO(spetrovic): Implement this.
 	return nil
