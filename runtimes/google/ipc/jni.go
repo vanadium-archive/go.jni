@@ -272,11 +272,11 @@ func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024ClientCall_native
 	util.GoUnref((*clientCall)(util.Ptr(goClientCallPtr)))
 }
 
-//export Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024ServerCall_nativeBlessing
-func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024ServerCall_nativeBlessing(env *C.JNIEnv, jServerCall C.jobject, goServerCallPtr C.jlong) C.jlong {
-	id := (*serverCall)(util.Ptr(goServerCallPtr)).Blessing()
-	util.GoRef(&id) // Un-refed when the Java PublicID object is finalized.
-	return C.jlong(util.PtrValue(&id))
+//export Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024ServerCall_nativeBlessings
+func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024ServerCall_nativeBlessings(env *C.JNIEnv, jServerCall C.jobject, goServerCallPtr C.jlong) C.jlong {
+	b := (*serverCall)(util.Ptr(goServerCallPtr)).Blessings()
+	util.GoRef(&b) // Un-refed when the Java Blessings object is finalized.
+	return C.jlong(util.PtrValue(&b))
 }
 
 //export Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024ServerCall_nativeDeadline
