@@ -3,6 +3,9 @@
 package security
 
 import (
+	"bytes"
+	"encoding/json"
+	"fmt"
 	"reflect"
 	"time"
 	"unsafe"
@@ -10,6 +13,8 @@ import (
 	"veyron.io/jni/runtimes/google/util"
 	isecurity "veyron.io/veyron/veyron/runtimes/google/security"
 	"veyron.io/veyron/veyron2/security"
+	"veyron.io/veyron/veyron2/security/wire"
+	"veyron.io/veyron/veyron2/vom"
 )
 
 // #cgo LDFLAGS: -ljniwrapper
@@ -125,6 +130,63 @@ func Java_io_veyron_veyron_veyron_runtimes_google_security_PublicID_nativeAuthor
 	return C.jlong(util.PtrValue(&id))
 }
 
+//export Java_io_veyron_veyron_veyron_runtimes_google_security_PublicID_nativeEncode
+func Java_io_veyron_veyron_veyron_runtimes_google_security_PublicID_nativeEncode(env *C.JNIEnv, jPublicID C.jobject, goPublicIDPtr C.jlong) C.jobjectArray {
+	pubID := *(*security.PublicID)(util.Ptr(goPublicIDPtr))
+	chains, err := getChains(pubID)
+	if err != nil {
+		util.JThrowV(env, err)
+		return nil
+	}
+	jsonChains := make([]string, len(chains))
+	for i, chain := range chains {
+		enc, err := json.Marshal(chain)
+		if err != nil {
+			util.JThrowV(env, err)
+			return nil
+		}
+		jsonChains[i] = string(enc)
+	}
+	return C.jobjectArray(util.JStringArrayPtr(env, jsonChains))
+}
+
+func getChains(id security.PublicID) ([]wire.ChainPublicID, error) {
+	m := reflect.ValueOf(id).MethodByName("VomEncode")
+	if !m.IsValid() {
+		return nil, fmt.Errorf("type %T doesn't implement VomEncode()", id)
+	}
+	results := m.Call(nil)
+	if len(results) != 2 {
+		return nil, fmt.Errorf("type %T has wrong number of return arguments for VomEncode()", id)
+	}
+	if !results[1].IsNil() {
+		err, ok := results[1].Interface().(error)
+		if !ok {
+			return nil, fmt.Errorf("second return argument must be an error, got %T", results[1].Interface())
+		}
+		return nil, fmt.Errorf("error invoking VomEncode(): %v", err)
+	}
+	if results[0].IsNil() {
+		return nil, fmt.Errorf("VomEncode() returned nil encoding value")
+	}
+	switch result := results[0].Interface().(type) {
+	case *wire.ChainPublicID:
+		return []wire.ChainPublicID{*result}, nil
+	case []security.PublicID:
+		var ret []wire.ChainPublicID
+		for _, childID := range result {
+			chains, err := getChains(childID)
+			if err != nil {
+				return nil, err
+			}
+			ret = append(ret, chains...)
+		}
+		return ret, nil
+	default:
+		return nil, fmt.Errorf("unexpected return value of type %T for VomEncode", result)
+	}
+}
+
 //export Java_io_veyron_veyron_veyron_runtimes_google_security_PublicID_nativeEquals
 func Java_io_veyron_veyron_veyron_runtimes_google_security_PublicID_nativeEquals(env *C.JNIEnv, jPublicID C.jobject, goPublicIDPtr, goOtherPublicIDPtr C.jlong) C.jboolean {
 	id := *(*security.PublicID)(util.Ptr(goPublicIDPtr))
@@ -160,9 +222,12 @@ func Java_io_veyron_veyron_veyron_runtimes_google_security_PrivateID_nativePubli
 }
 
 //export Java_io_veyron_veyron_veyron_runtimes_google_security_PrivateID_nativeBless
-func Java_io_veyron_veyron_veyron_runtimes_google_security_PrivateID_nativeBless(env *C.JNIEnv, jPrivateID C.jobject, goPrivateIDPtr C.jlong, jBlessee C.jobject, name C.jstring, jDuration C.jobject) C.jlong {
-	blesseePtr := util.CallLongMethodOrCatch(env, jBlessee, "getNativePtr", nil)
-	blessee := (*(*security.PublicID)(util.Ptr(blesseePtr)))
+func Java_io_veyron_veyron_veyron_runtimes_google_security_PrivateID_nativeBless(env *C.JNIEnv, jPrivateID C.jobject, goPrivateIDPtr C.jlong, jBlesseeChains C.jobjectArray, name C.jstring, jDuration C.jobject) C.jlong {
+	blessee, err := idFromChains(env, jBlesseeChains)
+	if err != nil {
+		util.JThrowV(env, err)
+		return C.jlong(0)
+	}
 	duration := time.Duration(util.CallLongMethodOrCatch(env, jDuration, "getMillis", nil)) * time.Millisecond
 	id, err := (*(*security.PrivateID)(util.Ptr(goPrivateIDPtr))).Bless(blessee, util.GoString(env, name), duration, nil)
 	if err != nil {
@@ -174,9 +239,12 @@ func Java_io_veyron_veyron_veyron_runtimes_google_security_PrivateID_nativeBless
 }
 
 //export Java_io_veyron_veyron_veyron_runtimes_google_security_PrivateID_nativeDerive
-func Java_io_veyron_veyron_veyron_runtimes_google_security_PrivateID_nativeDerive(env *C.JNIEnv, jPrivateID C.jobject, goPrivateIDPtr C.jlong, jPublicID C.jobject) C.jlong {
-	publicIDPtr := util.CallLongMethodOrCatch(env, jPublicID, "getNativePtr", nil)
-	publicID := (*(*security.PublicID)(util.Ptr(publicIDPtr)))
+func Java_io_veyron_veyron_veyron_runtimes_google_security_PrivateID_nativeDerive(env *C.JNIEnv, jPrivateID C.jobject, goPrivateIDPtr C.jlong, jPublicIDChains C.jobjectArray) C.jlong {
+	publicID, err := idFromChains(env, jPublicIDChains)
+	if err != nil {
+		util.JThrowV(env, err)
+		return C.jlong(0)
+	}
 	id, err := (*(*security.PrivateID)(util.Ptr(goPrivateIDPtr))).Derive(publicID)
 	if err != nil {
 		util.JThrowV(env, err)
@@ -184,6 +252,39 @@ func Java_io_veyron_veyron_veyron_runtimes_google_security_PrivateID_nativeDeriv
 	}
 	util.GoRef(&id) // Un-refed when the Java PrivateID is finalized.
 	return C.jlong(util.PtrValue(&id))
+}
+
+func idFromChains(env *C.JNIEnv, jPublicIDChains C.jobjectArray) (security.PublicID, error) {
+	chainStrs := util.GoStringArray(env, jPublicIDChains)
+	if len(chainStrs) == 0 {
+		return nil, fmt.Errorf("Empty public id chains")
+	}
+	// JSON-decode chains.
+	chains := make([]wire.ChainPublicID, len(chainStrs))
+	for i, str := range chainStrs {
+		if err := json.Unmarshal([]byte(str), &chains[i]); err != nil {
+			return nil, fmt.Errorf("Couldn't JSON-decode chain %q: %v", str, err)
+		}
+	}
+	// Create PublicIDs.
+	ids := make([]security.PublicID, len(chains))
+	for i, chain := range chains {
+		// Total hack to obtain a PublicID from wire.ChainPublicID.
+		// TODO(spetrovic): make sure this goes away when we switch to Principal/Blessing API.
+		var buf bytes.Buffer
+		if err := vom.NewEncoder(&buf).Encode(&chain); err != nil {
+			return nil, fmt.Errorf("Couldn't VOM-encode chain: %v", err)
+		}
+		privID, err := isecurity.NewPrivateID("dummy", nil)
+		if err != nil {
+			return nil, fmt.Errorf("Couldn't mint new private id")
+		}
+		ids[i] = privID.PublicID()
+		if err := vom.NewDecoder(&buf).Decode(&ids[i]); err != nil {
+			return nil, fmt.Errorf("Couldn't VOM-decode chain: %v", err)
+		}
+	}
+	return isecurity.NewSetPublicID(ids...)
 }
 
 //export Java_io_veyron_veyron_veyron_runtimes_google_security_PrivateID_nativeFinalize
