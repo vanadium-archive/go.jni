@@ -17,11 +17,11 @@ func mintID() security.PublicID {
 }
 
 func TestSimple(t *testing.T) {
-	testCoder(t, mintID("dummy"))
+	testCoder(t, mintID())
 }
 
 func TestSet(t *testing.T) {
-	id := mintID("dummy")
+	id := mintID()
 	set, err := isecurity.NewSetPublicID(id, id, id)
 	if err != nil {
 		t.Fatalf("couldn't create set id: %v", err)
