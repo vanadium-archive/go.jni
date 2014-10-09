@@ -28,8 +28,7 @@ func newClient(c ipc.Client) *client {
 	}
 }
 
-// TODO(mattr): Remove the jTimeout param. after we move deadlines to contexts on java.
-func (c *client) StartCall(env *C.JNIEnv, jContext C.jobject, name, method string, jArgs C.jobjectArray, jPath C.jstring, jTimeout C.jlong) (*clientCall, error) {
+func (c *client) StartCall(env *C.JNIEnv, jContext C.jobject, name, method string, jArgs C.jobjectArray, jOptions C.jobject) (*clientCall, error) {
 	// NOTE(spetrovic): In the long-term, we will decode JSON arguments into an
 	// array of vom.Value instances and send this array across the wire.
 
@@ -39,14 +38,20 @@ func (c *client) StartCall(env *C.JNIEnv, jContext C.jobject, name, method strin
 		argStrs[i] = util.GoString(env, C.GetObjectArrayElement(env, jArgs, C.jsize(i)))
 	}
 	// Get argument instances that correspond to the provided method.
-	vdlPackagePath := util.GoString(env, jPath)
-	getter, err := newArgGetter([]string{vdlPackagePath})
+	vdlPackagePathPtr, err := getVDLPathOpt(env, jOptions)
+	if err != nil {
+		return nil, err
+	}
+	if vdlPackagePathPtr == nil {
+		return nil, fmt.Errorf("couldn't find VDL_INTERFACE_PATH option")
+	}
+	getter, err := newArgGetter([]string{*vdlPackagePathPtr})
 	if err != nil {
 		return nil, err
 	}
 	mArgs := getter.FindMethod(method, len(argStrs))
 	if mArgs == nil {
-		return nil, fmt.Errorf("couldn't find method %s with %d args in VDL interface at path %q", method, len(argStrs), util.GoString(env, jPath))
+		return nil, fmt.Errorf("couldn't find method %s with %d args in VDL interface at path %q", method, len(argStrs), util.GoString(env, *vdlPackagePathPtr))
 	}
 	argptrs := mArgs.InPtrs()
 	if len(argptrs) != len(argStrs) {
@@ -63,15 +68,7 @@ func (c *client) StartCall(env *C.JNIEnv, jContext C.jobject, name, method strin
 		args[i] = util.DerefOrDie(argptrs[i])
 	}
 
-	// TODO(mattr): It's not clear what needs to be done with the result of newContext.
-	// We should be getting access to the veyron context object perhaps maintained inside
-	// jContext somehow.  For now I'll create a new context with a deadline derived from
-	// jTimeout.  Eventually we should remove jTimeout altogether.
-	_, err = newContext(env, jContext)
-	if err != nil {
-		return nil, err
-	}
-	context, _ := rt.R().NewContext().WithTimeout(time.Duration(int(jTimeout)) * time.Millisecond)
+	context, _ := rt.R().NewContext().WithTimeout(10 * time.Second)
 
 	// Invoke StartCall
 	call, err := c.client.StartCall(context, name, method, args)

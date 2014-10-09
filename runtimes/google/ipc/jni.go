@@ -7,7 +7,6 @@ import (
 	"time"
 	"unsafe"
 
-	jnisecurity "veyron.io/jni/runtimes/google/security"
 	"veyron.io/jni/runtimes/google/util"
 	"veyron.io/veyron/veyron2"
 	ctx "veyron.io/veyron/veyron2/context"
@@ -52,7 +51,7 @@ func Init(jEnv interface{}) {
 
 //export Java_io_veyron_veyron_veyron_runtimes_google_Runtime_nativeInit
 func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_nativeInit(env *C.JNIEnv, jRuntime C.jclass, jOptions C.jobject) C.jlong {
-	opts := goRuntimeOpts(env, jOptions)
+	opts := getRuntimeOpts(env, jOptions)
 	r := rt.Init(opts...)
 	util.GoRef(&r) // Un-refed when the Java Runtime object is finalized.
 	return C.jlong(util.PtrValue(&r))
@@ -60,7 +59,7 @@ func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_nativeInit(env *C.JNIE
 
 //export Java_io_veyron_veyron_veyron_runtimes_google_Runtime_nativeNewRuntime
 func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_nativeNewRuntime(env *C.JNIEnv, jRuntime C.jclass, jOptions C.jobject) C.jlong {
-	opts := goRuntimeOpts(env, jOptions)
+	opts := getRuntimeOpts(env, jOptions)
 	r, err := rt.New(opts...)
 	if err != nil {
 		util.JThrowV(env, err)
@@ -70,30 +69,19 @@ func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_nativeNewRuntime(env *
 	return C.jlong(util.PtrValue(&r))
 }
 
-// goRuntimeOpts converts Java runtime options into Go runtime options.
-func goRuntimeOpts(env *C.JNIEnv, jOptions C.jobject) (ret []veyron2.ROpt) {
-	// Process RuntimeIDOpt.
-	runtimeIDKey := util.JStaticStringField(env, jOptionDefsClass, "RUNTIME_ID")
-	if util.CallBooleanMethodOrCatch(env, jOptions, "has", []util.Sign{util.StringSign}, runtimeIDKey) {
-		jPrivateID := C.jobject(util.CallObjectMethodOrCatch(env, jOptions, "get", []util.Sign{util.StringSign}, util.ObjectSign, runtimeIDKey))
-		id := jnisecurity.NewPrivateID(env, jPrivateID)
-		ret = append(ret, veyron2.RuntimeID(id))
-	}
-	// Process RuntimePublicIDStoreOpt
-	runtimePublicIDStoreKey := util.JStaticStringField(env, jOptionDefsClass, "RUNTIME_PUBLIC_ID_STORE")
-	if util.CallBooleanMethodOrCatch(env, jOptions, "has", []util.Sign{util.StringSign}, runtimePublicIDStoreKey) {
-		jStore := C.jobject(util.CallObjectMethodOrCatch(env, jOptions, "get", []util.Sign{util.StringSign}, util.ObjectSign, runtimePublicIDStoreKey))
-		store := jnisecurity.NewPublicIDStore(env, jStore)
-		ret = append(ret, veyron2.RuntimePublicIDStore(store))
-	}
-	return
-}
-
 //export Java_io_veyron_veyron_veyron_runtimes_google_Runtime_nativeNewClient
-// TODO(mattr): Eliminate timeoutMillis, it is no longer functional.
-func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_nativeNewClient(env *C.JNIEnv, jRuntime C.jobject, goRuntimePtr C.jlong, timeoutMillis C.jlong) C.jlong {
+func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_nativeNewClient(env *C.JNIEnv, jRuntime C.jobject, goRuntimePtr C.jlong, jOptions C.jobject) C.jlong {
 	r := (*veyron2.Runtime)(util.Ptr(goRuntimePtr))
-	rc, err := (*r).NewClient()
+	opt, err := getLocalIDOpt(env, jOptions)
+	if err != nil {
+		util.JThrowV(env, err)
+		return C.jlong(0)
+	}
+	var opts []ipc.ClientOpt
+	if opt != nil {
+		opts = append(opts, *opt)
+	}
+	rc, err := (*r).NewClient(opts...)
 	if err != nil {
 		util.JThrowV(env, err)
 		return C.jlong(0)
@@ -104,9 +92,18 @@ func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_nativeNewClient(env *C
 }
 
 //export Java_io_veyron_veyron_veyron_runtimes_google_Runtime_nativeNewServer
-func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_nativeNewServer(env *C.JNIEnv, jRuntime C.jobject, goRuntimePtr C.jlong) C.jlong {
+func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_nativeNewServer(env *C.JNIEnv, jRuntime C.jobject, goRuntimePtr C.jlong, jOptions C.jobject) C.jlong {
 	r := (*veyron2.Runtime)(util.Ptr(goRuntimePtr))
-	s, err := (*r).NewServer()
+	opt, err := getLocalIDOpt(env, jOptions)
+	if err != nil {
+		util.JThrowV(env, err)
+		return C.jlong(0)
+	}
+	var opts []ipc.ServerOpt
+	if opt != nil {
+		opts = append(opts, *opt)
+	}
+	s, err := (*r).NewServer(opts...)
 	if err != nil {
 		util.JThrowV(env, err)
 		return C.jlong(0)
@@ -207,9 +204,9 @@ func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024Server_nativeFina
 }
 
 //export Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024Client_nativeStartCall
-func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024Client_nativeStartCall(env *C.JNIEnv, jClient C.jobject, goClientPtr C.jlong, jContext C.jobject, name C.jstring, method C.jstring, jsonArgs C.jobjectArray, jPath C.jstring, timeoutMillis C.jlong) C.jlong {
+func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024Client_nativeStartCall(env *C.JNIEnv, jClient C.jobject, goClientPtr C.jlong, jContext C.jobject, name C.jstring, method C.jstring, jsonArgs C.jobjectArray, jOptions C.jobject) C.jlong {
 	c := (*client)(util.Ptr(goClientPtr))
-	call, err := c.StartCall(env, jContext, util.GoString(env, name), util.GoString(env, method), jsonArgs, jPath, timeoutMillis)
+	call, err := c.StartCall(env, jContext, util.GoString(env, name), util.GoString(env, method), jsonArgs, jOptions)
 	if err != nil {
 		util.JThrowV(env, err)
 		return C.jlong(0)

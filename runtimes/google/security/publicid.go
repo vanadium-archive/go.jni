@@ -38,6 +38,7 @@ func newPublicID(env *C.JNIEnv, jPublicID C.jobject) *publicID {
 	return id
 }
 
+// TODO(spetrovic): Implement VomEncode/VomDecode for this type to be useful.
 type publicID struct {
 	jVM       *C.JavaVM
 	jPublicID C.jobject

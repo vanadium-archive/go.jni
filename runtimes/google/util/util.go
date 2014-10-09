@@ -390,7 +390,8 @@ func JStaticFieldIDPtrOrDie(jEnv, jClass interface{}, name string, sign Sign) un
 	return ptr
 }
 
-// JMethodIDPtrOrDie returns the Java method ID for the given method.
+// JMethodIDPtrOrDie returns the Java method ID for the given instance
+// (non-static) method.
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
@@ -402,6 +403,25 @@ func JMethodIDPtrOrDie(jEnv, jClass interface{}, name string, signature Sign) un
 	cSignature := C.CString(string(signature))
 	defer C.free(unsafe.Pointer(cSignature))
 	ptr := unsafe.Pointer(C.GetMethodID(env, class, cName, cSignature))
+	if err := JExceptionMsg(env); err != nil || ptr == nil {
+		panic(fmt.Sprintf("couldn't find method %s: %v", name, err))
+	}
+	return ptr
+}
+
+// JStaticMethodIDPtrOrDie returns the Java method ID for the given static
+// method.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func JStaticMethodIDPtrOrDie(jEnv, jClass interface{}, name string, signature Sign) unsafe.Pointer {
+	env := getEnv(jEnv)
+	class := getClass(jClass)
+	cName := C.CString(name)
+	defer C.free(unsafe.Pointer(cName))
+	cSignature := C.CString(string(signature))
+	defer C.free(unsafe.Pointer(cSignature))
+	ptr := unsafe.Pointer(C.GetStaticMethodID(env, class, cName, cSignature))
 	if err := JExceptionMsg(env); err != nil || ptr == nil {
 		panic(fmt.Sprintf("couldn't find method %s: %v", name, err))
 	}

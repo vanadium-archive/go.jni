@@ -108,6 +108,9 @@ func NewObjectOrCatch(env interface{}, class interface{}, argSigns []Sign, args 
 
 // setupMethodCall performs the shared preparation operations between various java method invocation functions.
 func setupMethodCall(env interface{}, object interface{}, name string, argSigns []Sign, retSign Sign, args []interface{}) (jenv *C.JNIEnv, jobject C.jobject, jmid C.jmethodID, jvalArray *C.jvalue, freeFunc func()) {
+	if len(argSigns) != len(args) {
+		panic(fmt.Sprintf("mismatch in number of arguments (%d) and arg signatures (%d) for method %q", len(args), len(argSigns), name))
+	}
 	jenv = getEnv(env)
 	jobject = getObject(object)
 	jclass := C.GetObjectClass(jenv, jobject)
@@ -272,7 +275,7 @@ func CallStaticObjectMethod(env interface{}, class interface{}, name string, arg
 	jenv := getEnv(env)
 	jclass := getClass(class)
 
-	jmid := C.jmethodID(JMethodIDPtrOrDie(jenv, jclass, name, FuncSign(argSigns, retSign)))
+	jmid := C.jmethodID(JStaticMethodIDPtrOrDie(jenv, jclass, name, FuncSign(argSigns, retSign)))
 
 	jvalArray, freeFunc := jValueArray(jenv, args)
 	ret := C.CallStaticObjectMethodA(jenv, jclass, jmid, jvalArray)
