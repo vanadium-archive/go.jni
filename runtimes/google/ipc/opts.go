@@ -6,6 +6,7 @@ import (
 	jnisecurity "veyron.io/jni/runtimes/google/security"
 	"veyron.io/jni/runtimes/google/util"
 	"veyron.io/veyron/veyron2"
+	"veyron.io/veyron/veyron2/options"
 )
 
 // #cgo LDFLAGS: -ljniwrapper
@@ -22,15 +23,18 @@ func getRuntimeOpts(env *C.JNIEnv, jOptions C.jobject) (ret []veyron2.ROpt) {
 	if util.CallBooleanMethodOrCatch(env, jOptions, "has", []util.Sign{util.StringSign}, runtimeIDKey) {
 		jPrivateID := C.jobject(util.CallObjectMethodOrCatch(env, jOptions, "get", []util.Sign{util.StringSign}, util.ObjectSign, runtimeIDKey))
 		id := jnisecurity.NewPrivateID(env, jPrivateID)
-		ret = append(ret, veyron2.RuntimeID(id))
+		ret = append(ret, options.RuntimeID(id))
 	}
-	// Process RuntimePublicIDStoreOpt
-	runtimePublicIDStoreKey := util.JStaticStringField(env, jOptionDefsClass, "RUNTIME_PUBLIC_ID_STORE")
-	if util.CallBooleanMethodOrCatch(env, jOptions, "has", []util.Sign{util.StringSign}, runtimePublicIDStoreKey) {
-		jStore := C.jobject(util.CallObjectMethodOrCatch(env, jOptions, "get", []util.Sign{util.StringSign}, util.ObjectSign, runtimePublicIDStoreKey))
-		store := jnisecurity.NewPublicIDStore(env, jStore)
-		ret = append(ret, veyron2.RuntimePublicIDStore(store))
-	}
+	// TODO(ashankar,ataly,spetrovic): Replace witht he new security API
+	/*
+		// Process RuntimePublicIDStoreOpt
+		runtimePublicIDStoreKey := util.JStaticStringField(env, jOptionDefsClass, "RUNTIME_PUBLIC_ID_STORE")
+		if util.CallBooleanMethodOrCatch(env, jOptions, "has", []util.Sign{util.StringSign}, runtimePublicIDStoreKey) {
+			jStore := C.jobject(util.CallObjectMethodOrCatch(env, jOptions, "get", []util.Sign{util.StringSign}, util.ObjectSign, runtimePublicIDStoreKey))
+			store := jnisecurity.NewPublicIDStore(env, jStore)
+			ret = append(ret, options.RuntimePublicIDStore(store))
+		}
+	*/
 	return
 }
 
@@ -52,7 +56,7 @@ func getLocalIDOpt(env *C.JNIEnv, jOptions C.jobject) (*veyron2.LocalIDOpt, erro
 	if err != nil {
 		return nil, err
 	}
-	opt := veyron2.LocalID(id)
+	opt := options.LocalID(id)
 	return &opt, nil
 }
 
