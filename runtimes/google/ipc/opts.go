@@ -23,7 +23,7 @@ func getRuntimeOpts(env *C.JNIEnv, jOptions C.jobject) (ret []veyron2.ROpt) {
 	if util.CallBooleanMethodOrCatch(env, jOptions, "has", []util.Sign{util.StringSign}, runtimeIDKey) {
 		jPrivateID := C.jobject(util.CallObjectMethodOrCatch(env, jOptions, "get", []util.Sign{util.StringSign}, util.ObjectSign, runtimeIDKey))
 		id := jnisecurity.NewPrivateID(env, jPrivateID)
-		ret = append(ret, options.RuntimeID(id))
+		ret = append(ret, options.RuntimeID{id})
 	}
 	// TODO(ashankar,ataly,spetrovic): Replace witht he new security API
 	/*
@@ -39,7 +39,7 @@ func getRuntimeOpts(env *C.JNIEnv, jOptions C.jobject) (ret []veyron2.ROpt) {
 }
 
 // getLocalIDOpt converts the Java LocalID option (encoded) into Go LocalId option.
-func getLocalIDOpt(env *C.JNIEnv, jOptions C.jobject) (*veyron2.LocalIDOpt, error) {
+func getLocalIDOpt(env *C.JNIEnv, jOptions C.jobject) (*options.LocalID, error) {
 	if jOptions == nil {
 		return nil, nil
 	}
@@ -56,7 +56,7 @@ func getLocalIDOpt(env *C.JNIEnv, jOptions C.jobject) (*veyron2.LocalIDOpt, erro
 	if err != nil {
 		return nil, err
 	}
-	opt := options.LocalID(id)
+	opt := options.LocalID{id}
 	return &opt, nil
 }
 
