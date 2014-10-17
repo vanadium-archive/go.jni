@@ -4,11 +4,11 @@ import (
 	"reflect"
 	"testing"
 
-	"veyron.io/veyron/veyron2/vdl/test_base"
+	"veyron.io/veyron/veyron2/vdl/testdata/base"
 )
 
 func init() {
-	registerInterface((*test_base.ServiceB)(nil))
+	registerInterface((*base.ServiceB)(nil))
 }
 
 func compareType(t *testing.T, method string, got, want interface{}, argKind string) {
@@ -27,7 +27,7 @@ func compareTypes(t *testing.T, method string, got, want []interface{}, argKind 
 }
 
 func TestGetter(t *testing.T) {
-	iface := "veyron.io/veyron/veyron2/vdl/test_base/ServiceB"
+	iface := "veyron.io/veyron/veyron2/vdl/testdata/base/ServiceB"
 	getter, err := newArgGetter([]string{iface})
 	if err != nil {
 		t.Fatalf("couldn't find getter for interface: %v ", iface)
@@ -41,9 +41,9 @@ func TestGetter(t *testing.T) {
 	}{
 		{"MethodA1", 0, nil, nil, nil, nil, nil},
 		{"MethodA2", 2, []interface{}{(*int32)(nil), (*string)(nil)}, []interface{}{(*string)(nil)}, nil, nil, nil},
-		{"MethodA3", 1, []interface{}{(*int32)(nil)}, nil, nil, (*test_base.Scalars)(nil), []interface{}{(*string)(nil)}},
+		{"MethodA3", 1, []interface{}{(*int32)(nil)}, nil, nil, (*base.Scalars)(nil), []interface{}{(*string)(nil)}},
 		{"MethodA4", 1, []interface{}{(*int32)(nil)}, nil, (*int32)(nil), (*string)(nil), nil},
-		{"MethodB1", 2, []interface{}{(*test_base.Scalars)(nil), (*test_base.Composites)(nil)}, []interface{}{(*test_base.CompComp)(nil)}, nil, nil, nil},
+		{"MethodB1", 2, []interface{}{(*base.Scalars)(nil), (*base.Composites)(nil)}, []interface{}{(*base.CompComp)(nil)}, nil, nil, nil},
 	}
 	for _, d := range data {
 		m := getter.FindMethod(d.Method, d.NumInArgs)
