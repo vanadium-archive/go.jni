@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"runtime"
 
-	"veyron.io/jni/runtimes/google/util"
+	"veyron.io/jni/util"
 )
 
 // #cgo LDFLAGS: -ljniwrapper
@@ -27,8 +27,8 @@ func newContext(env *C.JNIEnv, jContext C.jobject) (*context, error) {
 		jContext: jContext,
 	}
 	runtime.SetFinalizer(c, func(c *context) {
-		envPtr, freeFunc := util.GetEnv(c.jVM)
-		env := (*C.JNIEnv)(envPtr)
+		jEnv, freeFunc := util.GetEnv(c.jVM)
+		env := (*C.JNIEnv)(jEnv)
 		defer freeFunc()
 		C.DeleteGlobalRef(env, c.jContext)
 	})

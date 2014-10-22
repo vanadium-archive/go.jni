@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"unsafe"
 
-	"veyron.io/jni/runtimes/google/util"
+	"veyron.io/jni/util"
 	"veyron.io/veyron/veyron2/security"
 )
 
@@ -41,8 +41,8 @@ func NewPublicIDStore(jEnv, jStore interface{}) security.PublicIDStore {
 		jPublicIDStore: jPublicIDStore,
 	}
 	runtime.SetFinalizer(s, func(s *publicIDStore) {
-		envPtr, freeFunc := util.GetEnv(s.jVM)
-		env := (*C.JNIEnv)(envPtr)
+		jEnv, freeFunc := util.GetEnv(s.jVM)
+		env := (*C.JNIEnv)(jEnv)
 		defer freeFunc()
 		C.DeleteGlobalRef(env, s.jPublicIDStore)
 	})
@@ -55,8 +55,8 @@ type publicIDStore struct {
 }
 
 func (s *publicIDStore) Add(id security.PublicID, peerPattern security.BlessingPattern) error {
-	envPtr, freeFunc := util.GetEnv(s.jVM)
-	env := (*C.JNIEnv)(envPtr)
+	jEnv, freeFunc := util.GetEnv(s.jVM)
+	env := (*C.JNIEnv)(jEnv)
 	defer freeFunc()
 	util.GoRef(&id) // Un-refed when the Java PublicID object created below is finalized.
 	jPublicID := C.jobject(util.NewObjectOrCatch(env, jPublicIDImplClass, []util.Sign{util.LongSign}, &id))
@@ -65,8 +65,8 @@ func (s *publicIDStore) Add(id security.PublicID, peerPattern security.BlessingP
 }
 
 func (s *publicIDStore) ForPeer(peer security.PublicID) (security.PublicID, error) {
-	envPtr, freeFunc := util.GetEnv(s.jVM)
-	env := (*C.JNIEnv)(envPtr)
+	jEnv, freeFunc := util.GetEnv(s.jVM)
+	env := (*C.JNIEnv)(jEnv)
 	defer freeFunc()
 	util.GoRef(&peer) // Un-refed when the Java peer object created below is finalized.
 	jPeer := C.jobject(util.NewObjectOrCatch(env, jPublicIDImplClass, []util.Sign{util.LongSign}, &peer))
@@ -79,8 +79,8 @@ func (s *publicIDStore) ForPeer(peer security.PublicID) (security.PublicID, erro
 }
 
 func (s *publicIDStore) DefaultPublicID() (security.PublicID, error) {
-	envPtr, freeFunc := util.GetEnv(s.jVM)
-	env := (*C.JNIEnv)(envPtr)
+	jEnv, freeFunc := util.GetEnv(s.jVM)
+	env := (*C.JNIEnv)(jEnv)
 	defer freeFunc()
 	jPublicID, err := util.CallObjectMethod(env, s.jPublicIDStore, "defaultPublicID", []util.Sign{}, publicIDSign)
 	if err != nil {
@@ -91,8 +91,8 @@ func (s *publicIDStore) DefaultPublicID() (security.PublicID, error) {
 }
 
 func (s *publicIDStore) SetDefaultBlessingPattern(pattern security.BlessingPattern) error {
-	envPtr, freeFunc := util.GetEnv(s.jVM)
-	env := (*C.JNIEnv)(envPtr)
+	jEnv, freeFunc := util.GetEnv(s.jVM)
+	env := (*C.JNIEnv)(jEnv)
 	defer freeFunc()
 	jPattern := C.jobject(util.NewObjectOrCatch(env, jBlessingPatternClass, []util.Sign{util.StringSign}, string(pattern)))
 	return util.CallVoidMethod(env, s.jPublicIDStore, "setDefaultBlessingPattern", []util.Sign{principalPatternSign}, jPattern)

@@ -5,7 +5,7 @@ package security
 import (
 	"runtime"
 
-	"veyron.io/jni/runtimes/google/util"
+	"veyron.io/jni/util"
 	"veyron.io/veyron/veyron2/security"
 )
 
@@ -45,15 +45,15 @@ type publicID struct {
 }
 
 func (id *publicID) Names() []string {
-	envPtr, freeFunc := util.GetEnv(id.jVM)
-	env := (*C.JNIEnv)(envPtr)
+	jEnv, freeFunc := util.GetEnv(id.jVM)
+	env := (*C.JNIEnv)(jEnv)
 	defer freeFunc()
 	return util.CallStringArrayMethodOrCatch(env, id.jPublicID, "names", nil)
 }
 
 func (id *publicID) PublicKey() security.PublicKey {
-	envPtr, freeFunc := util.GetEnv(id.jVM)
-	env := (*C.JNIEnv)(envPtr)
+	jEnv, freeFunc := util.GetEnv(id.jVM)
+	env := (*C.JNIEnv)(jEnv)
 	defer freeFunc()
 	publicKeySign := util.ClassSign("java.security.interfaces.ECPublicKey")
 	jPublicKey := C.jobject(util.CallObjectMethodOrCatch(env, id.jPublicID, "publicKey", nil, publicKeySign))
@@ -67,8 +67,8 @@ func (id *publicID) PublicKey() security.PublicKey {
 }
 
 func (id *publicID) Authorize(context security.Context) (security.PublicID, error) {
-	envPtr, freeFunc := util.GetEnv(id.jVM)
-	env := (*C.JNIEnv)(envPtr)
+	jEnv, freeFunc := util.GetEnv(id.jVM)
+	env := (*C.JNIEnv)(jEnv)
 	defer freeFunc()
 	jContext := newJavaContext(env, context)
 	contextSign := util.ClassSign("io.veyron.veyron.veyron2.security.Context")

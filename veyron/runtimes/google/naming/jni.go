@@ -5,7 +5,7 @@ package naming
 import (
 	"time"
 
-	"veyron.io/jni/runtimes/google/util"
+	"veyron.io/jni/util"
 	"veyron.io/veyron/veyron2/naming"
 	"veyron.io/veyron/veyron2/rt"
 )

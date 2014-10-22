@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"time"
 
-	"veyron.io/jni/runtimes/google/util"
+	"veyron.io/jni/util"
 	"veyron.io/veyron/veyron2/ipc"
 	"veyron.io/veyron/veyron2/rt"
 )
@@ -134,7 +134,7 @@ func (c *clientCall) Finish(env *C.JNIEnv) (C.jobjectArray, error) {
 	// Convert to Java array of C.jstring.
 	ret := C.NewObjectArray(env, C.jsize(len(jsonResults)), jStringClass, nil)
 	for i, result := range jsonResults {
-		C.SetObjectArrayElement(env, ret, C.jsize(i), C.jobject(util.JStringPtr(env, string(result))))
+		C.SetObjectArrayElement(env, ret, C.jsize(i), C.jobject(util.JString(env, string(result))))
 	}
 	return ret, nil
 }

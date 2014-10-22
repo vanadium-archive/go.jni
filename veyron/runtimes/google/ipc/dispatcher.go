@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"runtime"
 
-	isecurity "veyron.io/jni/runtimes/google/security"
-	"veyron.io/jni/runtimes/google/util"
+	"veyron.io/jni/util"
+	isecurity "veyron.io/jni/veyron/runtimes/google/security"
 	"veyron.io/veyron/veyron2/ipc"
 	"veyron.io/veyron/veyron2/security"
 )
@@ -33,8 +33,8 @@ func newDispatcher(env *C.JNIEnv, jDispatcher C.jobject) (*dispatcher, error) {
 		jDispatcher: jDispatcher,
 	}
 	runtime.SetFinalizer(d, func(d *dispatcher) {
-		envPtr, freeFunc := util.GetEnv(d.jVM)
-		env := (*C.JNIEnv)(envPtr)
+		jEnv, freeFunc := util.GetEnv(d.jVM)
+		env := (*C.JNIEnv)(jEnv)
 		defer freeFunc()
 		C.DeleteGlobalRef(env, d.jDispatcher)
 	})
@@ -49,8 +49,8 @@ type dispatcher struct {
 
 func (d *dispatcher) Lookup(suffix, method string) (ipc.Invoker, security.Authorizer, error) {
 	// Get Java environment.
-	envPtr, freeFunc := util.GetEnv(d.jVM)
-	env := (*C.JNIEnv)(envPtr)
+	jEnv, freeFunc := util.GetEnv(d.jVM)
+	env := (*C.JNIEnv)(jEnv)
 	defer freeFunc()
 
 	// Call Java dispatcher's lookup() method.

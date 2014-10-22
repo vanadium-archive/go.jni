@@ -3,8 +3,9 @@
 package ipc
 
 import (
-	jnisecurity "veyron.io/jni/runtimes/google/security"
-	"veyron.io/jni/runtimes/google/util"
+	"veyron.io/jni/util"
+	jnisecurity "veyron.io/jni/veyron/runtimes/google/security"
+	jsecurity "veyron.io/jni/veyron2/security"
 	"veyron.io/veyron/veyron2"
 	"veyron.io/veyron/veyron2/options"
 )
@@ -14,27 +15,35 @@ import (
 import "C"
 
 // getRuntimeOpts converts Java runtime options into Go runtime options.
-func getRuntimeOpts(env *C.JNIEnv, jOptions C.jobject) (ret []veyron2.ROpt) {
+func getRuntimeOpts(env *C.JNIEnv, jOptions C.jobject) (ret []veyron2.ROpt, err error) {
 	if jOptions == nil {
 		return
 	}
 	// Process RuntimeIDOpt.
 	runtimeIDKey := util.JStaticStringField(env, jOptionDefsClass, "RUNTIME_ID")
-	if util.CallBooleanMethodOrCatch(env, jOptions, "has", []util.Sign{util.StringSign}, runtimeIDKey) {
+	if has, err := util.CallBooleanMethod(env, jOptions, "has", []util.Sign{util.StringSign}, runtimeIDKey); err != nil {
+		return nil, err
+	} else if has {
 		jPrivateID := C.jobject(util.CallObjectMethodOrCatch(env, jOptions, "get", []util.Sign{util.StringSign}, util.ObjectSign, runtimeIDKey))
 		id := jnisecurity.NewPrivateID(env, jPrivateID)
 		ret = append(ret, options.RuntimeID{id})
 	}
-	// TODO(ashankar,ataly,spetrovic): Replace witht he new security API
-	/*
-		// Process RuntimePublicIDStoreOpt
-		runtimePublicIDStoreKey := util.JStaticStringField(env, jOptionDefsClass, "RUNTIME_PUBLIC_ID_STORE")
-		if util.CallBooleanMethodOrCatch(env, jOptions, "has", []util.Sign{util.StringSign}, runtimePublicIDStoreKey) {
-			jStore := C.jobject(util.CallObjectMethodOrCatch(env, jOptions, "get", []util.Sign{util.StringSign}, util.ObjectSign, runtimePublicIDStoreKey))
-			store := jnisecurity.NewPublicIDStore(env, jStore)
-			ret = append(ret, options.RuntimePublicIDStore(store))
+	runtimePrincipalKey := util.JStaticStringField(env, jOptionDefsClass, "RUNTIME_PRINCIPAL")
+	if has, err := util.CallBooleanMethod(env, jOptions, "has", []util.Sign{util.StringSign}, runtimePrincipalKey); err != nil {
+		return nil, err
+	} else if has {
+		jPrincipal, err := util.CallObjectMethod(env, jOptions, "get", []util.Sign{util.StringSign}, util.ObjectSign, runtimePrincipalKey)
+		if err != nil {
+			return nil, err
 		}
-	*/
+		principal, err := jsecurity.GoPrincipal(env, jPrincipal)
+		if err != nil {
+			return nil, err
+		}
+		ret = append(ret, options.RuntimePrincipal{principal})
+	}
+	// TODO(spetrovic): Remove this once the transition to the new model is complete.
+	ret = append(ret, options.ForceNewSecurityModel{})
 	return
 }
 
@@ -66,10 +75,17 @@ func getVDLPathOpt(env *C.JNIEnv, jOptions C.jobject) (*string, error) {
 		return nil, nil
 	}
 	vdlPathKey := util.JStaticStringField(env, jOptionDefsClass, "VDL_INTERFACE_PATH")
-	if !util.CallBooleanMethodOrCatch(env, jOptions, "has", []util.Sign{util.StringSign}, vdlPathKey) {
+	has, err := util.CallBooleanMethod(env, jOptions, "has", []util.Sign{util.StringSign}, vdlPathKey)
+	if err != nil {
+		return nil, err
+	}
+	if !has {
 		return nil, nil
 	}
-	jPath := C.jobject(util.CallObjectMethodOrCatch(env, jOptions, "get", []util.Sign{util.StringSign}, util.ObjectSign, vdlPathKey))
+	jPath, err := util.CallObjectMethod(env, jOptions, "get", []util.Sign{util.StringSign}, util.ObjectSign, vdlPathKey)
+	if err != nil {
+		return nil, err
+	}
 	if jPath == nil {
 		return nil, nil
 	}

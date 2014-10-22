@@ -7,7 +7,8 @@ import (
 	"time"
 	"unsafe"
 
-	"veyron.io/jni/runtimes/google/util"
+	"veyron.io/jni/util"
+	jsecurity "veyron.io/jni/veyron2/security"
 	isecurity "veyron.io/veyron/veyron/runtimes/google/security"
 	"veyron.io/veyron/veyron2/security"
 )
@@ -99,7 +100,7 @@ func Java_io_veyron_veyron_veyron_runtimes_google_security_PublicIDStore_nativeF
 //export Java_io_veyron_veyron_veyron_runtimes_google_security_PublicID_nativeNames
 func Java_io_veyron_veyron_veyron_runtimes_google_security_PublicID_nativeNames(env *C.JNIEnv, jPublicID C.jobject, goPublicIDPtr C.jlong) C.jobjectArray {
 	names := (*(*security.PublicID)(util.Ptr(goPublicIDPtr))).Names()
-	return C.jobjectArray(util.JStringArrayPtr(env, names))
+	return C.jobjectArray(util.JStringArray(env, names))
 }
 
 //export Java_io_veyron_veyron_veyron_runtimes_google_security_PublicID_nativePublicKey
@@ -110,7 +111,7 @@ func Java_io_veyron_veyron_veyron_runtimes_google_security_PublicID_nativePublic
 		util.JThrowV(env, err)
 		return C.jbyteArray(nil)
 	}
-	return C.jbyteArray(util.JByteArrayPtr(env, encoded))
+	return C.jbyteArray(util.JByteArray(env, encoded))
 }
 
 //export Java_io_veyron_veyron_veyron_runtimes_google_security_PublicID_nativeAuthorize
@@ -132,7 +133,7 @@ func Java_io_veyron_veyron_veyron_runtimes_google_security_PublicID_nativeEncode
 		util.JThrowV(env, err)
 		return nil
 	}
-	return C.jobjectArray(util.JStringArrayPtr(env, chains))
+	return C.jobjectArray(util.JStringArray(env, chains))
 }
 
 //export Java_io_veyron_veyron_veyron_runtimes_google_security_PublicID_nativeEquals
@@ -209,49 +210,82 @@ func Java_io_veyron_veyron_veyron_runtimes_google_security_PrivateID_nativeFinal
 
 //export Java_io_veyron_veyron_veyron_runtimes_google_security_Context_nativeMethod
 func Java_io_veyron_veyron_veyron_runtimes_google_security_Context_nativeMethod(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) C.jstring {
-	return C.jstring(util.JStringPtr(env, (*(*security.Context)(util.Ptr(goContextPtr))).Method()))
+	return C.jstring(util.JString(env, (*(*security.Context)(util.Ptr(goContextPtr))).Method()))
 }
 
 //export Java_io_veyron_veyron_veyron_runtimes_google_security_Context_nativeName
-func Java_io_veyron_veyron_veyron_runtimes_google_security_Context_nativeName(env *C.JNIEnv, jServerCall C.jobject, goContextPtr C.jlong) C.jstring {
-	return C.jstring(util.JStringPtr(env, (*(*security.Context)(util.Ptr(goContextPtr))).Name()))
+func Java_io_veyron_veyron_veyron_runtimes_google_security_Context_nativeName(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) C.jstring {
+	return C.jstring(util.JString(env, (*(*security.Context)(util.Ptr(goContextPtr))).Name()))
 }
 
 //export Java_io_veyron_veyron_veyron_runtimes_google_security_Context_nativeSuffix
-func Java_io_veyron_veyron_veyron_runtimes_google_security_Context_nativeSuffix(env *C.JNIEnv, jServerCall C.jobject, goContextPtr C.jlong) C.jstring {
-	return C.jstring(util.JStringPtr(env, (*(*security.Context)(util.Ptr(goContextPtr))).Suffix()))
+func Java_io_veyron_veyron_veyron_runtimes_google_security_Context_nativeSuffix(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) C.jstring {
+	return C.jstring(util.JString(env, (*(*security.Context)(util.Ptr(goContextPtr))).Suffix()))
 }
 
 //export Java_io_veyron_veyron_veyron_runtimes_google_security_Context_nativeLabel
-func Java_io_veyron_veyron_veyron_runtimes_google_security_Context_nativeLabel(env *C.JNIEnv, jServerCall C.jobject, goContextPtr C.jlong) C.jint {
+func Java_io_veyron_veyron_veyron_runtimes_google_security_Context_nativeLabel(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) C.jint {
 	return C.jint((*(*security.Context)(util.Ptr(goContextPtr))).Label())
 }
 
+//export Java_io_veyron_veyron_veyron_runtimes_google_security_Context_nativeLocalEndpoint
+func Java_io_veyron_veyron_veyron_runtimes_google_security_Context_nativeLocalEndpoint(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) C.jstring {
+	return C.jstring(util.JString(env, (*(*security.Context)(util.Ptr(goContextPtr))).LocalEndpoint().String()))
+}
+
+//export Java_io_veyron_veyron_veyron_runtimes_google_security_Context_nativeRemoteEndpoint
+func Java_io_veyron_veyron_veyron_runtimes_google_security_Context_nativeRemoteEndpoint(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) C.jstring {
+	return C.jstring(util.JString(env, (*(*security.Context)(util.Ptr(goContextPtr))).RemoteEndpoint().String()))
+}
+
+//export Java_io_veyron_veyron_veyron_runtimes_google_security_Context_nativeLocalPrincipal
+func Java_io_veyron_veyron_veyron_runtimes_google_security_Context_nativeLocalPrincipal(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) C.jobject {
+	principal := (*(*security.Context)(util.Ptr(goContextPtr))).LocalPrincipal()
+	jPrincipal, err := jsecurity.JavaPrincipal(env, principal)
+	if err != nil {
+		util.JThrowV(env, err)
+		return nil
+	}
+	return C.jobject(jPrincipal)
+}
+
+//export Java_io_veyron_veyron_veyron_runtimes_google_security_Context_nativeLocalBlessings
+func Java_io_veyron_veyron_veyron_runtimes_google_security_Context_nativeLocalBlessings(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) C.jobject {
+	blessings := (*(*security.Context)(util.Ptr(goContextPtr))).LocalBlessings()
+	jBlessings, err := jsecurity.JavaBlessings(env, blessings)
+	if err != nil {
+		util.JThrowV(env, err)
+		return nil
+	}
+	return C.jobject(jBlessings)
+}
+
+//export Java_io_veyron_veyron_veyron_runtimes_google_security_Context_nativeRemoteBlessings
+func Java_io_veyron_veyron_veyron_runtimes_google_security_Context_nativeRemoteBlessings(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) C.jobject {
+	blessings := (*(*security.Context)(util.Ptr(goContextPtr))).RemoteBlessings()
+	jBlessings, err := jsecurity.JavaBlessings(env, blessings)
+	if err != nil {
+		util.JThrowV(env, err)
+		return nil
+	}
+	return C.jobject(jBlessings)
+}
+
 //export Java_io_veyron_veyron_veyron_runtimes_google_security_Context_nativeLocalID
-func Java_io_veyron_veyron_veyron_runtimes_google_security_Context_nativeLocalID(env *C.JNIEnv, jServerCall C.jobject, goContextPtr C.jlong) C.jlong {
+func Java_io_veyron_veyron_veyron_runtimes_google_security_Context_nativeLocalID(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) C.jlong {
 	id := (*(*security.Context)(util.Ptr(goContextPtr))).LocalID()
 	util.GoRef(&id) // Un-refed when the Java PublicID object is finalized.
 	return C.jlong(util.PtrValue(&id))
 }
 
 //export Java_io_veyron_veyron_veyron_runtimes_google_security_Context_nativeRemoteID
-func Java_io_veyron_veyron_veyron_runtimes_google_security_Context_nativeRemoteID(env *C.JNIEnv, jServerCall C.jobject, goContextPtr C.jlong) C.jlong {
+func Java_io_veyron_veyron_veyron_runtimes_google_security_Context_nativeRemoteID(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) C.jlong {
 	id := (*(*security.Context)(util.Ptr(goContextPtr))).RemoteID()
 	util.GoRef(&id)
 	return C.jlong(util.PtrValue(&id))
 }
 
-//export Java_io_veyron_veyron_veyron_runtimes_google_security_Context_nativeLocalEndpoint
-func Java_io_veyron_veyron_veyron_runtimes_google_security_Context_nativeLocalEndpoint(env *C.JNIEnv, jServerCall C.jobject, goContextPtr C.jlong) C.jstring {
-	return C.jstring(util.JStringPtr(env, (*(*security.Context)(util.Ptr(goContextPtr))).LocalEndpoint().String()))
-}
-
-//export Java_io_veyron_veyron_veyron_runtimes_google_security_Context_nativeRemoteEndpoint
-func Java_io_veyron_veyron_veyron_runtimes_google_security_Context_nativeRemoteEndpoint(env *C.JNIEnv, jServerCall C.jobject, goContextPtr C.jlong) C.jstring {
-	return C.jstring(util.JStringPtr(env, (*(*security.Context)(util.Ptr(goContextPtr))).RemoteEndpoint().String()))
-}
-
 //export Java_io_veyron_veyron_veyron_runtimes_google_security_Context_nativeFinalize
-func Java_io_veyron_veyron_veyron_runtimes_google_security_Context_nativeFinalize(env *C.JNIEnv, jServerCall C.jobject, goContextPtr C.jlong) {
+func Java_io_veyron_veyron_veyron_runtimes_google_security_Context_nativeFinalize(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) {
 	util.GoUnref((*security.Context)(util.Ptr(goContextPtr)))
 }

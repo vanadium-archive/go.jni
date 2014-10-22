@@ -7,7 +7,8 @@ import (
 	"time"
 	"unsafe"
 
-	"veyron.io/jni/runtimes/google/util"
+	"veyron.io/jni/util"
+	_ "veyron.io/veyron/veyron/profiles"
 	"veyron.io/veyron/veyron2"
 	ctx "veyron.io/veyron/veyron2/context"
 	"veyron.io/veyron/veyron2/ipc"
@@ -51,7 +52,11 @@ func Init(jEnv interface{}) {
 
 //export Java_io_veyron_veyron_veyron_runtimes_google_Runtime_nativeInit
 func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_nativeInit(env *C.JNIEnv, jRuntime C.jclass, jOptions C.jobject) C.jlong {
-	opts := getRuntimeOpts(env, jOptions)
+	opts, err := getRuntimeOpts(env, jOptions)
+	if err != nil {
+		util.JThrowV(env, err)
+		return C.jlong(0)
+	}
 	r := rt.Init(opts...)
 	util.GoRef(&r) // Un-refed when the Java Runtime object is finalized.
 	return C.jlong(util.PtrValue(&r))
@@ -59,7 +64,11 @@ func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_nativeInit(env *C.JNIE
 
 //export Java_io_veyron_veyron_veyron_runtimes_google_Runtime_nativeNewRuntime
 func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_nativeNewRuntime(env *C.JNIEnv, jRuntime C.jclass, jOptions C.jobject) C.jlong {
-	opts := getRuntimeOpts(env, jOptions)
+	opts, err := getRuntimeOpts(env, jOptions)
+	if err != nil {
+		util.JThrowV(env, err)
+		return C.jlong(0)
+	}
 	r, err := rt.New(opts...)
 	if err != nil {
 		util.JThrowV(env, err)
@@ -158,7 +167,7 @@ func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024Server_nativeList
 		util.JThrowV(env, err)
 		return nil
 	}
-	return C.jstring(util.JStringPtr(env, ep.String()))
+	return C.jstring(util.JString(env, ep.String()))
 }
 
 //export Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024Server_nativeServe
@@ -184,7 +193,7 @@ func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024Server_nativeGetP
 	}
 	ret := C.NewObjectArray(env, C.jsize(len(names)), jStringClass, nil)
 	for i, name := range names {
-		C.SetObjectArrayElement(env, ret, C.jsize(i), C.jobject(util.JStringPtr(env, string(name))))
+		C.SetObjectArrayElement(env, ret, C.jsize(i), C.jobject(util.JString(env, string(name))))
 	}
 	return ret
 }

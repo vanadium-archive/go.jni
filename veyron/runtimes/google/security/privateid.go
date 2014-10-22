@@ -8,7 +8,7 @@ import (
 	"time"
 	"unsafe"
 
-	"veyron.io/jni/runtimes/google/util"
+	"veyron.io/jni/util"
 	"veyron.io/veyron/veyron2/security"
 )
 
@@ -42,8 +42,8 @@ func NewPrivateID(jEnv, jPrivID interface{}) security.PrivateID {
 		jPrivateID: jPrivateID,
 	}
 	runtime.SetFinalizer(id, func(id *privateID) {
-		envPtr, freeFunc := util.GetEnv(id.jVM)
-		env := (*C.JNIEnv)(envPtr)
+		jEnv, freeFunc := util.GetEnv(id.jVM)
+		env := (*C.JNIEnv)(jEnv)
 		defer freeFunc()
 		C.DeleteGlobalRef(env, id.jPrivateID)
 	})
@@ -56,8 +56,8 @@ type privateID struct {
 }
 
 func (id *privateID) PublicID() security.PublicID {
-	envPtr, freeFunc := util.GetEnv(id.jVM)
-	env := (*C.JNIEnv)(envPtr)
+	jEnv, freeFunc := util.GetEnv(id.jVM)
+	env := (*C.JNIEnv)(jEnv)
 	defer freeFunc()
 	jPublicID := C.jobject(util.CallObjectMethodOrCatch(env, id.jPrivateID, "publicID", nil, publicIDSign))
 	publicIDPtr := util.CallLongMethodOrCatch(env, jPublicID, "getNativePtr", nil)
@@ -68,8 +68,8 @@ func (id *privateID) Bless(blessee security.PublicID, blessingName string, durat
 	if len(caveats) > 0 {
 		return nil, fmt.Errorf("Caveats currently not supported in Java.")
 	}
-	envPtr, freeFunc := util.GetEnv(id.jVM)
-	env := (*C.JNIEnv)(envPtr)
+	jEnv, freeFunc := util.GetEnv(id.jVM)
+	env := (*C.JNIEnv)(jEnv)
 	defer freeFunc()
 	util.GoRef(&blessee) // Un-refed when the Java blessee object created below is finalized.
 	jBlessee := C.jobject(util.NewObjectOrCatch(env, jPublicIDImplClass, []util.Sign{util.LongSign}, &blessee))
@@ -84,8 +84,8 @@ func (id *privateID) Bless(blessee security.PublicID, blessingName string, durat
 }
 
 func (id *privateID) Derive(publicID security.PublicID) (security.PrivateID, error) {
-	envPtr, freeFunc := util.GetEnv(id.jVM)
-	env := (*C.JNIEnv)(envPtr)
+	jEnv, freeFunc := util.GetEnv(id.jVM)
+	env := (*C.JNIEnv)(jEnv)
 	defer freeFunc()
 	util.GoRef(&publicID) // Un-refed when the Java PublicID object created below is finalized.
 	jPublicID := C.jobject(util.NewObjectOrCatch(env, jPublicIDImplClass, []util.Sign{util.LongSign}, &publicID))
@@ -102,8 +102,8 @@ func (id *privateID) MintDischarge(caveat security.ThirdPartyCaveat, context sec
 }
 
 func (id *privateID) Sign(message []byte) (security.Signature, error) {
-	envPtr, freeFunc := util.GetEnv(id.jVM)
-	env := (*C.JNIEnv)(envPtr)
+	jEnv, freeFunc := util.GetEnv(id.jVM)
+	env := (*C.JNIEnv)(jEnv)
 	defer freeFunc()
 	signatureSign := util.ClassSign("io.veyron.veyron.veyron2.security.Signature")
 	jSig, err := util.CallObjectMethod(env, id.jPrivateID, "sign", []util.Sign{util.ArraySign(util.ByteSign)}, signatureSign, message)
@@ -121,8 +121,8 @@ func (id *privateID) Sign(message []byte) (security.Signature, error) {
 }
 
 func (id *privateID) PublicKey() security.PublicKey {
-	envPtr, freeFunc := util.GetEnv(id.jVM)
-	env := (*C.JNIEnv)(envPtr)
+	jEnv, freeFunc := util.GetEnv(id.jVM)
+	env := (*C.JNIEnv)(jEnv)
 	defer freeFunc()
 	publicKeySign := util.ClassSign("java.security.interfaces.ECPublicKey")
 	jPublicKey := C.jobject(util.CallObjectMethodOrCatch(env, id.jPrivateID, "publicKey", nil, publicKeySign))

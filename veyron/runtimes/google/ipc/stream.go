@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"veyron.io/jni/runtimes/google/util"
+	"veyron.io/jni/util"
 	"veyron.io/veyron/veyron2/ipc"
 )
 
@@ -51,5 +51,5 @@ func (s *stream) Recv(env *C.JNIEnv) (C.jstring, error) {
 	if err != nil {
 		return nil, err
 	}
-	return C.jstring(util.JStringPtr(env, string(result))), nil
+	return C.jstring(util.JString(env, string(result))), nil
 }

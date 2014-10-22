@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"unsafe"
 
-	"veyron.io/jni/runtimes/google/util"
+	"veyron.io/jni/util"
 	"veyron.io/veyron/veyron2/security"
 )
 
@@ -37,8 +37,8 @@ func NewAuthorizer(jEnv, jAuthPtr interface{}) security.Authorizer {
 		jAuth: jAuth,
 	}
 	runtime.SetFinalizer(a, func(a *authorizer) {
-		envPtr, freeFunc := util.GetEnv(a.jVM)
-		env := (*C.JNIEnv)(envPtr)
+		jEnv, freeFunc := util.GetEnv(a.jVM)
+		env := (*C.JNIEnv)(jEnv)
 		defer freeFunc()
 		C.DeleteGlobalRef(env, a.jAuth)
 	})
@@ -51,8 +51,8 @@ type authorizer struct {
 }
 
 func (a *authorizer) Authorize(context security.Context) error {
-	envPtr, freeFunc := util.GetEnv(a.jVM)
-	env := (*C.JNIEnv)(envPtr)
+	jEnv, freeFunc := util.GetEnv(a.jVM)
+	env := (*C.JNIEnv)(jEnv)
 	defer freeFunc()
 	// Create a Java context.
 	jContext := newJavaContext(env, context)

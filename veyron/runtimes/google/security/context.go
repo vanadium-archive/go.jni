@@ -5,7 +5,7 @@ package security
 import (
 	"runtime"
 
-	"veyron.io/jni/runtimes/google/util"
+	"veyron.io/jni/util"
 	inaming "veyron.io/veyron/veyron/runtimes/google/naming"
 	"veyron.io/veyron/veyron2/naming"
 	"veyron.io/veyron/veyron2/security"
@@ -38,8 +38,8 @@ func newContext(env *C.JNIEnv, jContext C.jobject) *context {
 		jContext: jContext,
 	}
 	runtime.SetFinalizer(c, func(c *context) {
-		envPtr, freeFunc := util.GetEnv(c.jVM)
-		env := (*C.JNIEnv)(envPtr)
+		jEnv, freeFunc := util.GetEnv(c.jVM)
+		env := (*C.JNIEnv)(jEnv)
 		defer freeFunc()
 		C.DeleteGlobalRef(env, c.jContext)
 	})
@@ -65,8 +65,8 @@ func (c *context) Suffix() string {
 }
 
 func (c *context) Label() security.Label {
-	envPtr, freeFunc := util.GetEnv(c.jVM)
-	env := (*C.JNIEnv)(envPtr)
+	jEnv, freeFunc := util.GetEnv(c.jVM)
+	env := (*C.JNIEnv)(jEnv)
 	defer freeFunc()
 	labelSign := util.ClassSign("io.veyron.veyron.veyron2.security.Label")
 	jLabel := C.jobject(util.CallObjectMethodOrCatch(env, c.jContext, "label", nil, labelSign))
@@ -79,8 +79,8 @@ func (c *context) Discharges() map[string]security.Discharge {
 }
 
 func (c *context) LocalID() security.PublicID {
-	envPtr, freeFunc := util.GetEnv(c.jVM)
-	env := (*C.JNIEnv)(envPtr)
+	jEnv, freeFunc := util.GetEnv(c.jVM)
+	env := (*C.JNIEnv)(jEnv)
 	defer freeFunc()
 	publicIDSign := util.ClassSign("io.veyron.veyron.veyron2.security.PublicID")
 	jID := C.jobject(util.CallObjectMethodOrCatch(env, c.jContext, "localID", nil, publicIDSign))
@@ -89,8 +89,8 @@ func (c *context) LocalID() security.PublicID {
 }
 
 func (c *context) RemoteID() security.PublicID {
-	envPtr, freeFunc := util.GetEnv(c.jVM)
-	env := (*C.JNIEnv)(envPtr)
+	jEnv, freeFunc := util.GetEnv(c.jVM)
+	env := (*C.JNIEnv)(jEnv)
 	defer freeFunc()
 	publicIDSign := util.ClassSign("io.veyron.veyron.veyron2.security.PublicID")
 	jID := C.jobject(util.CallObjectMethodOrCatch(env, c.jContext, "remoteID", nil, publicIDSign))
@@ -132,8 +132,8 @@ func (c *context) RemoteEndpoint() naming.Endpoint {
 }
 
 func (c *context) callStringMethod(methodName string) string {
-	envPtr, freeFunc := util.GetEnv(c.jVM)
-	env := (*C.JNIEnv)(envPtr)
+	jEnv, freeFunc := util.GetEnv(c.jVM)
+	env := (*C.JNIEnv)(jEnv)
 	defer freeFunc()
 	return util.CallStringMethodOrCatch(env, c.jContext, methodName, nil)
 }

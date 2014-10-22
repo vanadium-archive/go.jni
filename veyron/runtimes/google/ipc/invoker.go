@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"runtime"
 
-	"veyron.io/jni/runtimes/google/util"
+	"veyron.io/jni/util"
 	"veyron.io/veyron/veyron2/ipc"
 	"veyron.io/veyron/veyron2/security"
 	"veyron.io/veyron/veyron2/verror"
@@ -41,8 +41,8 @@ func newInvoker(env *C.JNIEnv, jVM *C.JavaVM, jObj C.jobject) (*invoker, error) 
 		argGetter: getter,
 	}
 	runtime.SetFinalizer(i, func(i *invoker) {
-		envPtr, freeFunc := util.GetEnv(i.jVM)
-		env := (*C.JNIEnv)(envPtr)
+		jEnv, freeFunc := util.GetEnv(i.jVM)
+		env := (*C.JNIEnv)(jEnv)
 		defer freeFunc()
 		C.DeleteGlobalRef(env, i.jInvoker)
 	})
@@ -61,8 +61,8 @@ func (i *invoker) Prepare(method string, numArgs int) (argptrs []interface{}, la
 	// arguments into vom.Value objects, which we shall then de-serialize into
 	// Java objects (see Invoke comments below).  This approach is blocked on
 	// pending VOM encoder/decoder changes as well as Java (de)serializer.
-	envPtr, freeFunc := util.GetEnv(i.jVM)
-	env := (*C.JNIEnv)(envPtr)
+	jEnv, freeFunc := util.GetEnv(i.jVM)
+	env := (*C.JNIEnv)(jEnv)
 	defer freeFunc()
 
 	mArgs := i.argGetter.FindMethod(method, numArgs)
@@ -90,8 +90,8 @@ func (i *invoker) Invoke(method string, call ipc.ServerCall, argptrs []interface
 	// method.  The returned Java objects will be converted into serialized
 	// vom.Values, which will then be returned.  This approach is blocked on VOM
 	// encoder/decoder changes as well as Java's (de)serializer.
-	envPtr, freeFunc := util.GetEnv(i.jVM)
-	env := (*C.JNIEnv)(envPtr)
+	jEnv, freeFunc := util.GetEnv(i.jVM)
+	env := (*C.JNIEnv)(jEnv)
 	defer freeFunc()
 
 	// Create a new Java server call instance.
@@ -138,7 +138,7 @@ func (*invoker) encodeArgs(env *C.JNIEnv, argptrs []interface{}) (C.jobjectArray
 	// Convert to Java array of C.jstring.
 	ret := C.NewObjectArray(env, C.jsize(len(argptrs)), jStringClass, nil)
 	for i, arg := range jsonArgs {
-		C.SetObjectArrayElement(env, ret, C.jsize(i), C.jobject(util.JStringPtr(env, string(arg))))
+		C.SetObjectArrayElement(env, ret, C.jsize(i), C.jobject(util.JString(env, string(arg))))
 	}
 	return ret, nil
 }

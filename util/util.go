@@ -141,20 +141,18 @@ func GetEnv(javaVM interface{}) (jEnv unsafe.Pointer, free func()) {
 	}
 	// Couldn't get env, attach the thread.
 	C.AttachCurrentThread(jVM, &env, nil)
-	return unsafe.Pointer(env), func() {
-		C.DetachCurrentThread(jVM)
-	}
+	return unsafe.Pointer(env), func() { C.DetachCurrentThread(jVM) }
 }
 
 // JString returns a Java string given the Go string.
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JStringPtr(jEnv interface{}, str string) unsafe.Pointer {
+func JString(jEnv interface{}, str string) C.jstring {
 	env := getEnv(jEnv)
 	cString := C.CString(str)
 	defer C.free(unsafe.Pointer(cString))
-	return unsafe.Pointer(C.NewStringUTF(env, cString))
+	return C.NewStringUTF(env, cString)
 }
 
 // JThrow throws a new Java exception of the provided type with the given message.
@@ -176,8 +174,11 @@ func JThrow(jEnv, jClass interface{}, msg string) {
 func JThrowV(jEnv interface{}, err error) {
 	env := getEnv(jEnv)
 	verr := verror.Convert(err)
-	id := C.jmethodID(JMethodIDPtrOrDie(env, jVeyronExceptionClass, "<init>", FuncSign([]Sign{StringSign, StringSign}, VoidSign)))
-	obj := C.jthrowable(C.CallNewVeyronExceptionObject(env, jVeyronExceptionClass, id, C.jstring(JStringPtr(env, verr.Error())), C.jstring(JStringPtr(env, string(verr.ErrorID())))))
+	id, err := JMethodID(env, jVeyronExceptionClass, "<init>", FuncSign([]Sign{StringSign, StringSign}, VoidSign))
+	if err != nil {
+		panic(err.Error())
+	}
+	obj := C.jthrowable(C.CallNewVeyronExceptionObject(env, jVeyronExceptionClass, id, JString(env, verr.Error()), JString(env, string(verr.ErrorID()))))
 	C.Throw(env, obj)
 }
 
@@ -193,20 +194,23 @@ func JExceptionMsg(jEnv interface{}) error {
 		return nil
 	}
 	C.ExceptionClear(env)
-	id := C.jmethodID(JMethodIDPtrOrDie(env, jThrowableClass, "getMessage", FuncSign(nil, StringSign)))
+	id, err := JMethodID(env, jThrowableClass, "getMessage", FuncSign(nil, StringSign))
+	if err != nil {
+		panic(err.Error())
+	}
 	jMsg := C.CallGetExceptionMessage(env, C.jobject(e), id)
 	return errors.New(GoString(env, jMsg))
 }
 
-// JObjectFieldPtr returns the value of the provided Java object's Object field.
+// JObjectField returns the value of the provided Java object's Object field.
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JObjectFieldPtr(jEnv, jObj interface{}, field string) unsafe.Pointer {
+func JObjectField(jEnv, jObj interface{}, field string) C.jobject {
 	env := getEnv(jEnv)
 	obj := getObject(jObj)
 	fid := C.jfieldID(JFieldIDPtrOrDie(env, C.GetObjectClass(env, obj), field, ObjectSign))
-	return unsafe.Pointer(C.GetObjectField(env, obj, fid))
+	return C.GetObjectField(env, obj, fid)
 }
 
 // JBoolField returns the value of the provided Java object's boolean field.
@@ -290,16 +294,16 @@ func JStaticStringField(jEnv, jClass interface{}, field string) string {
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JStringArrayPtr(jEnv interface{}, strs []string) unsafe.Pointer {
+func JStringArray(jEnv interface{}, strs []string) C.jobjectArray {
 	if strs == nil {
-		return unsafe.Pointer(nil)
+		return C.jobjectArray(nil)
 	}
 	env := getEnv(jEnv)
 	ret := C.NewObjectArray(env, C.jsize(len(strs)), jStringClass, nil)
 	for i, str := range strs {
-		C.SetObjectArrayElement(env, ret, C.jsize(i), C.jobject(JStringPtr(env, str)))
+		C.SetObjectArrayElement(env, ret, C.jsize(i), C.jobject(JString(env, str)))
 	}
-	return unsafe.Pointer(ret)
+	return ret
 }
 
 // GoStringArray converts a Java string array to a Go string array.
@@ -324,16 +328,16 @@ func GoStringArray(jEnv, jStrArray interface{}) []string {
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JByteArrayPtr(jEnv interface{}, bytes []byte) unsafe.Pointer {
+func JByteArray(jEnv interface{}, bytes []byte) C.jbyteArray {
 	if bytes == nil {
-		return unsafe.Pointer(nil)
+		return C.jbyteArray(nil)
 	}
 	env := getEnv(jEnv)
 	ret := C.NewByteArray(env, C.jsize(len(bytes)))
 	if len(bytes) > 0 {
 		C.SetByteArrayRegion(env, ret, 0, C.jsize(len(bytes)), (*C.jbyte)(unsafe.Pointer(&bytes[0])))
 	}
-	return unsafe.Pointer(ret)
+	return ret
 }
 
 // GoByteArray converts the provided Java byte array into a Go byte slice.
@@ -390,42 +394,42 @@ func JStaticFieldIDPtrOrDie(jEnv, jClass interface{}, name string, sign Sign) un
 	return ptr
 }
 
-// JMethodIDPtrOrDie returns the Java method ID for the given instance
-// (non-static) method.
+// JMethodID returns the Java method ID for the given instance (non-static)
+// method, or an error if the method couldn't be found.
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JMethodIDPtrOrDie(jEnv, jClass interface{}, name string, signature Sign) unsafe.Pointer {
+func JMethodID(jEnv, jClass interface{}, name string, signature Sign) (C.jmethodID, error) {
 	env := getEnv(jEnv)
 	class := getClass(jClass)
 	cName := C.CString(name)
 	defer C.free(unsafe.Pointer(cName))
 	cSignature := C.CString(string(signature))
 	defer C.free(unsafe.Pointer(cSignature))
-	ptr := unsafe.Pointer(C.GetMethodID(env, class, cName, cSignature))
-	if err := JExceptionMsg(env); err != nil || ptr == nil {
-		panic(fmt.Sprintf("couldn't find method %s: %v", name, err))
+	mid := C.GetMethodID(env, class, cName, cSignature)
+	if err := JExceptionMsg(env); err != nil || mid == C.jmethodID(nil) {
+		return C.jmethodID(nil), fmt.Errorf("couldn't find method %s with signature %v.", name)
 	}
-	return ptr
+	return mid, nil
 }
 
-// JStaticMethodIDPtrOrDie returns the Java method ID for the given static
-// method.
+// JStaticMethodID returns the Java method ID for the given static method, or an
+// error if the method couldn't be found.
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JStaticMethodIDPtrOrDie(jEnv, jClass interface{}, name string, signature Sign) unsafe.Pointer {
+func JStaticMethodID(jEnv, jClass interface{}, name string, signature Sign) (C.jmethodID, error) {
 	env := getEnv(jEnv)
 	class := getClass(jClass)
 	cName := C.CString(name)
 	defer C.free(unsafe.Pointer(cName))
 	cSignature := C.CString(string(signature))
 	defer C.free(unsafe.Pointer(cSignature))
-	ptr := unsafe.Pointer(C.GetStaticMethodID(env, class, cName, cSignature))
-	if err := JExceptionMsg(env); err != nil || ptr == nil {
-		panic(fmt.Sprintf("couldn't find method %s: %v", name, err))
+	mid := C.GetStaticMethodID(env, class, cName, cSignature)
+	if err := JExceptionMsg(env); err != nil || mid == C.jmethodID(nil) {
+		return C.jmethodID(nil), fmt.Errorf("couldn't find method %s with a given signature.", name)
 	}
-	return ptr
+	return mid, nil
 }
 
 // JFindClasPtrsOrDie returns the global references to the Java class with the
