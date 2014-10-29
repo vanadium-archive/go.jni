@@ -8,7 +8,7 @@ import (
 
 	"veyron.io/jni/util"
 	"veyron.io/jni/veyron/runtimes/google"
-	"veyron.io/jni/veyron2/security"
+	"veyron.io/jni/veyron2"
 )
 
 // #cgo LDFLAGS: -ljniwrapper
@@ -28,7 +28,7 @@ func JNI_OnLoad(jVM *C.JavaVM, reserved unsafe.Pointer) C.jint {
 
 	Init(env)
 	util.Init(env)
-	security.Init(env)
+	veyron2.Init(env)
 	google.Init(env)
 	return C.JNI_VERSION_1_6
 }

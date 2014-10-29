@@ -42,10 +42,10 @@ func Init(jEnv interface{}) {
 	// Cache global references to all Java classes used by the package.  This is
 	// necessary because JNI gets access to the class loader only in the system
 	// thread, so we aren't able to invoke FindClass in other threads.
-	jPublicIDImplClass = C.jclass(util.JFindClassPtrOrDie(env, "io/veyron/veyron/veyron/runtimes/google/security/PublicID"))
-	jContextImplClass = C.jclass(util.JFindClassPtrOrDie(env, "io/veyron/veyron/veyron/runtimes/google/security/Context"))
-	jBlessingPatternClass = C.jclass(util.JFindClassPtrOrDie(env, "io/veyron/veyron/veyron2/security/BlessingPattern"))
-	jDurationClass = C.jclass(util.JFindClassPtrOrDie(env, "org/joda/time/Duration"))
+	jPublicIDImplClass = C.jclass(util.JFindClassOrPrint(env, "io/veyron/veyron/veyron/runtimes/google/security/PublicID"))
+	jContextImplClass = C.jclass(util.JFindClassOrPrint(env, "io/veyron/veyron/veyron/runtimes/google/security/Context"))
+	jBlessingPatternClass = C.jclass(util.JFindClassOrPrint(env, "io/veyron/veyron/veyron2/security/BlessingPattern"))
+	jDurationClass = C.jclass(util.JFindClassOrPrint(env, "org/joda/time/Duration"))
 }
 
 //export Java_io_veyron_veyron_veyron_runtimes_google_security_PublicIDStore_nativeAdd
@@ -116,7 +116,12 @@ func Java_io_veyron_veyron_veyron_runtimes_google_security_PublicID_nativePublic
 
 //export Java_io_veyron_veyron_veyron_runtimes_google_security_PublicID_nativeAuthorize
 func Java_io_veyron_veyron_veyron_runtimes_google_security_PublicID_nativeAuthorize(env *C.JNIEnv, jPublicID C.jobject, goPublicIDPtr C.jlong, jContext C.jobject) C.jlong {
-	id, err := (*(*security.PublicID)(util.Ptr(goPublicIDPtr))).Authorize(newContext(env, jContext))
+	context, err := jsecurity.GoContext(env, jContext)
+	if err != nil {
+		util.JThrowV(env, err)
+		return C.jlong(0)
+	}
+	id, err := (*(*security.PublicID)(util.Ptr(goPublicIDPtr))).Authorize(context)
 	if err != nil {
 		util.JThrowV(env, err)
 		return C.jlong(0)

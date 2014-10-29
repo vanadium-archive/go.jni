@@ -45,10 +45,10 @@ func Init(jEnv interface{}) {
 	// Cache global references to all Java classes used by the package.  This is
 	// necessary because JNI gets access to the class loader only in the system
 	// thread, so we aren't able to invoke FindClass in other threads.
-	jPrincipalImplClass = C.jclass(util.JFindClassPtrOrDie(env, "io/veyron/veyron/veyron2/security/PrincipalImpl"))
-	jBlessingStoreImplClass = C.jclass(util.JFindClassPtrOrDie(env, "io/veyron/veyron/veyron2/security/BlessingStoreImpl"))
-	jBlessingRootsImplClass = C.jclass(util.JFindClassPtrOrDie(env, "io/veyron/veyron/veyron2/security/BlessingRootsImpl"))
-	jUtilClass = C.jclass(util.JFindClassPtrOrDie(env, "io/veyron/veyron/veyron2/security/Util"))
+	jPrincipalImplClass = C.jclass(util.JFindClassOrPrint(env, "io/veyron/veyron/veyron2/security/PrincipalImpl"))
+	jBlessingStoreImplClass = C.jclass(util.JFindClassOrPrint(env, "io/veyron/veyron/veyron2/security/BlessingStoreImpl"))
+	jBlessingRootsImplClass = C.jclass(util.JFindClassOrPrint(env, "io/veyron/veyron/veyron2/security/BlessingRootsImpl"))
+	jUtilClass = C.jclass(util.JFindClassOrPrint(env, "io/veyron/veyron/veyron2/security/Util"))
 }
 
 //export Java_io_veyron_veyron_veyron2_security_PrincipalImpl_nativeCreate

@@ -23,8 +23,10 @@ import "C"
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func GoContext(jEnv interface{}, jContext C.jobject) (security.Context, error) {
+func GoContext(jEnv, jContextObj interface{}) (security.Context, error) {
 	env := (*C.JNIEnv)(unsafe.Pointer(util.PtrValue(jEnv)))
+	jContext := C.jobject(unsafe.Pointer(util.PtrValue(jContextObj)))
+
 	// We cannot cache Java environments as they are only valid in the current
 	// thread.  We can, however, cache the Java VM and obtain an environment
 	// from it in whatever thread happens to be running at the time.
@@ -41,10 +43,10 @@ func GoContext(jEnv interface{}, jContext C.jobject) (security.Context, error) {
 		jContext: jContext,
 	}
 	runtime.SetFinalizer(c, func(c *context) {
-		jEnv, freeFunc := util.GetEnv(c.jVM)
-		env := (*C.JNIEnv)(jEnv)
+		javaEnv, freeFunc := util.GetEnv(c.jVM)
+		jenv := (*C.JNIEnv)(javaEnv)
 		defer freeFunc()
-		C.DeleteGlobalRef(env, c.jContext)
+		C.DeleteGlobalRef(jenv, c.jContext)
 	})
 	return c, nil
 }

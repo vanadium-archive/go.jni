@@ -33,8 +33,10 @@ func JavaBlessingRoots(jEnv interface{}, roots security.BlessingRoots) (C.jobjec
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func GoBlessingRoots(jEnv interface{}, jBlessingRoots C.jobject) (security.BlessingRoots, error) {
+func GoBlessingRoots(jEnv, jBlessingRootsObj interface{}) (security.BlessingRoots, error) {
 	env := (*C.JNIEnv)(unsafe.Pointer(util.PtrValue(jEnv)))
+	jBlessingRoots := C.jobject(unsafe.Pointer(util.PtrValue(jBlessingRootsObj)))
+
 	// We cannot cache Java environments as they are only valid in the current
 	// thread.  We can, however, cache the Java VM and obtain an environment
 	// from it in whatever thread happens to be running at the time.

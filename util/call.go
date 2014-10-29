@@ -31,14 +31,20 @@ func jArg(env *C.JNIEnv, v interface{}, sign Sign) (C.jvalue, bool) {
 	}
 	var ptr unsafe.Pointer
 	switch rv.Kind() {
-	case reflect.Int, reflect.Int64, reflect.Int32, reflect.Int16, reflect.Int8:
+	case reflect.Int, reflect.Int32, reflect.Int16, reflect.Int8, reflect.Uint, reflect.Uint32, reflect.Uint16, reflect.Uint8:
 		if !isSignOneOf(sign, []Sign{ByteSign, ShortSign, IntSign, LongSign}) {
 			return *(*C.jvalue)(nil), false
 		}
 		jv := C.jint(rv.Int())
 		ptr = unsafe.Pointer(&jv)
-	case reflect.Uint, reflect.Uint64, reflect.Uint32, reflect.Uint16, reflect.Uint8:
-		if !isSignOneOf(sign, []Sign{ByteSign, ShortSign, IntSign, LongSign}) {
+	case reflect.Int64:
+		if sign != LongSign {
+			return *(*C.jvalue)(nil), false
+		}
+		jv := C.jlong(rv.Int())
+		ptr = unsafe.Pointer(&jv)
+	case reflect.Uint64:
+		if sign != LongSign {
 			return *(*C.jvalue)(nil), false
 		}
 		jv := C.jlong(rv.Uint())
@@ -330,13 +336,12 @@ func CallStaticObjectMethod(env interface{}, class interface{}, name string, arg
 	if err != nil {
 		return nil, err
 	}
-
 	jvalArray, freeFunc, err := jArgArray(jenv, args, argSigns)
+	defer freeFunc()
 	if err != nil {
 		return C.jobject(nil), err
 	}
 	ret := C.CallStaticObjectMethodA(jenv, jclass, jmid, jvalArray)
-	freeFunc()
 	return ret, JExceptionMsg(env)
 }
 
@@ -353,6 +358,24 @@ func CallStaticByteArrayMethod(env interface{}, class interface{}, name string, 
 		return nil, err
 	}
 	return GoByteArray(env, jArr), nil
+}
+
+// CallStaticIntMethod calls a static Java method that returns an int.
+func CallStaticIntMethod(env interface{}, class interface{}, name string, argSigns []Sign, args ...interface{}) (int, error) {
+	jenv := getEnv(env)
+	jclass := getClass(class)
+
+	jmid, err := JStaticMethodID(jenv, jclass, name, FuncSign(argSigns, IntSign))
+	if err != nil {
+		return 0, err
+	}
+	jvalArray, freeFunc, err := jArgArray(jenv, args, argSigns)
+	defer freeFunc()
+	if err != nil {
+		return -1, err
+	}
+	ret := int(C.CallStaticIntMethodA(jenv, jclass, jmid, jvalArray))
+	return ret, JExceptionMsg(env)
 }
 
 // CallStaticObjectMethodOrCatch is a helper method that calls CallStaticObjectMethod and panics if a Java exception occurred.

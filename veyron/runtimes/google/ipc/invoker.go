@@ -100,8 +100,10 @@ func (i *invoker) Invoke(method string, call ipc.ServerCall, argptrs []interface
 		err = fmt.Errorf("couldn't find VDL method %q with %d args", method, len(argptrs))
 	}
 	sCall := newServerCall(call, mArgs)
-	jServerCall := C.jobject(util.NewObjectOrCatch(env, jServerCallClass, []util.Sign{util.LongSign}, sCall))
-	util.GoRef(sCall) // unref-ed when jServerCall is garbage-collected
+	jServerCall, err := javaServerCall(env, sCall)
+	if err != nil {
+		return nil, err
+	}
 
 	// Translate input args to JSON.
 	jArgs, err := i.encodeArgs(env, argptrs)

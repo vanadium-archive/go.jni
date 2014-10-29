@@ -6,11 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
-	"time"
 
 	"veyron.io/jni/util"
+	jcontext "veyron.io/jni/veyron2/context"
 	"veyron.io/veyron/veyron2/ipc"
-	"veyron.io/veyron/veyron2/rt"
 )
 
 // #cgo LDFLAGS: -ljniwrapper
@@ -68,7 +67,11 @@ func (c *client) StartCall(env *C.JNIEnv, jContext C.jobject, name, method strin
 		args[i] = util.DerefOrDie(argptrs[i])
 	}
 
-	context, _ := rt.R().NewContext().WithTimeout(10 * time.Second)
+	// Convert context.
+	context, err := jcontext.GoContext(env, jContext)
+	if err != nil {
+		return nil, err
+	}
 
 	// Invoke StartCall
 	call, err := c.client.StartCall(context, name, method, args)

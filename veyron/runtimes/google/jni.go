@@ -30,7 +30,7 @@ var (
 // interface and then cast into the package-local environment type.
 func Init(jEnv interface{}) {
 	env := (*C.JNIEnv)(unsafe.Pointer(util.PtrValue(jEnv)))
-	jEOFExceptionClass = C.jclass(util.JFindClassPtrOrDie(env, "java/io/EOFException"))
+	jEOFExceptionClass = C.jclass(util.JFindClassOrPrint(env, "java/io/EOFException"))
 
 	android.Init(env)
 	ipc.Init(env)

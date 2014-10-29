@@ -3,11 +3,9 @@
 package naming
 
 import (
-	"time"
-
 	"veyron.io/jni/util"
+	jcontext "veyron.io/jni/veyron2/context"
 	"veyron.io/veyron/veyron2/naming"
-	"veyron.io/veyron/veyron2/rt"
 )
 
 // #cgo LDFLAGS: -ljniwrapper
@@ -24,9 +22,12 @@ func Init(jEnv interface{}) {}
 //export Java_io_veyron_veyron_veyron_runtimes_google_naming_Namespace_nativeGlob
 func Java_io_veyron_veyron_veyron_runtimes_google_naming_Namespace_nativeGlob(env *C.JNIEnv, jNamespace C.jobject, goNamespacePtr C.jlong, jContext C.jobject, pattern C.jstring) C.jlong {
 	n := *(*naming.Namespace)(util.Ptr(goNamespacePtr))
-	// TODO(spetrovic): Implement context correctly in Java and use it here.
-	ctx, _ := rt.R().NewContext().WithTimeout(20 * time.Second)
-	entryChan, err := n.Glob(ctx, util.GoString(env, pattern))
+	context, err := jcontext.GoContext(env, jContext)
+	if err != nil {
+		util.JThrowV(env, err)
+		return C.jlong(0)
+	}
+	entryChan, err := n.Glob(context, util.GoString(env, pattern))
 	if err != nil {
 		util.JThrowV(env, err)
 		return C.jlong(0)

@@ -55,8 +55,10 @@ func (a *authorizer) Authorize(context security.Context) error {
 	env := (*C.JNIEnv)(jEnv)
 	defer freeFunc()
 	// Create a Java context.
-	jContext := newJavaContext(env, context)
-
+	jContext, err := JavaContext(env, context)
+	if err != nil {
+		return err
+	}
 	// Run Java Authorizer.
 	contextSign := util.ClassSign("io.veyron.veyron.veyron2.security.Context")
 	return util.CallVoidMethod(env, a.jAuth, "authorize", []util.Sign{contextSign}, jContext)

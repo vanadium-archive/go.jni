@@ -6,8 +6,8 @@ package util
 import (
 	"errors"
 	"fmt"
-	"reflect"
-	"sync"
+	"log"
+	"time"
 	"unicode"
 	"unicode/utf8"
 	"unsafe"
@@ -31,8 +31,14 @@ import "C"
 var (
 	// Global reference for io.veyron.veyron.veyron2.ipc.VeyronException class.
 	jVeyronExceptionClass C.jclass
+	// Global reference for org.joda.time.DateTime class.
+	jDateTimeClass C.jclass
+	// Global reference for org.joda.time.Duration class.
+	jDurationClass C.jclass
 	// Global reference for java.lang.Throwable class.
 	jThrowableClass C.jclass
+	// Global reference for java.lang.System class.
+	jSystemClass C.jclass
 	// Global reference for java.lang.String class.
 	jStringClass C.jclass
 )
@@ -45,63 +51,12 @@ var (
 // and then cast into their package local types.
 func Init(jEnv interface{}) {
 	env := getEnv(jEnv)
-	jVeyronExceptionClass = C.jclass(JFindClassPtrOrDie(env, "io/veyron/veyron/veyron2/ipc/VeyronException"))
-	jThrowableClass = C.jclass(JFindClassPtrOrDie(env, "java/lang/Throwable"))
-	jStringClass = C.jclass(JFindClassPtrOrDie(env, "java/lang/String"))
-}
-
-// GoRef creates a new reference to the value addressed by the provided pointer.
-// The value will remain referenced until it is explicitly unreferenced using
-// goUnref().
-func GoRef(valptr interface{}) {
-	if !IsPointer(valptr) {
-		panic("must pass pointer value to goRef")
-	}
-	refs.insert(valptr)
-}
-
-// GoUnref removes a previously added reference to the value addressed by the
-// provided pointer.  If the value hasn't been ref-ed (a bug?), this unref will
-// be a no-op.
-func GoUnref(valptr interface{}) {
-	if !IsPointer(valptr) {
-		panic("must pass pointer value to goUnref")
-	}
-	refs.delete(valptr)
-}
-
-// IsPointer returns true iff the provided value is a pointer.
-func IsPointer(val interface{}) bool {
-	return reflect.ValueOf(val).Kind() == reflect.Ptr
-}
-
-// DerefOrDie dereferences the provided (pointer) value, or panic-s if the value
-// isn't of pointer type.
-func DerefOrDie(i interface{}) interface{} {
-	v := reflect.ValueOf(i)
-	if v.Kind() != reflect.Ptr {
-		panic(fmt.Sprintf("want reflect.Ptr value for %v, have %v", i, v.Kind()))
-	}
-	return v.Elem().Interface()
-}
-
-// Ptr returns the value of the provided Java pointer (of type C.jlong) as an
-// unsafe.Pointer.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func Ptr(jPtr interface{}) unsafe.Pointer {
-	v := reflect.ValueOf(jPtr)
-	return unsafe.Pointer(uintptr(v.Int()))
-}
-
-// PtrValue returns the value of the pointer as a uintptr.
-func PtrValue(ptr interface{}) uintptr {
-	v := reflect.ValueOf(ptr)
-	if v.Kind() != reflect.Ptr && v.Kind() != reflect.UnsafePointer {
-		panic("must pass pointer value to PtrValue")
-	}
-	return v.Pointer()
+	jVeyronExceptionClass = JFindClassOrPrint(env, "io/veyron/veyron/veyron2/ipc/VeyronException")
+	jDateTimeClass = JFindClassOrPrint(env, "org/joda/time/DateTime")
+	jDurationClass = JFindClassOrPrint(env, "org/joda/time/Duration")
+	jThrowableClass = JFindClassOrPrint(env, "java/lang/Throwable")
+	jSystemClass = JFindClassOrPrint(env, "java/lang/System")
+	jStringClass = JFindClassOrPrint(env, "java/lang/String")
 }
 
 // CamelCase converts ThisString to thisString.
@@ -432,50 +387,87 @@ func JStaticMethodID(jEnv, jClass interface{}, name string, signature Sign) (C.j
 	return mid, nil
 }
 
-// JFindClasPtrsOrDie returns the global references to the Java class with the
-// given pathname, or panic-s if the class cannot be found.
+// JFindClass returns the global reference to the Java class with the
+// given pathname, or an error if the class cannot be found.
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JFindClassPtrOrDie(jEnv interface{}, name string) unsafe.Pointer {
+func JFindClass(jEnv interface{}, name string) (C.jclass, error) {
 	env := getEnv(jEnv)
 	cName := C.CString(name)
 	defer C.free(unsafe.Pointer(cName))
 	class := C.FindClass(env, cName)
 	if err := JExceptionMsg(env); err != nil || class == nil {
-		panic(fmt.Sprintf("couldn't find class %s: %v", name, err))
+		return nil, fmt.Errorf("couldn't find class %s: %v", name, err)
 	}
-	return unsafe.Pointer(C.NewGlobalRef(env, C.jobject(class)))
+	return C.jclass(C.NewGlobalRef(env, C.jobject(class))), nil
 }
 
-// refs stores references to instances of various Go types, namely instances
-// that are referenced only by the Java code.  The only purpose of this store
-// is to prevent Go runtime from garbage collecting those instances.
-var refs = newSafeSet()
-
-// newSafeSet returns a new instance of a thread-safe set.
-func newSafeSet() *safeSet {
-	return &safeSet{
-		items: make(map[interface{}]bool),
+// JFindClassOrPrint returns the global reference to the Java class with the
+// given pathname.  If the class cannot be found, it prints an error message and
+// return nil.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func JFindClassOrPrint(jEnv interface{}, name string) C.jclass {
+	ret, err := JFindClass(jEnv, name)
+	if err != nil {
+		log.Printf("Couldn't find class %q: %v", name, err)
+		return nil
 	}
+	return ret
 }
 
-// safeSet is a thread-safe set.
-type safeSet struct {
-	lock  sync.Mutex
-	items map[interface{}]bool
+// GoTime converts the provided Java DateTime object into a Go time.Time value.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func GoTime(jEnv, jTime interface{}) (time.Time, error) {
+	if jTime == nil {
+		return time.Time{}, fmt.Errorf("Nil Java time.")
+	}
+	millis, err := CallLongMethod(jEnv, jTime, "getMillis", nil)
+	if err != nil {
+		return time.Time{}, err
+	}
+	sec := millis / 1000
+	nsec := (millis % 1000) * 1000000
+	return time.Unix(sec, nsec), nil
 }
 
-func (s *safeSet) insert(item interface{}) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-	s.items[item] = true
+// JTime converts the provided Go time.Time value into a Java DateTime
+// object.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func JTime(jEnv interface{}, t time.Time) (C.jobject, error) {
+	millis := t.UnixNano() / 1000000
+	jTime, err := NewObject(jEnv, jDateTimeClass, []Sign{LongSign}, millis)
+	return C.jobject(jTime), err
 }
 
-func (s *safeSet) delete(item interface{}) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-	delete(s.items, item)
+// GoDuration converts the provided Java Duration object into a Go time.Duration
+// value.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func GoDuration(jEnv interface{}, jDuration interface{}) (time.Duration, error) {
+	millis, err := CallLongMethod(jEnv, jDuration, "getMillis", nil)
+	if err != nil {
+		return 0, err
+	}
+	return time.Duration(millis) * time.Millisecond, nil
+}
+
+// JDuration converts the provided Go time.Duration value into a Java
+// Duration object.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func JDuration(jEnv interface{}, d time.Duration) (C.jobject, error) {
+	millis := d.Nanoseconds() / 1000000
+	jDuration, err := NewObject(jEnv, jDurationClass, []Sign{LongSign}, int64(millis))
+	return C.jobject(jDuration), err
 }
 
 // Various functions that cast CGO types from various other packages into this
