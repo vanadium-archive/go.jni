@@ -190,9 +190,13 @@ func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_nativeFinalize(env *C.
 }
 
 //export Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024Server_nativeListen
-func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024Server_nativeListen(env *C.JNIEnv, server C.jobject, goServerPtr C.jlong, protocol C.jstring, address C.jstring) C.jstring {
-	s := (*ipc.Server)(util.Ptr(goServerPtr))
-	ep, err := (*s).Listen(util.GoString(env, protocol), util.GoString(env, address))
+func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024Server_nativeListen(env *C.JNIEnv, server C.jobject, goServerPtr C.jlong, jSpec C.jobject) C.jstring {
+	spec, err := GoListenSpec(env, jSpec)
+	if err != nil {
+		util.JThrowV(env, err)
+		return nil
+	}
+	ep, err := (*(*ipc.Server)(util.Ptr(goServerPtr))).Listen(spec)
 	if err != nil {
 		util.JThrowV(env, err)
 		return nil

@@ -3,11 +3,13 @@
 package ipc
 
 import (
+	"fmt"
 	"unsafe"
 
 	"veyron.io/jni/util"
 	jsecurity "veyron.io/jni/veyron/runtimes/google/security"
 	jcontext "veyron.io/jni/veyron2/context"
+	"veyron.io/veyron/veyron/profiles/roaming"
 	"veyron.io/veyron/veyron2/ipc"
 )
 
@@ -99,4 +101,24 @@ func javaStream(env *C.JNIEnv, streamIn interface{}) (C.jobject, error) {
 	}
 	util.GoRef(s) // Un-refed when the Java stream object is finalized.
 	return C.jobject(jStream), nil
+}
+
+func GoListenSpec(jEnv, jSpec interface{}) (ipc.ListenSpec, error) {
+	protocol, err := util.CallStringMethod(jEnv, jSpec, "getProtocol", nil)
+	if err != nil {
+		return ipc.ListenSpec{}, err
+	}
+	proxy, err := util.CallStringMethod(jEnv, jSpec, "getProxy", nil)
+	if err != nil {
+		return ipc.ListenSpec{}, err
+	}
+	var spec ipc.ListenSpec
+	switch protocol {
+	case "tcp", "tcp4", "tcp6":
+		spec = roaming.ListenSpec
+	default:
+		return ipc.ListenSpec{}, fmt.Errorf("Unsupported protocol: %s", protocol)
+	}
+	spec.Proxy = proxy
+	return spec, nil
 }
