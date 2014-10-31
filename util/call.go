@@ -140,15 +140,6 @@ func NewObject(env interface{}, class interface{}, argSigns []Sign, args ...inte
 	return ret, err
 }
 
-// NewObjectOrCatch is a helper method that calls NewObject and panics if a Java exception occurred.
-func NewObjectOrCatch(env interface{}, class interface{}, argSigns []Sign, args ...interface{}) C.jobject {
-	obj, err := NewObject(env, class, argSigns, args...)
-	if err != nil {
-		panic(fmt.Sprintf("exception while creating jni object: %v", err))
-	}
-	return obj
-}
-
 // setupMethodCall performs the shared preparation operations between various java method invocation functions.
 func setupMethodCall(env interface{}, object interface{}, name string, argSigns []Sign, retSign Sign, args []interface{}) (jenv *C.JNIEnv, jobject C.jobject, jmid C.jmethodID, jvalArray *C.jvalue, freeFunc func(), err error) {
 	jenv = getEnv(env)
@@ -261,68 +252,6 @@ func CallVoidMethod(env interface{}, object interface{}, name string, argSigns [
 	return JExceptionMsg(env)
 }
 
-// CallObjectMethodOrCatch is a helper method that calls CallObjectMethod and panics if a Java exception occurred.
-func CallObjectMethodOrCatch(env interface{}, object interface{}, name string, argSigns []Sign, retSign Sign, args ...interface{}) C.jobject {
-	obj, err := CallObjectMethod(env, object, name, argSigns, retSign, args...)
-	handleError(name, err)
-	return obj
-}
-
-// CallStringMethodOrCatch is a helper method that calls CallStringMethod and panics if a Java exception occurred.
-func CallStringMethodOrCatch(env interface{}, object interface{}, name string, argSigns []Sign, args ...interface{}) string {
-	str, err := CallStringMethod(env, object, name, argSigns, args...)
-	handleError(name, err)
-	return str
-}
-
-// CallByteArrayMethodOrCatch is a helper method that calls CallByteArrayMethod and panics if a Java exception occurred.
-func CallByteArrayMethodOrCatch(env interface{}, object interface{}, name string, argSigns []Sign, args ...interface{}) []byte {
-	arr, err := CallByteArrayMethod(env, object, name, argSigns, args...)
-	handleError(name, err)
-	return arr
-}
-
-// CallObjectArrayMethodOrCatch is a helper method that calls CallObjectArrayMethod and panics if a Java exception occurred.
-func CallObjectArrayMethodOrCatch(env interface{}, object interface{}, name string, argSigns []Sign, retSign Sign, args ...interface{}) []C.jobject {
-	objs, err := CallObjectArrayMethod(env, object, name, argSigns, retSign, args...)
-	handleError(name, err)
-	return objs
-}
-
-// CallStringArrayMethodOrCatch is a helper method that calls CallStringArrayMethod and panics if a Java exception occurred.
-func CallStringArrayMethodOrCatch(env interface{}, object interface{}, name string, argSigns []Sign, args ...interface{}) []string {
-	strs, err := CallStringArrayMethod(env, object, name, argSigns, ArraySign(StringSign), args...)
-	handleError(name, err)
-	return strs
-}
-
-// CallBooleanMethodOrCatch is a helper method that calls CallBooleanMethod and panics if a Java exception occurred.
-func CallBooleanMethodOrCatch(env interface{}, object interface{}, name string, argSigns []Sign, args ...interface{}) bool {
-	b, err := CallBooleanMethod(env, object, name, argSigns, args...)
-	handleError(name, err)
-	return b
-}
-
-// CallIntMethodOrCatch is a helper method that calls CallIntMethod and panics if a Java exception occurred.
-func CallIntMethodOrCatch(env interface{}, object interface{}, name string, argSigns []Sign, args ...interface{}) int {
-	i, err := CallIntMethod(env, object, name, argSigns, args...)
-	handleError(name, err)
-	return i
-}
-
-// CallLongMethodOrCatch is a helper method that calls CallLongMethod and panics if a Java exception occurred.
-func CallLongMethodOrCatch(env interface{}, object interface{}, name string, argSigns []Sign, args ...interface{}) int64 {
-	l, err := CallLongMethod(env, object, name, argSigns, args...)
-	handleError(name, err)
-	return l
-}
-
-// CallVoidMethodOrCatch is a helper method that calls CallVoidMethod and panics if a Java exception occurred.
-func CallVoidMethodOrCatch(env interface{}, object interface{}, name string, argSigns []Sign, args ...interface{}) {
-	err := CallVoidMethod(env, object, name, argSigns, args...)
-	handleError(name, err)
-}
-
 // CallStaticObjectMethod calls a static Java method that returns a Java object.
 func CallStaticObjectMethod(env interface{}, class interface{}, name string, argSigns []Sign, retSign Sign, args ...interface{}) (C.jobject, error) {
 	switch retSign {
@@ -376,27 +305,6 @@ func CallStaticIntMethod(env interface{}, class interface{}, name string, argSig
 	}
 	ret := int(C.CallStaticIntMethodA(jenv, jclass, jmid, jvalArray))
 	return ret, JExceptionMsg(env)
-}
-
-// CallStaticObjectMethodOrCatch is a helper method that calls CallStaticObjectMethod and panics if a Java exception occurred.
-func CallStaticObjectMethodOrCatch(env interface{}, class interface{}, name string, argSigns []Sign, retSign Sign, args ...interface{}) C.jobject {
-	obj, err := CallStaticObjectMethod(env, class, name, argSigns, retSign, args...)
-	handleError(name, err)
-	return obj
-}
-
-// CallStaticStringMethodOrCatch is a helper method that calls CallStaticStringMethod and panics if a Java exception occurred.
-func CallStaticStringMethodOrCatch(env interface{}, class interface{}, name string, argSigns []Sign, args ...interface{}) string {
-	s, err := CallStaticStringMethod(env, class, name, argSigns, args...)
-	handleError(name, err)
-	return s
-}
-
-// CallStaticByteArrayMethodOrCatch is a helper method that calls CallStaticByteArrayMethod and panics if a Java exception occurred.
-func CallStaticByteArrayMethodOrCatch(env interface{}, class interface{}, name string, argSigns []Sign, args ...interface{}) []byte {
-	b, err := CallStaticByteArrayMethod(env, class, name, argSigns, args...)
-	handleError(name, err)
-	return b
 }
 
 func handleError(name string, err error) {

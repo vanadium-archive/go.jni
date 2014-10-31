@@ -23,9 +23,12 @@ import "C"
 // and then cast into their package local types.
 func JavaPrincipal(jEnv interface{}, principal security.Principal) (C.jobject, error) {
 	env := (*C.JNIEnv)(unsafe.Pointer(util.PtrValue(jEnv)))
-	util.GoRef(&principal) // Un-refed when the Java PrincipalImpl is finalized.
 	jObj, err := util.NewObject(env, jPrincipalImplClass, []util.Sign{util.LongSign, signerSign, blessingStoreSign, blessingRootsSign}, &principal, C.jobject(nil), C.jobject(nil), C.jobject(nil))
-	return C.jobject(jObj), err
+	if err != nil {
+		return nil, err
+	}
+	util.GoRef(&principal) // Un-refed when the Java PrincipalImpl is finalized.
+	return C.jobject(jObj), nil
 }
 
 // GoPrincipal creates an instance of security.Principal that uses the provided

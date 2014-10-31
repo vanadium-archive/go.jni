@@ -23,9 +23,12 @@ import "C"
 // and then cast into their package local types.
 func JavaBlessingRoots(jEnv interface{}, roots security.BlessingRoots) (C.jobject, error) {
 	env := (*C.JNIEnv)(unsafe.Pointer(util.PtrValue(jEnv)))
-	util.GoRef(&roots) // Un-refed when the Java BlessingRootsImpl is finalized.
 	jObj, err := util.NewObject(env, jBlessingRootsImplClass, []util.Sign{util.LongSign}, &roots)
-	return C.jobject(jObj), err
+	if err != nil {
+		return nil, err
+	}
+	util.GoRef(&roots) // Un-refed when the Java BlessingRootsImpl is finalized.
+	return C.jobject(jObj), nil
 }
 
 // GoBlessingRoots creates an instance of security.BlessingRoots that uses the

@@ -17,20 +17,33 @@ import (
 // #include "jni_wrapper.h"
 import "C"
 
-func newInvoker(env *C.JNIEnv, jVM *C.JavaVM, jObj C.jobject) (*invoker, error) {
+func goInvoker(env *C.JNIEnv, jObj C.jobject) (ipc.Invoker, error) {
 	// Create a new Java VDLInvoker object.
-	tempJInvoker, err := util.NewObject(env, jVDLInvokerClass, []util.Sign{util.ObjectSign}, jObj)
-	jInvoker := C.jobject(tempJInvoker)
+	jInvokerObj, err := util.NewObject(env, jVDLInvokerClass, []util.Sign{util.ObjectSign}, jObj)
 	if err != nil {
 		return nil, fmt.Errorf("error creating Java VDLInvoker object: %v", err)
 	}
+	jInvoker := C.jobject(jInvokerObj)
+
 	// Fetch the argGetter for the object.
-	jPathArray := C.jobjectArray(util.CallObjectMethodOrCatch(env, jInvoker, "getImplementedServices", nil, util.ArraySign(util.StringSign)))
+	jPathArray, err := util.CallObjectMethod(env, jInvoker, "getImplementedServices", nil, util.ArraySign(util.StringSign))
+	if err != nil {
+		return nil, err
+	}
 	paths := util.GoStringArray(env, jPathArray)
 	getter, err := newArgGetter(paths)
 	if err != nil {
 		return nil, err
 	}
+
+	// We cannot cache Java environments as they are only valid in the current
+	// thread.  We can, however, cache the Java VM and obtain an environment
+	// from it in whatever thread happens to be running at the time.
+	var jVM *C.JavaVM
+	if status := C.GetJavaVM(env, &jVM); status != 0 {
+		return nil, fmt.Errorf("couldn't get Java VM from the (Java) environment")
+	}
+
 	// Reference Java invoker; it will be de-referenced when the go invoker
 	// created below is garbage-collected (through the finalizer callback we
 	// setup just below).

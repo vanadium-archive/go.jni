@@ -4,7 +4,6 @@ package ipc
 
 import (
 	"veyron.io/jni/util"
-	jnisecurity "veyron.io/jni/veyron/runtimes/google/security"
 	jsecurity "veyron.io/jni/veyron2/security"
 	"veyron.io/veyron/veyron2"
 	"veyron.io/veyron/veyron2/options"
@@ -18,15 +17,6 @@ import "C"
 func getRuntimeOpts(env *C.JNIEnv, jOptions C.jobject) (ret []veyron2.ROpt, err error) {
 	if jOptions == nil {
 		return
-	}
-	// Process RuntimeIDOpt.
-	runtimeIDKey := util.JStaticStringField(env, jOptionDefsClass, "RUNTIME_ID")
-	if has, err := util.CallBooleanMethod(env, jOptions, "has", []util.Sign{util.StringSign}, runtimeIDKey); err != nil {
-		return nil, err
-	} else if has {
-		jPrivateID := C.jobject(util.CallObjectMethodOrCatch(env, jOptions, "get", []util.Sign{util.StringSign}, util.ObjectSign, runtimeIDKey))
-		id := jnisecurity.NewPrivateID(env, jPrivateID)
-		ret = append(ret, options.RuntimeID{id})
 	}
 	runtimePrincipalKey := util.JStaticStringField(env, jOptionDefsClass, "RUNTIME_PRINCIPAL")
 	if has, err := util.CallBooleanMethod(env, jOptions, "has", []util.Sign{util.StringSign}, runtimePrincipalKey); err != nil {
@@ -42,31 +32,7 @@ func getRuntimeOpts(env *C.JNIEnv, jOptions C.jobject) (ret []veyron2.ROpt, err 
 		}
 		ret = append(ret, options.RuntimePrincipal{principal})
 	}
-	// TODO(spetrovic): Remove this once the transition to the new model is complete.
-	ret = append(ret, options.ForceNewSecurityModel{})
 	return
-}
-
-// getLocalIDOpt converts the Java LocalID option (encoded) into Go LocalId option.
-func getLocalIDOpt(env *C.JNIEnv, jOptions C.jobject) (*options.LocalID, error) {
-	if jOptions == nil {
-		return nil, nil
-	}
-	localIDKey := util.JStaticStringField(env, jOptionDefsClass, "LOCAL_ID")
-	if !util.CallBooleanMethodOrCatch(env, jOptions, "has", []util.Sign{util.StringSign}, localIDKey) {
-		return nil, nil
-	}
-	jEncodedChains := C.jobject(util.CallObjectMethodOrCatch(env, jOptions, "get", []util.Sign{util.StringSign}, util.ObjectSign, localIDKey))
-	if jEncodedChains == nil {
-		return nil, nil
-	}
-	encodedChains := util.GoStringArray(env, jEncodedChains)
-	id, err := jnisecurity.DecodeChains(encodedChains)
-	if err != nil {
-		return nil, err
-	}
-	opt := options.LocalID{id}
-	return &opt, nil
 }
 
 // getVDLPathOpt retrieves the Java VDL_PATH option.

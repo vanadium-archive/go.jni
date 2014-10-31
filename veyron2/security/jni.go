@@ -3,6 +3,7 @@
 package security
 
 import (
+	"fmt"
 	"unsafe"
 
 	"veyron.io/jni/util"
@@ -78,12 +79,12 @@ func Java_io_veyron_veyron_veyron2_security_PrincipalImpl_nativeCreateForSigner(
 		util.JThrowV(env, err)
 		return C.jobject(nil)
 	}
-	util.GoRef(&principal) // Un-refed when the Java PrincipalImpl is finalized.
 	jPrincipal, err := util.NewObject(env, jPrincipalImplClass, []util.Sign{util.LongSign, signerSign, blessingStoreSign, blessingRootsSign}, &principal, jSigner, C.jobject(nil), C.jobject(nil))
 	if err != nil {
 		util.JThrowV(env, err)
 		return C.jobject(nil)
 	}
+	util.GoRef(&principal) // Un-refed when the Java PrincipalImpl is finalized.
 	return C.jobject(jPrincipal)
 }
 
@@ -109,12 +110,12 @@ func Java_io_veyron_veyron_veyron2_security_PrincipalImpl_nativeCreateForAll(env
 		util.JThrowV(env, err)
 		return C.jobject(nil)
 	}
-	util.GoRef(&principal) // Un-refed when the Java PrincipalImpl is finalized.
 	jPrincipal, err := util.NewObject(env, jPrincipalImplClass, []util.Sign{util.LongSign, signerSign, blessingStoreSign, blessingRootsSign}, &principal, jSigner, jStore, jRoots)
 	if err != nil {
 		util.JThrowV(env, err)
 		return C.jobject(nil)
 	}
+	util.GoRef(&principal) // Un-refed when the Java PrincipalImpl is finalized.
 	return C.jobject(jPrincipal)
 }
 
@@ -150,12 +151,12 @@ func Java_io_veyron_veyron_veyron2_security_PrincipalImpl_nativeCreatePersistent
 		util.JThrowV(env, err)
 		return C.jobject(nil)
 	}
-	util.GoRef(&principal) // Un-refed when the Java PrincipalImpl is finalized.
 	jPrincipal, err := util.NewObject(env, jPrincipalImplClass, []util.Sign{util.LongSign, signerSign, blessingStoreSign, blessingRootsSign}, &principal, jSigner, C.jobject(nil), C.jobject(nil))
 	if err != nil {
 		util.JThrowV(env, err)
 		return C.jobject(nil)
 	}
+	util.GoRef(&principal) // Un-refed when the Java PrincipalImpl is finalized.
 	return C.jobject(jPrincipal)
 }
 
@@ -362,6 +363,12 @@ func Java_io_veyron_veyron_veyron2_security_BlessingRootsImpl_nativeDebugString(
 	return C.jstring(util.JString(env, debug))
 }
 
+//export Java_io_veyron_veyron_veyron2_security_BlessingRootsImpl_nativeToString
+func Java_io_veyron_veyron_veyron2_security_BlessingRootsImpl_nativeToString(env *C.JNIEnv, jBlessingRootsImpl C.jobject, goPtr C.jlong) C.jstring {
+	str := fmt.Sprintf("%v", (*(*security.BlessingRoots)(util.Ptr(goPtr))))
+	return C.jstring(util.JString(env, str))
+}
+
 //export Java_io_veyron_veyron_veyron2_security_BlessingRootsImpl_nativeFinalize
 func Java_io_veyron_veyron_veyron2_security_BlessingRootsImpl_nativeFinalize(env *C.JNIEnv, jBlessingRootsImpl C.jobject, goPtr C.jlong) {
 	util.GoUnref((*security.BlessingRoots)(util.Ptr(goPtr)))
@@ -443,6 +450,12 @@ func Java_io_veyron_veyron_veyron2_security_BlessingStoreImpl_nativePublicKey(en
 func Java_io_veyron_veyron_veyron2_security_BlessingStoreImpl_nativeDebugString(env *C.JNIEnv, jBlessingStoreImpl C.jobject, goPtr C.jlong) C.jstring {
 	debug := (*(*security.BlessingStore)(util.Ptr(goPtr))).DebugString()
 	return C.jstring(util.JString(env, debug))
+}
+
+//export Java_io_veyron_veyron_veyron2_security_BlessingStoreImpl_nativeToString
+func Java_io_veyron_veyron_veyron2_security_BlessingStoreImpl_nativeToString(env *C.JNIEnv, jBlessingStoreImpl C.jobject, goPtr C.jlong) C.jstring {
+	str := fmt.Sprintf("%s", (*(*security.BlessingStore)(util.Ptr(goPtr))))
+	return C.jstring(util.JString(env, str))
 }
 
 //export Java_io_veyron_veyron_veyron2_security_BlessingStoreImpl_nativeFinalize

@@ -16,7 +16,7 @@ import (
 // #include "jni_wrapper.h"
 import "C"
 
-func newDispatcher(env *C.JNIEnv, jDispatcher C.jobject) (*dispatcher, error) {
+func goDispatcher(env *C.JNIEnv, jDispatcher C.jobject) (*dispatcher, error) {
 	// We cannot cache Java environments as they are only valid in the current
 	// thread.  We can, however, cache the Java VM and obtain an environment
 	// from it in whatever thread happens to be running at the time.
@@ -67,21 +67,27 @@ func (d *dispatcher) Lookup(suffix, method string) (ipc.Invoker, security.Author
 	}
 
 	// Extract the Java service object and Authorizer.
-	jServiceObj := C.jobject(util.CallObjectMethodOrCatch(env, jObj, "getServiceObject", nil, util.ObjectSign))
+	jServiceObj, err := util.CallObjectMethod(env, jObj, "getServiceObject", nil, util.ObjectSign)
+	if err != nil {
+		return nil, nil, err
+	}
 	if jServiceObj == nil {
 		return nil, nil, fmt.Errorf("null service object returned by Java's ServiceObjectWithAuthorizer")
 	}
 	authSign := util.ClassSign("io.veyron.veyron.veyron2.security.Authorizer")
-	jAuth := C.jobject(util.CallObjectMethodOrCatch(env, jObj, "getAuthorizer", nil, authSign))
-
-	// Create Go Invoker and Authorizer.
-	i, err := newInvoker(env, d.jVM, jServiceObj)
+	jAuth, err := util.CallObjectMethod(env, jObj, "getAuthorizer", nil, authSign)
 	if err != nil {
 		return nil, nil, err
 	}
-	var a security.Authorizer
-	if jAuth != nil {
-		a = isecurity.NewAuthorizer(env, jAuth)
+
+	// Create Go Invoker and Authorizer.
+	i, err := goInvoker(env, C.jobject(jServiceObj))
+	if err != nil {
+		return nil, nil, err
+	}
+	a, err := isecurity.GoAuthorizer(env, jAuth)
+	if err != nil {
+		return nil, nil, err
 	}
 	return i, a, nil
 }

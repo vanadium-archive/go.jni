@@ -27,13 +27,18 @@ type goContextValue struct {
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func JavaContext(jEnv interface{}, ctx context.T, cancel context.CancelFunc) (C.jobject, error) {
-	util.GoRef(&ctx) // Un-refed when the Java context object is finalized.
 	cancelPtr := int64(0)
 	if cancel != nil {
-		util.GoRef(&cancel) // Un-refed when the Java context object is finalized.
 		cancelPtr = int64(util.PtrValue(&cancel))
 	}
 	jCtx, err := util.NewObject(jEnv, jContextImplClass, []util.Sign{util.LongSign, util.LongSign}, int64(util.PtrValue(&ctx)), cancelPtr)
+	if err != nil {
+		return nil, err
+	}
+	util.GoRef(&ctx) // Un-refed when the Java context object is finalized.
+	if cancel != nil {
+		util.GoRef(&cancel) // Un-refed when the Java context object is finalized.
+	}
 	return C.jobject(jCtx), err
 }
 

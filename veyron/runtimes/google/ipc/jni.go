@@ -95,16 +95,8 @@ func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_nativeNewRuntime(env *
 //export Java_io_veyron_veyron_veyron_runtimes_google_Runtime_nativeNewClient
 func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_nativeNewClient(env *C.JNIEnv, jRuntime C.jobject, goPtr C.jlong, jOptions C.jobject) C.jobject {
 	r := (*veyron2.Runtime)(util.Ptr(goPtr))
-	opt, err := getLocalIDOpt(env, jOptions)
-	if err != nil {
-		util.JThrowV(env, err)
-		return nil
-	}
-	var opts []ipc.ClientOpt
-	if opt != nil {
-		opts = append(opts, *opt)
-	}
-	rc, err := (*r).NewClient(opts...)
+	// No options supported yet.
+	rc, err := (*r).NewClient()
 	if err != nil {
 		util.JThrowV(env, err)
 		return nil
@@ -121,16 +113,8 @@ func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_nativeNewClient(env *C
 //export Java_io_veyron_veyron_veyron_runtimes_google_Runtime_nativeNewServer
 func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_nativeNewServer(env *C.JNIEnv, jRuntime C.jobject, goPtr C.jlong, jOptions C.jobject) C.jobject {
 	r := (*veyron2.Runtime)(util.Ptr(goPtr))
-	opt, err := getLocalIDOpt(env, jOptions)
-	if err != nil {
-		util.JThrowV(env, err)
-		return nil
-	}
-	var opts []ipc.ServerOpt
-	if opt != nil {
-		opts = append(opts, *opt)
-	}
-	s, err := (*r).NewServer(opts...)
+	// No options supported yet.
+	s, err := (*r).NewServer()
 	if err != nil {
 		util.JThrowV(env, err)
 		return nil
@@ -168,14 +152,6 @@ func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_nativeNewContext(env *
 	return C.jobject(jContext)
 }
 
-//export Java_io_veyron_veyron_veyron_runtimes_google_Runtime_nativeGetPublicIDStore
-func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_nativeGetPublicIDStore(env *C.JNIEnv, jRuntime C.jobject, goPtr C.jlong) C.jlong {
-	r := (*veyron2.Runtime)(util.Ptr(goPtr))
-	s := (*r).PublicIDStore()
-	util.GoRef(&s) // Un-refed when the Java PublicIDStore object is finalized.
-	return C.jlong(util.PtrValue(&s))
-}
-
 //export Java_io_veyron_veyron_veyron_runtimes_google_Runtime_nativeGetNamespace
 func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_nativeGetNamespace(env *C.JNIEnv, jRuntime C.jobject, goPtr C.jlong) C.jlong {
 	r := (*veyron2.Runtime)(util.Ptr(goPtr))
@@ -207,7 +183,7 @@ func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024Server_nativeList
 //export Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024Server_nativeServe
 func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024Server_nativeServe(env *C.JNIEnv, jServer C.jobject, goServerPtr C.jlong, name C.jstring, jDispatcher C.jobject) {
 	s := (*ipc.Server)(util.Ptr(goServerPtr))
-	d, err := newDispatcher(env, jDispatcher)
+	d, err := goDispatcher(env, jDispatcher)
 	if err != nil {
 		util.JThrowV(env, err)
 		return

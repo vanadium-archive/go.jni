@@ -87,16 +87,6 @@ func (c *context) Discharges() map[string]security.Discharge {
 	return nil
 }
 
-func (c *context) LocalID() security.PublicID {
-	// NOTE(spetrovic): deprecated.
-	return nil
-}
-
-func (c *context) RemoteID() security.PublicID {
-	// NOTE(spetrovic): deprecated.
-	return nil
-}
-
 func (c *context) LocalEndpoint() naming.Endpoint {
 	epStr := c.callStringMethod("localEndpoint")
 	ep, err := inaming.NewEndpoint(epStr)

@@ -23,9 +23,12 @@ import "C"
 // and then cast into their package local types.
 func JavaBlessingStore(jEnv interface{}, store security.BlessingStore) (C.jobject, error) {
 	env := (*C.JNIEnv)(unsafe.Pointer(util.PtrValue(jEnv)))
-	util.GoRef(&store) // Un-refed when the Java BlessingStoreImpl is finalized.
 	jObj, err := util.NewObject(env, jBlessingStoreImplClass, []util.Sign{util.LongSign}, &store)
-	return C.jobject(jObj), err
+	if err != nil {
+		return nil, err
+	}
+	util.GoRef(&store) // Un-refed when the Java BlessingStoreImpl is finalized.
+	return C.jobject(jObj), nil
 }
 
 // GoBlessingStore creates an instance of security.BlessingStore that uses the
