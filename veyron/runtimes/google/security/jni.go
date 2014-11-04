@@ -32,9 +32,38 @@ func Init(jEnv interface{}) {
 	jContextImplClass = C.jclass(util.JFindClassOrPrint(env, "io/veyron/veyron/veyron/runtimes/google/security/Context"))
 }
 
+//export Java_io_veyron_veyron_veyron_runtimes_google_security_Context_nativeTimestamp
+func Java_io_veyron_veyron_veyron_runtimes_google_security_Context_nativeTimestamp(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) C.jobject {
+	t := (*(*security.Context)(util.Ptr(goContextPtr))).Timestamp()
+	jTime, err := util.JTime(env, t)
+	if err != nil {
+		util.JThrowV(env, err)
+		return nil
+	}
+	return C.jobject(jTime)
+}
+
 //export Java_io_veyron_veyron_veyron_runtimes_google_security_Context_nativeMethod
 func Java_io_veyron_veyron_veyron_runtimes_google_security_Context_nativeMethod(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) C.jstring {
 	return C.jstring(util.JString(env, (*(*security.Context)(util.Ptr(goContextPtr))).Method()))
+}
+
+//export Java_io_veyron_veyron_veyron_runtimes_google_security_Context_nativeMethodTags
+func Java_io_veyron_veyron_veyron_runtimes_google_security_Context_nativeMethodTags(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) C.jobjectArray {
+	tags := (*(*security.Context)(util.Ptr(goContextPtr))).MethodTags()
+	if tags == nil {
+		return nil
+	}
+	tagsJava := make([]interface{}, len(tags))
+	for i, tag := range tags {
+		tagsJava[i] = C.jobject(unsafe.Pointer(util.PtrValue(tag)))
+	}
+	jTags, err := util.JObjectArray(env, tagsJava)
+	if err != nil {
+		util.JThrowV(env, err)
+		return nil
+	}
+	return C.jobjectArray(jTags)
 }
 
 //export Java_io_veyron_veyron_veyron_runtimes_google_security_Context_nativeName

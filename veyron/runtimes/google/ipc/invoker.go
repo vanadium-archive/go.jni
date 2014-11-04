@@ -9,7 +9,6 @@ import (
 
 	"veyron.io/jni/util"
 	"veyron.io/veyron/veyron2/ipc"
-	"veyron.io/veyron/veyron2/security"
 	"veyron.io/veyron/veyron2/verror"
 )
 
@@ -68,7 +67,7 @@ type invoker struct {
 	argGetter *argGetter
 }
 
-func (i *invoker) Prepare(method string, numArgs int) (argptrs []interface{}, label security.Label, err error) {
+func (i *invoker) Prepare(method string, numArgs int) (argptrs, tags []interface{}, err error) {
 	// NOTE(spetrovic): In the long-term, this method will return an array of
 	// []vom.Value.  This will in turn result in VOM decoding all input
 	// arguments into vom.Value objects, which we shall then de-serialize into
@@ -85,13 +84,18 @@ func (i *invoker) Prepare(method string, numArgs int) (argptrs []interface{}, la
 	}
 	argptrs = mArgs.InPtrs()
 
-	// Get the security label.
-	labelSign := util.ClassSign("io.veyron.veyron.veyron2.security.Label")
-	jLabel, err := util.CallObjectMethod(env, i.jInvoker, "getSecurityLabel", []util.Sign{util.StringSign}, labelSign, util.CamelCase(method))
+	// Get the method tags.
+	jTags, err := util.CallObjectMethod(env, i.jInvoker, "getMethodTags", []util.Sign{util.StringSign}, util.ArraySign(util.ObjectSign), util.CamelCase(method))
 	if err != nil {
-		return nil, security.Label(0), err
+		return nil, nil, err
 	}
-	label = security.Label(util.JIntField(env, jLabel, "value"))
+	tagsJava := util.GoObjectArray(env, jTags)
+	if tagsJava != nil {
+		tags = make([]interface{}, len(tagsJava))
+		for i, tag := range tagsJava {
+			tags[i] = C.jobject(tag)
+		}
+	}
 	return
 }
 

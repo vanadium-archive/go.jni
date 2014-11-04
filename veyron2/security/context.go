@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"runtime"
+	"time"
 	"unsafe"
 
 	"veyron.io/jni/util"
@@ -59,6 +60,14 @@ type context struct {
 
 func (c *context) Method() string {
 	return c.callStringMethod("method")
+}
+
+func (c *context) MethodTags() []interface{} {
+	return nil
+}
+
+func (c *context) Timestamp() time.Time {
+	return time.Now()
 }
 
 func (c *context) Name() string {

@@ -8,7 +8,6 @@ import (
 
 	"veyron.io/jni/util"
 	isecurity "veyron.io/jni/veyron/runtimes/google/security"
-	"veyron.io/veyron/veyron2/ipc"
 	"veyron.io/veyron/veyron2/security"
 )
 
@@ -47,7 +46,7 @@ type dispatcher struct {
 	jDispatcher C.jobject
 }
 
-func (d *dispatcher) Lookup(suffix, method string) (ipc.Invoker, security.Authorizer, error) {
+func (d *dispatcher) Lookup(suffix, method string) (interface{}, security.Authorizer, error) {
 	// Get Java environment.
 	jEnv, freeFunc := util.GetEnv(d.jVM)
 	env := (*C.JNIEnv)(jEnv)

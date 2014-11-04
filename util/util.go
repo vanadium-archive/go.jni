@@ -41,6 +41,8 @@ var (
 	jSystemClass C.jclass
 	// Global reference for java.lang.String class.
 	jStringClass C.jclass
+	// Global reference for java.lang.Object class.
+	jObjectClass C.jclass
 )
 
 // Init initializes the JNI code with the given Java environment.  This method
@@ -57,6 +59,7 @@ func Init(jEnv interface{}) {
 	jThrowableClass = JFindClassOrPrint(env, "java/lang/Throwable")
 	jSystemClass = JFindClassOrPrint(env, "java/lang/System")
 	jStringClass = JFindClassOrPrint(env, "java/lang/String")
+	jObjectClass = JFindClassOrPrint(env, "java/lang/Object")
 }
 
 // CamelCase converts ThisString to thisString.
@@ -245,18 +248,56 @@ func JStaticStringField(jEnv, jClass interface{}, field string) string {
 	return GoString(env, jStr)
 }
 
-// JStringArray converts the provided slice of Go strings into a Java array of strings.
+// JObjectArray converts the provided slice of C.jobject pointers into a Java
+// Object array.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func JObjectArray(jEnv interface{}, arr []interface{}) (C.jobjectArray, error) {
+	if arr == nil {
+		return nil, nil
+	}
+	env := getEnv(jEnv)
+	ret := C.NewObjectArray(env, C.jsize(len(arr)), jObjectClass, nil)
+	for i, elem := range arr {
+		jElem := getObject(elem)
+		C.SetObjectArrayElement(env, ret, C.jsize(i), jElem)
+	}
+	return ret, nil
+}
+
+// JStringArray converts the provided slice of Go strings into a Java array of
+// strings.
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func JStringArray(jEnv interface{}, strs []string) C.jobjectArray {
 	if strs == nil {
-		return C.jobjectArray(nil)
+		return nil
 	}
 	env := getEnv(jEnv)
 	ret := C.NewObjectArray(env, C.jsize(len(strs)), jStringClass, nil)
 	for i, str := range strs {
 		C.SetObjectArrayElement(env, ret, C.jsize(i), C.jobject(JString(env, str)))
+	}
+	return ret
+}
+
+// GoObjectArray converts a Java Object array to a Go slice of C.jobject
+// pointers.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func GoObjectArray(jEnv, jObjArray interface{}) []C.jobject {
+	env := getEnv(jEnv)
+	jArr := getObjectArray(jObjArray)
+	if jArr == nil {
+		return nil
+	}
+	length := C.GetArrayLength(env, C.jarray(jArr))
+	ret := make([]C.jobject, int(length))
+	for i := 0; i < int(length); i++ {
+		ret[i] = C.GetObjectArrayElement(env, jArr, C.jsize(i))
 	}
 	return ret
 }

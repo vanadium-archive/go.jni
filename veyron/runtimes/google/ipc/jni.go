@@ -188,7 +188,7 @@ func Java_io_veyron_veyron_veyron_runtimes_google_Runtime_00024Server_nativeServ
 		util.JThrowV(env, err)
 		return
 	}
-	if err := (*s).Serve(util.GoString(env, name), d); err != nil {
+	if err := (*s).ServeDispatcher(util.GoString(env, name), d); err != nil {
 		util.JThrowV(env, err)
 		return
 	}
