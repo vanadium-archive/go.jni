@@ -8,7 +8,7 @@ import (
 	"runtime"
 	"unsafe"
 
-	"veyron.io/jni/util"
+	jutil "veyron.io/jni/util"
 	"veyron.io/veyron/veyron2/security"
 )
 
@@ -22,12 +22,12 @@ import "C"
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func JavaBlessingRoots(jEnv interface{}, roots security.BlessingRoots) (C.jobject, error) {
-	env := (*C.JNIEnv)(unsafe.Pointer(util.PtrValue(jEnv)))
-	jObj, err := util.NewObject(env, jBlessingRootsImplClass, []util.Sign{util.LongSign}, &roots)
+	env := (*C.JNIEnv)(unsafe.Pointer(jutil.PtrValue(jEnv)))
+	jObj, err := jutil.NewObject(env, jBlessingRootsImplClass, []jutil.Sign{jutil.LongSign}, &roots)
 	if err != nil {
 		return nil, err
 	}
-	util.GoRef(&roots) // Un-refed when the Java BlessingRootsImpl is finalized.
+	jutil.GoRef(&roots) // Un-refed when the Java BlessingRootsImpl is finalized.
 	return C.jobject(jObj), nil
 }
 
@@ -37,8 +37,8 @@ func JavaBlessingRoots(jEnv interface{}, roots security.BlessingRoots) (C.jobjec
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func GoBlessingRoots(jEnv, jBlessingRootsObj interface{}) (security.BlessingRoots, error) {
-	env := (*C.JNIEnv)(unsafe.Pointer(util.PtrValue(jEnv)))
-	jBlessingRoots := C.jobject(unsafe.Pointer(util.PtrValue(jBlessingRootsObj)))
+	env := (*C.JNIEnv)(unsafe.Pointer(jutil.PtrValue(jEnv)))
+	jBlessingRoots := C.jobject(unsafe.Pointer(jutil.PtrValue(jBlessingRootsObj)))
 
 	// We cannot cache Java environments as they are only valid in the current
 	// thread.  We can, however, cache the Java VM and obtain an environment
@@ -56,7 +56,7 @@ func GoBlessingRoots(jEnv, jBlessingRootsObj interface{}) (security.BlessingRoot
 		jBlessingRoots: jBlessingRoots,
 	}
 	runtime.SetFinalizer(r, func(r *blessingRoots) {
-		envPtr, freeFunc := util.GetEnv(r.jVM)
+		envPtr, freeFunc := jutil.GetEnv(r.jVM)
 		env := (*C.JNIEnv)(envPtr)
 		defer freeFunc()
 		C.DeleteGlobalRef(env, r.jBlessingRoots)
@@ -70,7 +70,7 @@ type blessingRoots struct {
 }
 
 func (r *blessingRoots) Add(root security.PublicKey, pattern security.BlessingPattern) error {
-	envPtr, freeFunc := util.GetEnv(r.jVM)
+	envPtr, freeFunc := jutil.GetEnv(r.jVM)
 	env := (*C.JNIEnv)(envPtr)
 	defer freeFunc()
 	jRoot, err := JavaPublicKey(env, root)
@@ -81,28 +81,28 @@ func (r *blessingRoots) Add(root security.PublicKey, pattern security.BlessingPa
 	if err != nil {
 		return err
 	}
-	return util.CallVoidMethod(env, r.jBlessingRoots, "add", []util.Sign{publicKeySign, blessingPatternSign}, jRoot, jPattern)
+	return jutil.CallVoidMethod(env, r.jBlessingRoots, "add", []jutil.Sign{publicKeySign, blessingPatternSign}, jRoot, jPattern)
 }
 
 func (r *blessingRoots) Recognized(root security.PublicKey, blessing string) error {
-	envPtr, freeFunc := util.GetEnv(r.jVM)
+	envPtr, freeFunc := jutil.GetEnv(r.jVM)
 	env := (*C.JNIEnv)(envPtr)
 	defer freeFunc()
 	jRoot, err := JavaPublicKey(env, root)
 	if err != nil {
 		return err
 	}
-	return util.CallVoidMethod(env, r.jBlessingRoots, "recognized", []util.Sign{publicKeySign, util.StringSign}, jRoot, blessing)
+	return jutil.CallVoidMethod(env, r.jBlessingRoots, "recognized", []jutil.Sign{publicKeySign, jutil.StringSign}, jRoot, blessing)
 }
 
 func (r *blessingRoots) DebugString() string {
-	envPtr, freeFunc := util.GetEnv(r.jVM)
+	envPtr, freeFunc := jutil.GetEnv(r.jVM)
 	env := (*C.JNIEnv)(envPtr)
 	defer freeFunc()
-	jString, err := util.CallStringMethod(env, r.jBlessingRoots, "debugString", nil)
+	jString, err := jutil.CallStringMethod(env, r.jBlessingRoots, "debugString", nil)
 	if err != nil {
 		log.Printf("Coudln't get Java DebugString: %v", err)
 		return ""
 	}
-	return util.GoString(env, jString)
+	return jutil.GoString(env, jString)
 }

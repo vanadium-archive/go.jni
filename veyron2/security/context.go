@@ -9,7 +9,7 @@ import (
 	"time"
 	"unsafe"
 
-	"veyron.io/jni/util"
+	jutil "veyron.io/jni/util"
 	inaming "veyron.io/veyron/veyron/runtimes/google/naming"
 	"veyron.io/veyron/veyron2/naming"
 	"veyron.io/veyron/veyron2/security"
@@ -25,8 +25,8 @@ import "C"
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func GoContext(jEnv, jContextObj interface{}) (security.Context, error) {
-	env := (*C.JNIEnv)(unsafe.Pointer(util.PtrValue(jEnv)))
-	jContext := C.jobject(unsafe.Pointer(util.PtrValue(jContextObj)))
+	env := (*C.JNIEnv)(unsafe.Pointer(jutil.PtrValue(jEnv)))
+	jContext := C.jobject(unsafe.Pointer(jutil.PtrValue(jContextObj)))
 
 	// We cannot cache Java environments as they are only valid in the current
 	// thread.  We can, however, cache the Java VM and obtain an environment
@@ -44,7 +44,7 @@ func GoContext(jEnv, jContextObj interface{}) (security.Context, error) {
 		jContext: jContext,
 	}
 	runtime.SetFinalizer(c, func(c *context) {
-		javaEnv, freeFunc := util.GetEnv(c.jVM)
+		javaEnv, freeFunc := jutil.GetEnv(c.jVM)
 		jenv := (*C.JNIEnv)(javaEnv)
 		defer freeFunc()
 		C.DeleteGlobalRef(jenv, c.jContext)
@@ -79,16 +79,16 @@ func (c *context) Suffix() string {
 }
 
 func (c *context) Label() security.Label {
-	jEnv, freeFunc := util.GetEnv(c.jVM)
+	jEnv, freeFunc := jutil.GetEnv(c.jVM)
 	env := (*C.JNIEnv)(jEnv)
 	defer freeFunc()
-	labelSign := util.ClassSign("io.veyron.veyron.veyron2.security.Label")
-	jLabel, err := util.CallObjectMethod(env, c.jContext, "label", nil, labelSign)
+	labelSign := jutil.ClassSign("io.veyron.veyron.veyron2.security.Label")
+	jLabel, err := jutil.CallObjectMethod(env, c.jContext, "label", nil, labelSign)
 	if err != nil {
 		log.Printf("Couldn't call Java label method: %v", err)
 		return security.Label(0)
 	}
-	return security.Label(util.JIntField(env, jLabel, "value"))
+	return security.Label(jutil.JIntField(env, jLabel, "value"))
 }
 
 func (c *context) Discharges() map[string]security.Discharge {
@@ -107,10 +107,10 @@ func (c *context) LocalEndpoint() naming.Endpoint {
 }
 
 func (c *context) LocalPrincipal() security.Principal {
-	jEnv, freeFunc := util.GetEnv(c.jVM)
+	jEnv, freeFunc := jutil.GetEnv(c.jVM)
 	env := (*C.JNIEnv)(jEnv)
 	defer freeFunc()
-	jPrincipal, err := util.CallObjectMethod(env, c.jContext, "localPrincipal", nil, blessingsSign)
+	jPrincipal, err := jutil.CallObjectMethod(env, c.jContext, "localPrincipal", nil, blessingsSign)
 	if err != nil {
 		log.Printf("Couldn't call Java localPrincipal method: %v", err)
 		return nil
@@ -124,10 +124,10 @@ func (c *context) LocalPrincipal() security.Principal {
 }
 
 func (c *context) LocalBlessings() security.Blessings {
-	jEnv, freeFunc := util.GetEnv(c.jVM)
+	jEnv, freeFunc := jutil.GetEnv(c.jVM)
 	env := (*C.JNIEnv)(jEnv)
 	defer freeFunc()
-	jBlessings, err := util.CallObjectMethod(env, c.jContext, "localBlessings", nil, blessingsSign)
+	jBlessings, err := jutil.CallObjectMethod(env, c.jContext, "localBlessings", nil, blessingsSign)
 	if err != nil {
 		log.Printf("Couldn't call Java localBlessings method: %v", err)
 		return nil
@@ -141,10 +141,10 @@ func (c *context) LocalBlessings() security.Blessings {
 }
 
 func (c *context) RemoteBlessings() security.Blessings {
-	jEnv, freeFunc := util.GetEnv(c.jVM)
+	jEnv, freeFunc := jutil.GetEnv(c.jVM)
 	env := (*C.JNIEnv)(jEnv)
 	defer freeFunc()
-	jBlessings, err := util.CallObjectMethod(env, c.jContext, "remoteBlessings", nil, blessingsSign)
+	jBlessings, err := jutil.CallObjectMethod(env, c.jContext, "remoteBlessings", nil, blessingsSign)
 	if err != nil {
 		log.Printf("Couldn't call Java remoteBlessings method: %v", err)
 		return nil
@@ -168,10 +168,10 @@ func (c *context) RemoteEndpoint() naming.Endpoint {
 }
 
 func (c *context) callStringMethod(methodName string) string {
-	jEnv, freeFunc := util.GetEnv(c.jVM)
+	jEnv, freeFunc := jutil.GetEnv(c.jVM)
 	env := (*C.JNIEnv)(jEnv)
 	defer freeFunc()
-	ret, err := util.CallStringMethod(env, c.jContext, methodName, nil)
+	ret, err := jutil.CallStringMethod(env, c.jContext, methodName, nil)
 	if err != nil {
 		log.Printf("Couldn't call Java %q method: %v", methodName, err)
 		return ""

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"unsafe"
 
-	"veyron.io/jni/util"
+	jutil "veyron.io/jni/util"
 	jsecurity "veyron.io/jni/veyron/runtimes/google/security"
 	jcontext "veyron.io/jni/veyron2/context"
 	"veyron.io/veyron/veyron/profiles/roaming"
@@ -17,29 +17,36 @@ import (
 // #include "jni_wrapper.h"
 import "C"
 
-// javaServer converts the provided Go Server into a Java Server object.
-func javaServer(env *C.JNIEnv, server ipc.Server) (C.jobject, error) {
+// JavaServer converts the provided Go Server into a Java Server object.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func JavaServer(jEnv interface{}, server ipc.Server) (C.jobject, error) {
 	if server == nil {
 		return nil, nil
 	}
-	jServer, err := util.NewObject(env, jServerClass, []util.Sign{util.LongSign}, int64(util.PtrValue(&server)))
+	jServer, err := jutil.NewObject(jEnv, jServerClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&server)))
 	if err != nil {
 		return nil, err
 	}
-	util.GoRef(&server) // Un-refed when the Java Server object is finalized.
+	jutil.GoRef(&server) // Un-refed when the Java Server object is finalized.
 	return C.jobject(jServer), nil
 }
 
-// javaClient converts the provided Go client into a Java Client object.
-func javaClient(env *C.JNIEnv, c *client) (C.jobject, error) {
-	if c == nil {
+// JavaClient converts the provided Go client into a Java Client object.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func JavaClient(jEnv interface{}, client ipc.Client) (C.jobject, error) {
+	if client == nil {
 		return nil, nil
 	}
-	jClient, err := util.NewObject(env, jClientClass, []util.Sign{util.LongSign}, int64(util.PtrValue(c)))
+	c := newClient(client)
+	jClient, err := jutil.NewObject(jEnv, jClientClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(c)))
 	if err != nil {
 		return nil, err
 	}
-	util.GoRef(c) // Un-refed when the Java Client object is finalized.
+	jutil.GoRef(c) // Un-refed when the Java Client object is finalized.
 	return C.jobject(jClient), nil
 }
 
@@ -61,13 +68,13 @@ func javaServerCall(env *C.JNIEnv, call *serverCall) (C.jobject, error) {
 	if err != nil {
 		return nil, err
 	}
-	contextSign := util.ClassSign("io.veyron.veyron.veyron2.context.Context")
-	securityContextSign := util.ClassSign("io.veyron.veyron.veyron.runtimes.google.security.Context")
-	jServerCall, err := util.NewObject(env, jServerCallClass, []util.Sign{util.LongSign, streamSign, contextSign, securityContextSign}, int64(util.PtrValue(call)), jStream, jContext, jSecurityContext)
+	contextSign := jutil.ClassSign("io.veyron.veyron.veyron2.context.Context")
+	securityContextSign := jutil.ClassSign("io.veyron.veyron.veyron.runtimes.google.security.Context")
+	jServerCall, err := jutil.NewObject(env, jServerCallClass, []jutil.Sign{jutil.LongSign, streamSign, contextSign, securityContextSign}, int64(jutil.PtrValue(call)), jStream, jContext, jSecurityContext)
 	if err != nil {
 		return nil, err
 	}
-	util.GoRef(call) // Un-refed when the Java ServerCall object is finalized.
+	jutil.GoRef(call) // Un-refed when the Java ServerCall object is finalized.
 	return C.jobject(jServerCall), nil
 }
 
@@ -81,34 +88,38 @@ func javaClientCall(env *C.JNIEnv, call *clientCall) (C.jobject, error) {
 	if err != nil {
 		return nil, err
 	}
-	jClientCall, err := util.NewObject(env, jClientCallClass, []util.Sign{util.LongSign, streamSign}, int64(util.PtrValue(call)), jStream)
+	jClientCall, err := jutil.NewObject(env, jClientCallClass, []jutil.Sign{jutil.LongSign, streamSign}, int64(jutil.PtrValue(call)), jStream)
 	if err != nil {
 		return nil, err
 	}
-	util.GoRef(call) // Un-refed when the Java ClientCall object is finalized.
+	jutil.GoRef(call) // Un-refed when the Java ClientCall object is finalized.
 	return C.jobject(jClientCall), nil
 }
 
 // javaStream converts the provided Go stream into a Java Stream object.
 func javaStream(env *C.JNIEnv, streamIn interface{}) (C.jobject, error) {
-	s := (*stream)(unsafe.Pointer(util.PtrValue(streamIn)))
+	s := (*stream)(unsafe.Pointer(jutil.PtrValue(streamIn)))
 	if s == nil {
 		return nil, nil
 	}
-	jStream, err := util.NewObject(env, jStreamClass, []util.Sign{util.LongSign}, C.jlong(util.PtrValue(s)))
+	jStream, err := jutil.NewObject(env, jStreamClass, []jutil.Sign{jutil.LongSign}, C.jlong(jutil.PtrValue(s)))
 	if err != nil {
 		return nil, err
 	}
-	util.GoRef(s) // Un-refed when the Java stream object is finalized.
+	jutil.GoRef(s) // Un-refed when the Java stream object is finalized.
 	return C.jobject(jStream), nil
 }
 
+// GoListenSpec converts the provided Java ListenSpec into a Go ListenSpec.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
 func GoListenSpec(jEnv, jSpec interface{}) (ipc.ListenSpec, error) {
-	protocol, err := util.CallStringMethod(jEnv, jSpec, "getProtocol", nil)
+	protocol, err := jutil.CallStringMethod(jEnv, jSpec, "getProtocol", nil)
 	if err != nil {
 		return ipc.ListenSpec{}, err
 	}
-	proxy, err := util.CallStringMethod(jEnv, jSpec, "getProxy", nil)
+	proxy, err := jutil.CallStringMethod(jEnv, jSpec, "getProxy", nil)
 	if err != nil {
 		return ipc.ListenSpec{}, err
 	}

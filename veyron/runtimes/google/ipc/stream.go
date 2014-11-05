@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"veyron.io/jni/util"
+	jutil "veyron.io/jni/util"
 	"veyron.io/veyron/veyron2/ipc"
 )
 
@@ -27,7 +27,7 @@ type stream struct {
 }
 
 func (s *stream) Send(env *C.JNIEnv, jItem C.jstring) error {
-	argStr := util.GoString(env, jItem)
+	argStr := jutil.GoString(env, jItem)
 	argptr := s.mArgs.StreamSendPtr()
 	if argptr == nil {
 		return fmt.Errorf("nil stream input argument, expected a non-nil type for argument %q", argStr)
@@ -35,7 +35,7 @@ func (s *stream) Send(env *C.JNIEnv, jItem C.jstring) error {
 	if err := json.Unmarshal([]byte(argStr), argptr); err != nil {
 		return err
 	}
-	return s.stream.Send(util.DerefOrDie(argptr))
+	return s.stream.Send(jutil.DerefOrDie(argptr))
 }
 
 func (s *stream) Recv(env *C.JNIEnv) (C.jstring, error) {
@@ -47,9 +47,9 @@ func (s *stream) Recv(env *C.JNIEnv) (C.jstring, error) {
 		return nil, err
 	}
 	// JSON encode the result.
-	result, err := json.Marshal(util.DerefOrDie(argptr))
+	result, err := json.Marshal(jutil.DerefOrDie(argptr))
 	if err != nil {
 		return nil, err
 	}
-	return C.jstring(util.JString(env, string(result))), nil
+	return C.jstring(jutil.JString(env, string(result))), nil
 }

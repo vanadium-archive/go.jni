@@ -6,9 +6,9 @@ import (
 	"flag"
 	"unsafe"
 
-	"veyron.io/jni/util"
-	"veyron.io/jni/veyron/runtimes/google"
-	"veyron.io/jni/veyron2"
+	jutil "veyron.io/jni/util"
+	jgoogle "veyron.io/jni/veyron/runtimes/google"
+	jveyron2 "veyron.io/jni/veyron2"
 )
 
 // #cgo LDFLAGS: -ljniwrapper
@@ -22,14 +22,14 @@ func Init(env *C.JNIEnv) {}
 
 //export JNI_OnLoad
 func JNI_OnLoad(jVM *C.JavaVM, reserved unsafe.Pointer) C.jint {
-	jEnv, freeFunc := util.GetEnv(jVM)
+	jEnv, freeFunc := jutil.GetEnv(jVM)
 	env := (*C.JNIEnv)(jEnv)
 	defer freeFunc()
 
 	Init(env)
-	util.Init(env)
-	veyron2.Init(env)
-	google.Init(env)
+	jutil.Init(env)
+	jveyron2.Init(env)
+	jgoogle.Init(env)
 	return C.JNI_VERSION_1_6
 }
 

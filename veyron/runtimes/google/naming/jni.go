@@ -3,7 +3,7 @@
 package naming
 
 import (
-	"veyron.io/jni/util"
+	jutil "veyron.io/jni/util"
 	jcontext "veyron.io/jni/veyron2/context"
 	"veyron.io/veyron/veyron2/naming"
 )
@@ -21,15 +21,15 @@ func Init(jEnv interface{}) {}
 
 //export Java_io_veyron_veyron_veyron_runtimes_google_naming_Namespace_nativeGlob
 func Java_io_veyron_veyron_veyron_runtimes_google_naming_Namespace_nativeGlob(env *C.JNIEnv, jNamespace C.jobject, goNamespacePtr C.jlong, jContext C.jobject, pattern C.jstring) C.jlong {
-	n := *(*naming.Namespace)(util.Ptr(goNamespacePtr))
+	n := *(*naming.Namespace)(jutil.Ptr(goNamespacePtr))
 	context, err := jcontext.GoContext(env, jContext)
 	if err != nil {
-		util.JThrowV(env, err)
+		jutil.JThrowV(env, err)
 		return C.jlong(0)
 	}
-	entryChan, err := n.Glob(context, util.GoString(env, pattern))
+	entryChan, err := n.Glob(context, jutil.GoString(env, pattern))
 	if err != nil {
-		util.JThrowV(env, err)
+		jutil.JThrowV(env, err)
 		return C.jlong(0)
 	}
 	// We want to return chan interface{}, not chan naming.MountEntry, so we
@@ -53,11 +53,11 @@ func Java_io_veyron_veyron_veyron_runtimes_google_naming_Namespace_nativeGlob(en
 		}
 		close(retChan)
 	}()
-	util.GoRef(&retChan) // Un-refed when the InputChannel is finalized.
-	return C.jlong(util.PtrValue(&retChan))
+	jutil.GoRef(&retChan) // Un-refed when the InputChannel is finalized.
+	return C.jlong(jutil.PtrValue(&retChan))
 }
 
 //export Java_io_veyron_veyron_veyron_runtimes_google_naming_Namespace_nativeFinalize
 func Java_io_veyron_veyron_veyron_runtimes_google_naming_Namespace_nativeFinalize(env *C.JNIEnv, jNamespace C.jobject, goNamespacePtr C.jlong) {
-	util.GoUnref((*naming.Namespace)(util.Ptr(goNamespacePtr)))
+	jutil.GoUnref((*naming.Namespace)(jutil.Ptr(goNamespacePtr)))
 }

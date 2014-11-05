@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"runtime"
 
-	"veyron.io/jni/util"
+	jutil "veyron.io/jni/util"
 	"veyron.io/veyron/veyron2/ipc"
 	"veyron.io/veyron/veyron2/verror"
 )
@@ -18,18 +18,18 @@ import "C"
 
 func goInvoker(env *C.JNIEnv, jObj C.jobject) (ipc.Invoker, error) {
 	// Create a new Java VDLInvoker object.
-	jInvokerObj, err := util.NewObject(env, jVDLInvokerClass, []util.Sign{util.ObjectSign}, jObj)
+	jInvokerObj, err := jutil.NewObject(env, jVDLInvokerClass, []jutil.Sign{jutil.ObjectSign}, jObj)
 	if err != nil {
 		return nil, fmt.Errorf("error creating Java VDLInvoker object: %v", err)
 	}
 	jInvoker := C.jobject(jInvokerObj)
 
 	// Fetch the argGetter for the object.
-	jPathArray, err := util.CallObjectMethod(env, jInvoker, "getImplementedServices", nil, util.ArraySign(util.StringSign))
+	jPathArray, err := jutil.CallObjectMethod(env, jInvoker, "getImplementedServices", nil, jutil.ArraySign(jutil.StringSign))
 	if err != nil {
 		return nil, err
 	}
-	paths := util.GoStringArray(env, jPathArray)
+	paths := jutil.GoStringArray(env, jPathArray)
 	getter, err := newArgGetter(paths)
 	if err != nil {
 		return nil, err
@@ -53,7 +53,7 @@ func goInvoker(env *C.JNIEnv, jObj C.jobject) (ipc.Invoker, error) {
 		argGetter: getter,
 	}
 	runtime.SetFinalizer(i, func(i *invoker) {
-		jEnv, freeFunc := util.GetEnv(i.jVM)
+		jEnv, freeFunc := jutil.GetEnv(i.jVM)
 		env := (*C.JNIEnv)(jEnv)
 		defer freeFunc()
 		C.DeleteGlobalRef(env, i.jInvoker)
@@ -73,7 +73,7 @@ func (i *invoker) Prepare(method string, numArgs int) (argptrs, tags []interface
 	// arguments into vom.Value objects, which we shall then de-serialize into
 	// Java objects (see Invoke comments below).  This approach is blocked on
 	// pending VOM encoder/decoder changes as well as Java (de)serializer.
-	jEnv, freeFunc := util.GetEnv(i.jVM)
+	jEnv, freeFunc := jutil.GetEnv(i.jVM)
 	env := (*C.JNIEnv)(jEnv)
 	defer freeFunc()
 
@@ -85,11 +85,11 @@ func (i *invoker) Prepare(method string, numArgs int) (argptrs, tags []interface
 	argptrs = mArgs.InPtrs()
 
 	// Get the method tags.
-	jTags, err := util.CallObjectMethod(env, i.jInvoker, "getMethodTags", []util.Sign{util.StringSign}, util.ArraySign(util.ObjectSign), util.CamelCase(method))
+	jTags, err := jutil.CallObjectMethod(env, i.jInvoker, "getMethodTags", []jutil.Sign{jutil.StringSign}, jutil.ArraySign(jutil.ObjectSign), jutil.CamelCase(method))
 	if err != nil {
 		return nil, nil, err
 	}
-	tagsJava := util.GoObjectArray(env, jTags)
+	tagsJava := jutil.GoObjectArray(env, jTags)
 	if tagsJava != nil {
 		tags = make([]interface{}, len(tagsJava))
 		for i, tag := range tagsJava {
@@ -107,7 +107,7 @@ func (i *invoker) Invoke(method string, call ipc.ServerCall, argptrs []interface
 	// method.  The returned Java objects will be converted into serialized
 	// vom.Values, which will then be returned.  This approach is blocked on VOM
 	// encoder/decoder changes as well as Java's (de)serializer.
-	jEnv, freeFunc := util.GetEnv(i.jVM)
+	jEnv, freeFunc := jutil.GetEnv(i.jVM)
 	env := (*C.JNIEnv)(jEnv)
 	defer freeFunc()
 
@@ -128,9 +128,9 @@ func (i *invoker) Invoke(method string, call ipc.ServerCall, argptrs []interface
 		return
 	}
 	// Invoke the method.
-	callSign := util.ClassSign("io.veyron.veyron.veyron2.ipc.ServerCall")
-	replySign := util.ClassSign("io.veyron.veyron.veyron.runtimes.google.VDLInvoker$InvokeReply")
-	jReply, err := util.CallObjectMethod(env, i.jInvoker, "invoke", []util.Sign{util.StringSign, callSign, util.ArraySign(util.StringSign)}, replySign, util.CamelCase(method), jServerCall, jArgs)
+	callSign := jutil.ClassSign("io.veyron.veyron.veyron2.ipc.ServerCall")
+	replySign := jutil.ClassSign("io.veyron.veyron.veyron.runtimes.google.ipc.VDLInvoker$InvokeReply")
+	jReply, err := jutil.CallObjectMethod(env, i.jInvoker, "invoke", []jutil.Sign{jutil.StringSign, callSign, jutil.ArraySign(jutil.StringSign)}, replySign, jutil.CamelCase(method), jServerCall, jArgs)
 	if err != nil {
 		return nil, fmt.Errorf("error invoking Java method %q: %v", method, err)
 	}
@@ -146,7 +146,7 @@ func (*invoker) encodeArgs(env *C.JNIEnv, argptrs []interface{}) (C.jobjectArray
 	for i, argptr := range argptrs {
 		// Remove the pointer from the argument.  Simply *argptr doesn't work
 		// as argptr is of type interface{}.
-		arg := util.DerefOrDie(argptr)
+		arg := jutil.DerefOrDie(argptr)
 		var err error
 		jsonArgs[i], err = json.Marshal(arg)
 		if err != nil {
@@ -157,7 +157,7 @@ func (*invoker) encodeArgs(env *C.JNIEnv, argptrs []interface{}) (C.jobjectArray
 	// Convert to Java array of C.jstring.
 	ret := C.NewObjectArray(env, C.jsize(len(argptrs)), jStringClass, nil)
 	for i, arg := range jsonArgs {
-		C.SetObjectArrayElement(env, ret, C.jsize(i), C.jobject(util.JString(env, string(arg))))
+		C.SetObjectArrayElement(env, ret, C.jsize(i), C.jobject(jutil.JString(env, string(arg))))
 	}
 	return ret, nil
 }
@@ -166,10 +166,10 @@ func (*invoker) encodeArgs(env *C.JNIEnv, argptrs []interface{}) (C.jobjectArray
 // returns an array of Go reply objects.
 func (i *invoker) decodeResults(env *C.JNIEnv, method string, numArgs int, jReply C.jobject) ([]interface{}, error) {
 	// Unpack the replies.
-	results := util.JStringArrayField(env, jReply, "results")
-	hasAppErr := util.JBoolField(env, jReply, "hasApplicationError")
-	errorID := util.JStringField(env, jReply, "errorID")
-	errorMsg := util.JStringField(env, jReply, "errorMsg")
+	results := jutil.JStringArrayField(env, jReply, "results")
+	hasAppErr := jutil.JBoolField(env, jReply, "hasApplicationError")
+	errorID := jutil.JStringField(env, jReply, "errorID")
+	errorMsg := jutil.JStringField(env, jReply, "errorMsg")
 
 	// Get result instances.
 	mArgs := i.argGetter.FindMethod(method, numArgs)
@@ -199,7 +199,7 @@ func (i *invoker) decodeResults(env *C.JNIEnv, method string, numArgs int, jRepl
 func resultsWithError(resultptrs []interface{}, err error) []interface{} {
 	ret := make([]interface{}, len(resultptrs)+1)
 	for i, resultptr := range resultptrs {
-		ret[i] = util.DerefOrDie(resultptr)
+		ret[i] = jutil.DerefOrDie(resultptr)
 	}
 	ret[len(resultptrs)] = err
 	return ret

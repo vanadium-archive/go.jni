@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"runtime"
 
-	"veyron.io/jni/util"
-	isecurity "veyron.io/jni/veyron/runtimes/google/security"
+	jutil "veyron.io/jni/util"
+	jsecurity "veyron.io/jni/veyron/runtimes/google/security"
 	"veyron.io/veyron/veyron2/security"
 )
 
@@ -32,7 +32,7 @@ func goDispatcher(env *C.JNIEnv, jDispatcher C.jobject) (*dispatcher, error) {
 		jDispatcher: jDispatcher,
 	}
 	runtime.SetFinalizer(d, func(d *dispatcher) {
-		jEnv, freeFunc := util.GetEnv(d.jVM)
+		jEnv, freeFunc := jutil.GetEnv(d.jVM)
 		env := (*C.JNIEnv)(jEnv)
 		defer freeFunc()
 		C.DeleteGlobalRef(env, d.jDispatcher)
@@ -48,13 +48,13 @@ type dispatcher struct {
 
 func (d *dispatcher) Lookup(suffix, method string) (interface{}, security.Authorizer, error) {
 	// Get Java environment.
-	jEnv, freeFunc := util.GetEnv(d.jVM)
+	jEnv, freeFunc := jutil.GetEnv(d.jVM)
 	env := (*C.JNIEnv)(jEnv)
 	defer freeFunc()
 
 	// Call Java dispatcher's lookup() method.
-	serviceObjectWithAuthorizerSign := util.ClassSign("io.veyron.veyron.veyron2.ipc.ServiceObjectWithAuthorizer")
-	tempJObj, err := util.CallObjectMethod(env, d.jDispatcher, "lookup", []util.Sign{util.StringSign}, serviceObjectWithAuthorizerSign, suffix)
+	serviceObjectWithAuthorizerSign := jutil.ClassSign("io.veyron.veyron.veyron2.ipc.ServiceObjectWithAuthorizer")
+	tempJObj, err := jutil.CallObjectMethod(env, d.jDispatcher, "lookup", []jutil.Sign{jutil.StringSign}, serviceObjectWithAuthorizerSign, suffix)
 	jObj := C.jobject(tempJObj)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error invoking Java dispatcher's lookup() method: %v", err)
@@ -66,15 +66,15 @@ func (d *dispatcher) Lookup(suffix, method string) (interface{}, security.Author
 	}
 
 	// Extract the Java service object and Authorizer.
-	jServiceObj, err := util.CallObjectMethod(env, jObj, "getServiceObject", nil, util.ObjectSign)
+	jServiceObj, err := jutil.CallObjectMethod(env, jObj, "getServiceObject", nil, jutil.ObjectSign)
 	if err != nil {
 		return nil, nil, err
 	}
 	if jServiceObj == nil {
 		return nil, nil, fmt.Errorf("null service object returned by Java's ServiceObjectWithAuthorizer")
 	}
-	authSign := util.ClassSign("io.veyron.veyron.veyron2.security.Authorizer")
-	jAuth, err := util.CallObjectMethod(env, jObj, "getAuthorizer", nil, authSign)
+	authSign := jutil.ClassSign("io.veyron.veyron.veyron2.security.Authorizer")
+	jAuth, err := jutil.CallObjectMethod(env, jObj, "getAuthorizer", nil, authSign)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -84,7 +84,7 @@ func (d *dispatcher) Lookup(suffix, method string) (interface{}, security.Author
 	if err != nil {
 		return nil, nil, err
 	}
-	a, err := isecurity.GoAuthorizer(env, jAuth)
+	a, err := jsecurity.GoAuthorizer(env, jAuth)
 	if err != nil {
 		return nil, nil, err
 	}

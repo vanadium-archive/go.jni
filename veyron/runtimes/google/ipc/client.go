@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"veyron.io/jni/util"
+	jutil "veyron.io/jni/util"
 	jcontext "veyron.io/jni/veyron2/context"
 	"veyron.io/veyron/veyron2/ipc"
 )
@@ -34,7 +34,7 @@ func (c *client) StartCall(env *C.JNIEnv, jContext C.jobject, name, method strin
 	// Convert Java argument array into []string.
 	argStrs := make([]string, int(C.GetArrayLength(env, C.jarray(jArgs))))
 	for i := 0; i < len(argStrs); i++ {
-		argStrs[i] = util.GoString(env, C.GetObjectArrayElement(env, jArgs, C.jsize(i)))
+		argStrs[i] = jutil.GoString(env, C.GetObjectArrayElement(env, jArgs, C.jsize(i)))
 	}
 	// Get argument instances that correspond to the provided method.
 	vdlPackagePathPtr, err := getVDLPathOpt(env, jOptions)
@@ -50,7 +50,7 @@ func (c *client) StartCall(env *C.JNIEnv, jContext C.jobject, name, method strin
 	}
 	mArgs := getter.FindMethod(method, len(argStrs))
 	if mArgs == nil {
-		return nil, fmt.Errorf("couldn't find method %s with %d args in VDL interface at path %q", method, len(argStrs), util.GoString(env, *vdlPackagePathPtr))
+		return nil, fmt.Errorf("couldn't find method %s with %d args in VDL interface at path %q", method, len(argStrs), jutil.GoString(env, *vdlPackagePathPtr))
 	}
 	argptrs := mArgs.InPtrs()
 	if len(argptrs) != len(argStrs) {
@@ -64,7 +64,7 @@ func (c *client) StartCall(env *C.JNIEnv, jContext C.jobject, name, method strin
 		}
 		// Remove the pointer from the argument.  Simply *argptr[i] doesn't work
 		// as argptr[i] is of type interface{}.
-		args[i] = util.DerefOrDie(argptrs[i])
+		args[i] = jutil.DerefOrDie(argptrs[i])
 	}
 
 	// Convert context.
@@ -114,7 +114,7 @@ func (c *clientCall) Finish(env *C.JNIEnv) (C.jobjectArray, error) {
 	for i, resultptr := range resultptrs {
 		// Remove the pointer from the result.  Simply *resultptr doesn't work
 		// as resultptr is of type interface{}.
-		result := util.DerefOrDie(resultptr)
+		result := jutil.DerefOrDie(resultptr)
 
 		// See if the result has a VomEncode method, which converts the result into a VDL type.
 		// If it does, invoke the method as the resulting VDL type is guaranteed to be
@@ -137,11 +137,35 @@ func (c *clientCall) Finish(env *C.JNIEnv) (C.jobjectArray, error) {
 	// Convert to Java array of C.jstring.
 	ret := C.NewObjectArray(env, C.jsize(len(jsonResults)), jStringClass, nil)
 	for i, result := range jsonResults {
-		C.SetObjectArrayElement(env, ret, C.jsize(i), C.jobject(util.JString(env, string(result))))
+		C.SetObjectArrayElement(env, ret, C.jsize(i), C.jobject(jutil.JString(env, string(result))))
 	}
 	return ret, nil
 }
 
 func (c *clientCall) Cancel() {
 	c.call.Cancel()
+}
+
+// getVDLPathOpt retrieves the Java VDL_PATH option.
+func getVDLPathOpt(env *C.JNIEnv, jOptions C.jobject) (*string, error) {
+	if jOptions == nil {
+		return nil, nil
+	}
+	vdlPathKey := jutil.JStaticStringField(env, jOptionDefsClass, "VDL_INTERFACE_PATH")
+	has, err := jutil.CallBooleanMethod(env, jOptions, "has", []jutil.Sign{jutil.StringSign}, vdlPathKey)
+	if err != nil {
+		return nil, err
+	}
+	if !has {
+		return nil, nil
+	}
+	jPath, err := jutil.CallObjectMethod(env, jOptions, "get", []jutil.Sign{jutil.StringSign}, jutil.ObjectSign, vdlPathKey)
+	if err != nil {
+		return nil, err
+	}
+	if jPath == nil {
+		return nil, nil
+	}
+	path := jutil.GoString(env, jPath)
+	return &path, nil
 }

@@ -3,7 +3,7 @@
 package security
 
 import (
-	"veyron.io/jni/util"
+	jutil "veyron.io/jni/util"
 	"veyron.io/veyron/veyron2/security"
 )
 
@@ -16,10 +16,10 @@ import "C"
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func JavaContext(jEnv interface{}, context security.Context) (C.jobject, error) {
-	jContext, err := util.NewObject(jEnv, jContextImplClass, []util.Sign{util.LongSign}, &context)
+	jContext, err := jutil.NewObject(jEnv, jContextImplClass, []jutil.Sign{jutil.LongSign}, &context)
 	if err != nil {
 		return nil, err
 	}
-	util.GoRef(&context) // Un-refed when the Java Context object is finalized.
+	jutil.GoRef(&context) // Un-refed when the Java Context object is finalized.
 	return C.jobject(jContext), nil
 }

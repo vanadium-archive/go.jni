@@ -8,7 +8,7 @@ import (
 	"runtime"
 	"unsafe"
 
-	"veyron.io/jni/util"
+	jutil "veyron.io/jni/util"
 	"veyron.io/veyron/veyron2/context"
 )
 
@@ -29,15 +29,15 @@ type goContextValue struct {
 func JavaContext(jEnv interface{}, ctx context.T, cancel context.CancelFunc) (C.jobject, error) {
 	cancelPtr := int64(0)
 	if cancel != nil {
-		cancelPtr = int64(util.PtrValue(&cancel))
+		cancelPtr = int64(jutil.PtrValue(&cancel))
 	}
-	jCtx, err := util.NewObject(jEnv, jContextImplClass, []util.Sign{util.LongSign, util.LongSign}, int64(util.PtrValue(&ctx)), cancelPtr)
+	jCtx, err := jutil.NewObject(jEnv, jContextImplClass, []jutil.Sign{jutil.LongSign, jutil.LongSign}, int64(jutil.PtrValue(&ctx)), cancelPtr)
 	if err != nil {
 		return nil, err
 	}
-	util.GoRef(&ctx) // Un-refed when the Java context object is finalized.
+	jutil.GoRef(&ctx) // Un-refed when the Java context object is finalized.
 	if cancel != nil {
-		util.GoRef(&cancel) // Un-refed when the Java context object is finalized.
+		jutil.GoRef(&cancel) // Un-refed when the Java context object is finalized.
 	}
 	return C.jobject(jCtx), err
 }
@@ -51,11 +51,11 @@ func GoContext(jEnv, jContextObj interface{}) (context.T, error) {
 	if jContext == nil {
 		return nil, nil
 	}
-	goCtxPtr, err := util.CallLongMethod(jEnv, jContext, "nativePtr", nil)
+	goCtxPtr, err := jutil.CallLongMethod(jEnv, jContext, "nativePtr", nil)
 	if err != nil {
 		return nil, err
 	}
-	return *(*context.T)(util.Ptr(goCtxPtr)), nil
+	return *(*context.T)(jutil.Ptr(goCtxPtr)), nil
 }
 
 // JavaCountDownLatch creates a Java CountDownLatch object with an initial count
@@ -66,7 +66,7 @@ func GoContext(jEnv, jContextObj interface{}) (context.T, error) {
 // and then cast into their package local types.
 func JavaCountDownLatch(jEnv interface{}, c <-chan struct{}) (C.jobject, error) {
 	env := getEnv(jEnv)
-	jLatchObj, err := util.NewObject(env, jCountDownLatchClass, []util.Sign{util.IntSign}, int(1))
+	jLatchObj, err := jutil.NewObject(env, jCountDownLatchClass, []jutil.Sign{jutil.IntSign}, int(1))
 	if err != nil {
 		return nil, err
 	}
@@ -82,10 +82,10 @@ func JavaCountDownLatch(jEnv interface{}, c <-chan struct{}) (C.jobject, error) 
 	jLatch = C.NewGlobalRef(env, jLatch)
 	go func() {
 		<-c
-		javaEnv, freeFunc := util.GetEnv(jVM)
+		javaEnv, freeFunc := jutil.GetEnv(jVM)
 		jenv := (*C.JNIEnv)(javaEnv)
 		defer freeFunc()
-		if err := util.CallVoidMethod(jenv, jLatch, "countDown", nil); err != nil {
+		if err := jutil.CallVoidMethod(jenv, jLatch, "countDown", nil); err != nil {
 			log.Printf("Error decrementing CountDownLatch: %v", err)
 		}
 		C.DeleteGlobalRef(jenv, jLatch)
@@ -104,15 +104,15 @@ func GoContextKey(jEnv, jKeyObj interface{}) (interface{}, error) {
 	jKey := getObject(jKeyObj)
 
 	// Create a lookup key we use to map Java context keys to Go context keys.
-	hashCode, err := util.CallIntMethod(env, jKey, "hashCode", nil)
+	hashCode, err := jutil.CallIntMethod(env, jKey, "hashCode", nil)
 	if err != nil {
 		return nil, err
 	}
-	jClass, err := util.CallObjectMethod(env, jKey, "getClass", nil, classSign)
+	jClass, err := jutil.CallObjectMethod(env, jKey, "getClass", nil, classSign)
 	if err != nil {
 		return nil, err
 	}
-	className, err := util.CallStringMethod(env, jClass, "getName", nil)
+	className, err := jutil.CallStringMethod(env, jClass, "getName", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -142,7 +142,7 @@ func GoContextValue(jEnv, jValueObj interface{}) (interface{}, error) {
 		jObj: jValue,
 	}
 	runtime.SetFinalizer(value, func(value *goContextValue) {
-		javaEnv, freeFunc := util.GetEnv(jVM)
+		javaEnv, freeFunc := jutil.GetEnv(jVM)
 		jenv := (*C.JNIEnv)(javaEnv)
 		defer freeFunc()
 		C.DeleteGlobalRef(jenv, value.jObj)
@@ -163,8 +163,8 @@ func JavaContextValue(jEnv interface{}, value interface{}) (C.jobject, error) {
 }
 
 func getEnv(jEnv interface{}) *C.JNIEnv {
-	return (*C.JNIEnv)(unsafe.Pointer(util.PtrValue(jEnv)))
+	return (*C.JNIEnv)(unsafe.Pointer(jutil.PtrValue(jEnv)))
 }
 func getObject(jObj interface{}) C.jobject {
-	return C.jobject(unsafe.Pointer(util.PtrValue(jObj)))
+	return C.jobject(unsafe.Pointer(jutil.PtrValue(jObj)))
 }

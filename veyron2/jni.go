@@ -3,8 +3,8 @@
 package veyron2
 
 import (
-	"veyron.io/jni/veyron2/context"
-	"veyron.io/jni/veyron2/security"
+	jcontext "veyron.io/jni/veyron2/context"
+	jsecurity "veyron.io/jni/veyron2/security"
 )
 
 // #cgo LDFLAGS: -ljniwrapper
@@ -18,6 +18,6 @@ import "C"
 // invoked from a different package, Java environment is passed in an empty
 // interface and then cast into the package-local environment type.
 func Init(jEnv interface{}) {
-	context.Init(jEnv)
-	security.Init(jEnv)
+	jcontext.Init(jEnv)
+	jsecurity.Init(jEnv)
 }

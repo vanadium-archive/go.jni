@@ -8,7 +8,7 @@ import (
 	"runtime"
 	"unsafe"
 
-	"veyron.io/jni/util"
+	jutil "veyron.io/jni/util"
 	"veyron.io/veyron/veyron2/security"
 )
 
@@ -22,12 +22,12 @@ import "C"
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func JavaBlessingStore(jEnv interface{}, store security.BlessingStore) (C.jobject, error) {
-	env := (*C.JNIEnv)(unsafe.Pointer(util.PtrValue(jEnv)))
-	jObj, err := util.NewObject(env, jBlessingStoreImplClass, []util.Sign{util.LongSign}, &store)
+	env := (*C.JNIEnv)(unsafe.Pointer(jutil.PtrValue(jEnv)))
+	jObj, err := jutil.NewObject(env, jBlessingStoreImplClass, []jutil.Sign{jutil.LongSign}, &store)
 	if err != nil {
 		return nil, err
 	}
-	util.GoRef(&store) // Un-refed when the Java BlessingStoreImpl is finalized.
+	jutil.GoRef(&store) // Un-refed when the Java BlessingStoreImpl is finalized.
 	return C.jobject(jObj), nil
 }
 
@@ -37,7 +37,7 @@ func JavaBlessingStore(jEnv interface{}, store security.BlessingStore) (C.jobjec
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func GoBlessingStore(jEnv interface{}, jBlessingStore C.jobject) (security.BlessingStore, error) {
-	env := (*C.JNIEnv)(unsafe.Pointer(util.PtrValue(jEnv)))
+	env := (*C.JNIEnv)(unsafe.Pointer(jutil.PtrValue(jEnv)))
 	// We cannot cache Java environments as they are only valid in the current
 	// thread.  We can, however, cache the Java VM and obtain an environment
 	// from it in whatever thread happens to be running at the time.
@@ -54,7 +54,7 @@ func GoBlessingStore(jEnv interface{}, jBlessingStore C.jobject) (security.Bless
 		jBlessingStore: jBlessingStore,
 	}
 	runtime.SetFinalizer(s, func(s *blessingStore) {
-		envPtr, freeFunc := util.GetEnv(s.jVM)
+		envPtr, freeFunc := jutil.GetEnv(s.jVM)
 		env := (*C.JNIEnv)(envPtr)
 		defer freeFunc()
 		C.DeleteGlobalRef(env, s.jBlessingStore)
@@ -68,7 +68,7 @@ type blessingStore struct {
 }
 
 func (s *blessingStore) Set(blessings security.Blessings, forPeers security.BlessingPattern) (security.Blessings, error) {
-	envPtr, freeFunc := util.GetEnv(s.jVM)
+	envPtr, freeFunc := jutil.GetEnv(s.jVM)
 	env := (*C.JNIEnv)(envPtr)
 	defer freeFunc()
 	jBlessings, err := JavaBlessings(env, blessings)
@@ -79,7 +79,7 @@ func (s *blessingStore) Set(blessings security.Blessings, forPeers security.Bles
 	if err != nil {
 		return nil, err
 	}
-	jOldBlessings, err := util.CallObjectMethod(env, s.jBlessingStore, "set", []util.Sign{blessingsSign, blessingPatternSign}, blessingsSign, jBlessings, jForPeers)
+	jOldBlessings, err := jutil.CallObjectMethod(env, s.jBlessingStore, "set", []jutil.Sign{blessingsSign, blessingPatternSign}, blessingsSign, jBlessings, jForPeers)
 	if err != nil {
 		return nil, err
 	}
@@ -87,10 +87,10 @@ func (s *blessingStore) Set(blessings security.Blessings, forPeers security.Bles
 }
 
 func (s *blessingStore) ForPeer(peerBlessings ...string) security.Blessings {
-	envPtr, freeFunc := util.GetEnv(s.jVM)
+	envPtr, freeFunc := jutil.GetEnv(s.jVM)
 	env := (*C.JNIEnv)(envPtr)
 	defer freeFunc()
-	jBlessings, err := util.CallObjectMethod(env, s.jBlessingStore, "forPeer", []util.Sign{util.ArraySign(util.StringSign)}, blessingsSign, peerBlessings)
+	jBlessings, err := jutil.CallObjectMethod(env, s.jBlessingStore, "forPeer", []jutil.Sign{jutil.ArraySign(jutil.StringSign)}, blessingsSign, peerBlessings)
 	if err != nil {
 		log.Printf("Couldn't call Java forPeer method: %v", err)
 		return nil
@@ -104,21 +104,21 @@ func (s *blessingStore) ForPeer(peerBlessings ...string) security.Blessings {
 }
 
 func (s *blessingStore) SetDefault(blessings security.Blessings) error {
-	envPtr, freeFunc := util.GetEnv(s.jVM)
+	envPtr, freeFunc := jutil.GetEnv(s.jVM)
 	env := (*C.JNIEnv)(envPtr)
 	defer freeFunc()
 	jBlessings, err := JavaBlessings(env, blessings)
 	if err != nil {
 		return err
 	}
-	return util.CallVoidMethod(env, s.jBlessingStore, "setDefaultBlessings", []util.Sign{blessingsSign}, jBlessings)
+	return jutil.CallVoidMethod(env, s.jBlessingStore, "setDefaultBlessings", []jutil.Sign{blessingsSign}, jBlessings)
 }
 
 func (s *blessingStore) Default() security.Blessings {
-	envPtr, freeFunc := util.GetEnv(s.jVM)
+	envPtr, freeFunc := jutil.GetEnv(s.jVM)
 	env := (*C.JNIEnv)(envPtr)
 	defer freeFunc()
-	jBlessings, err := util.CallObjectMethod(env, s.jBlessingStore, "defaultBlessings", nil, blessingsSign)
+	jBlessings, err := jutil.CallObjectMethod(env, s.jBlessingStore, "defaultBlessings", nil, blessingsSign)
 	if err != nil {
 		log.Printf("Couldn't call Java defaultBlessings method: %v", err)
 		return nil
@@ -132,10 +132,10 @@ func (s *blessingStore) Default() security.Blessings {
 }
 
 func (s *blessingStore) PublicKey() security.PublicKey {
-	envPtr, freeFunc := util.GetEnv(s.jVM)
+	envPtr, freeFunc := jutil.GetEnv(s.jVM)
 	env := (*C.JNIEnv)(envPtr)
 	defer freeFunc()
-	jPublicKey, err := util.CallObjectMethod(env, s.jBlessingStore, "publicKey", nil, publicKeySign)
+	jPublicKey, err := jutil.CallObjectMethod(env, s.jBlessingStore, "publicKey", nil, publicKeySign)
 	if err != nil {
 		log.Printf("Couldn't get Java public key: %v", err)
 		return nil
@@ -149,13 +149,13 @@ func (s *blessingStore) PublicKey() security.PublicKey {
 }
 
 func (r *blessingStore) DebugString() string {
-	envPtr, freeFunc := util.GetEnv(r.jVM)
+	envPtr, freeFunc := jutil.GetEnv(r.jVM)
 	env := (*C.JNIEnv)(envPtr)
 	defer freeFunc()
-	jString, err := util.CallStringMethod(env, r.jBlessingStore, "debugString", nil)
+	jString, err := jutil.CallStringMethod(env, r.jBlessingStore, "debugString", nil)
 	if err != nil {
 		log.Printf("Couldn't call Java debugString: %v", err)
 		return ""
 	}
-	return util.GoString(env, jString)
+	return jutil.GoString(env, jString)
 }

@@ -404,7 +404,7 @@ func JMethodID(jEnv, jClass interface{}, name string, signature Sign) (C.jmethod
 	defer C.free(unsafe.Pointer(cSignature))
 	mid := C.GetMethodID(env, class, cName, cSignature)
 	if err := JExceptionMsg(env); err != nil || mid == C.jmethodID(nil) {
-		return C.jmethodID(nil), fmt.Errorf("couldn't find method %s with signature %v.", name)
+		return C.jmethodID(nil), fmt.Errorf("couldn't find method %q with signature %v.", name, signature)
 	}
 	return mid, nil
 }

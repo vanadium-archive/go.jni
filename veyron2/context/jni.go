@@ -6,7 +6,7 @@ import (
 	"log"
 	"unsafe"
 
-	"veyron.io/jni/util"
+	jutil "veyron.io/jni/util"
 	_ "veyron.io/veyron/veyron/profiles"
 	"veyron.io/veyron/veyron2/context"
 	"veyron.io/veyron/veyron2/rt"
@@ -18,10 +18,10 @@ import (
 import "C"
 
 var (
-	classSign = util.ClassSign("java.lang.Class")
+	classSign = jutil.ClassSign("java.lang.Class")
 	// Global reference for io.veyron.veyron.veyron2.context.ContextImpl class.
 	jContextImplClass C.jclass
-	// Global reference for java.util.concurrent.CountDownLatch class.
+	// Global reference for java.jutil.concurrent.CountDownLatch class.
 	jCountDownLatchClass C.jclass
 )
 
@@ -31,12 +31,12 @@ var (
 // invoked from a different package, Java environment is passed in an empty
 // interface and then cast into the package-local environment type.
 func Init(jEnv interface{}) {
-	env := (*C.JNIEnv)(unsafe.Pointer(util.PtrValue(jEnv)))
+	env := (*C.JNIEnv)(unsafe.Pointer(jutil.PtrValue(jEnv)))
 	// Cache global references to all Java classes used by the package.  This is
 	// necessary because JNI gets access to the class loader only in the system
 	// thread, so we aren't able to invoke FindClass in other threads.
-	jContextImplClass = C.jclass(util.JFindClassOrPrint(env, "io/veyron/veyron/veyron2/context/ContextImpl"))
-	jCountDownLatchClass = C.jclass(util.JFindClassOrPrint(env, "java/util/concurrent/CountDownLatch"))
+	jContextImplClass = C.jclass(jutil.JFindClassOrPrint(env, "io/veyron/veyron/veyron2/context/ContextImpl"))
+	jCountDownLatchClass = C.jclass(jutil.JFindClassOrPrint(env, "java/util/concurrent/CountDownLatch"))
 }
 
 //export Java_io_veyron_veyron_veyron2_context_ContextImpl_nativeCreate
@@ -47,7 +47,7 @@ func Java_io_veyron_veyron_veyron2_context_ContextImpl_nativeCreate(env *C.JNIEn
 	ctx := r.NewContext()
 	jCtx, err := JavaContext(env, ctx, nil)
 	if err != nil {
-		util.JThrowV(env, err)
+		jutil.JThrowV(env, err)
 		return nil
 	}
 	return jCtx
@@ -56,14 +56,14 @@ func Java_io_veyron_veyron_veyron2_context_ContextImpl_nativeCreate(env *C.JNIEn
 //export Java_io_veyron_veyron_veyron2_context_ContextImpl_nativeDeadline
 func Java_io_veyron_veyron_veyron2_context_ContextImpl_nativeDeadline(env *C.JNIEnv, jContextObj C.jobject, goPtr C.jlong) C.jobject {
 
-	d, ok := (*(*context.T)(util.Ptr(goPtr))).Deadline()
+	d, ok := (*(*context.T)(jutil.Ptr(goPtr))).Deadline()
 	if !ok {
 		return nil
 	}
 	log.Println("Go got deadline: ", d)
-	jDeadline, err := util.JTime(env, d)
+	jDeadline, err := jutil.JTime(env, d)
 	if err != nil {
-		util.JThrowV(env, err)
+		jutil.JThrowV(env, err)
 		return nil
 	}
 	return C.jobject(jDeadline)
@@ -71,10 +71,10 @@ func Java_io_veyron_veyron_veyron2_context_ContextImpl_nativeDeadline(env *C.JNI
 
 //export Java_io_veyron_veyron_veyron2_context_ContextImpl_nativeDone
 func Java_io_veyron_veyron_veyron2_context_ContextImpl_nativeDone(env *C.JNIEnv, jContextObj C.jobject, goPtr C.jlong) C.jobject {
-	c := (*(*context.T)(util.Ptr(goPtr))).Done()
+	c := (*(*context.T)(jutil.Ptr(goPtr))).Done()
 	jCounter, err := JavaCountDownLatch(env, c)
 	if err != nil {
-		util.JThrowV(env, err)
+		jutil.JThrowV(env, err)
 		return nil
 	}
 	return jCounter
@@ -83,10 +83,10 @@ func Java_io_veyron_veyron_veyron2_context_ContextImpl_nativeDone(env *C.JNIEnv,
 //export Java_io_veyron_veyron_veyron2_context_ContextImpl_nativeValue
 func Java_io_veyron_veyron_veyron2_context_ContextImpl_nativeValue(env *C.JNIEnv, jContextObj C.jobject, goPtr C.jlong, jKey C.jobject) C.jobject {
 	key, err := GoContextKey(env, jKey)
-	value := (*(*context.T)(util.Ptr(goPtr))).Value(key)
+	value := (*(*context.T)(jutil.Ptr(goPtr))).Value(key)
 	jValue, err := JavaContextValue(env, value)
 	if err != nil {
-		util.JThrowV(env, err)
+		jutil.JThrowV(env, err)
 		return nil
 	}
 	return jValue
@@ -94,10 +94,10 @@ func Java_io_veyron_veyron_veyron2_context_ContextImpl_nativeValue(env *C.JNIEnv
 
 //export Java_io_veyron_veyron_veyron2_context_ContextImpl_nativeWithCancel
 func Java_io_veyron_veyron_veyron2_context_ContextImpl_nativeWithCancel(env *C.JNIEnv, jContextObj C.jobject, goPtr C.jlong) C.jobject {
-	ctx, cancelFunc := (*(*context.T)(util.Ptr(goPtr))).WithCancel()
+	ctx, cancelFunc := (*(*context.T)(jutil.Ptr(goPtr))).WithCancel()
 	jCtx, err := JavaContext(env, ctx, cancelFunc)
 	if err != nil {
-		util.JThrowV(env, err)
+		jutil.JThrowV(env, err)
 		return nil
 	}
 	return jCtx
@@ -105,15 +105,15 @@ func Java_io_veyron_veyron_veyron2_context_ContextImpl_nativeWithCancel(env *C.J
 
 //export Java_io_veyron_veyron_veyron2_context_ContextImpl_nativeWithDeadline
 func Java_io_veyron_veyron_veyron2_context_ContextImpl_nativeWithDeadline(env *C.JNIEnv, jContextObj C.jobject, goPtr C.jlong, jDeadline C.jobject) C.jobject {
-	deadline, err := util.GoTime(env, jDeadline)
+	deadline, err := jutil.GoTime(env, jDeadline)
 	if err != nil {
-		util.JThrowV(env, err)
+		jutil.JThrowV(env, err)
 		return nil
 	}
-	ctx, cancelFunc := (*(*context.T)(util.Ptr(goPtr))).WithDeadline(deadline)
+	ctx, cancelFunc := (*(*context.T)(jutil.Ptr(goPtr))).WithDeadline(deadline)
 	jCtx, err := JavaContext(env, ctx, cancelFunc)
 	if err != nil {
-		util.JThrowV(env, err)
+		jutil.JThrowV(env, err)
 		return nil
 	}
 	return jCtx
@@ -121,15 +121,15 @@ func Java_io_veyron_veyron_veyron2_context_ContextImpl_nativeWithDeadline(env *C
 
 //export Java_io_veyron_veyron_veyron2_context_ContextImpl_nativeWithTimeout
 func Java_io_veyron_veyron_veyron2_context_ContextImpl_nativeWithTimeout(env *C.JNIEnv, jContextObj C.jobject, goPtr C.jlong, jTimeout C.jobject) C.jobject {
-	timeout, err := util.GoDuration(env, jTimeout)
+	timeout, err := jutil.GoDuration(env, jTimeout)
 	if err != nil {
-		util.JThrowV(env, err)
+		jutil.JThrowV(env, err)
 		return nil
 	}
-	ctx, cancelFunc := (*(*context.T)(util.Ptr(goPtr))).WithTimeout(timeout)
+	ctx, cancelFunc := (*(*context.T)(jutil.Ptr(goPtr))).WithTimeout(timeout)
 	jCtx, err := JavaContext(env, ctx, cancelFunc)
 	if err != nil {
-		util.JThrowV(env, err)
+		jutil.JThrowV(env, err)
 		return nil
 	}
 	return jCtx
@@ -139,18 +139,18 @@ func Java_io_veyron_veyron_veyron2_context_ContextImpl_nativeWithTimeout(env *C.
 func Java_io_veyron_veyron_veyron2_context_ContextImpl_nativeWithValue(env *C.JNIEnv, jContextObj C.jobject, goPtr C.jlong, jKey C.jobject, jValue C.jobject) C.jobject {
 	key, err := GoContextKey(env, jKey)
 	if err != nil {
-		util.JThrowV(env, err)
+		jutil.JThrowV(env, err)
 		return nil
 	}
 	value, err := GoContextValue(env, jValue)
 	if err != nil {
-		util.JThrowV(env, err)
+		jutil.JThrowV(env, err)
 		return nil
 	}
-	ctx := (*(*context.T)(util.Ptr(goPtr))).WithValue(key, value)
+	ctx := (*(*context.T)(jutil.Ptr(goPtr))).WithValue(key, value)
 	jCtx, err := JavaContext(env, ctx, nil)
 	if err != nil {
-		util.JThrowV(env, err)
+		jutil.JThrowV(env, err)
 		return nil
 	}
 	return jCtx
@@ -159,14 +159,14 @@ func Java_io_veyron_veyron_veyron2_context_ContextImpl_nativeWithValue(env *C.JN
 //export Java_io_veyron_veyron_veyron2_context_ContextImpl_nativeCancel
 func Java_io_veyron_veyron_veyron2_context_ContextImpl_nativeCancel(env *C.JNIEnv, jContextObj C.jobject, goCancelPtr C.jlong) {
 	if goCancelPtr != 0 {
-		(*(*context.CancelFunc)(util.Ptr(goCancelPtr)))()
+		(*(*context.CancelFunc)(jutil.Ptr(goCancelPtr)))()
 	}
 }
 
 //export Java_io_veyron_veyron_veyron2_context_ContextImpl_nativeFinalize
 func Java_io_veyron_veyron_veyron2_context_ContextImpl_nativeFinalize(env *C.JNIEnv, jContextObj C.jobject, goPtr C.jlong, goCancelPtr C.jlong) {
-	util.GoUnref((*context.T)(util.Ptr(goPtr)))
+	jutil.GoUnref((*context.T)(jutil.Ptr(goPtr)))
 	if goCancelPtr != 0 {
-		util.GoUnref((*context.CancelFunc)(util.Ptr(goPtr)))
+		jutil.GoUnref((*context.CancelFunc)(jutil.Ptr(goPtr)))
 	}
 }

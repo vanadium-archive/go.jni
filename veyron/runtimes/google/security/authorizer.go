@@ -7,7 +7,7 @@ import (
 	"runtime"
 	"unsafe"
 
-	"veyron.io/jni/util"
+	jutil "veyron.io/jni/util"
 	"veyron.io/veyron/veyron2/security"
 )
 
@@ -20,8 +20,8 @@ import "C"
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func GoAuthorizer(jEnv, jAuthObj interface{}) (security.Authorizer, error) {
-	env := (*C.JNIEnv)(unsafe.Pointer(util.PtrValue(jEnv)))
-	jAuth := C.jobject(unsafe.Pointer(util.PtrValue(jAuthObj)))
+	env := (*C.JNIEnv)(unsafe.Pointer(jutil.PtrValue(jEnv)))
+	jAuth := C.jobject(unsafe.Pointer(jutil.PtrValue(jAuthObj)))
 	if jAuth == nil {
 		return nil, nil
 	}
@@ -41,7 +41,7 @@ func GoAuthorizer(jEnv, jAuthObj interface{}) (security.Authorizer, error) {
 		jAuth: jAuth,
 	}
 	runtime.SetFinalizer(a, func(a *authorizer) {
-		jEnv, freeFunc := util.GetEnv(a.jVM)
+		jEnv, freeFunc := jutil.GetEnv(a.jVM)
 		env := (*C.JNIEnv)(jEnv)
 		defer freeFunc()
 		C.DeleteGlobalRef(env, a.jAuth)
@@ -55,7 +55,7 @@ type authorizer struct {
 }
 
 func (a *authorizer) Authorize(context security.Context) error {
-	jEnv, freeFunc := util.GetEnv(a.jVM)
+	jEnv, freeFunc := jutil.GetEnv(a.jVM)
 	env := (*C.JNIEnv)(jEnv)
 	defer freeFunc()
 	// Create a Java context.
@@ -64,6 +64,6 @@ func (a *authorizer) Authorize(context security.Context) error {
 		return err
 	}
 	// Run Java Authorizer.
-	contextSign := util.ClassSign("io.veyron.veyron.veyron2.security.Context")
-	return util.CallVoidMethod(env, a.jAuth, "authorize", []util.Sign{contextSign}, jContext)
+	contextSign := jutil.ClassSign("io.veyron.veyron.veyron2.security.Context")
+	return jutil.CallVoidMethod(env, a.jAuth, "authorize", []jutil.Sign{contextSign}, jContext)
 }
