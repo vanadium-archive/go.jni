@@ -7,7 +7,7 @@ import (
 	"runtime"
 
 	jutil "veyron.io/jni/util"
-	jsecurity "veyron.io/jni/veyron/runtimes/google/security"
+	jsecurity "veyron.io/jni/veyron2/security"
 	"veyron.io/veyron/veyron2/security"
 )
 
@@ -48,8 +48,7 @@ type dispatcher struct {
 
 func (d *dispatcher) Lookup(suffix, method string) (interface{}, security.Authorizer, error) {
 	// Get Java environment.
-	jEnv, freeFunc := jutil.GetEnv(d.jVM)
-	env := (*C.JNIEnv)(jEnv)
+	env, freeFunc := jutil.GetEnv(d.jVM)
 	defer freeFunc()
 
 	// Call Java dispatcher's lookup() method.
@@ -80,7 +79,7 @@ func (d *dispatcher) Lookup(suffix, method string) (interface{}, security.Author
 	}
 
 	// Create Go Invoker and Authorizer.
-	i, err := goInvoker(env, C.jobject(jServiceObj))
+	i, err := goInvoker((*C.JNIEnv)(env), C.jobject(jServiceObj))
 	if err != nil {
 		return nil, nil, err
 	}

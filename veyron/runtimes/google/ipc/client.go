@@ -151,7 +151,10 @@ func getVDLPathOpt(env *C.JNIEnv, jOptions C.jobject) (*string, error) {
 	if jOptions == nil {
 		return nil, nil
 	}
-	vdlPathKey := jutil.JStaticStringField(env, jOptionDefsClass, "VDL_INTERFACE_PATH")
+	vdlPathKey, err := jutil.JStaticStringField(env, jOptionDefsClass, "VDL_INTERFACE_PATH")
+	if err != nil {
+		return nil, err
+	}
 	has, err := jutil.CallBooleanMethod(env, jOptions, "has", []jutil.Sign{jutil.StringSign}, vdlPathKey)
 	if err != nil {
 		return nil, err

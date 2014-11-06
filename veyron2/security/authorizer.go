@@ -55,8 +55,7 @@ type authorizer struct {
 }
 
 func (a *authorizer) Authorize(context security.Context) error {
-	jEnv, freeFunc := jutil.GetEnv(a.jVM)
-	env := (*C.JNIEnv)(jEnv)
+	env, freeFunc := jutil.GetEnv(a.jVM)
 	defer freeFunc()
 	// Create a Java context.
 	jContext, err := JavaContext(env, context)

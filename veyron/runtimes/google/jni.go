@@ -11,7 +11,6 @@ import (
 	jipc "veyron.io/jni/veyron/runtimes/google/ipc"
 	jnaming "veyron.io/jni/veyron/runtimes/google/naming"
 	jrt "veyron.io/jni/veyron/runtimes/google/rt"
-	jsecurity "veyron.io/jni/veyron/runtimes/google/security"
 )
 
 // #cgo LDFLAGS: -ljniwrapper
@@ -37,7 +36,6 @@ func Init(jEnv interface{}) {
 	jipc.Init(env)
 	jrt.Init(env)
 	jnaming.Init(env)
-	jsecurity.Init(env)
 }
 
 //export Java_io_veyron_veyron_veyron_runtimes_google_InputChannel_nativeAvailable

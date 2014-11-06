@@ -7,8 +7,8 @@ import (
 	"unsafe"
 
 	jutil "veyron.io/jni/util"
-	jsecurity "veyron.io/jni/veyron/runtimes/google/security"
 	jcontext "veyron.io/jni/veyron2/context"
+	jsecurity "veyron.io/jni/veyron2/security"
 	"veyron.io/veyron/veyron/profiles/roaming"
 	"veyron.io/veyron/veyron2/ipc"
 )
@@ -69,7 +69,7 @@ func javaServerCall(env *C.JNIEnv, call *serverCall) (C.jobject, error) {
 		return nil, err
 	}
 	contextSign := jutil.ClassSign("io.veyron.veyron.veyron2.context.Context")
-	securityContextSign := jutil.ClassSign("io.veyron.veyron.veyron.runtimes.google.security.Context")
+	securityContextSign := jutil.ClassSign("io.veyron.veyron.veyron2.security.Context")
 	jServerCall, err := jutil.NewObject(env, jServerCallClass, []jutil.Sign{jutil.LongSign, streamSign, contextSign, securityContextSign}, int64(jutil.PtrValue(call)), jStream, jContext, jSecurityContext)
 	if err != nil {
 		return nil, err

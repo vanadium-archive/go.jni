@@ -71,8 +71,7 @@ type principal struct {
 }
 
 func (p *principal) Bless(key security.PublicKey, with security.Blessings, extension string, caveat security.Caveat, additionalCaveats ...security.Caveat) (security.Blessings, error) {
-	jEnv, freeFunc := jutil.GetEnv(p.jVM)
-	env := (*C.JNIEnv)(jEnv)
+	env, freeFunc := jutil.GetEnv(p.jVM)
 	defer freeFunc()
 
 	jKey, err := JavaPublicKey(env, key)
@@ -99,8 +98,7 @@ func (p *principal) Bless(key security.PublicKey, with security.Blessings, exten
 }
 
 func (p *principal) BlessSelf(name string, caveats ...security.Caveat) (security.Blessings, error) {
-	jEnv, freeFunc := jutil.GetEnv(p.jVM)
-	env := (*C.JNIEnv)(jEnv)
+	env, freeFunc := jutil.GetEnv(p.jVM)
 	defer freeFunc()
 	jCaveats, err := JavaCaveats(env, caveats)
 	if err != nil {
@@ -114,8 +112,7 @@ func (p *principal) BlessSelf(name string, caveats ...security.Caveat) (security
 }
 
 func (p *principal) Sign(message []byte) (security.Signature, error) {
-	jEnv, freeFunc := jutil.GetEnv(p.jVM)
-	env := (*C.JNIEnv)(jEnv)
+	env, freeFunc := jutil.GetEnv(p.jVM)
 	defer freeFunc()
 	jSig, err := jutil.CallObjectMethod(env, p.jPrincipal, "sign", []jutil.Sign{jutil.ArraySign(jutil.ByteSign)}, signatureSign, message)
 	if err != nil {
@@ -129,8 +126,7 @@ func (p *principal) MintDischarge(tp security.ThirdPartyCaveat, caveat security.
 }
 
 func (p *principal) PublicKey() security.PublicKey {
-	jEnv, freeFunc := jutil.GetEnv(p.jVM)
-	env := (*C.JNIEnv)(jEnv)
+	env, freeFunc := jutil.GetEnv(p.jVM)
 	defer freeFunc()
 	jPublicKey, err := jutil.CallObjectMethod(env, p.jPrincipal, "publicKey", nil, publicKeySign)
 	if err != nil {
@@ -146,8 +142,7 @@ func (p *principal) PublicKey() security.PublicKey {
 }
 
 func (p *principal) BlessingStore() security.BlessingStore {
-	jEnv, freeFunc := jutil.GetEnv(p.jVM)
-	env := (*C.JNIEnv)(jEnv)
+	env, freeFunc := jutil.GetEnv(p.jVM)
 	defer freeFunc()
 	jBlessingStore, err := jutil.CallObjectMethod(env, p.jPrincipal, "blessingStore", nil, blessingStoreSign)
 	if err != nil {
@@ -163,8 +158,7 @@ func (p *principal) BlessingStore() security.BlessingStore {
 }
 
 func (p *principal) Roots() security.BlessingRoots {
-	jEnv, freeFunc := jutil.GetEnv(p.jVM)
-	env := (*C.JNIEnv)(jEnv)
+	env, freeFunc := jutil.GetEnv(p.jVM)
 	defer freeFunc()
 	jBlessingRoots, err := jutil.CallObjectMethod(env, p.jPrincipal, "roots", nil, blessingRootsSign)
 	if err != nil {
@@ -180,8 +174,7 @@ func (p *principal) Roots() security.BlessingRoots {
 }
 
 func (p *principal) AddToRoots(blessings security.Blessings) error {
-	jEnv, freeFunc := jutil.GetEnv(p.jVM)
-	env := (*C.JNIEnv)(jEnv)
+	env, freeFunc := jutil.GetEnv(p.jVM)
 	defer freeFunc()
 	jBlessings, err := JavaBlessings(env, blessings)
 	if err != nil {

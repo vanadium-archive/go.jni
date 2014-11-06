@@ -138,7 +138,10 @@ func getRuntimeOpts(env *C.JNIEnv, jOptions C.jobject) (ret []veyron2.ROpt, err 
 	if jOptions == nil {
 		return
 	}
-	runtimePrincipalKey := jutil.JStaticStringField(env, jOptionDefsClass, "RUNTIME_PRINCIPAL")
+	runtimePrincipalKey, err := jutil.JStaticStringField(env, jOptionDefsClass, "RUNTIME_PRINCIPAL")
+	if err != nil {
+		return nil, err
+	}
 	if has, err := jutil.CallBooleanMethod(env, jOptions, "has", []jutil.Sign{jutil.StringSign}, runtimePrincipalKey); err != nil {
 		return nil, err
 	} else if has {

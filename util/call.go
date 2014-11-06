@@ -126,12 +126,12 @@ func NewObject(env interface{}, class interface{}, argSigns []Sign, args ...inte
 
 	jcid, err := JMethodID(jenv, jclass, "<init>", FuncSign(argSigns, VoidSign))
 	if err != nil {
-		return C.jobject(nil), err
+		return nil, err
 	}
 
 	valArray, freeFunc, err := jArgArray(jenv, args, argSigns)
 	if err != nil {
-		return C.jobject(nil), err
+		return nil, err
 	}
 	defer freeFunc()
 
@@ -162,7 +162,7 @@ func CallObjectMethod(env interface{}, object interface{}, name string, argSigns
 	}
 	jenv, jobject, jmid, valArray, freeFunc, err := setupMethodCall(env, object, name, argSigns, retSign, args)
 	if err != nil {
-		return C.jobject(nil), err
+		return nil, err
 	}
 	defer freeFunc()
 	ret := C.CallObjectMethodA(jenv, jobject, jmid, valArray)
@@ -185,27 +185,30 @@ func CallByteArrayMethod(env interface{}, object interface{}, name string, argSi
 }
 
 // CallObjectArrayMethod calls a java method that returns an object array.
-func CallObjectArrayMethod(env interface{}, object interface{}, name string, argSigns []Sign, retSign Sign, args ...interface{}) ([]C.jobject, error) {
-	if retSign == "" || retSign[0] != '[' {
-		panic(fmt.Sprintf("Expected object array, got: %v", retSign))
-	}
+func CallObjectArrayMethod(env interface{}, object interface{}, name string, argSigns []Sign, retElemSign Sign, args ...interface{}) ([]C.jobject, error) {
 	jenv := getEnv(env)
-	jarr, err := CallObjectMethod(env, object, name, argSigns, retSign, args...)
+	jarr, err := CallObjectMethod(env, object, name, argSigns, ArraySign(retElemSign), args...)
+	if err != nil {
+		return nil, err
+	}
 	garr := make([]C.jobject, int(C.GetArrayLength(jenv, C.jarray(jarr))))
 	for i, _ := range garr {
 		garr[i] = C.jobject(C.GetObjectArrayElement(jenv, C.jobjectArray(jarr), C.jsize(i)))
 	}
-	return garr, err
+	return garr, nil
 }
 
 // CallStringArrayMethod calls a java method that returns an string array.
-func CallStringArrayMethod(env interface{}, object interface{}, name string, argSigns []Sign, retSign Sign, args ...interface{}) ([]string, error) {
-	objarr, err := CallObjectArrayMethod(env, object, name, argSigns, retSign, args...)
+func CallStringArrayMethod(env interface{}, object interface{}, name string, argSigns []Sign, args ...interface{}) ([]string, error) {
+	objarr, err := CallObjectArrayMethod(env, object, name, argSigns, StringSign, args...)
+	if err != nil {
+		return nil, err
+	}
 	strs := make([]string, len(objarr))
 	for i, obj := range objarr {
 		strs[i] = GoString(env, obj)
 	}
-	return strs, err
+	return strs, nil
 }
 
 // CallBooleanMethod calls a java method that returns a boolean.
@@ -268,7 +271,7 @@ func CallStaticObjectMethod(env interface{}, class interface{}, name string, arg
 	jvalArray, freeFunc, err := jArgArray(jenv, args, argSigns)
 	defer freeFunc()
 	if err != nil {
-		return C.jobject(nil), err
+		return nil, err
 	}
 	ret := C.CallStaticObjectMethodA(jenv, jclass, jmid, jvalArray)
 	return ret, JExceptionMsg(env)

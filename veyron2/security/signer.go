@@ -53,8 +53,7 @@ type signer struct {
 }
 
 func (s *signer) Sign(purpose, message []byte) (security.Signature, error) {
-	jEnv, freeFunc := jutil.GetEnv(s.jVM)
-	env := (*C.JNIEnv)(jEnv)
+	env, freeFunc := jutil.GetEnv(s.jVM)
 	defer freeFunc()
 	signatureSign := jutil.ClassSign("io.veyron.veyron.veyron2.security.Signature")
 	jSig, err := jutil.CallObjectMethod(env, s.jSigner, "sign", []jutil.Sign{jutil.ArraySign(jutil.ByteSign), jutil.ArraySign(jutil.ByteSign)}, signatureSign, purpose, message)
@@ -65,8 +64,7 @@ func (s *signer) Sign(purpose, message []byte) (security.Signature, error) {
 }
 
 func (s *signer) PublicKey() security.PublicKey {
-	jEnv, freeFunc := jutil.GetEnv(s.jVM)
-	env := (*C.JNIEnv)(jEnv)
+	env, freeFunc := jutil.GetEnv(s.jVM)
 	defer freeFunc()
 	publicKeySign := jutil.ClassSign("java.security.interfaces.ECPublicKey")
 	jPublicKey, err := jutil.CallObjectMethod(env, s.jSigner, "publicKey", nil, publicKeySign)

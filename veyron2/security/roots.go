@@ -70,8 +70,7 @@ type blessingRoots struct {
 }
 
 func (r *blessingRoots) Add(root security.PublicKey, pattern security.BlessingPattern) error {
-	envPtr, freeFunc := jutil.GetEnv(r.jVM)
-	env := (*C.JNIEnv)(envPtr)
+	env, freeFunc := jutil.GetEnv(r.jVM)
 	defer freeFunc()
 	jRoot, err := JavaPublicKey(env, root)
 	if err != nil {
@@ -85,8 +84,7 @@ func (r *blessingRoots) Add(root security.PublicKey, pattern security.BlessingPa
 }
 
 func (r *blessingRoots) Recognized(root security.PublicKey, blessing string) error {
-	envPtr, freeFunc := jutil.GetEnv(r.jVM)
-	env := (*C.JNIEnv)(envPtr)
+	env, freeFunc := jutil.GetEnv(r.jVM)
 	defer freeFunc()
 	jRoot, err := JavaPublicKey(env, root)
 	if err != nil {
@@ -96,8 +94,7 @@ func (r *blessingRoots) Recognized(root security.PublicKey, blessing string) err
 }
 
 func (r *blessingRoots) DebugString() string {
-	envPtr, freeFunc := jutil.GetEnv(r.jVM)
-	env := (*C.JNIEnv)(envPtr)
+	env, freeFunc := jutil.GetEnv(r.jVM)
 	defer freeFunc()
 	jString, err := jutil.CallStringMethod(env, r.jBlessingRoots, "debugString", nil)
 	if err != nil {

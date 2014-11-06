@@ -18,18 +18,13 @@ import (
 // #cgo LDFLAGS: -ljniwrapper
 // #include <stdlib.h>
 // #include "jni_wrapper.h"
-// // CGO doesn't support variadic functions so we have to hard-code these
-// // functions to match the invoking code. Ugh!
-// static jobject CallNewVeyronExceptionObject(JNIEnv* env, jclass class, jmethodID mid, jstring msg, jstring id) {
-//   return (*env)->NewObject(env, class, mid, msg, id);
-// }
 // static jstring CallGetExceptionMessage(JNIEnv* env, jobject obj, jmethodID id) {
 //   return (jstring)(*env)->CallObjectMethod(env, obj, id);
 // }
 import "C"
 
 var (
-	// Global reference for io.veyron.veyron.veyron2.ipc.VeyronException class.
+	// Global reference for io.veyron.veyron.veyron2.VeyronException class.
 	jVeyronExceptionClass C.jclass
 	// Global reference for org.joda.time.DateTime class.
 	jDateTimeClass C.jclass
@@ -53,7 +48,7 @@ var (
 // and then cast into their package local types.
 func Init(jEnv interface{}) {
 	env := getEnv(jEnv)
-	jVeyronExceptionClass = JFindClassOrPrint(env, "io/veyron/veyron/veyron2/ipc/VeyronException")
+	jVeyronExceptionClass = JFindClassOrPrint(env, "io/veyron/veyron/veyron2/VeyronException")
 	jDateTimeClass = JFindClassOrPrint(env, "org/joda/time/DateTime")
 	jDurationClass = JFindClassOrPrint(env, "org/joda/time/Duration")
 	jThrowableClass = JFindClassOrPrint(env, "java/lang/Throwable")
@@ -132,12 +127,12 @@ func JThrow(jEnv, jClass interface{}, msg string) {
 func JThrowV(jEnv interface{}, err error) {
 	env := getEnv(jEnv)
 	verr := verror.Convert(err)
-	id, err := JMethodID(env, jVeyronExceptionClass, "<init>", FuncSign([]Sign{StringSign, StringSign}, VoidSign))
-	if err != nil {
-		panic(err.Error())
+	jObj, errNew := NewObject(env, jVeyronExceptionClass, []Sign{StringSign, StringSign}, verr.Error(), string(verr.ErrorID()))
+	if errNew != nil {
+		log.Printf("Couldn't throw exception %v: %v", err, errNew)
+		return
 	}
-	obj := C.jthrowable(C.CallNewVeyronExceptionObject(env, jVeyronExceptionClass, id, JString(env, verr.Error()), JString(env, string(verr.ErrorID()))))
-	C.Throw(env, obj)
+	C.Throw(env, C.jthrowable(jObj))
 }
 
 // JExceptionMsg returns the exception message if an exception occurred, or
@@ -160,92 +155,116 @@ func JExceptionMsg(jEnv interface{}) error {
 	return errors.New(GoString(env, jMsg))
 }
 
-// JObjectField returns the value of the provided Java object's Object field.
+// JObjectField returns the value of the provided Java object's Object field, or
+// error if the field value couldn't be retrieved.
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JObjectField(jEnv, jObj interface{}, field string) C.jobject {
+func JObjectField(jEnv, jObj interface{}, field string) (C.jobject, error) {
 	env := getEnv(jEnv)
 	obj := getObject(jObj)
-	fid := C.jfieldID(JFieldIDPtrOrDie(env, C.GetObjectClass(env, obj), field, ObjectSign))
-	return C.GetObjectField(env, obj, fid)
+	fid, err := JFieldIDPtr(env, C.GetObjectClass(env, obj), field, ObjectSign)
+	if err != nil {
+		return nil, err
+	}
+	return C.GetObjectField(env, obj, C.jfieldID(fid)), nil
 }
 
-// JBoolField returns the value of the provided Java object's boolean field.
+// JBoolField returns the value of the provided Java object's boolean field, or
+// error if the field value couldn't be retrieved.
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JBoolField(jEnv, jObj interface{}, field string) bool {
+func JBoolField(jEnv, jObj interface{}, field string) (bool, error) {
 	env := getEnv(jEnv)
 	obj := getObject(jObj)
-	fid := C.jfieldID(JFieldIDPtrOrDie(env, C.GetObjectClass(env, obj), field, BoolSign))
-	return C.GetBooleanField(env, obj, fid) != C.JNI_FALSE
+	fid, err := JFieldIDPtr(env, C.GetObjectClass(env, obj), field, BoolSign)
+	if err != nil {
+		return false, err
+	}
+	return C.GetBooleanField(env, obj, C.jfieldID(fid)) != C.JNI_FALSE, nil
 }
 
-// JIntField returns the value of the provided Java object's int field.
+// JIntField returns the value of the provided Java object's int field, or
+// error if the field value couldn't be retrieved.
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JIntField(jEnv, jObj interface{}, field string) int {
+func JIntField(jEnv, jObj interface{}, field string) (int, error) {
 	env := getEnv(jEnv)
 	obj := getObject(jObj)
-	fid := C.jfieldID(JFieldIDPtrOrDie(env, C.GetObjectClass(env, obj), field, IntSign))
-	return int(C.GetIntField(env, obj, fid))
+	fid, err := JFieldIDPtr(env, C.GetObjectClass(env, obj), field, IntSign)
+	if err != nil {
+		return -1, err
+	}
+	return int(C.GetIntField(env, obj, C.jfieldID(fid))), nil
 }
 
-// JStringField returns the value of the provided Java object's String field,
-// as a Go string.
+// JStringField returns the value of the provided Java object's String field, or
+// error if the field value couldn't be retrieved.
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JStringField(jEnv, jObj interface{}, field string) string {
+func JStringField(jEnv, jObj interface{}, field string) (string, error) {
 	env := getEnv(jEnv)
 	obj := getObject(jObj)
-	fid := C.jfieldID(JFieldIDPtrOrDie(env, C.GetObjectClass(env, obj), field, StringSign))
-	jStr := C.jstring(C.GetObjectField(env, obj, fid))
-	return GoString(env, jStr)
+	fid, err := JFieldIDPtr(env, C.GetObjectClass(env, obj), field, StringSign)
+	if err != nil {
+		return "", err
+	}
+	jStr := C.jstring(C.GetObjectField(env, obj, C.jfieldID(fid)))
+	return GoString(env, jStr), nil
 }
 
 // JStringArrayField returns the value of the provided object's String[] field,
-// as a slice of Go strings.
+// or error if the field value couldn't be retrieved.
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JStringArrayField(jEnv, jObj interface{}, field string) []string {
+func JStringArrayField(jEnv, jObj interface{}, field string) ([]string, error) {
 	env := getEnv(jEnv)
 	obj := getObject(jObj)
-	fid := C.jfieldID(JFieldIDPtrOrDie(env, C.GetObjectClass(env, obj), field, ArraySign(StringSign)))
-	jStrArray := C.jobjectArray(C.GetObjectField(env, obj, fid))
-	return GoStringArray(env, jStrArray)
+	fid, err := JFieldIDPtr(env, C.GetObjectClass(env, obj), field, ArraySign(StringSign))
+	if err != nil {
+		return nil, err
+	}
+	jStrArray := C.jobjectArray(C.GetObjectField(env, obj, C.jfieldID(fid)))
+	return GoStringArray(env, jStrArray), nil
 }
 
-// JByteArrayField returns the value of the provided object's byte[] field as a
-// Go byte slice.
+// JByteArrayField returns the value of the provided object's byte[] field, or
+// error if the field value couldn't be retrieved.
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JByteArrayField(jEnv, jObj interface{}, field string) []byte {
+func JByteArrayField(jEnv, jObj interface{}, field string) ([]byte, error) {
 	env := getEnv(jEnv)
 	obj := getObject(jObj)
-	fid := C.jfieldID(JFieldIDPtrOrDie(env, C.GetObjectClass(env, obj), field, ArraySign(ByteSign)))
-	arr := C.jbyteArray(C.GetObjectField(env, obj, fid))
-	if arr == nil {
-		return nil
+	fid, err := JFieldIDPtr(env, C.GetObjectClass(env, obj), field, ArraySign(ByteSign))
+	if err != nil {
+		return nil, err
 	}
-	return GoByteArray(env, arr)
+	arr := C.jbyteArray(C.GetObjectField(env, obj, C.jfieldID(fid)))
+	if arr == nil {
+		return nil, nil
+	}
+	return GoByteArray(env, arr), nil
 }
 
 // JStaticStringField returns the value of the static String field of the
-// provided Java class, as a Go string.
+// provided Java class, or error if the field value couldn't be retrieved.
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JStaticStringField(jEnv, jClass interface{}, field string) string {
+func JStaticStringField(jEnv, jClass interface{}, field string) (string, error) {
 	env := getEnv(jEnv)
 	class := getClass(jClass)
-	fid := C.jfieldID(JStaticFieldIDPtrOrDie(env, class, field, StringSign))
-	jStr := C.jstring(C.GetStaticObjectField(env, class, fid))
-	return GoString(env, jStr)
+	fid, err := JStaticFieldIDPtr(env, class, field, StringSign)
+	if err != nil {
+		return "", err
+	}
+	jStr := C.jstring(C.GetStaticObjectField(env, class, C.jfieldID(fid)))
+	return GoString(env, jStr), nil
 }
 
 // JObjectArray converts the provided slice of C.jobject pointers into a Java
@@ -353,12 +372,12 @@ func GoByteArray(jEnv, jArr interface{}) (ret []byte) {
 	return
 }
 
-// JFieldIDPtrOrDie returns the Java field ID for the given object
-// (i.e., non-static) field.
+// JFieldIDPtr returns the Java field ID for the given object (i.e., non-static)
+// field, or an error if the field couldn't be found.
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JFieldIDPtrOrDie(jEnv, jClass interface{}, name string, sign Sign) unsafe.Pointer {
+func JFieldIDPtr(jEnv, jClass interface{}, name string, sign Sign) (unsafe.Pointer, error) {
 	env := getEnv(jEnv)
 	class := getClass(jClass)
 	cName := C.CString(name)
@@ -367,16 +386,17 @@ func JFieldIDPtrOrDie(jEnv, jClass interface{}, name string, sign Sign) unsafe.P
 	defer C.free(unsafe.Pointer(cSign))
 	ptr := unsafe.Pointer(C.GetFieldID(env, class, cName, cSign))
 	if err := JExceptionMsg(env); err != nil || ptr == nil {
-		panic(fmt.Sprintf("couldn't find field %s: %v", name, err))
+		return nil, fmt.Errorf("couldn't find field %s: %v", name, err)
 	}
-	return ptr
+	return ptr, nil
 }
 
-// JStaticFieldIDPtrOrDie returns the Java field ID for the given static field.
+// JStaticFieldIDPtr returns the Java field ID for the given static field,
+// or an error if the field couldn't be found.
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JStaticFieldIDPtrOrDie(jEnv, jClass interface{}, name string, sign Sign) unsafe.Pointer {
+func JStaticFieldIDPtr(jEnv, jClass interface{}, name string, sign Sign) (unsafe.Pointer, error) {
 	env := getEnv(jEnv)
 	class := getClass(jClass)
 	cName := C.CString(name)
@@ -385,9 +405,9 @@ func JStaticFieldIDPtrOrDie(jEnv, jClass interface{}, name string, sign Sign) un
 	defer C.free(unsafe.Pointer(cSign))
 	ptr := unsafe.Pointer(C.GetStaticFieldID(env, class, cName, cSign))
 	if err := JExceptionMsg(env); err != nil || ptr == nil {
-		panic(fmt.Sprintf("couldn't find field %s: %v", name, err))
+		return nil, fmt.Errorf("couldn't find field %s: %v", name, err)
 	}
-	return ptr
+	return ptr, nil
 }
 
 // JMethodID returns the Java method ID for the given instance (non-static)

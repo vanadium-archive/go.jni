@@ -68,8 +68,7 @@ type blessingStore struct {
 }
 
 func (s *blessingStore) Set(blessings security.Blessings, forPeers security.BlessingPattern) (security.Blessings, error) {
-	envPtr, freeFunc := jutil.GetEnv(s.jVM)
-	env := (*C.JNIEnv)(envPtr)
+	env, freeFunc := jutil.GetEnv(s.jVM)
 	defer freeFunc()
 	jBlessings, err := JavaBlessings(env, blessings)
 	if err != nil {
@@ -87,8 +86,7 @@ func (s *blessingStore) Set(blessings security.Blessings, forPeers security.Bles
 }
 
 func (s *blessingStore) ForPeer(peerBlessings ...string) security.Blessings {
-	envPtr, freeFunc := jutil.GetEnv(s.jVM)
-	env := (*C.JNIEnv)(envPtr)
+	env, freeFunc := jutil.GetEnv(s.jVM)
 	defer freeFunc()
 	jBlessings, err := jutil.CallObjectMethod(env, s.jBlessingStore, "forPeer", []jutil.Sign{jutil.ArraySign(jutil.StringSign)}, blessingsSign, peerBlessings)
 	if err != nil {
@@ -104,8 +102,7 @@ func (s *blessingStore) ForPeer(peerBlessings ...string) security.Blessings {
 }
 
 func (s *blessingStore) SetDefault(blessings security.Blessings) error {
-	envPtr, freeFunc := jutil.GetEnv(s.jVM)
-	env := (*C.JNIEnv)(envPtr)
+	env, freeFunc := jutil.GetEnv(s.jVM)
 	defer freeFunc()
 	jBlessings, err := JavaBlessings(env, blessings)
 	if err != nil {
@@ -115,8 +112,7 @@ func (s *blessingStore) SetDefault(blessings security.Blessings) error {
 }
 
 func (s *blessingStore) Default() security.Blessings {
-	envPtr, freeFunc := jutil.GetEnv(s.jVM)
-	env := (*C.JNIEnv)(envPtr)
+	env, freeFunc := jutil.GetEnv(s.jVM)
 	defer freeFunc()
 	jBlessings, err := jutil.CallObjectMethod(env, s.jBlessingStore, "defaultBlessings", nil, blessingsSign)
 	if err != nil {
@@ -132,8 +128,7 @@ func (s *blessingStore) Default() security.Blessings {
 }
 
 func (s *blessingStore) PublicKey() security.PublicKey {
-	envPtr, freeFunc := jutil.GetEnv(s.jVM)
-	env := (*C.JNIEnv)(envPtr)
+	env, freeFunc := jutil.GetEnv(s.jVM)
 	defer freeFunc()
 	jPublicKey, err := jutil.CallObjectMethod(env, s.jBlessingStore, "publicKey", nil, publicKeySign)
 	if err != nil {
@@ -149,8 +144,7 @@ func (s *blessingStore) PublicKey() security.PublicKey {
 }
 
 func (r *blessingStore) DebugString() string {
-	envPtr, freeFunc := jutil.GetEnv(r.jVM)
-	env := (*C.JNIEnv)(envPtr)
+	env, freeFunc := jutil.GetEnv(r.jVM)
 	defer freeFunc()
 	jString, err := jutil.CallStringMethod(env, r.jBlessingStore, "debugString", nil)
 	if err != nil {

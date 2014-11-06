@@ -22,7 +22,7 @@ import "C"
 // and then cast into their package local types.
 func JavaBlessings(jEnv interface{}, blessings security.Blessings) (C.jobject, error) {
 	if blessings == nil {
-		return C.jobject(nil), nil
+		return nil, nil
 	}
 	env := getEnv(jEnv)
 	wire, err := extractWire(blessings)
@@ -48,7 +48,7 @@ func GoBlessings(jEnv, jBless interface{}) (security.Blessings, error) {
 	env := getEnv(jEnv)
 	jBlessings := getObject(jBless)
 
-	if jBlessings == C.jobject(nil) {
+	if jBlessings == nil {
 		return nil, nil
 	}
 	encoded, err := jutil.CallStaticStringMethod(env, jUtilClass, "encodeBlessings", []jutil.Sign{blessingsSign}, jBlessings)
@@ -125,7 +125,7 @@ func GoBlessingPattern(jEnv, jPatt interface{}) (security.BlessingPattern, error
 // and then cast into their package local types.
 func JavaPublicKey(jEnv interface{}, key security.PublicKey) (C.jobject, error) {
 	if key == nil {
-		return C.jobject(nil), nil
+		return nil, nil
 	}
 	env := getEnv(jEnv)
 	encoded, err := key.MarshalBinary()

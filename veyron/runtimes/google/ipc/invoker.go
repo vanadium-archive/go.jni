@@ -73,8 +73,7 @@ func (i *invoker) Prepare(method string, numArgs int) (argptrs, tags []interface
 	// arguments into vom.Value objects, which we shall then de-serialize into
 	// Java objects (see Invoke comments below).  This approach is blocked on
 	// pending VOM encoder/decoder changes as well as Java (de)serializer.
-	jEnv, freeFunc := jutil.GetEnv(i.jVM)
-	env := (*C.JNIEnv)(jEnv)
+	env, freeFunc := jutil.GetEnv(i.jVM)
 	defer freeFunc()
 
 	mArgs := i.argGetter.FindMethod(method, numArgs)
@@ -166,10 +165,22 @@ func (*invoker) encodeArgs(env *C.JNIEnv, argptrs []interface{}) (C.jobjectArray
 // returns an array of Go reply objects.
 func (i *invoker) decodeResults(env *C.JNIEnv, method string, numArgs int, jReply C.jobject) ([]interface{}, error) {
 	// Unpack the replies.
-	results := jutil.JStringArrayField(env, jReply, "results")
-	hasAppErr := jutil.JBoolField(env, jReply, "hasApplicationError")
-	errorID := jutil.JStringField(env, jReply, "errorID")
-	errorMsg := jutil.JStringField(env, jReply, "errorMsg")
+	results, err := jutil.JStringArrayField(env, jReply, "results")
+	if err != nil {
+		return nil, err
+	}
+	hasAppErr, err := jutil.JBoolField(env, jReply, "hasApplicationError")
+	if err != nil {
+		return nil, err
+	}
+	errorID, err := jutil.JStringField(env, jReply, "errorID")
+	if err != nil {
+		return nil, err
+	}
+	errorMsg, err := jutil.JStringField(env, jReply, "errorMsg")
+	if err != nil {
+		return nil, err
+	}
 
 	// Get result instances.
 	mArgs := i.argGetter.FindMethod(method, numArgs)

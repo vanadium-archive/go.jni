@@ -26,12 +26,14 @@ var (
 	signatureSign       = jutil.ClassSign("io.veyron.veyron.veyron2.security.Signature")
 	publicKeySign       = jutil.ClassSign("java.security.interfaces.ECPublicKey")
 
-	// Global reference for io.veyron.veyron.veyron2.security.PrincipalImpl
+	// Global reference for io.veyron.veyron.veyron2.security.PrincipalImpl class.
 	jPrincipalImplClass C.jclass
-	// Global reference for io.veyron.veyron.veyron2.security.BlessingStoreImpl
+	// Global reference for io.veyron.veyron.veyron2.security.BlessingStoreImpl class.
 	jBlessingStoreImplClass C.jclass
-	// Global reference for io.veyron.veyron.veyron2.security.BlessingRootsImpl
+	// Global reference for io.veyron.veyron.veyron2.security.BlessingRootsImpl class.
 	jBlessingRootsImplClass C.jclass
+	// Global reference for io.veyron.veyron.veyron2.security.ContextImpl class.
+	jContextImplClass C.jclass
 	// Global reference for io.veyron.veyron.veyron2.security.Util class.
 	jUtilClass C.jclass
 )
@@ -49,7 +51,105 @@ func Init(jEnv interface{}) {
 	jPrincipalImplClass = C.jclass(jutil.JFindClassOrPrint(env, "io/veyron/veyron/veyron2/security/PrincipalImpl"))
 	jBlessingStoreImplClass = C.jclass(jutil.JFindClassOrPrint(env, "io/veyron/veyron/veyron2/security/BlessingStoreImpl"))
 	jBlessingRootsImplClass = C.jclass(jutil.JFindClassOrPrint(env, "io/veyron/veyron/veyron2/security/BlessingRootsImpl"))
+	jContextImplClass = C.jclass(jutil.JFindClassOrPrint(env, "io/veyron/veyron/veyron2/security/ContextImpl"))
 	jUtilClass = C.jclass(jutil.JFindClassOrPrint(env, "io/veyron/veyron/veyron2/security/Util"))
+}
+
+//export Java_io_veyron_veyron_veyron2_security_ContextImpl_nativeTimestamp
+func Java_io_veyron_veyron_veyron2_security_ContextImpl_nativeTimestamp(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) C.jobject {
+	t := (*(*security.Context)(jutil.Ptr(goContextPtr))).Timestamp()
+	jTime, err := jutil.JTime(env, t)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	return C.jobject(jTime)
+}
+
+//export Java_io_veyron_veyron_veyron2_security_ContextImpl_nativeMethod
+func Java_io_veyron_veyron_veyron2_security_ContextImpl_nativeMethod(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) C.jstring {
+	return C.jstring(jutil.JString(env, (*(*security.Context)(jutil.Ptr(goContextPtr))).Method()))
+}
+
+//export Java_io_veyron_veyron_veyron2_security_ContextImpl_nativeMethodTags
+func Java_io_veyron_veyron_veyron2_security_ContextImpl_nativeMethodTags(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) C.jobjectArray {
+	tags := (*(*security.Context)(jutil.Ptr(goContextPtr))).MethodTags()
+	if tags == nil {
+		return nil
+	}
+	tagsJava := make([]interface{}, len(tags))
+	for i, tag := range tags {
+		tagsJava[i] = C.jobject(unsafe.Pointer(jutil.PtrValue(tag)))
+	}
+	jTags, err := jutil.JObjectArray(env, tagsJava)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	return C.jobjectArray(jTags)
+}
+
+//export Java_io_veyron_veyron_veyron2_security_ContextImpl_nativeName
+func Java_io_veyron_veyron_veyron2_security_ContextImpl_nativeName(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) C.jstring {
+	return C.jstring(jutil.JString(env, (*(*security.Context)(jutil.Ptr(goContextPtr))).Name()))
+}
+
+//export Java_io_veyron_veyron_veyron2_security_ContextImpl_nativeSuffix
+func Java_io_veyron_veyron_veyron2_security_ContextImpl_nativeSuffix(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) C.jstring {
+	return C.jstring(jutil.JString(env, (*(*security.Context)(jutil.Ptr(goContextPtr))).Suffix()))
+}
+
+//export Java_io_veyron_veyron_veyron2_security_ContextImpl_nativeLabel
+func Java_io_veyron_veyron_veyron2_security_ContextImpl_nativeLabel(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) C.jint {
+	return C.jint((*(*security.Context)(jutil.Ptr(goContextPtr))).Label())
+}
+
+//export Java_io_veyron_veyron_veyron2_security_ContextImpl_nativeLocalEndpoint
+func Java_io_veyron_veyron_veyron2_security_ContextImpl_nativeLocalEndpoint(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) C.jstring {
+	return C.jstring(jutil.JString(env, (*(*security.Context)(jutil.Ptr(goContextPtr))).LocalEndpoint().String()))
+}
+
+//export Java_io_veyron_veyron_veyron2_security_ContextImpl_nativeRemoteEndpoint
+func Java_io_veyron_veyron_veyron2_security_ContextImpl_nativeRemoteEndpoint(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) C.jstring {
+	return C.jstring(jutil.JString(env, (*(*security.Context)(jutil.Ptr(goContextPtr))).RemoteEndpoint().String()))
+}
+
+//export Java_io_veyron_veyron_veyron2_security_ContextImpl_nativeLocalPrincipal
+func Java_io_veyron_veyron_veyron2_security_ContextImpl_nativeLocalPrincipal(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) C.jobject {
+	principal := (*(*security.Context)(jutil.Ptr(goContextPtr))).LocalPrincipal()
+	jPrincipal, err := JavaPrincipal(env, principal)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	return C.jobject(jPrincipal)
+}
+
+//export Java_io_veyron_veyron_veyron2_security_ContextImpl_nativeLocalBlessings
+func Java_io_veyron_veyron_veyron2_security_ContextImpl_nativeLocalBlessings(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) C.jobject {
+	blessings := (*(*security.Context)(jutil.Ptr(goContextPtr))).LocalBlessings()
+	jBlessings, err := JavaBlessings(env, blessings)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	return C.jobject(jBlessings)
+}
+
+//export Java_io_veyron_veyron_veyron2_security_ContextImpl_nativeRemoteBlessings
+func Java_io_veyron_veyron_veyron2_security_ContextImpl_nativeRemoteBlessings(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) C.jobject {
+	blessings := (*(*security.Context)(jutil.Ptr(goContextPtr))).RemoteBlessings()
+	jBlessings, err := JavaBlessings(env, blessings)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	return C.jobject(jBlessings)
+}
+
+//export Java_io_veyron_veyron_veyron2_security_ContextImpl_nativeFinalize
+func Java_io_veyron_veyron_veyron2_security_ContextImpl_nativeFinalize(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) {
+	jutil.GoUnref((*security.Context)(jutil.Ptr(goContextPtr)))
 }
 
 //export Java_io_veyron_veyron_veyron2_security_PrincipalImpl_nativeCreate
@@ -57,12 +157,12 @@ func Java_io_veyron_veyron_veyron2_security_PrincipalImpl_nativeCreate(env *C.JN
 	principal, err := vsecurity.NewPrincipal()
 	if err != nil {
 		jutil.JThrowV(env, err)
-		return C.jobject(nil)
+		return nil
 	}
 	jPrincipal, err := JavaPrincipal(env, principal)
 	if err != nil {
 		jutil.JThrowV(env, err)
-		return C.jobject(nil)
+		return nil
 	}
 	return jPrincipal
 }
@@ -72,17 +172,17 @@ func Java_io_veyron_veyron_veyron2_security_PrincipalImpl_nativeCreateForSigner(
 	signer, err := GoSigner(env, jSigner)
 	if err != nil {
 		jutil.JThrowV(env, err)
-		return C.jobject(nil)
+		return nil
 	}
 	principal, err := vsecurity.NewPrincipalFromSigner(signer)
 	if err != nil {
 		jutil.JThrowV(env, err)
-		return C.jobject(nil)
+		return nil
 	}
 	jPrincipal, err := jutil.NewObject(env, jPrincipalImplClass, []jutil.Sign{jutil.LongSign, signerSign, blessingStoreSign, blessingRootsSign}, &principal, jSigner, C.jobject(nil), C.jobject(nil))
 	if err != nil {
 		jutil.JThrowV(env, err)
-		return C.jobject(nil)
+		return nil
 	}
 	jutil.GoRef(&principal) // Un-refed when the Java PrincipalImpl is finalized.
 	return C.jobject(jPrincipal)
@@ -93,27 +193,27 @@ func Java_io_veyron_veyron_veyron2_security_PrincipalImpl_nativeCreateForAll(env
 	signer, err := GoSigner(env, jSigner)
 	if err != nil {
 		jutil.JThrowV(env, err)
-		return C.jobject(nil)
+		return nil
 	}
 	store, err := GoBlessingStore(env, jStore)
 	if err != nil {
 		jutil.JThrowV(env, err)
-		return C.jobject(nil)
+		return nil
 	}
 	roots, err := GoBlessingRoots(env, jRoots)
 	if err != nil {
 		jutil.JThrowV(env, err)
-		return C.jobject(nil)
+		return nil
 	}
 	principal, err := security.CreatePrincipal(signer, store, roots)
 	if err != nil {
 		jutil.JThrowV(env, err)
-		return C.jobject(nil)
+		return nil
 	}
 	jPrincipal, err := jutil.NewObject(env, jPrincipalImplClass, []jutil.Sign{jutil.LongSign, signerSign, blessingStoreSign, blessingRootsSign}, &principal, jSigner, jStore, jRoots)
 	if err != nil {
 		jutil.JThrowV(env, err)
-		return C.jobject(nil)
+		return nil
 	}
 	jutil.GoRef(&principal) // Un-refed when the Java PrincipalImpl is finalized.
 	return C.jobject(jPrincipal)
@@ -127,13 +227,13 @@ func Java_io_veyron_veyron_veyron2_security_PrincipalImpl_nativeCreatePersistent
 	if err != nil {
 		if principal, err = vsecurity.CreatePersistentPrincipal(dir, []byte(passphrase)); err != nil {
 			jutil.JThrowV(env, err)
-			return C.jobject(nil)
+			return nil
 		}
 	}
 	jPrincipal, err := JavaPrincipal(env, principal)
 	if err != nil {
 		jutil.JThrowV(env, err)
-		return C.jobject(nil)
+		return nil
 	}
 	return C.jobject(jPrincipal)
 }
@@ -143,18 +243,18 @@ func Java_io_veyron_veyron_veyron2_security_PrincipalImpl_nativeCreatePersistent
 	signer, err := GoSigner(env, jSigner)
 	if err != nil {
 		jutil.JThrowV(env, err)
-		return C.jobject(nil)
+		return nil
 	}
 	dir := jutil.GoString(env, jDir)
 	principal, err := vsecurity.NewPersistentPrincipalFromSigner(signer, dir)
 	if err != nil {
 		jutil.JThrowV(env, err)
-		return C.jobject(nil)
+		return nil
 	}
 	jPrincipal, err := jutil.NewObject(env, jPrincipalImplClass, []jutil.Sign{jutil.LongSign, signerSign, blessingStoreSign, blessingRootsSign}, &principal, jSigner, C.jobject(nil), C.jobject(nil))
 	if err != nil {
 		jutil.JThrowV(env, err)
-		return C.jobject(nil)
+		return nil
 	}
 	jutil.GoRef(&principal) // Un-refed when the Java PrincipalImpl is finalized.
 	return C.jobject(jPrincipal)
@@ -165,33 +265,33 @@ func Java_io_veyron_veyron_veyron2_security_PrincipalImpl_nativeBless(env *C.JNI
 	key, err := GoPublicKey(env, jKey)
 	if err != nil {
 		jutil.JThrowV(env, err)
-		return C.jobject(nil)
+		return nil
 	}
 	with, err := GoBlessings(env, jWith)
 	if err != nil {
 		jutil.JThrowV(env, err)
-		return C.jobject(nil)
+		return nil
 	}
 	extension := jutil.GoString(env, jExtension)
 	caveat, err := GoCaveat(env, jCaveat)
 	if err != nil {
 		jutil.JThrowV(env, err)
-		return C.jobject(nil)
+		return nil
 	}
 	additionalCaveats, err := GoCaveats(env, jAdditionalCaveats)
 	if err != nil {
 		jutil.JThrowV(env, err)
-		return C.jobject(nil)
+		return nil
 	}
 	blessings, err := (*(*security.Principal)(jutil.Ptr(goPtr))).Bless(key, with, extension, caveat, additionalCaveats...)
 	if err != nil {
 		jutil.JThrowV(env, err)
-		return C.jobject(nil)
+		return nil
 	}
 	jBlessings, err := JavaBlessings(env, blessings)
 	if err != nil {
 		jutil.JThrowV(env, err)
-		return C.jobject(nil)
+		return nil
 	}
 	return jBlessings
 }
@@ -202,17 +302,17 @@ func Java_io_veyron_veyron_veyron2_security_PrincipalImpl_nativeBlessSelf(env *C
 	caveats, err := GoCaveats(env, jCaveats)
 	if err != nil {
 		jutil.JThrowV(env, err)
-		return C.jobject(nil)
+		return nil
 	}
 	blessings, err := (*(*security.Principal)(jutil.Ptr(goPtr))).BlessSelf(name, caveats...)
 	if err != nil {
 		jutil.JThrowV(env, err)
-		return C.jobject(nil)
+		return nil
 	}
 	jBlessings, err := JavaBlessings(env, blessings)
 	if err != nil {
 		jutil.JThrowV(env, err)
-		return C.jobject(nil)
+		return nil
 	}
 	return jBlessings
 }
@@ -223,12 +323,12 @@ func Java_io_veyron_veyron_veyron2_security_PrincipalImpl_nativeSign(env *C.JNIE
 	sig, err := (*(*security.Principal)(jutil.Ptr(goPtr))).Sign(message)
 	if err != nil {
 		jutil.JThrowV(env, err)
-		return C.jobject(nil)
+		return nil
 	}
 	jSig, err := JavaSignature(env, sig)
 	if err != nil {
 		jutil.JThrowV(env, err)
-		return C.jobject(nil)
+		return nil
 	}
 	return jSig
 }
@@ -239,7 +339,7 @@ func Java_io_veyron_veyron_veyron2_security_PrincipalImpl_nativePublicKey(env *C
 	jKey, err := JavaPublicKey(env, key)
 	if err != nil {
 		jutil.JThrowV(env, err)
-		return C.jobject(nil)
+		return nil
 	}
 	return jKey
 }
@@ -250,7 +350,7 @@ func Java_io_veyron_veyron_veyron2_security_PrincipalImpl_nativeBlessingStore(en
 	jStore, err := JavaBlessingStore(env, store)
 	if err != nil {
 		jutil.JThrowV(env, err)
-		return C.jobject(nil)
+		return nil
 	}
 	return jStore
 }
@@ -261,7 +361,7 @@ func Java_io_veyron_veyron_veyron2_security_PrincipalImpl_nativeRoots(env *C.JNI
 	jRoots, err := JavaBlessingRoots(env, roots)
 	if err != nil {
 		jutil.JThrowV(env, err)
-		return C.jobject(nil)
+		return nil
 	}
 	return jRoots
 }
@@ -316,7 +416,7 @@ func Java_io_veyron_veyron_veyron2_security_BlessingsImpl_nativePublicKey(env *C
 	jPublicKey, err := JavaPublicKey(env, key)
 	if err != nil {
 		jutil.JThrowV(env, err)
-		return C.jobject(nil)
+		return nil
 	}
 	return jPublicKey
 }
@@ -379,23 +479,23 @@ func Java_io_veyron_veyron_veyron2_security_BlessingStoreImpl_nativeSet(env *C.J
 	blessings, err := GoBlessings(env, jBlessings)
 	if err != nil {
 		jutil.JThrowV(env, err)
-		return C.jobject(nil)
+		return nil
 	}
 	forPeers, err := GoBlessingPattern(env, jForPeers)
 	if err != nil {
 		jutil.JThrowV(env, err)
-		return C.jobject(nil)
+		return nil
 	}
 	oldBlessings, err := (*(*security.BlessingStore)(jutil.Ptr(goPtr))).Set(blessings, forPeers)
 	if err != nil {
 		jutil.JThrowV(env, err)
-		return C.jobject(nil)
+		return nil
 	}
 	jOldBlessings, err := JavaBlessings(env, oldBlessings)
-	return C.jobject(nil)
+	return nil
 	if err != nil {
 		jutil.JThrowV(env, err)
-		return C.jobject(nil)
+		return nil
 	}
 	return jOldBlessings
 }
@@ -407,7 +507,7 @@ func Java_io_veyron_veyron_veyron2_security_BlessingStoreImpl_nativeForPeer(env 
 	jBlessings, err := JavaBlessings(env, blessings)
 	if err != nil {
 		jutil.JThrowV(env, err)
-		return C.jobject(nil)
+		return nil
 	}
 	return jBlessings
 }
@@ -430,7 +530,7 @@ func Java_io_veyron_veyron_veyron2_security_BlessingStoreImpl_nativeDefaultBless
 	jBlessings, err := JavaBlessings(env, blessings)
 	if err != nil {
 		jutil.JThrowV(env, err)
-		return C.jobject(nil)
+		return nil
 	}
 	return jBlessings
 }
@@ -441,7 +541,7 @@ func Java_io_veyron_veyron_veyron2_security_BlessingStoreImpl_nativePublicKey(en
 	jKey, err := JavaPublicKey(env, key)
 	if err != nil {
 		jutil.JThrowV(env, err)
-		return C.jobject(nil)
+		return nil
 	}
 	return jKey
 }
