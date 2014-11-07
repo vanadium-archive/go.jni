@@ -16,9 +16,9 @@ import (
 
 func init() {
 	registerUniversalInterface()
-	registerInterface((*fortune.Fortune)(nil))
-	registerInterface((*fortune.FortuneService)(nil))
-	registerInterface((*identity.OAuthBlesser)(nil))
+	registerInterface((*fortune.FortuneClientMethods)(nil))
+	registerInterface((*fortune.FortuneServerMethods)(nil))
+	registerInterface((*identity.OAuthBlesserClientMethods)(nil))
 }
 
 // A list of all registered serviceArgGetter-s.

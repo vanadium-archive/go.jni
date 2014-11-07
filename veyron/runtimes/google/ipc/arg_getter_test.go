@@ -8,7 +8,7 @@ import (
 )
 
 func init() {
-	registerInterface((*base.ServiceB)(nil))
+	registerInterface((*base.ServiceBClientMethods)(nil))
 }
 
 func compareType(t *testing.T, method string, got, want interface{}, argKind string) {
@@ -27,7 +27,7 @@ func compareTypes(t *testing.T, method string, got, want []interface{}, argKind 
 }
 
 func TestGetter(t *testing.T) {
-	iface := "veyron.io/veyron/veyron2/vdl/testdata/base/ServiceB"
+	iface := "veyron.io/veyron/veyron2/vdl/testdata/base/ServiceBClientMethods"
 	getter, err := newArgGetter([]string{iface})
 	if err != nil {
 		t.Fatalf("couldn't find getter for interface: %v ", iface)

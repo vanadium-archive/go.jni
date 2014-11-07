@@ -6,123 +6,73 @@ package fortune
 import (
 	"veyron.io/veyron/veyron2/security"
 
-	// The non-user imports are prefixed with "_gen_" to prevent collisions.
-	_gen_veyron2 "veyron.io/veyron/veyron2"
-	_gen_context "veyron.io/veyron/veyron2/context"
-	_gen_ipc "veyron.io/veyron/veyron2/ipc"
-	_gen_naming "veyron.io/veyron/veyron2/naming"
-	_gen_vdlutil "veyron.io/veyron/veyron2/vdl/vdlutil"
-	_gen_wiretype "veyron.io/veyron/veyron2/wiretype"
+	// The non-user imports are prefixed with "__" to prevent collisions.
+	__veyron2 "veyron.io/veyron/veyron2"
+	__context "veyron.io/veyron/veyron2/context"
+	__ipc "veyron.io/veyron/veyron2/ipc"
+	__vdlutil "veyron.io/veyron/veyron2/vdl/vdlutil"
+	__wiretype "veyron.io/veyron/veyron2/wiretype"
 )
 
 // TODO(toddw): Remove this line once the new signature support is done.
-// It corrects a bug where _gen_wiretype is unused in VDL pacakges where only
+// It corrects a bug where __wiretype is unused in VDL pacakges where only
 // bootstrap types are used on interfaces.
-const _ = _gen_wiretype.TypeIDInvalid
+const _ = __wiretype.TypeIDInvalid
 
+// FortuneClientMethods is the client interface
+// containing Fortune methods.
+//
 // Fortune allows clients to Get and Add fortune strings.
-// Fortune is the interface the client binds and uses.
-// Fortune_ExcludingUniversal is the interface without internal framework-added methods
-// to enable embedding without method collisions.  Not to be used directly by clients.
-type Fortune_ExcludingUniversal interface {
+type FortuneClientMethods interface {
 	// Get returns a random fortune.
-	Get(ctx _gen_context.T, opts ..._gen_ipc.CallOpt) (reply string, err error)
+	Get(__context.T, ...__ipc.CallOpt) (Fortune string, err error)
 	// Add stores a fortune in the set used by Get.
-	Add(ctx _gen_context.T, Fortune string, opts ..._gen_ipc.CallOpt) (err error)
-}
-type Fortune interface {
-	_gen_ipc.UniversalServiceMethods
-	Fortune_ExcludingUniversal
+	Add(ctx __context.T, Fortune string, opts ...__ipc.CallOpt) error
 }
 
-// FortuneService is the interface the server implements.
-type FortuneService interface {
-
-	// Get returns a random fortune.
-	Get(context _gen_ipc.ServerContext) (reply string, err error)
-	// Add stores a fortune in the set used by Get.
-	Add(context _gen_ipc.ServerContext, Fortune string) (err error)
+// FortuneClientStub adds universal methods to FortuneClientMethods.
+type FortuneClientStub interface {
+	FortuneClientMethods
+	__ipc.UniversalServiceMethods
 }
 
-// BindFortune returns the client stub implementing the Fortune
-// interface.
-//
-// If no _gen_ipc.Client is specified, the default _gen_ipc.Client in the
-// global Runtime is used.
-func BindFortune(name string, opts ..._gen_ipc.BindOpt) (Fortune, error) {
-	var client _gen_ipc.Client
-	switch len(opts) {
-	case 0:
-		// Do nothing.
-	case 1:
-		if clientOpt, ok := opts[0].(_gen_ipc.Client); opts[0] == nil || ok {
+// FortuneClient returns a client stub for Fortune.
+func FortuneClient(name string, opts ...__ipc.BindOpt) FortuneClientStub {
+	var client __ipc.Client
+	for _, opt := range opts {
+		if clientOpt, ok := opt.(__ipc.Client); ok {
 			client = clientOpt
-		} else {
-			return nil, _gen_vdlutil.ErrUnrecognizedOption
 		}
-	default:
-		return nil, _gen_vdlutil.ErrTooManyOptionsToBind
 	}
-	stub := &clientStubFortune{defaultClient: client, name: name}
-
-	return stub, nil
+	return implFortuneClientStub{name, client}
 }
 
-// NewServerFortune creates a new server stub.
-//
-// It takes a regular server implementing the FortuneService
-// interface, and returns a new server stub.
-func NewServerFortune(server FortuneService) interface{} {
-	stub := &ServerStubFortune{
-		service: server,
-	}
-	var gs _gen_ipc.GlobState
-	var self interface{} = stub
-	// VAllGlobber is implemented by the server object, which is wrapped in
-	// a VDL generated server stub.
-	if x, ok := self.(_gen_ipc.VAllGlobber); ok {
-		gs.VAllGlobber = x
-	}
-	// VAllGlobber is implemented by the server object without using a VDL
-	// generated stub.
-	if x, ok := server.(_gen_ipc.VAllGlobber); ok {
-		gs.VAllGlobber = x
-	}
-	// VChildrenGlobber is implemented in the server object.
-	if x, ok := server.(_gen_ipc.VChildrenGlobber); ok {
-		gs.VChildrenGlobber = x
-	}
-	stub.gs = &gs
-	return stub
+type implFortuneClientStub struct {
+	name   string
+	client __ipc.Client
 }
 
-// clientStubFortune implements Fortune.
-type clientStubFortune struct {
-	defaultClient _gen_ipc.Client
-	name          string
-}
-
-func (__gen_c *clientStubFortune) client(ctx _gen_context.T) _gen_ipc.Client {
-	if __gen_c.defaultClient != nil {
-		return __gen_c.defaultClient
+func (c implFortuneClientStub) c(ctx __context.T) __ipc.Client {
+	if c.client != nil {
+		return c.client
 	}
-	return _gen_veyron2.RuntimeFromContext(ctx).Client()
+	return __veyron2.RuntimeFromContext(ctx).Client()
 }
 
-func (__gen_c *clientStubFortune) Get(ctx _gen_context.T, opts ..._gen_ipc.CallOpt) (reply string, err error) {
-	var call _gen_ipc.Call
-	if call, err = __gen_c.client(ctx).StartCall(ctx, __gen_c.name, "Get", nil, opts...); err != nil {
+func (c implFortuneClientStub) Get(ctx __context.T, opts ...__ipc.CallOpt) (o0 string, err error) {
+	var call __ipc.Call
+	if call, err = c.c(ctx).StartCall(ctx, c.name, "Get", nil, opts...); err != nil {
 		return
 	}
-	if ierr := call.Finish(&reply, &err); ierr != nil {
+	if ierr := call.Finish(&o0, &err); ierr != nil {
 		err = ierr
 	}
 	return
 }
 
-func (__gen_c *clientStubFortune) Add(ctx _gen_context.T, Fortune string, opts ..._gen_ipc.CallOpt) (err error) {
-	var call _gen_ipc.Call
-	if call, err = __gen_c.client(ctx).StartCall(ctx, __gen_c.name, "Add", []interface{}{Fortune}, opts...); err != nil {
+func (c implFortuneClientStub) Add(ctx __context.T, i0 string, opts ...__ipc.CallOpt) (err error) {
+	var call __ipc.Call
+	if call, err = c.c(ctx).StartCall(ctx, c.name, "Add", []interface{}{i0}, opts...); err != nil {
 		return
 	}
 	if ierr := call.Finish(&err); ierr != nil {
@@ -131,51 +81,96 @@ func (__gen_c *clientStubFortune) Add(ctx _gen_context.T, Fortune string, opts .
 	return
 }
 
-func (__gen_c *clientStubFortune) UnresolveStep(ctx _gen_context.T, opts ..._gen_ipc.CallOpt) (reply []string, err error) {
-	var call _gen_ipc.Call
-	if call, err = __gen_c.client(ctx).StartCall(ctx, __gen_c.name, "UnresolveStep", nil, opts...); err != nil {
+func (c implFortuneClientStub) Signature(ctx __context.T, opts ...__ipc.CallOpt) (o0 __ipc.ServiceSignature, err error) {
+	var call __ipc.Call
+	if call, err = c.c(ctx).StartCall(ctx, c.name, "Signature", nil, opts...); err != nil {
 		return
 	}
-	if ierr := call.Finish(&reply, &err); ierr != nil {
+	if ierr := call.Finish(&o0, &err); ierr != nil {
 		err = ierr
 	}
 	return
 }
 
-func (__gen_c *clientStubFortune) Signature(ctx _gen_context.T, opts ..._gen_ipc.CallOpt) (reply _gen_ipc.ServiceSignature, err error) {
-	var call _gen_ipc.Call
-	if call, err = __gen_c.client(ctx).StartCall(ctx, __gen_c.name, "Signature", nil, opts...); err != nil {
+func (c implFortuneClientStub) GetMethodTags(ctx __context.T, method string, opts ...__ipc.CallOpt) (o0 []interface{}, err error) {
+	var call __ipc.Call
+	if call, err = c.c(ctx).StartCall(ctx, c.name, "GetMethodTags", []interface{}{method}, opts...); err != nil {
 		return
 	}
-	if ierr := call.Finish(&reply, &err); ierr != nil {
+	if ierr := call.Finish(&o0, &err); ierr != nil {
 		err = ierr
 	}
 	return
 }
 
-func (__gen_c *clientStubFortune) GetMethodTags(ctx _gen_context.T, method string, opts ..._gen_ipc.CallOpt) (reply []interface{}, err error) {
-	var call _gen_ipc.Call
-	if call, err = __gen_c.client(ctx).StartCall(ctx, __gen_c.name, "GetMethodTags", []interface{}{method}, opts...); err != nil {
-		return
-	}
-	if ierr := call.Finish(&reply, &err); ierr != nil {
-		err = ierr
-	}
-	return
+// FortuneServerMethods is the interface a server writer
+// implements for Fortune.
+//
+// Fortune allows clients to Get and Add fortune strings.
+type FortuneServerMethods interface {
+	// Get returns a random fortune.
+	Get(__ipc.ServerContext) (Fortune string, Err error)
+	// Add stores a fortune in the set used by Get.
+	Add(ctx __ipc.ServerContext, Fortune string) error
 }
 
-// ServerStubFortune wraps a server that implements
-// FortuneService and provides an object that satisfies
-// the requirements of veyron2/ipc.ReflectInvoker.
-type ServerStubFortune struct {
-	service FortuneService
-	gs      *_gen_ipc.GlobState
+// FortuneServerStubMethods is the server interface containing
+// Fortune methods, as expected by ipc.Server.  The difference between
+// this interface and FortuneServerMethods is that the first context
+// argument for each method is always ipc.ServerCall here, while it is either
+// ipc.ServerContext or a typed streaming context there.
+type FortuneServerStubMethods interface {
+	// Get returns a random fortune.
+	Get(__ipc.ServerCall) (Fortune string, Err error)
+	// Add stores a fortune in the set used by Get.
+	Add(call __ipc.ServerCall, Fortune string) error
 }
 
-func (__gen_s *ServerStubFortune) GetMethodTags(call _gen_ipc.ServerCall, method string) ([]interface{}, error) {
-	// TODO(bprosnitz) GetMethodTags() will be replaces with Signature().
-	// Note: This exhibits some weird behavior like returning a nil error if the method isn't found.
-	// This will change when it is replaced with Signature().
+// FortuneServerStub adds universal methods to FortuneServerStubMethods.
+type FortuneServerStub interface {
+	FortuneServerStubMethods
+	// GetMethodTags will be replaced with DescribeInterfaces.
+	GetMethodTags(call __ipc.ServerCall, method string) ([]interface{}, error)
+	// Signature will be replaced with DescribeInterfaces.
+	Signature(call __ipc.ServerCall) (__ipc.ServiceSignature, error)
+}
+
+// FortuneServer returns a server stub for Fortune.
+// It converts an implementation of FortuneServerMethods into
+// an object that may be used by ipc.Server.
+func FortuneServer(impl FortuneServerMethods) FortuneServerStub {
+	stub := implFortuneServerStub{
+		impl: impl,
+	}
+	// Initialize GlobState; always check the stub itself first, to handle the
+	// case where the user has the Glob method defined in their VDL source.
+	if gs := __ipc.NewGlobState(stub); gs != nil {
+		stub.gs = gs
+	} else if gs := __ipc.NewGlobState(impl); gs != nil {
+		stub.gs = gs
+	}
+	return stub
+}
+
+type implFortuneServerStub struct {
+	impl FortuneServerMethods
+	gs   *__ipc.GlobState
+}
+
+func (s implFortuneServerStub) Get(call __ipc.ServerCall) (string, error) {
+	return s.impl.Get(call)
+}
+
+func (s implFortuneServerStub) Add(call __ipc.ServerCall, i0 string) error {
+	return s.impl.Add(call, i0)
+}
+
+func (s implFortuneServerStub) VGlob() *__ipc.GlobState {
+	return s.gs
+}
+
+func (s implFortuneServerStub) GetMethodTags(call __ipc.ServerCall, method string) ([]interface{}, error) {
+	// TODO(toddw): Replace with new DescribeInterfaces implementation.
 	switch method {
 	case "Get":
 		return []interface{}{security.Label(2)}, nil
@@ -186,58 +181,27 @@ func (__gen_s *ServerStubFortune) GetMethodTags(call _gen_ipc.ServerCall, method
 	}
 }
 
-func (__gen_s *ServerStubFortune) Signature(call _gen_ipc.ServerCall) (_gen_ipc.ServiceSignature, error) {
-	result := _gen_ipc.ServiceSignature{Methods: make(map[string]_gen_ipc.MethodSignature)}
-	result.Methods["Add"] = _gen_ipc.MethodSignature{
-		InArgs: []_gen_ipc.MethodArgument{
+func (s implFortuneServerStub) Signature(call __ipc.ServerCall) (__ipc.ServiceSignature, error) {
+	// TODO(toddw) Replace with new DescribeInterfaces implementation.
+	result := __ipc.ServiceSignature{Methods: make(map[string]__ipc.MethodSignature)}
+	result.Methods["Add"] = __ipc.MethodSignature{
+		InArgs: []__ipc.MethodArgument{
 			{Name: "Fortune", Type: 3},
 		},
-		OutArgs: []_gen_ipc.MethodArgument{
+		OutArgs: []__ipc.MethodArgument{
 			{Name: "", Type: 65},
 		},
 	}
-	result.Methods["Get"] = _gen_ipc.MethodSignature{
-		InArgs: []_gen_ipc.MethodArgument{},
-		OutArgs: []_gen_ipc.MethodArgument{
+	result.Methods["Get"] = __ipc.MethodSignature{
+		InArgs: []__ipc.MethodArgument{},
+		OutArgs: []__ipc.MethodArgument{
 			{Name: "Fortune", Type: 3},
 			{Name: "Err", Type: 65},
 		},
 	}
 
-	result.TypeDefs = []_gen_vdlutil.Any{
-		_gen_wiretype.NamedPrimitiveType{Type: 0x1, Name: "error", Tags: []string(nil)}}
+	result.TypeDefs = []__vdlutil.Any{
+		__wiretype.NamedPrimitiveType{Type: 0x1, Name: "error", Tags: []string(nil)}}
 
 	return result, nil
-}
-
-func (__gen_s *ServerStubFortune) UnresolveStep(call _gen_ipc.ServerCall) (reply []string, err error) {
-	if unresolver, ok := __gen_s.service.(_gen_ipc.Unresolver); ok {
-		return unresolver.UnresolveStep(call)
-	}
-	if call.Server() == nil {
-		return
-	}
-	var published []string
-	if published, err = call.Server().Published(); err != nil || published == nil {
-		return
-	}
-	reply = make([]string, len(published))
-	for i, p := range published {
-		reply[i] = _gen_naming.Join(p, call.Name())
-	}
-	return
-}
-
-func (__gen_s *ServerStubFortune) VGlob() *_gen_ipc.GlobState {
-	return __gen_s.gs
-}
-
-func (__gen_s *ServerStubFortune) Get(call _gen_ipc.ServerCall) (reply string, err error) {
-	reply, err = __gen_s.service.Get(call)
-	return
-}
-
-func (__gen_s *ServerStubFortune) Add(call _gen_ipc.ServerCall, Fortune string) (err error) {
-	err = __gen_s.service.Add(call, Fortune)
-	return
 }
