@@ -23,7 +23,7 @@ import "C"
 // and then cast into their package local types.
 func JavaBlessingRoots(jEnv interface{}, roots security.BlessingRoots) (C.jobject, error) {
 	env := (*C.JNIEnv)(unsafe.Pointer(jutil.PtrValue(jEnv)))
-	jObj, err := jutil.NewObject(env, jBlessingRootsImplClass, []jutil.Sign{jutil.LongSign}, &roots)
+	jObj, err := jutil.NewObject(env, jBlessingRootsImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&roots)))
 	if err != nil {
 		return nil, err
 	}

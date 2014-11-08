@@ -97,6 +97,29 @@ func GetEnv(javaVM interface{}) (jEnv unsafe.Pointer, free func()) {
 	return unsafe.Pointer(env), func() { C.DetachCurrentThread(jVM) }
 }
 
+// IsInstanceOf returns true iff the provided Java object is an instance of the
+// provided Java class.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func IsInstanceOf(jEnv, jObj, jClass interface{}) bool {
+	env := getEnv(jEnv)
+	obj := getObject(jObj)
+	class := getClass(jClass)
+	return C.IsInstanceOf(env, obj, class) == C.JNI_TRUE
+}
+
+// IsJavaObject returns true iff the provided value is of type C.jobject.
+// Note that this test is somewhat flawed: if the object is created by a package
+// other than this one, the type will be C.jobject local to that package, which
+// will fail the test below.  (This is because CGO creates package-local types.)
+// So this test should be trusted only if we are sure that the passed-in object
+// value would have been created by this package.
+func IsJavaObject(value interface{}) bool {
+	_, ok := value.(C.jobject)
+	return ok
+}
+
 // JString returns a Java string given the Go string.
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface

@@ -102,7 +102,7 @@ func javaStream(env *C.JNIEnv, streamIn interface{}) (C.jobject, error) {
 	if s == nil {
 		return nil, nil
 	}
-	jStream, err := jutil.NewObject(env, jStreamClass, []jutil.Sign{jutil.LongSign}, C.jlong(jutil.PtrValue(s)))
+	jStream, err := jutil.NewObject(env, jStreamClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(s)))
 	if err != nil {
 		return nil, err
 	}

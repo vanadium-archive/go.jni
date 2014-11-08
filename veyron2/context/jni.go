@@ -3,7 +3,6 @@
 package context
 
 import (
-	"log"
 	"unsafe"
 
 	jutil "veyron.io/jni/util"
@@ -60,7 +59,6 @@ func Java_io_veyron_veyron_veyron2_context_ContextImpl_nativeDeadline(env *C.JNI
 	if !ok {
 		return nil
 	}
-	log.Println("Go got deadline: ", d)
 	jDeadline, err := jutil.JTime(env, d)
 	if err != nil {
 		jutil.JThrowV(env, err)

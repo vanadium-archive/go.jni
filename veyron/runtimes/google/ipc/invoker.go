@@ -8,6 +8,7 @@ import (
 	"runtime"
 
 	jutil "veyron.io/jni/util"
+	jsecurity "veyron.io/jni/veyron2/security"
 	"veyron.io/veyron/veyron2/ipc"
 	"veyron.io/veyron/veyron2/verror"
 )
@@ -73,7 +74,8 @@ func (i *invoker) Prepare(method string, numArgs int) (argptrs, tags []interface
 	// arguments into vom.Value objects, which we shall then de-serialize into
 	// Java objects (see Invoke comments below).  This approach is blocked on
 	// pending VOM encoder/decoder changes as well as Java (de)serializer.
-	env, freeFunc := jutil.GetEnv(i.jVM)
+	jEnv, freeFunc := jutil.GetEnv(i.jVM)
+	env := (*C.JNIEnv)(jEnv)
 	defer freeFunc()
 
 	mArgs := i.argGetter.FindMethod(method, numArgs)
@@ -88,12 +90,9 @@ func (i *invoker) Prepare(method string, numArgs int) (argptrs, tags []interface
 	if err != nil {
 		return nil, nil, err
 	}
-	tagsJava := jutil.GoObjectArray(env, jTags)
-	if tagsJava != nil {
-		tags = make([]interface{}, len(tagsJava))
-		for i, tag := range tagsJava {
-			tags[i] = C.jobject(tag)
-		}
+	tags, err = jsecurity.GoTags(env, jTags)
+	if err != nil {
+		return nil, nil, err
 	}
 	return
 }

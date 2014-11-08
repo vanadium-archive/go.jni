@@ -23,7 +23,7 @@ import "C"
 // and then cast into their package local types.
 func JavaBlessingStore(jEnv interface{}, store security.BlessingStore) (C.jobject, error) {
 	env := (*C.JNIEnv)(unsafe.Pointer(jutil.PtrValue(jEnv)))
-	jObj, err := jutil.NewObject(env, jBlessingStoreImplClass, []jutil.Sign{jutil.LongSign}, &store)
+	jObj, err := jutil.NewObject(env, jBlessingStoreImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&store)))
 	if err != nil {
 		return nil, err
 	}

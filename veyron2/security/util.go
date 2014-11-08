@@ -6,9 +6,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"runtime"
 	"unsafe"
 
 	jutil "veyron.io/jni/util"
+	"veyron.io/veyron/veyron/security/acl"
 	"veyron.io/veyron/veyron2/security"
 )
 
@@ -24,7 +26,6 @@ func JavaBlessings(jEnv interface{}, blessings security.Blessings) (C.jobject, e
 	if blessings == nil {
 		return nil, nil
 	}
-	env := getEnv(jEnv)
 	wire, err := extractWire(blessings)
 	if err != nil {
 		return nil, err
@@ -33,7 +34,7 @@ func JavaBlessings(jEnv interface{}, blessings security.Blessings) (C.jobject, e
 	if err != nil {
 		return nil, err
 	}
-	jBlessings, err := jutil.CallStaticObjectMethod(env, jUtilClass, "decodeBlessings", []jutil.Sign{jutil.StringSign}, blessingsSign, encoded)
+	jBlessings, err := jutil.CallStaticObjectMethod(jEnv, jUtilClass, "decodeBlessings", []jutil.Sign{jutil.StringSign}, blessingsSign, encoded)
 	if err != nil {
 		return nil, err
 	}
@@ -45,13 +46,12 @@ func JavaBlessings(jEnv interface{}, blessings security.Blessings) (C.jobject, e
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func GoBlessings(jEnv, jBless interface{}) (security.Blessings, error) {
-	env := getEnv(jEnv)
 	jBlessings := getObject(jBless)
 
 	if jBlessings == nil {
 		return nil, nil
 	}
-	encoded, err := jutil.CallStaticStringMethod(env, jUtilClass, "encodeBlessings", []jutil.Sign{blessingsSign}, jBlessings)
+	encoded, err := jutil.CallStaticStringMethod(jEnv, jUtilClass, "encodeBlessings", []jutil.Sign{blessingsSign}, jBlessings)
 	if err != nil {
 		return nil, err
 	}
@@ -67,12 +67,11 @@ func GoBlessings(jEnv, jBless interface{}) (security.Blessings, error) {
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func JavaWireBlessings(jEnv interface{}, wire security.WireBlessings) (C.jobject, error) {
-	env := getEnv(jEnv)
 	encoded, err := encodeWireBlessings(wire)
 	if err != nil {
 		return nil, err
 	}
-	jWireBlessings, err := jutil.CallStaticObjectMethod(env, jUtilClass, "decodeWireBlessings", []jutil.Sign{jutil.StringSign}, wireBlessingsSign, encoded)
+	jWireBlessings, err := jutil.CallStaticObjectMethod(jEnv, jUtilClass, "decodeWireBlessings", []jutil.Sign{jutil.StringSign}, wireBlessingsSign, encoded)
 	if err != nil {
 		return nil, err
 	}
@@ -84,10 +83,9 @@ func JavaWireBlessings(jEnv interface{}, wire security.WireBlessings) (C.jobject
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func GoWireBlessings(jEnv, jWireBless interface{}) (security.WireBlessings, error) {
-	env := getEnv(jEnv)
 	jWireBlessings := getObject(jWireBless)
 
-	encoded, err := jutil.CallStaticStringMethod(env, jUtilClass, "encodeWireBlessings", []jutil.Sign{wireBlessingsSign}, jWireBlessings)
+	encoded, err := jutil.CallStaticStringMethod(jEnv, jUtilClass, "encodeWireBlessings", []jutil.Sign{wireBlessingsSign}, jWireBlessings)
 	if err != nil {
 		return security.WireBlessings{}, err
 	}
@@ -100,8 +98,7 @@ func GoWireBlessings(jEnv, jWireBless interface{}) (security.WireBlessings, erro
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func JavaBlessingPattern(jEnv interface{}, pattern security.BlessingPattern) (C.jobject, error) {
-	env := getEnv(jEnv)
-	jBlessingPattern, err := jutil.CallStaticObjectMethod(env, jUtilClass, "decodeBlessingPattern", []jutil.Sign{jutil.StringSign}, blessingPatternSign, string(pattern))
+	jBlessingPattern, err := jutil.CallStaticObjectMethod(jEnv, jUtilClass, "decodeBlessingPattern", []jutil.Sign{jutil.StringSign}, blessingPatternSign, string(pattern))
 	return C.jobject(jBlessingPattern), err
 }
 
@@ -110,9 +107,8 @@ func JavaBlessingPattern(jEnv interface{}, pattern security.BlessingPattern) (C.
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func GoBlessingPattern(jEnv, jPatt interface{}) (security.BlessingPattern, error) {
-	env := getEnv(jEnv)
 	jPattern := getObject(jPatt)
-	encoded, err := jutil.CallStaticStringMethod(env, jUtilClass, "encodeBlessingPattern", []jutil.Sign{blessingPatternSign}, jPattern)
+	encoded, err := jutil.CallStaticStringMethod(jEnv, jUtilClass, "encodeBlessingPattern", []jutil.Sign{blessingPatternSign}, jPattern)
 	if err != nil {
 		return security.BlessingPattern(""), err
 	}
@@ -127,12 +123,11 @@ func JavaPublicKey(jEnv interface{}, key security.PublicKey) (C.jobject, error) 
 	if key == nil {
 		return nil, nil
 	}
-	env := getEnv(jEnv)
 	encoded, err := key.MarshalBinary()
 	if err != nil {
 		return nil, err
 	}
-	jPublicKey, err := jutil.CallStaticObjectMethod(env, jUtilClass, "decodePublicKey", []jutil.Sign{jutil.ArraySign(jutil.ByteSign)}, publicKeySign, encoded)
+	jPublicKey, err := jutil.CallStaticObjectMethod(jEnv, jUtilClass, "decodePublicKey", []jutil.Sign{jutil.ArraySign(jutil.ByteSign)}, publicKeySign, encoded)
 	if err != nil {
 		return nil, err
 	}
@@ -144,9 +139,8 @@ func JavaPublicKey(jEnv interface{}, key security.PublicKey) (C.jobject, error) 
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func GoPublicKey(jEnv, jKey interface{}) (security.PublicKey, error) {
-	env := getEnv(jEnv)
 	jPublicKey := getObject(jKey)
-	encoded, err := jutil.CallStaticByteArrayMethod(env, jUtilClass, "encodePublicKey", []jutil.Sign{publicKeySign}, jPublicKey)
+	encoded, err := jutil.CallStaticByteArrayMethod(jEnv, jUtilClass, "encodePublicKey", []jutil.Sign{publicKeySign}, jPublicKey)
 	if err != nil {
 		return nil, err
 	}
@@ -158,12 +152,11 @@ func GoPublicKey(jEnv, jKey interface{}) (security.PublicKey, error) {
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func JavaSignature(jEnv interface{}, sig security.Signature) (C.jobject, error) {
-	env := getEnv(jEnv)
 	encoded, err := json.Marshal(sig)
 	if err != nil {
 		return nil, err
 	}
-	jSignature, err := jutil.CallStaticObjectMethod(env, jUtilClass, "decodeSignature", []jutil.Sign{jutil.StringSign}, signatureSign, encoded)
+	jSignature, err := jutil.CallStaticObjectMethod(jEnv, jUtilClass, "decodeSignature", []jutil.Sign{jutil.StringSign}, signatureSign, string(encoded))
 	if err != nil {
 		return nil, err
 	}
@@ -175,9 +168,8 @@ func JavaSignature(jEnv interface{}, sig security.Signature) (C.jobject, error) 
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func GoSignature(jEnv, jSig interface{}) (security.Signature, error) {
-	env := getEnv(jEnv)
 	jSignature := getObject(jSig)
-	encoded, err := jutil.CallStaticStringMethod(env, jUtilClass, "encodeSignature", []jutil.Sign{signatureSign}, jSignature)
+	encoded, err := jutil.CallStaticStringMethod(jEnv, jUtilClass, "encodeSignature", []jutil.Sign{signatureSign}, jSignature)
 	if err != nil {
 		return security.Signature{}, err
 	}
@@ -193,12 +185,11 @@ func GoSignature(jEnv, jSig interface{}) (security.Signature, error) {
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func JavaCaveat(jEnv interface{}, caveat security.Caveat) (C.jobject, error) {
-	env := getEnv(jEnv)
 	encoded, err := json.Marshal(caveat)
 	if err != nil {
 		return nil, err
 	}
-	jCaveat, err := jutil.CallStaticObjectMethod(env, jUtilClass, "decodeCaveat", []jutil.Sign{jutil.StringSign}, caveatSign, encoded)
+	jCaveat, err := jutil.CallStaticObjectMethod(jEnv, jUtilClass, "decodeCaveat", []jutil.Sign{jutil.StringSign}, caveatSign, string(encoded))
 	if err != nil {
 		return nil, err
 	}
@@ -210,9 +201,8 @@ func JavaCaveat(jEnv interface{}, caveat security.Caveat) (C.jobject, error) {
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func GoCaveat(jEnv, jCav interface{}) (security.Caveat, error) {
-	env := getEnv(jEnv)
 	jCaveat := getObject(jCav)
-	encoded, err := jutil.CallStaticStringMethod(env, jUtilClass, "encodeCaveat", []jutil.Sign{caveatSign}, jCaveat)
+	encoded, err := jutil.CallStaticStringMethod(jEnv, jUtilClass, "encodeCaveat", []jutil.Sign{caveatSign}, jCaveat)
 	if err != nil {
 		return security.Caveat{}, err
 	}
@@ -228,12 +218,11 @@ func GoCaveat(jEnv, jCav interface{}) (security.Caveat, error) {
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func JavaCaveats(jEnv interface{}, caveats []security.Caveat) (C.jobjectArray, error) {
-	env := getEnv(jEnv)
 	encoded, err := json.Marshal(caveats)
 	if err != nil {
 		return nil, err
 	}
-	jCaveats, err := jutil.CallStaticObjectMethod(env, jUtilClass, "decodeCaveats", []jutil.Sign{jutil.StringSign}, jutil.ArraySign(caveatSign), encoded)
+	jCaveats, err := jutil.CallStaticObjectMethod(jEnv, jUtilClass, "decodeCaveats", []jutil.Sign{jutil.StringSign}, jutil.ArraySign(caveatSign), string(encoded))
 	if err != nil {
 		return nil, err
 	}
@@ -246,9 +235,8 @@ func JavaCaveats(jEnv interface{}, caveats []security.Caveat) (C.jobjectArray, e
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func GoCaveats(jEnv, jCavs interface{}) ([]security.Caveat, error) {
-	env := getEnv(jEnv)
 	jCaveats := getObject(jCavs)
-	encoded, err := jutil.CallStaticStringMethod(env, jUtilClass, "encodeCaveats", []jutil.Sign{jutil.ArraySign(caveatSign)}, jCaveats)
+	encoded, err := jutil.CallStaticStringMethod(jEnv, jUtilClass, "encodeCaveats", []jutil.Sign{jutil.ArraySign(caveatSign)}, jCaveats)
 	if err != nil {
 		return nil, err
 	}
@@ -257,6 +245,147 @@ func GoCaveats(jEnv, jCavs interface{}) ([]security.Caveat, error) {
 		return nil, fmt.Errorf("couldn't JSON-decode caveats %q: %v", encoded, err)
 	}
 	return caveats, nil
+}
+
+// JavaACL converts the provided Go ACL into a Java ACL.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func JavaACL(jEnv interface{}, acl acl.ACL) (C.jobject, error) {
+	encoded, err := json.Marshal(acl)
+	if err != nil {
+		return nil, err
+	}
+	jACL, err := jutil.CallStaticObjectMethod(jEnv, jUtilClass, "decodeACL", []jutil.Sign{jutil.StringSign}, aclSign, string(encoded))
+	if err != nil {
+		return nil, err
+	}
+	return C.jobject(jACL), nil
+}
+
+// GoACL converts the provided Java ACL into a Go ACL.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func GoACL(jEnv, jACL interface{}) (acl.ACL, error) {
+	encoded, err := jutil.CallStaticStringMethod(jEnv, jUtilClass, "encodeACL", []jutil.Sign{aclSign}, jACL)
+	if err != nil {
+		return acl.ACL{}, err
+	}
+	var a acl.ACL
+	if err := json.Unmarshal([]byte(encoded), &a); err != nil {
+		return acl.ACL{}, fmt.Errorf("couldn't JSON-decode ACL %q: %v", encoded, err)
+	}
+	return a, nil
+}
+
+// JavaBlessingPatternWrapper converts the provided Go BlessingPattern into a Java
+// BlessingPatternWrapper object.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func JavaBlessingPatternWrapper(jEnv interface{}, pattern security.BlessingPattern) (C.jobject, error) {
+	jPattern, err := JavaBlessingPattern(jEnv, pattern)
+	if err != nil {
+		return nil, err
+	}
+	jWrapper, err := jutil.NewObject(jEnv, jBlessingPatternWrapperClass, []jutil.Sign{jutil.LongSign, blessingPatternSign}, int64(jutil.PtrValue(&pattern)), jPattern)
+	if err != nil {
+		return nil, err
+	}
+	jutil.GoRef(&pattern) // Un-refed when the Java BlessingPatternWrapper object is finalized.
+	return C.jobject(jWrapper), nil
+}
+
+// JavaACLWrapper converts the provided Go ACL into a Java ACLWrapper object.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func JavaACLWrapper(jEnv interface{}, acl acl.ACL) (C.jobject, error) {
+	jACL, err := JavaACL(jEnv, acl)
+	if err != nil {
+		return nil, err
+	}
+	jWrapper, err := jutil.NewObject(jEnv, jACLWrapperClass, []jutil.Sign{jutil.LongSign, aclSign}, int64(jutil.PtrValue(&acl)), jACL)
+	if err != nil {
+		return nil, err
+	}
+	jutil.GoRef(&acl) // Un-refed when the Java ACLWrapper object is finalized.
+	return C.jobject(jWrapper), nil
+}
+
+// javaTag is a placeholder for a tag that was obtained from Java.
+type javaTag struct {
+	jTag C.jobject
+	jVM  *C.JavaVM
+}
+
+// GoTags converts the provided Java tags into Go tags.  These tags will be mostly
+// useless except for later conversion back to Java tags.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func GoTags(jEnv, jTags interface{}) ([]interface{}, error) {
+	env := (*C.JNIEnv)(unsafe.Pointer(jutil.PtrValue(jEnv)))
+
+	// We cannot cache Java environments as they are only valid in the current
+	// thread.  We can, however, cache the Java VM and obtain an environment
+	// from it in whatever thread happens to be running at the time.
+	var jVM *C.JavaVM
+	if status := C.GetJavaVM(env, &jVM); status != 0 {
+		return nil, fmt.Errorf("couldn't get Java VM from the (Java) environment")
+	}
+
+	tagsJava := jutil.GoObjectArray(env, jTags)
+	if tagsJava == nil {
+		return nil, nil
+	}
+	tags := make([]interface{}, len(tagsJava))
+	for i, tag := range tagsJava {
+		jniTag := &javaTag{
+			// Reference the Java tag; it will be de-referenced when this Go tag
+			// is garbage-collected (through the finalizer callback we setup
+			// just below).
+			jTag: C.NewGlobalRef(env, C.jobject(tag)),
+			jVM:  jVM,
+		}
+		runtime.SetFinalizer(jniTag, func(t *javaTag) {
+			jEnv, freeFunc := jutil.GetEnv(t.jVM)
+			env := (*C.JNIEnv)(jEnv)
+			defer freeFunc()
+			C.DeleteGlobalRef(env, t.jTag)
+		})
+		tags[i] = jniTag
+	}
+	return tags, nil
+}
+
+// JavaTags converts the provided Go tags into Java tags.  It assumes that the
+// tags were produced by a call to GoTags above.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func JavaTags(jEnv interface{}, tags []interface{}) (C.jobjectArray, error) {
+	if tags == nil {
+		return nil, nil
+	}
+	tagsJava := make([]interface{}, len(tags))
+	for i, tag := range tags {
+		// Make sure that that the tag is a Java tag.  (That must be the case
+		// because the tags are injected into the Veyron runtime by the
+		// invoker's Prepare() method, which in out runtime implementation
+		// obtains the tags from Java.)
+		jniTag, ok := tag.(*javaTag)
+		if !ok {
+			return nil, fmt.Errorf("Encountered method tag of unsupported type %T: %v", tag, tag)
+		}
+		tagsJava[i] = jniTag.jTag
+	}
+	jTags, err := jutil.JObjectArray(jEnv, tagsJava)
+	if err != nil {
+		return nil, err
+	}
+	return C.jobjectArray(jTags), nil
 }
 
 // extractWire extracts WireBlessings from the provided Blessings.
@@ -302,10 +431,6 @@ func decodeWireBlessings(encoded string) (security.WireBlessings, error) {
 	return wire, nil
 }
 
-// Various functions that cast CGO types from other packages into this package's types.
-func getEnv(jEnv interface{}) *C.JNIEnv {
-	return (*C.JNIEnv)(unsafe.Pointer(jutil.PtrValue(jEnv)))
-}
 func getObject(jObj interface{}) C.jobject {
 	return C.jobject(unsafe.Pointer(jutil.PtrValue(jObj)))
 }

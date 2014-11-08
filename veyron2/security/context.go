@@ -24,11 +24,11 @@ import "C"
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func JavaContext(jEnv interface{}, context security.Context) (C.jobject, error) {
-	jContext, err := jutil.NewObject(jEnv, jContextImplClass, []jutil.Sign{jutil.LongSign}, &context)
+	jContext, err := jutil.NewObject(jEnv, jContextImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&context)))
 	if err != nil {
 		return nil, err
 	}
-	jutil.GoRef(&context) // Un-refed when the Java Context object is finalized.
+	jutil.GoRef(&context) // Un-refed when the Java ContextImpl object is finalized.
 	return C.jobject(jContext), nil
 }
 
@@ -100,13 +100,10 @@ func (c *context) MethodTags() []interface{} {
 		log.Println("Couldn't call Java methodTags method: ", err)
 		return nil
 	}
-	tagsJava := jutil.GoObjectArray(env, jTags)
-	if tagsJava == nil {
+	tags, err := GoTags(env, jTags)
+	if err != nil {
+		log.Println("Couldn't convert Java tags to Go: ", err)
 		return nil
-	}
-	tags := make([]interface{}, len(tagsJava))
-	for i, tag := range tagsJava {
-		tags[i] = tag
 	}
 	return tags
 }
@@ -119,21 +116,9 @@ func (c *context) Suffix() string {
 	return c.callStringMethod("suffix")
 }
 
+// TODO(spetrovic): remove when the method is removed from the Context interface.
 func (c *context) Label() security.Label {
-	env, freeFunc := jutil.GetEnv(c.jVM)
-	defer freeFunc()
-	labelSign := jutil.ClassSign("io.veyron.veyron.veyron2.security.Label")
-	jLabel, err := jutil.CallObjectMethod(env, c.jContext, "label", nil, labelSign)
-	if err != nil {
-		log.Println("Couldn't call Java label method: ", err)
-		return security.Label(0)
-	}
-	labelVal, err := jutil.JIntField(env, jLabel, "value")
-	if err != nil {
-		log.Println("Couldn't get Java Label field: ", err)
-		return security.Label(0)
-	}
-	return security.Label(labelVal)
+	return security.Label(0)
 }
 
 func (c *context) Discharges() map[string]security.Discharge {
@@ -154,7 +139,7 @@ func (c *context) LocalEndpoint() naming.Endpoint {
 func (c *context) LocalPrincipal() security.Principal {
 	env, freeFunc := jutil.GetEnv(c.jVM)
 	defer freeFunc()
-	jPrincipal, err := jutil.CallObjectMethod(env, c.jContext, "localPrincipal", nil, blessingsSign)
+	jPrincipal, err := jutil.CallObjectMethod(env, c.jContext, "localPrincipal", nil, principalSign)
 	if err != nil {
 		log.Printf("Couldn't call Java localPrincipal method: %v", err)
 		return nil
