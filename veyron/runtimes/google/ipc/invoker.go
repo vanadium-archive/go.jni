@@ -26,7 +26,7 @@ func goInvoker(env *C.JNIEnv, jObj C.jobject) (ipc.Invoker, error) {
 	jInvoker := C.jobject(jInvokerObj)
 
 	// Fetch the argGetter for the object.
-	jPathArray, err := jutil.CallObjectMethod(env, jInvoker, "getImplementedServices", nil, jutil.ArraySign(jutil.StringSign))
+	jPathArray, err := jutil.CallObjectMethod(env, jInvoker, "getImplementedServers", nil, jutil.ArraySign(jutil.StringSign))
 	if err != nil {
 		return nil, err
 	}
@@ -134,6 +134,11 @@ func (i *invoker) Invoke(method string, call ipc.ServerCall, argptrs []interface
 	}
 	// Decode and return results.
 	return i.decodeResults(env, method, len(argptrs), C.jobject(jReply))
+}
+
+func (i *invoker) VGlob() *ipc.GlobState {
+	// TODO(spetrovic): implement this method.
+	return &ipc.GlobState{}
 }
 
 // encodeArgs JSON-encodes the provided argument pointers, converts them into
