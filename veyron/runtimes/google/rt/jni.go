@@ -7,6 +7,7 @@ import (
 
 	jutil "veyron.io/jni/util"
 	jipc "veyron.io/jni/veyron/runtimes/google/ipc"
+	jnaming "veyron.io/jni/veyron/runtimes/google/naming"
 	jcontext "veyron.io/jni/veyron2/context"
 	jsecurity "veyron.io/jni/veyron2/security"
 	"veyron.io/veyron/veyron2"
@@ -64,14 +65,13 @@ func Java_io_veyron_veyron_veyron_runtimes_google_VRuntime_nativeNewRuntime(env 
 
 //export Java_io_veyron_veyron_veyron_runtimes_google_VRuntime_nativeNewClient
 func Java_io_veyron_veyron_veyron_runtimes_google_VRuntime_nativeNewClient(env *C.JNIEnv, jRuntime C.jobject, goPtr C.jlong, jOptions C.jobject) C.jobject {
-	r := (*veyron2.Runtime)(jutil.Ptr(goPtr))
 	// No options supported yet.
-	rc, err := (*r).NewClient()
+	client, err := (*(*veyron2.Runtime)(jutil.Ptr(goPtr))).NewClient()
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	jClient, err := jipc.JavaClient(env, rc)
+	jClient, err := jipc.JavaClient(env, client)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -81,14 +81,13 @@ func Java_io_veyron_veyron_veyron_runtimes_google_VRuntime_nativeNewClient(env *
 
 //export Java_io_veyron_veyron_veyron_runtimes_google_VRuntime_nativeNewServer
 func Java_io_veyron_veyron_veyron_runtimes_google_VRuntime_nativeNewServer(env *C.JNIEnv, jRuntime C.jobject, goPtr C.jlong, jOptions C.jobject) C.jobject {
-	r := (*veyron2.Runtime)(jutil.Ptr(goPtr))
 	// No options supported yet.
-	s, err := (*r).NewServer()
+	server, err := (*(*veyron2.Runtime)(jutil.Ptr(goPtr))).NewServer()
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	jServer, err := jipc.JavaServer(env, s)
+	jServer, err := jipc.JavaServer(env, server)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -98,9 +97,8 @@ func Java_io_veyron_veyron_veyron_runtimes_google_VRuntime_nativeNewServer(env *
 
 //export Java_io_veyron_veyron_veyron_runtimes_google_VRuntime_nativeGetClient
 func Java_io_veyron_veyron_veyron_runtimes_google_VRuntime_nativeGetClient(env *C.JNIEnv, jRuntime C.jobject, goPtr C.jlong) C.jobject {
-	r := (*veyron2.Runtime)(jutil.Ptr(goPtr))
-	rc := (*r).Client()
-	jClient, err := jipc.JavaClient(env, rc)
+	client := (*(*veyron2.Runtime)(jutil.Ptr(goPtr))).Client()
+	jClient, err := jipc.JavaClient(env, client)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -110,9 +108,8 @@ func Java_io_veyron_veyron_veyron_runtimes_google_VRuntime_nativeGetClient(env *
 
 //export Java_io_veyron_veyron_veyron_runtimes_google_VRuntime_nativeNewContext
 func Java_io_veyron_veyron_veyron_runtimes_google_VRuntime_nativeNewContext(env *C.JNIEnv, jRuntime C.jobject, goPtr C.jlong) C.jobject {
-	r := (*veyron2.Runtime)(jutil.Ptr(goPtr))
-	c := (*r).NewContext()
-	jContext, err := jcontext.JavaContext(env, c, nil)
+	context := (*(*veyron2.Runtime)(jutil.Ptr(goPtr))).NewContext()
+	jContext, err := jcontext.JavaContext(env, context, nil)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -120,12 +117,26 @@ func Java_io_veyron_veyron_veyron_runtimes_google_VRuntime_nativeNewContext(env 
 	return C.jobject(jContext)
 }
 
+//export Java_io_veyron_veyron_veyron_runtimes_google_VRuntime_nativeGetPrincipal
+func Java_io_veyron_veyron_veyron_runtimes_google_VRuntime_nativeGetPrincipal(env *C.JNIEnv, jRuntime C.jobject, goPtr C.jlong) C.jobject {
+	principal := (*(*veyron2.Runtime)(jutil.Ptr(goPtr))).Principal()
+	jPrincipal, err := jsecurity.JavaPrincipal(env, principal)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	return C.jobject(jPrincipal)
+}
+
 //export Java_io_veyron_veyron_veyron_runtimes_google_VRuntime_nativeGetNamespace
-func Java_io_veyron_veyron_veyron_runtimes_google_VRuntime_nativeGetNamespace(env *C.JNIEnv, jRuntime C.jobject, goPtr C.jlong) C.jlong {
-	r := (*veyron2.Runtime)(jutil.Ptr(goPtr))
-	n := (*r).Namespace()
-	jutil.GoRef(&n) // Un-refed when the Java Namespace object is finalized.
-	return C.jlong(jutil.PtrValue(&n))
+func Java_io_veyron_veyron_veyron_runtimes_google_VRuntime_nativeGetNamespace(env *C.JNIEnv, jRuntime C.jobject, goPtr C.jlong) C.jobject {
+	namespace := (*(*veyron2.Runtime)(jutil.Ptr(goPtr))).Namespace()
+	jNamespace, err := jnaming.JavaNamespace(env, namespace)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	return C.jobject(jNamespace)
 }
 
 //export Java_io_veyron_veyron_veyron_runtimes_google_VRuntime_nativeFinalize

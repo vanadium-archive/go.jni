@@ -3,6 +3,8 @@
 package naming
 
 import (
+	"unsafe"
+
 	jutil "veyron.io/jni/util"
 	jcontext "veyron.io/jni/veyron2/context"
 	"veyron.io/veyron/veyron2/naming"
@@ -12,12 +14,20 @@ import (
 // #include "jni_wrapper.h"
 import "C"
 
+var (
+	// Global reference for io.veyron.veyron.veyron.runtimes.google.naming.Namespace class.
+	jNamespaceImplClass C.jclass
+)
+
 // Init initializes the JNI code with the given Java environment. This method
 // must be called from the main Java thread.
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java environment is passed in an empty
 // interface and then cast into the package-local environment type.
-func Init(jEnv interface{}) {}
+func Init(jEnv interface{}) {
+	env := (*C.JNIEnv)(unsafe.Pointer(jutil.PtrValue(jEnv)))
+	jNamespaceImplClass = C.jclass(jutil.JFindClassOrPrint(env, "io/veyron/veyron/veyron/runtimes/google/naming/Namespace"))
+}
 
 //export Java_io_veyron_veyron_veyron_runtimes_google_naming_Namespace_nativeGlob
 func Java_io_veyron_veyron_veyron_runtimes_google_naming_Namespace_nativeGlob(env *C.JNIEnv, jNamespace C.jobject, goNamespacePtr C.jlong, jContext C.jobject, pattern C.jstring) C.jlong {

@@ -16,29 +16,27 @@ import (
 // #include "jni_wrapper.h"
 import "C"
 
-// JavaPrincipal creates an instance of Java Principal that uses the provided Go
-// Principal as its underlying implementation.
+// JavaPrincipal converts the provided Go Principal into a Java Principal
+// object.
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func JavaPrincipal(jEnv interface{}, principal security.Principal) (C.jobject, error) {
-	env := (*C.JNIEnv)(unsafe.Pointer(jutil.PtrValue(jEnv)))
-	jObj, err := jutil.NewObject(env, jPrincipalImplClass, []jutil.Sign{jutil.LongSign, signerSign, blessingStoreSign, blessingRootsSign}, &principal, C.jobject(nil), C.jobject(nil), C.jobject(nil))
+	jPrincipal, err := jutil.NewObject(jEnv, jPrincipalImplClass, []jutil.Sign{jutil.LongSign, signerSign, blessingStoreSign, blessingRootsSign}, int64(jutil.PtrValue(&principal)), C.jobject(nil), C.jobject(nil), C.jobject(nil))
 	if err != nil {
 		return nil, err
 	}
 	jutil.GoRef(&principal) // Un-refed when the Java PrincipalImpl is finalized.
-	return C.jobject(jObj), nil
+	return C.jobject(jPrincipal), nil
 }
 
-// GoPrincipal creates an instance of security.Principal that uses the provided
-// Java Principal as its underlying implementation.
+// GoPrincipal converts the provided Java Principal object into a Go Principal.
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func GoPrincipal(jEnv, jPrinc interface{}) (security.Principal, error) {
+func GoPrincipal(jEnv, jPrincipalObj interface{}) (security.Principal, error) {
 	env := (*C.JNIEnv)(unsafe.Pointer(jutil.PtrValue(jEnv)))
-	jPrincipal := C.jobject(unsafe.Pointer(jutil.PtrValue(jPrinc)))
+	jPrincipal := C.jobject(unsafe.Pointer(jutil.PtrValue(jPrincipalObj)))
 
 	// We cannot cache Java environments as they are only valid in the current
 	// thread.  We can, however, cache the Java VM and obtain an environment
