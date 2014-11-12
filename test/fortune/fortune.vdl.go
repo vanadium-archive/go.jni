@@ -115,24 +115,18 @@ type FortuneServerMethods interface {
 }
 
 // FortuneServerStubMethods is the server interface containing
-// Fortune methods, as expected by ipc.Server.  The difference between
-// this interface and FortuneServerMethods is that the first context
-// argument for each method is always ipc.ServerCall here, while it is either
-// ipc.ServerContext or a typed streaming context there.
-type FortuneServerStubMethods interface {
-	// Get returns a random fortune.
-	Get(__ipc.ServerCall) (Fortune string, Err error)
-	// Add stores a fortune in the set used by Get.
-	Add(call __ipc.ServerCall, Fortune string) error
-}
+// Fortune methods, as expected by ipc.Server.
+// There is no difference between this interface and FortuneServerMethods
+// since there are no streaming methods.
+type FortuneServerStubMethods FortuneServerMethods
 
 // FortuneServerStub adds universal methods to FortuneServerStubMethods.
 type FortuneServerStub interface {
 	FortuneServerStubMethods
 	// GetMethodTags will be replaced with DescribeInterfaces.
-	GetMethodTags(call __ipc.ServerCall, method string) ([]interface{}, error)
+	GetMethodTags(ctx __ipc.ServerContext, method string) ([]interface{}, error)
 	// Signature will be replaced with DescribeInterfaces.
-	Signature(call __ipc.ServerCall) (__ipc.ServiceSignature, error)
+	Signature(ctx __ipc.ServerContext) (__ipc.ServiceSignature, error)
 }
 
 // FortuneServer returns a server stub for Fortune.
@@ -157,19 +151,19 @@ type implFortuneServerStub struct {
 	gs   *__ipc.GlobState
 }
 
-func (s implFortuneServerStub) Get(call __ipc.ServerCall) (string, error) {
-	return s.impl.Get(call)
+func (s implFortuneServerStub) Get(ctx __ipc.ServerContext) (string, error) {
+	return s.impl.Get(ctx)
 }
 
-func (s implFortuneServerStub) Add(call __ipc.ServerCall, i0 string) error {
-	return s.impl.Add(call, i0)
+func (s implFortuneServerStub) Add(ctx __ipc.ServerContext, i0 string) error {
+	return s.impl.Add(ctx, i0)
 }
 
 func (s implFortuneServerStub) VGlob() *__ipc.GlobState {
 	return s.gs
 }
 
-func (s implFortuneServerStub) GetMethodTags(call __ipc.ServerCall, method string) ([]interface{}, error) {
+func (s implFortuneServerStub) GetMethodTags(ctx __ipc.ServerContext, method string) ([]interface{}, error) {
 	// TODO(toddw): Replace with new DescribeInterfaces implementation.
 	switch method {
 	case "Get":
@@ -181,7 +175,7 @@ func (s implFortuneServerStub) GetMethodTags(call __ipc.ServerCall, method strin
 	}
 }
 
-func (s implFortuneServerStub) Signature(call __ipc.ServerCall) (__ipc.ServiceSignature, error) {
+func (s implFortuneServerStub) Signature(ctx __ipc.ServerContext) (__ipc.ServiceSignature, error) {
 	// TODO(toddw) Replace with new DescribeInterfaces implementation.
 	result := __ipc.ServiceSignature{Methods: make(map[string]__ipc.MethodSignature)}
 	result.Methods["Add"] = __ipc.MethodSignature{
