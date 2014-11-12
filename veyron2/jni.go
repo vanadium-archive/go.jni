@@ -3,6 +3,7 @@
 package veyron2
 
 import (
+	jandroid "veyron.io/jni/veyron2/android"
 	jcontext "veyron.io/jni/veyron2/context"
 	jsecurity "veyron.io/jni/veyron2/security"
 )
@@ -20,4 +21,5 @@ import "C"
 func Init(jEnv interface{}) {
 	jcontext.Init(jEnv)
 	jsecurity.Init(jEnv)
+	jandroid.Init(jEnv)
 }

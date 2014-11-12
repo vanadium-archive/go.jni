@@ -2,8 +2,6 @@
 
 package android
 
-//TODO(bprosnitz) Move android code to a separate package so that we can make dependencies work
-
 import "syscall"
 
 // #cgo LDFLAGS: -ljniwrapper
@@ -19,7 +17,7 @@ import "C"
 // interface and then cast into the package-local environment type.
 func Init(jEnv interface{}) {}
 
-//export Java_io_veyron_veyron_veyron_runtimes_google_android_RedirectStderr_nativeStart
-func Java_io_veyron_veyron_veyron_runtimes_google_android_RedirectStderr_nativeStart(env *C.JNIEnv, jRuntime C.jclass, fileno C.jint) {
+//export Java_io_veyron_veyron_veyron2_android_RedirectStderr_nativeStart
+func Java_io_veyron_veyron_veyron2_android_RedirectStderr_nativeStart(env *C.JNIEnv, jRuntime C.jclass, fileno C.jint) {
 	syscall.Dup2(int(fileno), syscall.Stderr)
 }

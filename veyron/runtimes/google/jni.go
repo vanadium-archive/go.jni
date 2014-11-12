@@ -7,7 +7,6 @@ import (
 	"unsafe"
 
 	jutil "veyron.io/jni/util"
-	jandroid "veyron.io/jni/veyron/runtimes/google/android"
 	jipc "veyron.io/jni/veyron/runtimes/google/ipc"
 	jnaming "veyron.io/jni/veyron/runtimes/google/naming"
 	jrt "veyron.io/jni/veyron/runtimes/google/rt"
@@ -32,7 +31,6 @@ func Init(jEnv interface{}) {
 	env := (*C.JNIEnv)(unsafe.Pointer(jutil.PtrValue(jEnv)))
 	jEOFExceptionClass = C.jclass(jutil.JFindClassOrPrint(env, "java/io/EOFException"))
 
-	jandroid.Init(env)
 	jipc.Init(env)
 	jrt.Init(env)
 	jnaming.Init(env)

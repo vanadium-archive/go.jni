@@ -121,7 +121,7 @@ func (c *context) Label() security.Label {
 	return security.Label(0)
 }
 
-func (c *context) Discharges() map[string]security.Discharge {
+func (c *context) RemoteDischarges() map[string]security.Discharge {
 	// TODO(spetrovic): implement this method.
 	return nil
 }

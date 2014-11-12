@@ -4,7 +4,8 @@ package main
 
 import (
 	"flag"
-	"unsafe"
+
+	"golang.org/x/mobile/app"
 
 	jutil "veyron.io/jni/util"
 	jgoogle "veyron.io/jni/veyron/runtimes/google"
@@ -20,17 +21,12 @@ import "C"
 // from the main Java thread (e.g., On_Load()).
 func Init(env *C.JNIEnv) {}
 
-//export JNI_OnLoad
-func JNI_OnLoad(jVM *C.JavaVM, reserved unsafe.Pointer) C.jint {
-	jEnv, freeFunc := jutil.GetEnv(jVM)
-	env := (*C.JNIEnv)(jEnv)
-	defer freeFunc()
-
+//export Java_io_veyron_veyron_veyron2_RuntimeFactory_nativeInit
+func Java_io_veyron_veyron_veyron2_RuntimeFactory_nativeInit(env *C.JNIEnv, jRuntimeFactoryClass C.jclass) {
 	Init(env)
 	jutil.Init(env)
 	jveyron2.Init(env)
 	jgoogle.Init(env)
-	return C.JNI_VERSION_1_6
 }
 
 func main() {
@@ -38,4 +34,5 @@ func main() {
 	// flag is removed, the process will likely crash as android requires that all logs are written
 	// into a specific directory.
 	flag.Set("logtostderr", "true")
+	app.Run(app.Callbacks{})
 }

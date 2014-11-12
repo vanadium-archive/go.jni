@@ -171,7 +171,7 @@ func Java_io_veyron_veyron_veyron2_security_PrincipalImpl_nativeCreateForSigner(
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	principal, err := vsecurity.NewPrincipalFromSigner(signer)
+	principal, err := vsecurity.NewPrincipalFromSigner(signer, nil)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -243,7 +243,12 @@ func Java_io_veyron_veyron_veyron2_security_PrincipalImpl_nativeCreatePersistent
 		return nil
 	}
 	dir := jutil.GoString(env, jDir)
-	principal, err := vsecurity.NewPersistentPrincipalFromSigner(signer, dir)
+	stateSerializer, err := vsecurity.NewPrincipalStateSerializer(dir)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	principal, err := vsecurity.NewPrincipalFromSigner(signer, stateSerializer)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
