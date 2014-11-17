@@ -92,17 +92,6 @@ func (c implFortuneClientStub) Signature(ctx __context.T, opts ...__ipc.CallOpt)
 	return
 }
 
-func (c implFortuneClientStub) GetMethodTags(ctx __context.T, method string, opts ...__ipc.CallOpt) (o0 []interface{}, err error) {
-	var call __ipc.Call
-	if call, err = c.c(ctx).StartCall(ctx, c.name, "GetMethodTags", []interface{}{method}, opts...); err != nil {
-		return
-	}
-	if ierr := call.Finish(&o0, &err); ierr != nil {
-		err = ierr
-	}
-	return
-}
-
 // FortuneServerMethods is the interface a server writer
 // implements for Fortune.
 //
@@ -123,9 +112,9 @@ type FortuneServerStubMethods FortuneServerMethods
 // FortuneServerStub adds universal methods to FortuneServerStubMethods.
 type FortuneServerStub interface {
 	FortuneServerStubMethods
-	// GetMethodTags will be replaced with DescribeInterfaces.
-	GetMethodTags(ctx __ipc.ServerContext, method string) ([]interface{}, error)
-	// Signature will be replaced with DescribeInterfaces.
+	// Describe the Fortune interfaces.
+	Describe__() []__ipc.InterfaceDesc
+	// Signature will be replaced with Describe__.
 	Signature(ctx __ipc.ServerContext) (__ipc.ServiceSignature, error)
 }
 
@@ -163,20 +152,44 @@ func (s implFortuneServerStub) VGlob() *__ipc.GlobState {
 	return s.gs
 }
 
-func (s implFortuneServerStub) GetMethodTags(ctx __ipc.ServerContext, method string) ([]interface{}, error) {
-	// TODO(toddw): Replace with new DescribeInterfaces implementation.
-	switch method {
-	case "Get":
-		return []interface{}{security.Label(2)}, nil
-	case "Add":
-		return []interface{}{security.Label(4)}, nil
-	default:
-		return nil, nil
-	}
+func (s implFortuneServerStub) Describe__() []__ipc.InterfaceDesc {
+	return []__ipc.InterfaceDesc{FortuneDesc}
+}
+
+// FortuneDesc describes the Fortune interface.
+var FortuneDesc __ipc.InterfaceDesc = descFortune
+
+// descFortune hides the desc to keep godoc clean.
+var descFortune = __ipc.InterfaceDesc{
+	Name:    "Fortune",
+	PkgPath: "veyron.io/jni/test/fortune",
+	Doc:     "// Fortune allows clients to Get and Add fortune strings.",
+	Methods: []__ipc.MethodDesc{
+		{
+			Name: "Get",
+			Doc:  "// Get returns a random fortune.",
+			OutArgs: []__ipc.ArgDesc{
+				{"Fortune", ``}, // string
+				{"Err", ``},     // error
+			},
+			Tags: []__vdlutil.Any{security.Label(2)},
+		},
+		{
+			Name: "Add",
+			Doc:  "// Add stores a fortune in the set used by Get.",
+			InArgs: []__ipc.ArgDesc{
+				{"Fortune", ``}, // string
+			},
+			OutArgs: []__ipc.ArgDesc{
+				{"", ``}, // error
+			},
+			Tags: []__vdlutil.Any{security.Label(4)},
+		},
+	},
 }
 
 func (s implFortuneServerStub) Signature(ctx __ipc.ServerContext) (__ipc.ServiceSignature, error) {
-	// TODO(toddw) Replace with new DescribeInterfaces implementation.
+	// TODO(toddw): Replace with new Describe__ implementation.
 	result := __ipc.ServiceSignature{Methods: make(map[string]__ipc.MethodSignature)}
 	result.Methods["Add"] = __ipc.MethodSignature{
 		InArgs: []__ipc.MethodArgument{
