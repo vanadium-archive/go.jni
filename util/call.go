@@ -25,6 +25,7 @@ import "C"
 // jArg converts a Go argument to a Java argument.  It uses the provided sign to
 // validate that the argument is of a compatible type.
 func jArg(env *C.JNIEnv, v interface{}, sign Sign) (C.jvalue, bool) {
+	var errValue C.jvalue
 	rv := reflect.ValueOf(v)
 	if rv.Kind() == reflect.Ptr || rv.Kind() == reflect.UnsafePointer {
 		rv = reflect.ValueOf(rv.Pointer()) // Convert the pointer's address to a uintptr
@@ -33,63 +34,63 @@ func jArg(env *C.JNIEnv, v interface{}, sign Sign) (C.jvalue, bool) {
 	switch rv.Kind() {
 	case reflect.Int, reflect.Int32, reflect.Int16, reflect.Int8, reflect.Uint, reflect.Uint32, reflect.Uint16, reflect.Uint8:
 		if !isSignOneOf(sign, []Sign{ByteSign, ShortSign, IntSign, LongSign}) {
-			return *(*C.jvalue)(nil), false
+			return errValue, false
 		}
 		jv := C.jint(rv.Int())
 		ptr = unsafe.Pointer(&jv)
 	case reflect.Int64:
 		if sign != LongSign {
-			return *(*C.jvalue)(nil), false
+			return errValue, false
 		}
 		jv := C.jlong(rv.Int())
 		ptr = unsafe.Pointer(&jv)
 	case reflect.Uint64:
 		if sign != LongSign {
-			return *(*C.jvalue)(nil), false
+			return errValue, false
 		}
 		jv := C.jlong(rv.Uint())
 		ptr = unsafe.Pointer(&jv)
 	case reflect.Uintptr:
 		if isSignOneOf(sign, []Sign{ByteSign, BoolSign, CharSign, ShortSign, IntSign, FloatSign, DoubleSign}) {
-			return *(*C.jvalue)(nil), false
+			return errValue, false
 		}
 		jv := C.jlong(rv.Uint())
 		ptr = unsafe.Pointer(&jv)
 	case reflect.String:
 		if sign != StringSign {
-			return *(*C.jvalue)(nil), false
+			return errValue, false
 		}
 		// JString allocates the strings locally, so they are freed automatically when we return to Java.
 		jv := JString(env, rv.String())
 		if jv == nil {
-			return *(*C.jvalue)(nil), false
+			return errValue, false
 		}
 		ptr = unsafe.Pointer(&jv)
 	case reflect.Slice, reflect.Array:
 		switch rv.Type().Elem().Kind() {
 		case reflect.Uint8:
 			if sign != ArraySign(ByteSign) {
-				return *(*C.jvalue)(nil), false
+				return errValue, false
 			}
 			bs := rv.Interface().([]byte)
 			jv := JByteArray(env, bs)
 			ptr = unsafe.Pointer(&jv)
 		case reflect.String:
 			if sign != ArraySign(StringSign) {
-				return *(*C.jvalue)(nil), false
+				return errValue, false
 			}
 			// TODO(bprosnitz) We should handle objects by calling jArg recursively. We need a way to get the sign of the target type or treat it as an Object for non-string types.
 			strs := rv.Interface().([]string)
 			jv := JStringArray(env, strs)
 			ptr = unsafe.Pointer(&jv)
 		default:
-			return *(*C.jvalue)(nil), false
+			return errValue, false
 		}
 	default:
-		return *(*C.jvalue)(nil), false
+		return errValue, false
 	}
 	if ptr == nil {
-		return *(*C.jvalue)(nil), false
+		return errValue, false
 	}
 	return *(*C.jvalue)(ptr), true
 }
@@ -109,7 +110,6 @@ func jArgArray(env *C.JNIEnv, args []interface{}, argSigns []Sign) (jArr *C.jval
 		}
 		C.setJValueArrayElement(jvalueArr, C.int(i), jval)
 	}
-
 	freeFunc := func() {
 		C.free(unsafe.Pointer(jvalueArr))
 	}
@@ -269,10 +269,10 @@ func CallStaticObjectMethod(env interface{}, class interface{}, name string, arg
 		return nil, err
 	}
 	jvalArray, freeFunc, err := jArgArray(jenv, args, argSigns)
-	defer freeFunc()
 	if err != nil {
 		return nil, err
 	}
+	defer freeFunc()
 	ret := C.CallStaticObjectMethodA(jenv, jclass, jmid, jvalArray)
 	return ret, JExceptionMsg(env)
 }
@@ -302,10 +302,10 @@ func CallStaticIntMethod(env interface{}, class interface{}, name string, argSig
 		return 0, err
 	}
 	jvalArray, freeFunc, err := jArgArray(jenv, args, argSigns)
-	defer freeFunc()
 	if err != nil {
 		return -1, err
 	}
+	defer freeFunc()
 	ret := int(C.CallStaticIntMethodA(jenv, jclass, jmid, jvalArray))
 	return ret, JExceptionMsg(env)
 }
