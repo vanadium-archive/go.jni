@@ -5,7 +5,6 @@ package security
 import (
 	"encoding/json"
 	"fmt"
-	"reflect"
 	"runtime"
 	"unsafe"
 
@@ -26,10 +25,7 @@ func JavaBlessings(jEnv interface{}, blessings security.Blessings) (C.jobject, e
 	if blessings == nil {
 		return nil, nil
 	}
-	wire, err := extractWire(blessings)
-	if err != nil {
-		return nil, err
-	}
+	wire := security.MarshalBlessings(blessings)
 	encoded, err := encodeWireBlessings(wire)
 	if err != nil {
 		return nil, err
@@ -386,30 +382,6 @@ func JavaTags(jEnv interface{}, tags []interface{}) (C.jobjectArray, error) {
 		return nil, err
 	}
 	return C.jobjectArray(jTags), nil
-}
-
-// extractWire extracts WireBlessings from the provided Blessings.
-func extractWire(blessings security.Blessings) (security.WireBlessings, error) {
-	m := reflect.ValueOf(blessings).MethodByName("VomEncode")
-	if !m.IsValid() {
-		return security.WireBlessings{}, fmt.Errorf("type %T doesn't implement VomEncode()", blessings)
-	}
-	results := m.Call(nil)
-	if len(results) != 2 {
-		return security.WireBlessings{}, fmt.Errorf("wrong number of return arguments for %T.VomEncode(), want 2, have %d", blessings, len(results))
-	}
-	if !results[1].IsNil() {
-		err, ok := results[1].Interface().(error)
-		if !ok {
-			return security.WireBlessings{}, fmt.Errorf("second return argument must be an error, got %T", results[1].Interface())
-		}
-		return security.WireBlessings{}, fmt.Errorf("error invoking VomEncode(): %v", err)
-	}
-	result, ok := results[0].Interface().(security.WireBlessings)
-	if !ok {
-		return security.WireBlessings{}, fmt.Errorf("unexpected return value of type %T for VomEncode", result)
-	}
-	return result, nil
 }
 
 // encodeWireBlessings JSON-encodes the provided set of WireBlessings.

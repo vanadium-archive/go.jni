@@ -141,6 +141,16 @@ func (i *invoker) VGlob() *ipc.GlobState {
 	return &ipc.GlobState{}
 }
 
+func (i *invoker) Signature(ctx ipc.ServerContext) ([]ipc.InterfaceSig, error) {
+	// TODO(spetrovic): implement this method.
+	return nil, fmt.Errorf("Java runtime doesn't yet support signatures.")
+}
+
+func (i *invoker) MethodSignature(ctx ipc.ServerContext, method string) (ipc.MethodSig, error) {
+	// TODO(spetrovic): implement this method.
+	return ipc.MethodSig{}, fmt.Errorf("Java runtime doesn't yet support signatures.")
+}
+
 // encodeArgs JSON-encodes the provided argument pointers, converts them into
 // Java strings, and returns a Java string array response.
 func (*invoker) encodeArgs(env *C.JNIEnv, argptrs []interface{}) (C.jobjectArray, error) {
