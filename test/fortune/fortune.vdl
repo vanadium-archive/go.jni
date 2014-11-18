@@ -8,4 +8,6 @@ type Fortune interface {
  Get() (Fortune string, Err error) {security.ReadLabel}
  // Add stores a fortune in the set used by Get.
  Add(Fortune string) error {security.WriteLabel}
+ // StreamingGet returns a stream that can be used to obtain fortunes.
+ StreamingGet() stream<bool, string> (total int32, err error)
 }
