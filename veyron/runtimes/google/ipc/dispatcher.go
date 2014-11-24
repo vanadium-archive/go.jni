@@ -46,7 +46,7 @@ type dispatcher struct {
 	jDispatcher C.jobject
 }
 
-func (d *dispatcher) Lookup(suffix, method string) (interface{}, security.Authorizer, error) {
+func (d *dispatcher) Lookup(suffix string) (interface{}, security.Authorizer, error) {
 	// Get Java environment.
 	env, freeFunc := jutil.GetEnv(d.jVM)
 	defer freeFunc()
