@@ -4,8 +4,6 @@
 package fortune
 
 import (
-	"veyron.io/veyron/veyron2/security"
-
 	// The non-user imports are prefixed with "__" to prevent collisions.
 	__io "io"
 	__veyron2 "veyron.io/veyron/veyron2"
@@ -303,7 +301,6 @@ var descFortune = __ipc.InterfaceDesc{
 				{"Fortune", ``}, // string
 				{"Err", ``},     // error
 			},
-			Tags: []__vdlutil.Any{security.Label(2)},
 		},
 		{
 			Name: "Add",
@@ -314,7 +311,6 @@ var descFortune = __ipc.InterfaceDesc{
 			OutArgs: []__ipc.ArgDesc{
 				{"", ``}, // error
 			},
-			Tags: []__vdlutil.Any{security.Label(4)},
 		},
 		{
 			Name: "StreamingGet",

@@ -1,13 +1,11 @@
 package fortune
 
-import "veyron.io/veyron/veyron2/security"
-
 // Fortune allows clients to Get and Add fortune strings.
 type Fortune interface {
  // Get returns a random fortune.
- Get() (Fortune string, Err error) {security.ReadLabel}
+ Get() (Fortune string, Err error)
  // Add stores a fortune in the set used by Get.
- Add(Fortune string) error {security.WriteLabel}
+ Add(Fortune string) error
  // StreamingGet returns a stream that can be used to obtain fortunes.
  StreamingGet() stream<bool, string> (total int32, err error)
 }
