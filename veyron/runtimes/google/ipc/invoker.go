@@ -136,7 +136,7 @@ func (i *invoker) Invoke(method string, call ipc.ServerCall, argptrs []interface
 	return i.decodeResults(env, method, len(argptrs), C.jobject(jReply))
 }
 
-func (i *invoker) VGlob() *ipc.GlobState {
+func (i *invoker) Globber() *ipc.GlobState {
 	// TODO(spetrovic): implement this method.
 	return &ipc.GlobState{}
 }

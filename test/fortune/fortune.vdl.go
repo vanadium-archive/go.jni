@@ -277,7 +277,7 @@ func (s implFortuneServerStub) StreamingGet(ctx *FortuneStreamingGetContextStub)
 	return s.impl.StreamingGet(ctx)
 }
 
-func (s implFortuneServerStub) VGlob() *__ipc.GlobState {
+func (s implFortuneServerStub) Globber() *__ipc.GlobState {
 	return s.gs
 }
 
