@@ -9,7 +9,6 @@ import (
 	"unsafe"
 
 	jutil "veyron.io/jni/util"
-	"veyron.io/veyron/veyron/security/acl"
 	"veyron.io/veyron/veyron2/security"
 )
 
@@ -243,38 +242,6 @@ func GoCaveats(jEnv, jCavs interface{}) ([]security.Caveat, error) {
 	return caveats, nil
 }
 
-// JavaACL converts the provided Go ACL into a Java ACL.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func JavaACL(jEnv interface{}, acl acl.ACL) (C.jobject, error) {
-	encoded, err := json.Marshal(acl)
-	if err != nil {
-		return nil, err
-	}
-	jACL, err := jutil.CallStaticObjectMethod(jEnv, jUtilClass, "decodeACL", []jutil.Sign{jutil.StringSign}, aclSign, string(encoded))
-	if err != nil {
-		return nil, err
-	}
-	return C.jobject(jACL), nil
-}
-
-// GoACL converts the provided Java ACL into a Go ACL.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func GoACL(jEnv, jACL interface{}) (acl.ACL, error) {
-	encoded, err := jutil.CallStaticStringMethod(jEnv, jUtilClass, "encodeACL", []jutil.Sign{aclSign}, jACL)
-	if err != nil {
-		return acl.ACL{}, err
-	}
-	var a acl.ACL
-	if err := json.Unmarshal([]byte(encoded), &a); err != nil {
-		return acl.ACL{}, fmt.Errorf("couldn't JSON-decode ACL %q: %v", encoded, err)
-	}
-	return a, nil
-}
-
 // JavaBlessingPatternWrapper converts the provided Go BlessingPattern into a Java
 // BlessingPatternWrapper object.
 // NOTE: Because CGO creates package-local types and because this method may be
@@ -290,23 +257,6 @@ func JavaBlessingPatternWrapper(jEnv interface{}, pattern security.BlessingPatte
 		return nil, err
 	}
 	jutil.GoRef(&pattern) // Un-refed when the Java BlessingPatternWrapper object is finalized.
-	return C.jobject(jWrapper), nil
-}
-
-// JavaACLWrapper converts the provided Go ACL into a Java ACLWrapper object.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func JavaACLWrapper(jEnv interface{}, acl acl.ACL) (C.jobject, error) {
-	jACL, err := JavaACL(jEnv, acl)
-	if err != nil {
-		return nil, err
-	}
-	jWrapper, err := jutil.NewObject(jEnv, jACLWrapperClass, []jutil.Sign{jutil.LongSign, aclSign}, int64(jutil.PtrValue(&acl)), jACL)
-	if err != nil {
-		return nil, err
-	}
-	jutil.GoRef(&acl) // Un-refed when the Java ACLWrapper object is finalized.
 	return C.jobject(jWrapper), nil
 }
 

@@ -4,6 +4,8 @@
 package fortune
 
 import (
+	"veyron.io/veyron/veyron2/services/security/access"
+
 	// The non-user imports are prefixed with "__" to prevent collisions.
 	__io "io"
 	__veyron2 "veyron.io/veyron/veyron2"
@@ -23,10 +25,10 @@ const _ = __wiretype.TypeIDInvalid
 //
 // Fortune allows clients to Get and Add fortune strings.
 type FortuneClientMethods interface {
-	// Get returns a random fortune.
-	Get(__context.T, ...__ipc.CallOpt) (Fortune string, err error)
 	// Add stores a fortune in the set used by Get.
 	Add(ctx __context.T, Fortune string, opts ...__ipc.CallOpt) error
+	// Get returns a random fortune.
+	Get(__context.T, ...__ipc.CallOpt) (Fortune string, err error)
 	// StreamingGet returns a stream that can be used to obtain fortunes.
 	StreamingGet(__context.T, ...__ipc.CallOpt) (FortuneStreamingGetCall, error)
 }
@@ -60,23 +62,23 @@ func (c implFortuneClientStub) c(ctx __context.T) __ipc.Client {
 	return __veyron2.RuntimeFromContext(ctx).Client()
 }
 
-func (c implFortuneClientStub) Get(ctx __context.T, opts ...__ipc.CallOpt) (o0 string, err error) {
-	var call __ipc.Call
-	if call, err = c.c(ctx).StartCall(ctx, c.name, "Get", nil, opts...); err != nil {
-		return
-	}
-	if ierr := call.Finish(&o0, &err); ierr != nil {
-		err = ierr
-	}
-	return
-}
-
 func (c implFortuneClientStub) Add(ctx __context.T, i0 string, opts ...__ipc.CallOpt) (err error) {
 	var call __ipc.Call
 	if call, err = c.c(ctx).StartCall(ctx, c.name, "Add", []interface{}{i0}, opts...); err != nil {
 		return
 	}
 	if ierr := call.Finish(&err); ierr != nil {
+		err = ierr
+	}
+	return
+}
+
+func (c implFortuneClientStub) Get(ctx __context.T, opts ...__ipc.CallOpt) (o0 string, err error) {
+	var call __ipc.Call
+	if call, err = c.c(ctx).StartCall(ctx, c.name, "Get", nil, opts...); err != nil {
+		return
+	}
+	if ierr := call.Finish(&o0, &err); ierr != nil {
 		err = ierr
 	}
 	return
@@ -213,10 +215,10 @@ func (c *implFortuneStreamingGetCall) Finish() (o0 int32, err error) {
 //
 // Fortune allows clients to Get and Add fortune strings.
 type FortuneServerMethods interface {
-	// Get returns a random fortune.
-	Get(__ipc.ServerContext) (Fortune string, Err error)
 	// Add stores a fortune in the set used by Get.
 	Add(ctx __ipc.ServerContext, Fortune string) error
+	// Get returns a random fortune.
+	Get(__ipc.ServerContext) (Fortune string, Err error)
 	// StreamingGet returns a stream that can be used to obtain fortunes.
 	StreamingGet(FortuneStreamingGetContext) (total int32, err error)
 }
@@ -226,10 +228,10 @@ type FortuneServerMethods interface {
 // The only difference between this interface and FortuneServerMethods
 // is the streaming methods.
 type FortuneServerStubMethods interface {
-	// Get returns a random fortune.
-	Get(__ipc.ServerContext) (Fortune string, Err error)
 	// Add stores a fortune in the set used by Get.
 	Add(ctx __ipc.ServerContext, Fortune string) error
+	// Get returns a random fortune.
+	Get(__ipc.ServerContext) (Fortune string, Err error)
 	// StreamingGet returns a stream that can be used to obtain fortunes.
 	StreamingGet(*FortuneStreamingGetContextStub) (total int32, err error)
 }
@@ -265,12 +267,12 @@ type implFortuneServerStub struct {
 	gs   *__ipc.GlobState
 }
 
-func (s implFortuneServerStub) Get(ctx __ipc.ServerContext) (string, error) {
-	return s.impl.Get(ctx)
-}
-
 func (s implFortuneServerStub) Add(ctx __ipc.ServerContext, i0 string) error {
 	return s.impl.Add(ctx, i0)
+}
+
+func (s implFortuneServerStub) Get(ctx __ipc.ServerContext) (string, error) {
+	return s.impl.Get(ctx)
 }
 
 func (s implFortuneServerStub) StreamingGet(ctx *FortuneStreamingGetContextStub) (int32, error) {
@@ -295,14 +297,6 @@ var descFortune = __ipc.InterfaceDesc{
 	Doc:     "// Fortune allows clients to Get and Add fortune strings.",
 	Methods: []__ipc.MethodDesc{
 		{
-			Name: "Get",
-			Doc:  "// Get returns a random fortune.",
-			OutArgs: []__ipc.ArgDesc{
-				{"Fortune", ``}, // string
-				{"Err", ``},     // error
-			},
-		},
-		{
 			Name: "Add",
 			Doc:  "// Add stores a fortune in the set used by Get.",
 			InArgs: []__ipc.ArgDesc{
@@ -311,6 +305,16 @@ var descFortune = __ipc.InterfaceDesc{
 			OutArgs: []__ipc.ArgDesc{
 				{"", ``}, // error
 			},
+			Tags: []__vdlutil.Any{access.Tag("Write")},
+		},
+		{
+			Name: "Get",
+			Doc:  "// Get returns a random fortune.",
+			OutArgs: []__ipc.ArgDesc{
+				{"Fortune", ``}, // string
+				{"Err", ``},     // error
+			},
+			Tags: []__vdlutil.Any{access.Tag("Read")},
 		},
 		{
 			Name: "StreamingGet",
@@ -319,6 +323,7 @@ var descFortune = __ipc.InterfaceDesc{
 				{"total", ``}, // int32
 				{"err", ``},   // error
 			},
+			Tags: []__vdlutil.Any{access.Tag("Read")},
 		},
 	},
 }

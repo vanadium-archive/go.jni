@@ -6,6 +6,7 @@ import (
 	jandroid "veyron.io/jni/veyron2/android"
 	jcontext "veyron.io/jni/veyron2/context"
 	jsecurity "veyron.io/jni/veyron2/security"
+	jaccess "veyron.io/jni/veyron2/services/security/access"
 )
 
 // #cgo LDFLAGS: -ljniwrapper
@@ -22,4 +23,5 @@ func Init(jEnv interface{}) {
 	jcontext.Init(jEnv)
 	jsecurity.Init(jEnv)
 	jandroid.Init(jEnv)
+	jaccess.Init(jEnv)
 }

@@ -8,7 +8,6 @@ import (
 
 	jutil "veyron.io/jni/util"
 	vsecurity "veyron.io/veyron/veyron/security"
-	"veyron.io/veyron/veyron/security/acl"
 	"veyron.io/veyron/veyron2/security"
 )
 
@@ -25,7 +24,6 @@ var (
 	blessingPatternSign = jutil.ClassSign("io.veyron.veyron.veyron2.security.BlessingPattern")
 	signerSign          = jutil.ClassSign("io.veyron.veyron.veyron2.security.Signer")
 	caveatSign          = jutil.ClassSign("io.veyron.veyron.veyron2.security.Caveat")
-	aclSign             = jutil.ClassSign("io.veyron.veyron.veyron.security.acl.ACL")
 	signatureSign       = jutil.ClassSign("io.veyron.veyron.veyron2.security.Signature")
 	publicKeySign       = jutil.ClassSign("java.security.interfaces.ECPublicKey")
 
@@ -39,8 +37,6 @@ var (
 	jContextImplClass C.jclass
 	// Global reference for io.veyron.veyron.veyron2.security.BlessingPatternWrapper class.
 	jBlessingPatternWrapperClass C.jclass
-	// Global reference for io.veyron.veyron.veyron2.security.BlessingPatternWrapper class.
-	jACLWrapperClass C.jclass
 	// Global reference for io.veyron.veyron.veyron2.security.Util class.
 	jUtilClass C.jclass
 )
@@ -60,7 +56,6 @@ func Init(jEnv interface{}) {
 	jBlessingRootsImplClass = C.jclass(jutil.JFindClassOrPrint(env, "io/veyron/veyron/veyron2/security/BlessingRootsImpl"))
 	jContextImplClass = C.jclass(jutil.JFindClassOrPrint(env, "io/veyron/veyron/veyron2/security/ContextImpl"))
 	jBlessingPatternWrapperClass = C.jclass(jutil.JFindClassOrPrint(env, "io/veyron/veyron/veyron2/security/BlessingPatternWrapper"))
-	jACLWrapperClass = C.jclass(jutil.JFindClassOrPrint(env, "io/veyron/veyron/veyron2/security/ACLWrapper"))
 	jUtilClass = C.jclass(jutil.JFindClassOrPrint(env, "io/veyron/veyron/veyron2/security/Util"))
 }
 
@@ -613,34 +608,4 @@ func Java_io_veyron_veyron_veyron2_security_BlessingPatternWrapper_nativeMakeGlo
 //export Java_io_veyron_veyron_veyron2_security_BlessingPatternWrapper_nativeFinalize
 func Java_io_veyron_veyron_veyron2_security_BlessingPatternWrapper_nativeFinalize(env *C.JNIEnv, jBlessingPatternWrapper C.jobject, goPtr C.jlong) {
 	jutil.GoUnref((*security.BlessingPattern)(jutil.Ptr(goPtr)))
-}
-
-//export Java_io_veyron_veyron_veyron2_security_ACLWrapper_nativeWrap
-func Java_io_veyron_veyron_veyron2_security_ACLWrapper_nativeWrap(env *C.JNIEnv, jACLWrapperClass C.jclass, jACL C.jobject) C.jobject {
-	acl, err := GoACL(env, jACL)
-	if err != nil {
-		jutil.JThrowV(env, err)
-		return nil
-	}
-	jWrapper, err := JavaACLWrapper(env, acl)
-	if err != nil {
-		jutil.JThrowV(env, err)
-		return nil
-	}
-	return jWrapper
-}
-
-//export Java_io_veyron_veyron_veyron2_security_ACLWrapper_nativeIncludes
-func Java_io_veyron_veyron_veyron2_security_ACLWrapper_nativeIncludes(env *C.JNIEnv, jACLWrapper C.jobject, goPtr C.jlong, jBlessings C.jobjectArray) C.jboolean {
-	blessings := jutil.GoStringArray(env, jBlessings)
-	ok := (*(*acl.ACL)(jutil.Ptr(goPtr))).Includes(blessings...)
-	if ok {
-		return C.JNI_TRUE
-	}
-	return C.JNI_FALSE
-}
-
-//export Java_io_veyron_veyron_veyron2_security_ACLWrapper_nativeFinalize
-func Java_io_veyron_veyron_veyron2_security_ACLWrapper_nativeFinalize(env *C.JNIEnv, jACLWrapper C.jobject, goPtr C.jlong) {
-	jutil.GoUnref((*acl.ACL)(jutil.Ptr(goPtr)))
 }
