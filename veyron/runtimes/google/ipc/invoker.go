@@ -3,13 +3,13 @@
 package ipc
 
 import (
-	"encoding/json"
 	"fmt"
 	"runtime"
 
 	jutil "veyron.io/jni/util"
 	jsecurity "veyron.io/jni/veyron2/security"
 	"veyron.io/veyron/veyron2/ipc"
+	"veyron.io/veyron/veyron2/vdl"
 	"veyron.io/veyron/veyron2/verror"
 )
 
@@ -25,17 +25,6 @@ func goInvoker(env *C.JNIEnv, jObj C.jobject) (ipc.Invoker, error) {
 	}
 	jInvoker := C.jobject(jInvokerObj)
 
-	// Fetch the argGetter for the object.
-	jPathArray, err := jutil.CallObjectMethod(env, jInvoker, "getImplementedServers", nil, jutil.ArraySign(jutil.StringSign))
-	if err != nil {
-		return nil, err
-	}
-	paths := jutil.GoStringArray(env, jPathArray)
-	getter, err := newArgGetter(paths)
-	if err != nil {
-		return nil, err
-	}
-
 	// We cannot cache Java environments as they are only valid in the current
 	// thread.  We can, however, cache the Java VM and obtain an environment
 	// from it in whatever thread happens to be running at the time.
@@ -49,9 +38,8 @@ func goInvoker(env *C.JNIEnv, jObj C.jobject) (ipc.Invoker, error) {
 	// setup just below).
 	jInvoker = C.NewGlobalRef(env, jInvoker)
 	i := &invoker{
-		jVM:       jVM,
-		jInvoker:  jInvoker,
-		argGetter: getter,
+		jVM:      jVM,
+		jInvoker: jInvoker,
 	}
 	runtime.SetFinalizer(i, func(i *invoker) {
 		jEnv, freeFunc := jutil.GetEnv(i.jVM)
@@ -63,28 +51,21 @@ func goInvoker(env *C.JNIEnv, jObj C.jobject) (ipc.Invoker, error) {
 }
 
 type invoker struct {
-	jVM       *C.JavaVM
-	jInvoker  C.jobject
-	argGetter *argGetter
+	jVM      *C.JavaVM
+	jInvoker C.jobject
 }
 
 func (i *invoker) Prepare(method string, numArgs int) (argptrs, tags []interface{}, err error) {
-	// NOTE(spetrovic): In the long-term, this method will return an array of
-	// []vom.Value.  This will in turn result in VOM decoding all input
-	// arguments into vom.Value objects, which we shall then de-serialize into
-	// Java objects (see Invoke comments below).  This approach is blocked on
-	// pending VOM encoder/decoder changes as well as Java (de)serializer.
 	jEnv, freeFunc := jutil.GetEnv(i.jVM)
 	env := (*C.JNIEnv)(jEnv)
 	defer freeFunc()
 
-	mArgs := i.argGetter.FindMethod(method, numArgs)
-	if mArgs == nil {
-		err = fmt.Errorf("couldn't find VDL method %q with %d args", method, numArgs)
-		return
+	// Have all input arguments be decoded into *vdl.Value.
+	argptrs = make([]interface{}, numArgs)
+	for i := 0; i < numArgs; i++ {
+		value := new(vdl.Value)
+		argptrs[i] = &value
 	}
-	argptrs = mArgs.InPtrs()
-
 	// Get the method tags.
 	jTags, err := jutil.CallObjectMethod(env, i.jInvoker, "getMethodTags", []jutil.Sign{jutil.StringSign}, jutil.ArraySign(jutil.ObjectSign), jutil.CamelCase(method))
 	if err != nil {
@@ -98,42 +79,29 @@ func (i *invoker) Prepare(method string, numArgs int) (argptrs, tags []interface
 }
 
 func (i *invoker) Invoke(method string, call ipc.ServerCall, argptrs []interface{}) (results []interface{}, err error) {
-	// NOTE(spetrovic): In the long-term, all input arguments will be of
-	// vom.Value type (see comments for Prepare() method above).  Through JNI,
-	// we will call Java functions that transform a serialized vom.Value into
-	// Java objects. We will then pass those Java objects to Java's Invoke
-	// method.  The returned Java objects will be converted into serialized
-	// vom.Values, which will then be returned.  This approach is blocked on VOM
-	// encoder/decoder changes as well as Java's (de)serializer.
 	jEnv, freeFunc := jutil.GetEnv(i.jVM)
 	env := (*C.JNIEnv)(jEnv)
 	defer freeFunc()
 
-	// Create a new Java server call instance.
-	mArgs := i.argGetter.FindMethod(method, len(argptrs))
-	if mArgs == nil {
-		err = fmt.Errorf("couldn't find VDL method %q with %d args", method, len(argptrs))
-	}
-	sCall := newServerCall(call, mArgs)
-	jServerCall, err := javaServerCall(env, sCall)
+	jServerCall, err := javaServerCall(env, call)
 	if err != nil {
 		return nil, err
 	}
 
-	// Translate input args to JSON.
-	jArgs, err := i.encodeArgs(env, argptrs)
+	// VOM-encode the input arguments.
+	jVomArgs, err := encodeArgs(env, argptrs)
 	if err != nil {
-		return
+		return nil, err
 	}
 	// Invoke the method.
 	callSign := jutil.ClassSign("io.veyron.veyron.veyron2.ipc.ServerCall")
 	replySign := jutil.ClassSign("io.veyron.veyron.veyron.runtimes.google.ipc.VDLInvoker$InvokeReply")
-	jReply, err := jutil.CallObjectMethod(env, i.jInvoker, "invoke", []jutil.Sign{jutil.StringSign, callSign, jutil.ArraySign(jutil.StringSign)}, replySign, jutil.CamelCase(method), jServerCall, jArgs)
+	jReply, err := jutil.CallObjectMethod(env, i.jInvoker, "invoke", []jutil.Sign{jutil.StringSign, callSign, jutil.ArraySign(jutil.ArraySign(jutil.ByteSign))}, replySign, jutil.CamelCase(method), jServerCall, jVomArgs)
 	if err != nil {
 		return nil, fmt.Errorf("error invoking Java method %q: %v", method, err)
 	}
 	// Decode and return results.
-	return i.decodeResults(env, method, len(argptrs), C.jobject(jReply))
+	return decodeResults(env, C.jobject(jReply))
 }
 
 func (i *invoker) Globber() *ipc.GlobState {
@@ -151,35 +119,25 @@ func (i *invoker) MethodSignature(ctx ipc.ServerContext, method string) (ipc.Met
 	return ipc.MethodSig{}, fmt.Errorf("Java runtime doesn't yet support signatures.")
 }
 
-// encodeArgs JSON-encodes the provided argument pointers, converts them into
-// Java strings, and returns a Java string array response.
-func (*invoker) encodeArgs(env *C.JNIEnv, argptrs []interface{}) (C.jobjectArray, error) {
-	// JSON encode.
-	jsonArgs := make([][]byte, len(argptrs))
+// encodeArgs VOM-encodes the provided arguments pointers and returns them as a
+// Java array of byte arrays.
+func encodeArgs(env *C.JNIEnv, argptrs []interface{}) (C.jobjectArray, error) {
+	vomArgs := make([][]byte, len(argptrs))
 	for i, argptr := range argptrs {
-		// Remove the pointer from the argument.  Simply *argptr doesn't work
-		// as argptr is of type interface{}.
-		arg := jutil.DerefOrDie(argptr)
+		arg := interface{}(jutil.DerefOrDie(argptr))
 		var err error
-		jsonArgs[i], err = json.Marshal(arg)
-		if err != nil {
-			return nil, fmt.Errorf("error marshalling %q into JSON", arg)
+		if vomArgs[i], err = VomEncode(arg); err != nil {
+			return nil, err
 		}
 	}
-
-	// Convert to Java array of C.jstring.
-	ret := C.NewObjectArray(env, C.jsize(len(argptrs)), jStringClass, nil)
-	for i, arg := range jsonArgs {
-		C.SetObjectArrayElement(env, ret, C.jsize(i), C.jobject(jutil.JString(env, string(arg))))
-	}
-	return ret, nil
+	return C.jobjectArray(jutil.JByteArrayArray(env, vomArgs)), nil
 }
 
-// decodeResults JSON-decodes replies stored in the Java reply object and
-// returns an array of Go reply objects.
-func (i *invoker) decodeResults(env *C.JNIEnv, method string, numArgs int, jReply C.jobject) ([]interface{}, error) {
+// decodeResults VOM-decodes replies stored in the Java reply object into
+// an array *vdl.Value.
+func decodeResults(env *C.JNIEnv, jReply C.jobject) ([]interface{}, error) {
 	// Unpack the replies.
-	results, err := jutil.JStringArrayField(env, jReply, "results")
+	results, err := jutil.JByteArrayArrayField(env, jReply, "results")
 	if err != nil {
 		return nil, err
 	}
@@ -195,37 +153,19 @@ func (i *invoker) decodeResults(env *C.JNIEnv, method string, numArgs int, jRepl
 	if err != nil {
 		return nil, err
 	}
-
-	// Get result instances.
-	mArgs := i.argGetter.FindMethod(method, numArgs)
-	if mArgs == nil {
-		return nil, fmt.Errorf("couldn't find method %q with %d input args: %v", method, numArgs)
-	}
-	argptrs := mArgs.OutPtrs()
-
 	// Check for app error.
+	var appErr error
 	if hasAppErr {
-		return resultsWithError(argptrs, verror.Make(verror.ID(errorID), errorMsg)), nil
+		appErr = verror.Make(verror.ID(errorID), errorMsg)
 	}
-	// JSON-decode.
-	if len(results) != len(argptrs) {
-		return nil, fmt.Errorf("mismatch in number of output arguments, have: %d want: %d", len(results), len(argptrs))
-	}
+	// VOM-decode results into *vdl.Value instances and append the error (if any).
+	ret := make([]interface{}, len(results)+1)
 	for i, result := range results {
-		if err := json.Unmarshal([]byte(result), argptrs[i]); err != nil {
+		var err error
+		if ret[i], err = VomDecodeToValue(result); err != nil {
 			return nil, err
 		}
 	}
-	return resultsWithError(argptrs, nil), nil
-}
-
-// resultsWithError dereferences the provided result pointers and appends the
-// given error to the returned array.
-func resultsWithError(resultptrs []interface{}, err error) []interface{} {
-	ret := make([]interface{}, len(resultptrs)+1)
-	for i, resultptr := range resultptrs {
-		ret[i] = jutil.DerefOrDie(resultptr)
-	}
-	ret[len(resultptrs)] = err
-	return ret
+	ret[len(results)] = appErr
+	return ret, nil
 }

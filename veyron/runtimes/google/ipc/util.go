@@ -3,14 +3,16 @@
 package ipc
 
 import (
+	"bytes"
 	"fmt"
-	"unsafe"
 
 	jutil "veyron.io/jni/util"
 	jcontext "veyron.io/jni/veyron2/context"
 	jsecurity "veyron.io/jni/veyron2/security"
 	"veyron.io/veyron/veyron/profiles/roaming"
 	"veyron.io/veyron/veyron2/ipc"
+	"veyron.io/veyron/veyron2/vdl"
+	"veyron.io/veyron/veyron2/vom2"
 )
 
 // #cgo LDFLAGS: -ljniwrapper
@@ -23,7 +25,7 @@ import "C"
 // and then cast into their package local types.
 func JavaServer(jEnv interface{}, server ipc.Server) (C.jobject, error) {
 	if server == nil {
-		return nil, nil
+		return nil, fmt.Errorf("Go Server value cannot be nil")
 	}
 	jServer, err := jutil.NewObject(jEnv, jServerClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&server)))
 	if err != nil {
@@ -39,22 +41,21 @@ func JavaServer(jEnv interface{}, server ipc.Server) (C.jobject, error) {
 // and then cast into their package local types.
 func JavaClient(jEnv interface{}, client ipc.Client) (C.jobject, error) {
 	if client == nil {
-		return nil, nil
+		return nil, fmt.Errorf("Go Client value cannot be nil")
 	}
-	c := newClient(client)
-	jClient, err := jutil.NewObject(jEnv, jClientClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(c)))
+	jClient, err := jutil.NewObject(jEnv, jClientClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&client)))
 	if err != nil {
 		return nil, err
 	}
-	jutil.GoRef(c) // Un-refed when the Java Client object is finalized.
+	jutil.GoRef(&client) // Un-refed when the Java Client object is finalized.
 	return C.jobject(jClient), nil
 }
 
 // javaServerCall converts the provided Go serverCall into a Java ServerCall
 // object.
-func javaServerCall(env *C.JNIEnv, call *serverCall) (C.jobject, error) {
+func javaServerCall(env *C.JNIEnv, call ipc.ServerCall) (C.jobject, error) {
 	if call == nil {
-		return nil, nil
+		return nil, fmt.Errorf("Go ServerCall value cannot be nil")
 	}
 	jStream, err := javaStream(env, call)
 	if err != nil {
@@ -70,43 +71,38 @@ func javaServerCall(env *C.JNIEnv, call *serverCall) (C.jobject, error) {
 	}
 	contextSign := jutil.ClassSign("io.veyron.veyron.veyron2.context.Context")
 	securityContextSign := jutil.ClassSign("io.veyron.veyron.veyron2.security.Context")
-	jServerCall, err := jutil.NewObject(env, jServerCallClass, []jutil.Sign{jutil.LongSign, streamSign, contextSign, securityContextSign}, int64(jutil.PtrValue(call)), jStream, jContext, jSecurityContext)
+	jServerCall, err := jutil.NewObject(env, jServerCallClass, []jutil.Sign{jutil.LongSign, streamSign, contextSign, securityContextSign}, int64(jutil.PtrValue(&call)), jStream, jContext, jSecurityContext)
 	if err != nil {
 		return nil, err
 	}
-	jutil.GoRef(call) // Un-refed when the Java ServerCall object is finalized.
+	jutil.GoRef(&call) // Un-refed when the Java ServerCall object is finalized.
 	return C.jobject(jServerCall), nil
 }
 
-// javaServerCall converts the provided Go clientCall into a Java ClientCall
-// object.
-func javaClientCall(env *C.JNIEnv, call *clientCall) (C.jobject, error) {
+// javaCall converts the provided Go Call value into a Java Call object.
+func javaCall(env *C.JNIEnv, call ipc.Call) (C.jobject, error) {
 	if call == nil {
-		return nil, nil
+		return nil, fmt.Errorf("Go Call value cannot be nil")
 	}
 	jStream, err := javaStream(env, call)
 	if err != nil {
 		return nil, err
 	}
-	jClientCall, err := jutil.NewObject(env, jClientCallClass, []jutil.Sign{jutil.LongSign, streamSign}, int64(jutil.PtrValue(call)), jStream)
+	jCall, err := jutil.NewObject(env, jCallClass, []jutil.Sign{jutil.LongSign, streamSign}, int64(jutil.PtrValue(&call)), jStream)
 	if err != nil {
 		return nil, err
 	}
-	jutil.GoRef(call) // Un-refed when the Java ClientCall object is finalized.
-	return C.jobject(jClientCall), nil
+	jutil.GoRef(&call) // Un-refed when the Java Call object is finalized.
+	return C.jobject(jCall), nil
 }
 
 // javaStream converts the provided Go stream into a Java Stream object.
-func javaStream(env *C.JNIEnv, streamIn interface{}) (C.jobject, error) {
-	s := (*stream)(unsafe.Pointer(jutil.PtrValue(streamIn)))
-	if s == nil {
-		return nil, nil
-	}
-	jStream, err := jutil.NewObject(env, jStreamClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(s)))
+func javaStream(env *C.JNIEnv, stream ipc.Stream) (C.jobject, error) {
+	jStream, err := jutil.NewObject(env, jStreamClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&stream)))
 	if err != nil {
 		return nil, err
 	}
-	jutil.GoRef(s) // Un-refed when the Java stream object is finalized.
+	jutil.GoRef(&stream) // Un-refed when the Java stream object is finalized.
 	return C.jobject(jStream), nil
 }
 
@@ -132,4 +128,30 @@ func GoListenSpec(jEnv, jSpec interface{}) (ipc.ListenSpec, error) {
 	}
 	spec.Proxy = proxy
 	return spec, nil
+}
+
+// VomDecodeToValue VOM-decodes the provided data into *vdl.Value.
+func VomDecodeToValue(vomValue []byte) (*vdl.Value, error) {
+	decoder, err := vom2.NewDecoder(bytes.NewReader(vomValue))
+	if err != nil {
+		return nil, err
+	}
+	var value *vdl.Value
+	if err := decoder.Decode(&value); err != nil {
+		return nil, err
+	}
+	return value, nil
+}
+
+// VomEncode encodes the provided value.
+func VomEncode(value interface{}) ([]byte, error) {
+	var buf bytes.Buffer
+	encoder, err := vom2.NewBinaryEncoder(&buf)
+	if err != nil {
+		return nil, err
+	}
+	if err := encoder.Encode(value); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
 }

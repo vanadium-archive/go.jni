@@ -34,10 +34,12 @@ var (
 	jThrowableClass C.jclass
 	// Global reference for java.lang.System class.
 	jSystemClass C.jclass
-	// Global reference for java.lang.String class.
-	jStringClass C.jclass
 	// Global reference for java.lang.Object class.
 	jObjectClass C.jclass
+	// Global reference for java.lang.String class.
+	jStringClass C.jclass
+	// Global reference for []byte class.
+	jByteArrayClass C.jclass
 )
 
 // Init initializes the JNI code with the given Java environment.  This method
@@ -53,8 +55,9 @@ func Init(jEnv interface{}) {
 	jDurationClass = JFindClassOrPrint(env, "org/joda/time/Duration")
 	jThrowableClass = JFindClassOrPrint(env, "java/lang/Throwable")
 	jSystemClass = JFindClassOrPrint(env, "java/lang/System")
-	jStringClass = JFindClassOrPrint(env, "java/lang/String")
 	jObjectClass = JFindClassOrPrint(env, "java/lang/Object")
+	jStringClass = JFindClassOrPrint(env, "java/lang/String")
+	jByteArrayClass = JFindClassOrPrint(env, "[B")
 }
 
 // CamelCase converts ThisString to thisString.
@@ -274,6 +277,25 @@ func JByteArrayField(jEnv, jObj interface{}, field string) ([]byte, error) {
 	return GoByteArray(env, arr), nil
 }
 
+// JByteArrayArrayField returns the value of the provided object's byte[][]
+// field, or error if the field value couldn't be retrieved.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func JByteArrayArrayField(jEnv, jObj interface{}, field string) ([][]byte, error) {
+	env := getEnv(jEnv)
+	obj := getObject(jObj)
+	fid, err := JFieldIDPtr(env, C.GetObjectClass(env, obj), field, ArraySign(ArraySign(ByteSign)))
+	if err != nil {
+		return nil, err
+	}
+	arr := C.jobjectArray(C.GetObjectField(env, obj, C.jfieldID(fid)))
+	if arr == nil {
+		return nil, nil
+	}
+	return GoByteArrayArray(env, arr), nil
+}
+
 // JStaticStringField returns the value of the static String field of the
 // provided Java class, or error if the field value couldn't be retrieved.
 // NOTE: Because CGO creates package-local types and because this method may be
@@ -295,32 +317,15 @@ func JStaticStringField(jEnv, jClass interface{}, field string) (string, error) 
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JObjectArray(jEnv interface{}, arr []interface{}) (C.jobjectArray, error) {
+func JObjectArray(jEnv interface{}, arr []interface{}) C.jobjectArray {
 	if arr == nil {
-		return nil, nil
+		return nil
 	}
 	env := getEnv(jEnv)
 	ret := C.NewObjectArray(env, C.jsize(len(arr)), jObjectClass, nil)
 	for i, elem := range arr {
 		jElem := getObject(elem)
 		C.SetObjectArrayElement(env, ret, C.jsize(i), jElem)
-	}
-	return ret, nil
-}
-
-// JStringArray converts the provided slice of Go strings into a Java array of
-// strings.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func JStringArray(jEnv interface{}, strs []string) C.jobjectArray {
-	if strs == nil {
-		return nil
-	}
-	env := getEnv(jEnv)
-	ret := C.NewObjectArray(env, C.jsize(len(strs)), jStringClass, nil)
-	for i, str := range strs {
-		C.SetObjectArrayElement(env, ret, C.jsize(i), C.jobject(JString(env, str)))
 	}
 	return ret
 }
@@ -340,6 +345,23 @@ func GoObjectArray(jEnv, jObjArray interface{}) []C.jobject {
 	ret := make([]C.jobject, int(length))
 	for i := 0; i < int(length); i++ {
 		ret[i] = C.GetObjectArrayElement(env, jArr, C.jsize(i))
+	}
+	return ret
+}
+
+// JStringArray converts the provided slice of Go strings into a Java array of
+// strings.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func JStringArray(jEnv interface{}, strs []string) C.jobjectArray {
+	if strs == nil {
+		return nil
+	}
+	env := getEnv(jEnv)
+	ret := C.NewObjectArray(env, C.jsize(len(strs)), jStringClass, nil)
+	for i, str := range strs {
+		C.SetObjectArrayElement(env, ret, C.jsize(i), C.jobject(JString(env, str)))
 	}
 	return ret
 }
@@ -385,12 +407,52 @@ func JByteArray(jEnv interface{}, bytes []byte) C.jbyteArray {
 func GoByteArray(jEnv, jArr interface{}) (ret []byte) {
 	env := getEnv(jEnv)
 	arr := getByteArray(jArr)
+	if arr == nil {
+		return
+	}
 	length := int(C.GetArrayLength(env, C.jarray(arr)))
 	ret = make([]byte, length)
 	bytes := C.GetByteArrayElements(env, arr, nil)
 	for i := 0; i < length; i++ {
 		ret[i] = byte(*bytes)
 		bytes = (*C.jbyte)(unsafe.Pointer(uintptr(unsafe.Pointer(bytes)) + unsafe.Sizeof(*bytes)))
+	}
+	return
+}
+
+// JByteArrayArray converts the provided [][]byte value into a Java array of
+// byte arrays.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func JByteArrayArray(jEnv interface{}, arr [][]byte) C.jobjectArray {
+	if arr == nil {
+		return nil
+	}
+	env := getEnv(jEnv)
+	ret := C.NewObjectArray(env, C.jsize(len(arr)), jByteArrayClass, nil)
+	for i, elem := range arr {
+		jElem := JByteArray(env, elem)
+		C.SetObjectArrayElement(env, ret, C.jsize(i), C.jobject(jElem))
+	}
+	return ret
+}
+
+// GoByteArrayArray converts the provided Java array of byte arrays into a Go
+// [][]byte value.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func GoByteArrayArray(jEnv, jArr interface{}) (ret [][]byte) {
+	env := getEnv(jEnv)
+	arr := getObjectArray(jArr)
+	if arr == nil {
+		return
+	}
+	length := int(C.GetArrayLength(env, C.jarray(arr)))
+	ret = make([][]byte, length)
+	for i := 0; i < length; i++ {
+		ret[i] = GoByteArray(env, C.GetObjectArrayElement(env, arr, C.jsize(i)))
 	}
 	return
 }

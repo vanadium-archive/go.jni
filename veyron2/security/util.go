@@ -327,10 +327,7 @@ func JavaTags(jEnv interface{}, tags []interface{}) (C.jobjectArray, error) {
 		}
 		tagsJava[i] = jniTag.jTag
 	}
-	jTags, err := jutil.JObjectArray(jEnv, tagsJava)
-	if err != nil {
-		return nil, err
-	}
+	jTags := jutil.JObjectArray(jEnv, tagsJava)
 	return C.jobjectArray(jTags), nil
 }
 

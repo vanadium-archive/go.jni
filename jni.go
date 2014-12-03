@@ -10,6 +10,7 @@ import (
 	jutil "veyron.io/jni/util"
 	jgoogle "veyron.io/jni/veyron/runtimes/google"
 	jveyron2 "veyron.io/jni/veyron2"
+	"veyron.io/veyron/veyron2/vom2"
 )
 
 // #cgo LDFLAGS: -ljniwrapper
@@ -30,6 +31,8 @@ func Java_io_veyron_veyron_veyron2_RuntimeFactory_nativeInit(env *C.JNIEnv, jRun
 }
 
 func main() {
+	// Explicitly enable VOM2 encoding.
+	vom2.SetEnabled(true)
 	// Send all logging to stderr, so that the output is visible in Android.  Note that if this
 	// flag is removed, the process will likely crash as android requires that all logs are written
 	// into a specific directory.
