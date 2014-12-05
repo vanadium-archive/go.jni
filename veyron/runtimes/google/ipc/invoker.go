@@ -10,6 +10,7 @@ import (
 	jsecurity "veyron.io/jni/veyron2/security"
 	"veyron.io/veyron/veyron2/ipc"
 	"veyron.io/veyron/veyron2/vdl"
+	"veyron.io/veyron/veyron2/vdl/vdlroot/src/signature"
 	"veyron.io/veyron/veyron2/verror"
 )
 
@@ -109,14 +110,14 @@ func (i *invoker) Globber() *ipc.GlobState {
 	return &ipc.GlobState{}
 }
 
-func (i *invoker) Signature(ctx ipc.ServerContext) ([]ipc.InterfaceSig, error) {
+func (i *invoker) Signature(ctx ipc.ServerContext) ([]signature.Interface, error) {
 	// TODO(spetrovic): implement this method.
 	return nil, fmt.Errorf("Java runtime doesn't yet support signatures.")
 }
 
-func (i *invoker) MethodSignature(ctx ipc.ServerContext, method string) (ipc.MethodSig, error) {
+func (i *invoker) MethodSignature(ctx ipc.ServerContext, method string) (signature.Method, error) {
 	// TODO(spetrovic): implement this method.
-	return ipc.MethodSig{}, fmt.Errorf("Java runtime doesn't yet support signatures.")
+	return signature.Method{}, fmt.Errorf("Java runtime doesn't yet support signatures.")
 }
 
 // encodeArgs VOM-encodes the provided arguments pointers and returns them as a

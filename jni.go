@@ -22,8 +22,8 @@ import "C"
 // from the main Java thread (e.g., On_Load()).
 func Init(env *C.JNIEnv) {}
 
-//export Java_io_veyron_veyron_veyron2_RuntimeFactory_nativeInit
-func Java_io_veyron_veyron_veyron2_RuntimeFactory_nativeInit(env *C.JNIEnv, jRuntimeFactoryClass C.jclass) {
+//export Java_io_veyron_veyron_veyron2_VRuntime_nativeInit
+func Java_io_veyron_veyron_veyron2_VRuntime_nativeInit(env *C.JNIEnv, jVRuntimeClass C.jclass) {
 	Init(env)
 	jutil.Init(env)
 	jveyron2.Init(env)

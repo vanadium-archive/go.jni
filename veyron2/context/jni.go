@@ -54,7 +54,6 @@ func Java_io_veyron_veyron_veyron2_context_ContextImpl_nativeCreate(env *C.JNIEn
 
 //export Java_io_veyron_veyron_veyron2_context_ContextImpl_nativeDeadline
 func Java_io_veyron_veyron_veyron2_context_ContextImpl_nativeDeadline(env *C.JNIEnv, jContextObj C.jobject, goPtr C.jlong) C.jobject {
-
 	d, ok := (*(*context.T)(jutil.Ptr(goPtr))).Deadline()
 	if !ok {
 		return nil
