@@ -3,7 +3,6 @@
 package security
 
 import (
-	"encoding/json"
 	"fmt"
 	"runtime"
 	"unsafe"
@@ -25,11 +24,11 @@ func JavaBlessings(jEnv interface{}, blessings security.Blessings) (C.jobject, e
 		return nil, nil
 	}
 	wire := security.MarshalBlessings(blessings)
-	encoded, err := encodeWireBlessings(wire)
+	encoded, err := jutil.VomEncode(wire)
 	if err != nil {
 		return nil, err
 	}
-	jBlessings, err := jutil.CallStaticObjectMethod(jEnv, jUtilClass, "decodeBlessings", []jutil.Sign{jutil.StringSign}, blessingsSign, encoded)
+	jBlessings, err := jutil.CallStaticObjectMethod(jEnv, jUtilClass, "decodeBlessings", []jutil.Sign{jutil.ByteArraySign}, blessingsSign, encoded)
 	if err != nil {
 		return nil, err
 	}
@@ -42,16 +41,15 @@ func JavaBlessings(jEnv interface{}, blessings security.Blessings) (C.jobject, e
 // and then cast into their package local types.
 func GoBlessings(jEnv, jBless interface{}) (security.Blessings, error) {
 	jBlessings := getObject(jBless)
-
 	if jBlessings == nil {
 		return nil, nil
 	}
-	encoded, err := jutil.CallStaticStringMethod(jEnv, jUtilClass, "encodeBlessings", []jutil.Sign{blessingsSign}, jBlessings)
+	encoded, err := jutil.CallStaticByteArrayMethod(jEnv, jUtilClass, "encodeBlessings", []jutil.Sign{blessingsSign}, jBlessings)
 	if err != nil {
 		return nil, err
 	}
-	wire, err := decodeWireBlessings(encoded)
-	if err != nil {
+	var wire security.WireBlessings
+	if err := jutil.VomDecode(encoded, &wire); err != nil {
 		return nil, err
 	}
 	return security.NewBlessings(wire)
@@ -62,11 +60,11 @@ func GoBlessings(jEnv, jBless interface{}) (security.Blessings, error) {
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func JavaWireBlessings(jEnv interface{}, wire security.WireBlessings) (C.jobject, error) {
-	encoded, err := encodeWireBlessings(wire)
+	encoded, err := jutil.VomEncode(wire)
 	if err != nil {
 		return nil, err
 	}
-	jWireBlessings, err := jutil.CallStaticObjectMethod(jEnv, jUtilClass, "decodeWireBlessings", []jutil.Sign{jutil.StringSign}, wireBlessingsSign, encoded)
+	jWireBlessings, err := jutil.CallStaticObjectMethod(jEnv, jUtilClass, "decodeWireBlessings", []jutil.Sign{jutil.ByteArraySign}, wireBlessingsSign, encoded)
 	if err != nil {
 		return nil, err
 	}
@@ -80,12 +78,15 @@ func JavaWireBlessings(jEnv interface{}, wire security.WireBlessings) (C.jobject
 func GoWireBlessings(jEnv, jWireBless interface{}) (security.WireBlessings, error) {
 	jWireBlessings := getObject(jWireBless)
 
-	encoded, err := jutil.CallStaticStringMethod(jEnv, jUtilClass, "encodeWireBlessings", []jutil.Sign{wireBlessingsSign}, jWireBlessings)
+	encoded, err := jutil.CallStaticByteArrayMethod(jEnv, jUtilClass, "encodeWireBlessings", []jutil.Sign{wireBlessingsSign}, jWireBlessings)
 	if err != nil {
 		return security.WireBlessings{}, err
 	}
-
-	return decodeWireBlessings(encoded)
+	var wire security.WireBlessings
+	if err := jutil.VomDecode(encoded, &wire); err != nil {
+		return security.WireBlessings{}, err
+	}
+	return wire, nil
 }
 
 // JavaBlessingPattern converts the provided Go BlessingPattern into Java BlessingPattern.
@@ -147,11 +148,11 @@ func GoPublicKey(jEnv, jKey interface{}) (security.PublicKey, error) {
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func JavaSignature(jEnv interface{}, sig security.Signature) (C.jobject, error) {
-	encoded, err := json.Marshal(sig)
+	encoded, err := jutil.VomEncode(sig)
 	if err != nil {
 		return nil, err
 	}
-	jSignature, err := jutil.CallStaticObjectMethod(jEnv, jUtilClass, "decodeSignature", []jutil.Sign{jutil.StringSign}, signatureSign, string(encoded))
+	jSignature, err := jutil.CallStaticObjectMethod(jEnv, jUtilClass, "decodeSignature", []jutil.Sign{jutil.ByteArraySign}, signatureSign, encoded)
 	if err != nil {
 		return nil, err
 	}
@@ -164,13 +165,13 @@ func JavaSignature(jEnv interface{}, sig security.Signature) (C.jobject, error) 
 // and then cast into their package local types.
 func GoSignature(jEnv, jSig interface{}) (security.Signature, error) {
 	jSignature := getObject(jSig)
-	encoded, err := jutil.CallStaticStringMethod(jEnv, jUtilClass, "encodeSignature", []jutil.Sign{signatureSign}, jSignature)
+	encoded, err := jutil.CallStaticByteArrayMethod(jEnv, jUtilClass, "encodeSignature", []jutil.Sign{signatureSign}, jSignature)
 	if err != nil {
 		return security.Signature{}, err
 	}
 	var sig security.Signature
-	if err := json.Unmarshal([]byte(encoded), &sig); err != nil {
-		return security.Signature{}, fmt.Errorf("couldn't JSON-decode Signature %q: %v", encoded, err)
+	if err := jutil.VomDecode(encoded, &sig); err != nil {
+		return security.Signature{}, err
 	}
 	return sig, nil
 }
@@ -180,11 +181,11 @@ func GoSignature(jEnv, jSig interface{}) (security.Signature, error) {
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func JavaCaveat(jEnv interface{}, caveat security.Caveat) (C.jobject, error) {
-	encoded, err := json.Marshal(caveat)
+	encoded, err := jutil.VomEncode(caveat)
 	if err != nil {
 		return nil, err
 	}
-	jCaveat, err := jutil.CallStaticObjectMethod(jEnv, jUtilClass, "decodeCaveat", []jutil.Sign{jutil.StringSign}, caveatSign, string(encoded))
+	jCaveat, err := jutil.CallStaticObjectMethod(jEnv, jUtilClass, "decodeCaveat", []jutil.Sign{jutil.ByteArraySign}, caveatSign, encoded)
 	if err != nil {
 		return nil, err
 	}
@@ -197,13 +198,13 @@ func JavaCaveat(jEnv interface{}, caveat security.Caveat) (C.jobject, error) {
 // and then cast into their package local types.
 func GoCaveat(jEnv, jCav interface{}) (security.Caveat, error) {
 	jCaveat := getObject(jCav)
-	encoded, err := jutil.CallStaticStringMethod(jEnv, jUtilClass, "encodeCaveat", []jutil.Sign{caveatSign}, jCaveat)
+	encoded, err := jutil.CallStaticByteArrayMethod(jEnv, jUtilClass, "encodeCaveat", []jutil.Sign{caveatSign}, jCaveat)
 	if err != nil {
 		return security.Caveat{}, err
 	}
 	var caveat security.Caveat
-	if err := json.Unmarshal([]byte(encoded), &caveat); err != nil {
-		return security.Caveat{}, fmt.Errorf("couldn't JSON-decode Caveat %q: %v", encoded, err)
+	if err := jutil.VomDecode(encoded, &caveat); err != nil {
+		return security.Caveat{}, err
 	}
 	return caveat, nil
 }
@@ -213,11 +214,11 @@ func GoCaveat(jEnv, jCav interface{}) (security.Caveat, error) {
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func JavaCaveats(jEnv interface{}, caveats []security.Caveat) (C.jobjectArray, error) {
-	encoded, err := json.Marshal(caveats)
+	encoded, err := jutil.VomEncode(caveats)
 	if err != nil {
 		return nil, err
 	}
-	jCaveats, err := jutil.CallStaticObjectMethod(jEnv, jUtilClass, "decodeCaveats", []jutil.Sign{jutil.StringSign}, jutil.ArraySign(caveatSign), string(encoded))
+	jCaveats, err := jutil.CallStaticObjectMethod(jEnv, jUtilClass, "decodeCaveats", []jutil.Sign{jutil.ByteArraySign}, jutil.ArraySign(caveatSign), encoded)
 	if err != nil {
 		return nil, err
 	}
@@ -231,13 +232,13 @@ func JavaCaveats(jEnv interface{}, caveats []security.Caveat) (C.jobjectArray, e
 // and then cast into their package local types.
 func GoCaveats(jEnv, jCavs interface{}) ([]security.Caveat, error) {
 	jCaveats := getObject(jCavs)
-	encoded, err := jutil.CallStaticStringMethod(jEnv, jUtilClass, "encodeCaveats", []jutil.Sign{jutil.ArraySign(caveatSign)}, jCaveats)
+	encoded, err := jutil.CallStaticByteArrayMethod(jEnv, jUtilClass, "encodeCaveats", []jutil.Sign{jutil.ArraySign(caveatSign)}, jCaveats)
 	if err != nil {
 		return nil, err
 	}
 	var caveats []security.Caveat
-	if err := json.Unmarshal([]byte(encoded), &caveats); err != nil {
-		return nil, fmt.Errorf("couldn't JSON-decode caveats %q: %v", encoded, err)
+	if err := jutil.VomDecode(encoded, &caveats); err != nil {
+		return nil, err
 	}
 	return caveats, nil
 }
@@ -329,25 +330,6 @@ func JavaTags(jEnv interface{}, tags []interface{}) (C.jobjectArray, error) {
 	}
 	jTags := jutil.JObjectArray(jEnv, tagsJava)
 	return C.jobjectArray(jTags), nil
-}
-
-// encodeWireBlessings JSON-encodes the provided set of WireBlessings.
-func encodeWireBlessings(wire security.WireBlessings) (string, error) {
-	enc, err := json.Marshal(wire)
-	if err != nil {
-		return "", err
-	}
-	return string(enc), nil
-}
-
-// decodeWireBlessings decodes the provided JSON-encoded WireBlessings.
-func decodeWireBlessings(encoded string) (security.WireBlessings, error) {
-	// JSON-decode chains.
-	var wire security.WireBlessings
-	if err := json.Unmarshal([]byte(encoded), &wire); err != nil {
-		return security.WireBlessings{}, fmt.Errorf("couldn't JSON-decode WireBlessings %q: %v", encoded, err)
-	}
-	return wire, nil
 }
 
 func getObject(jObj interface{}) C.jobject {

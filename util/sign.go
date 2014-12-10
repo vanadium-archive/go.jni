@@ -33,6 +33,8 @@ var (
 	StringSign = ClassSign("java.lang.String")
 	// ObjectSign denotes a signature of a Java Object type.
 	ObjectSign = ClassSign("java.lang.Object")
+	// ByteArraySign denotes a signature of a Java byte array type.
+	ByteArraySign = ArraySign(ByteSign)
 )
 
 // ArraySign returns the array signature, given the underlying array type.

@@ -6,9 +6,7 @@ import (
 	"unsafe"
 
 	jutil "veyron.io/jni/util"
-	_ "veyron.io/veyron/veyron/profiles"
 	"veyron.io/veyron/veyron2/context"
-	"veyron.io/veyron/veyron2/rt"
 )
 
 // #cgo LDFLAGS: -ljniwrapper
@@ -36,20 +34,6 @@ func Init(jEnv interface{}) {
 	// thread, so we aren't able to invoke FindClass in other threads.
 	jContextImplClass = C.jclass(jutil.JFindClassOrPrint(env, "io/veyron/veyron/veyron2/context/ContextImpl"))
 	jCountDownLatchClass = C.jclass(jutil.JFindClassOrPrint(env, "java/util/concurrent/CountDownLatch"))
-}
-
-//export Java_io_veyron_veyron_veyron2_context_ContextImpl_nativeCreate
-func Java_io_veyron_veyron_veyron2_context_ContextImpl_nativeCreate(env *C.JNIEnv, jContextClass C.jclass) C.jobject {
-	// NOTE(spetrovic): we create a context here using a default runtime.  Since Java doesn't really
-	// expose the Runtime argument, this is probably OK.
-	r := rt.R()
-	ctx := r.NewContext()
-	jCtx, err := JavaContext(env, ctx, nil)
-	if err != nil {
-		jutil.JThrowV(env, err)
-		return nil
-	}
-	return jCtx
 }
 
 //export Java_io_veyron_veyron_veyron2_context_ContextImpl_nativeDeadline

@@ -10,6 +10,7 @@ import (
 	jutil "veyron.io/jni/util"
 	jgoogle "veyron.io/jni/veyron/runtimes/google"
 	jveyron2 "veyron.io/jni/veyron2"
+	_ "veyron.io/veyron/veyron/profiles/roaming"
 	"veyron.io/veyron/veyron2/vom2"
 )
 

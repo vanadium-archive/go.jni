@@ -9,7 +9,6 @@ import (
 	jutil "veyron.io/jni/util"
 	jcontext "veyron.io/jni/veyron2/context"
 	jsecurity "veyron.io/jni/veyron2/security"
-	_ "veyron.io/veyron/veyron/profiles"
 	"veyron.io/veyron/veyron2/ipc"
 	"veyron.io/veyron/veyron2/vdl"
 )
@@ -134,7 +133,7 @@ func Java_io_veyron_veyron_veyron_runtimes_google_ipc_Client_nativeStartCall(env
 	args := make([]interface{}, len(vomArgs))
 	for i := 0; i < len(vomArgs); i++ {
 		var err error
-		if args[i], err = VomDecodeToValue(vomArgs[i]); err != nil {
+		if args[i], err = jutil.VomDecodeToValue(vomArgs[i]); err != nil {
 			jutil.JThrowV(env, err)
 			return nil
 		}
@@ -167,7 +166,7 @@ func Java_io_veyron_veyron_veyron_runtimes_google_ipc_Client_nativeFinalize(env 
 //export Java_io_veyron_veyron_veyron_runtimes_google_ipc_Stream_nativeSend
 func Java_io_veyron_veyron_veyron_runtimes_google_ipc_Stream_nativeSend(env *C.JNIEnv, jStream C.jobject, goPtr C.jlong, jVomItem C.jbyteArray) {
 	vomItem := jutil.GoByteArray(env, jVomItem)
-	item, err := VomDecodeToValue(vomItem)
+	item, err := jutil.VomDecodeToValue(vomItem)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return
@@ -189,7 +188,7 @@ func Java_io_veyron_veyron_veyron_runtimes_google_ipc_Stream_nativeRecv(env *C.J
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	vomResult, err := VomEncode(result)
+	vomResult, err := jutil.VomEncode(result)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -200,6 +199,14 @@ func Java_io_veyron_veyron_veyron_runtimes_google_ipc_Stream_nativeRecv(env *C.J
 //export Java_io_veyron_veyron_veyron_runtimes_google_ipc_Stream_nativeFinalize
 func Java_io_veyron_veyron_veyron_runtimes_google_ipc_Stream_nativeFinalize(env *C.JNIEnv, jStream C.jobject, goPtr C.jlong) {
 	jutil.GoUnref((*ipc.Stream)(jutil.Ptr(goPtr)))
+}
+
+//export Java_io_veyron_veyron_veyron_runtimes_google_ipc_Call_nativeCloseSend
+func Java_io_veyron_veyron_veyron_runtimes_google_ipc_Call_nativeCloseSend(env *C.JNIEnv, jCall C.jobject, goPtr C.jlong) {
+	if err := (*(*ipc.Call)(jutil.Ptr(goPtr))).CloseSend(); err != nil {
+		jutil.JThrowV(env, err)
+		return
+	}
 }
 
 //export Java_io_veyron_veyron_veyron_runtimes_google_ipc_Call_nativeFinish
@@ -231,7 +238,7 @@ func Java_io_veyron_veyron_veyron_runtimes_google_ipc_Call_nativeFinish(env *C.J
 		// as resultPtr is of type interface{}.
 		result := interface{}(jutil.DerefOrDie(resultPtr))
 		var err error
-		if vomResults[i], err = VomEncode(result); err != nil {
+		if vomResults[i], err = jutil.VomEncode(result); err != nil {
 			jutil.JThrowV(env, err)
 			return nil
 		}

@@ -3,9 +3,6 @@
 package access
 
 import (
-	"encoding/json"
-	"fmt"
-
 	jutil "veyron.io/jni/util"
 	"veyron.io/veyron/veyron2/services/security/access"
 )
@@ -19,11 +16,11 @@ import "C"
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func JavaACL(jEnv interface{}, acl access.ACL) (C.jobject, error) {
-	encoded, err := json.Marshal(acl)
+	encoded, err := jutil.VomEncode(acl)
 	if err != nil {
 		return nil, err
 	}
-	jACL, err := jutil.CallStaticObjectMethod(jEnv, jUtilClass, "decodeACL", []jutil.Sign{jutil.StringSign}, aclSign, string(encoded))
+	jACL, err := jutil.CallStaticObjectMethod(jEnv, jUtilClass, "decodeACL", []jutil.Sign{jutil.ByteArraySign}, aclSign, encoded)
 	if err != nil {
 		return nil, err
 	}
@@ -35,13 +32,13 @@ func JavaACL(jEnv interface{}, acl access.ACL) (C.jobject, error) {
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func GoACL(jEnv, jACL interface{}) (access.ACL, error) {
-	encoded, err := jutil.CallStaticStringMethod(jEnv, jUtilClass, "encodeACL", []jutil.Sign{aclSign}, jACL)
+	encoded, err := jutil.CallStaticByteArrayMethod(jEnv, jUtilClass, "encodeACL", []jutil.Sign{aclSign}, jACL)
 	if err != nil {
 		return access.ACL{}, err
 	}
 	var a access.ACL
-	if err := json.Unmarshal([]byte(encoded), &a); err != nil {
-		return access.ACL{}, fmt.Errorf("couldn't JSON-decode ACL %q: %v", encoded, err)
+	if err := jutil.VomDecode(encoded, &a); err != nil {
+		return access.ACL{}, err
 	}
 	return a, nil
 }

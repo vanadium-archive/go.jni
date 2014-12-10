@@ -3,7 +3,6 @@
 package ipc
 
 import (
-	"bytes"
 	"fmt"
 
 	jutil "veyron.io/jni/util"
@@ -11,8 +10,6 @@ import (
 	jsecurity "veyron.io/jni/veyron2/security"
 	"veyron.io/veyron/veyron/profiles/roaming"
 	"veyron.io/veyron/veyron2/ipc"
-	"veyron.io/veyron/veyron2/vdl"
-	"veyron.io/veyron/veyron2/vom2"
 )
 
 // #cgo LDFLAGS: -ljniwrapper
@@ -128,30 +125,4 @@ func GoListenSpec(jEnv, jSpec interface{}) (ipc.ListenSpec, error) {
 	}
 	spec.Proxy = proxy
 	return spec, nil
-}
-
-// VomDecodeToValue VOM-decodes the provided data into *vdl.Value.
-func VomDecodeToValue(vomValue []byte) (*vdl.Value, error) {
-	decoder, err := vom2.NewDecoder(bytes.NewReader(vomValue))
-	if err != nil {
-		return nil, err
-	}
-	var value *vdl.Value
-	if err := decoder.Decode(&value); err != nil {
-		return nil, err
-	}
-	return value, nil
-}
-
-// VomEncode encodes the provided value.
-func VomEncode(value interface{}) ([]byte, error) {
-	var buf bytes.Buffer
-	encoder, err := vom2.NewBinaryEncoder(&buf)
-	if err != nil {
-		return nil, err
-	}
-	if err := encoder.Encode(value); err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
 }

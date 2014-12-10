@@ -10,6 +10,7 @@ import (
 	jnaming "veyron.io/jni/veyron/runtimes/google/naming"
 	jcontext "veyron.io/jni/veyron2/context"
 	jsecurity "veyron.io/jni/veyron2/security"
+
 	"veyron.io/veyron/veyron2"
 	"veyron.io/veyron/veyron2/options"
 	"veyron.io/veyron/veyron2/rt"
@@ -42,7 +43,11 @@ func Java_io_veyron_veyron_veyron_runtimes_google_VRuntimeImpl_nativeInit(env *C
 		jutil.JThrowV(env, err)
 		return C.jlong(0)
 	}
-	r := rt.Init(opts...)
+	r, err := rt.New(opts...)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return C.jlong(0)
+	}
 	jutil.GoRef(&r) // Un-refed when the Java Runtime object is finalized.
 	return C.jlong(jutil.PtrValue(&r))
 }

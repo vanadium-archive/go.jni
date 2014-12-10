@@ -3,7 +3,6 @@
 package google
 
 import (
-	"encoding/json"
 	"unsafe"
 
 	jutil "veyron.io/jni/util"
@@ -46,19 +45,19 @@ func Java_io_veyron_veyron_veyron_runtimes_google_InputChannel_nativeAvailable(e
 }
 
 //export Java_io_veyron_veyron_veyron_runtimes_google_InputChannel_nativeReadValue
-func Java_io_veyron_veyron_veyron_runtimes_google_InputChannel_nativeReadValue(env *C.JNIEnv, jInputChannel C.jobject, goChanPtr C.jlong) C.jstring {
+func Java_io_veyron_veyron_veyron_runtimes_google_InputChannel_nativeReadValue(env *C.JNIEnv, jInputChannel C.jobject, goChanPtr C.jlong) C.jbyteArray {
 	ch := *(*chan interface{})(jutil.Ptr(goChanPtr))
 	val, ok := <-ch
 	if !ok {
 		jutil.JThrow(env, jEOFExceptionClass, "Channel closed.")
 		return nil
 	}
-	bytes, err := json.Marshal(val)
+	bytes, err := jutil.VomEncode(val)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return C.jstring(jutil.JString(env, string(bytes)))
+	return C.jbyteArray(jutil.JByteArray(env, bytes))
 }
 
 //export Java_io_veyron_veyron_veyron_runtimes_google_InputChannel_nativeFinalize

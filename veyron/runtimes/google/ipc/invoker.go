@@ -5,7 +5,6 @@ package ipc
 import (
 	"fmt"
 	"runtime"
-
 	jutil "veyron.io/jni/util"
 	jsecurity "veyron.io/jni/veyron2/security"
 	"veyron.io/veyron/veyron2/ipc"
@@ -127,7 +126,7 @@ func encodeArgs(env *C.JNIEnv, argptrs []interface{}) (C.jobjectArray, error) {
 	for i, argptr := range argptrs {
 		arg := interface{}(jutil.DerefOrDie(argptr))
 		var err error
-		if vomArgs[i], err = VomEncode(arg); err != nil {
+		if vomArgs[i], err = jutil.VomEncode(arg); err != nil {
 			return nil, err
 		}
 	}
@@ -163,7 +162,7 @@ func decodeResults(env *C.JNIEnv, jReply C.jobject) ([]interface{}, error) {
 	ret := make([]interface{}, len(results)+1)
 	for i, result := range results {
 		var err error
-		if ret[i], err = VomDecodeToValue(result); err != nil {
+		if ret[i], err = jutil.VomDecodeToValue(result); err != nil {
 			return nil, err
 		}
 	}
