@@ -199,7 +199,7 @@ func (c *safeRefCounter) unref(value interface{}) {
 	defer c.lock.Unlock()
 	count, ok := c.refs[value]
 	if !ok {
-		log.Println("Unrefing value %v that hasn't been refed before", value)
+		log.Println("Unrefing value %v or type %T that hasn't been refed before", value, value)
 		return
 	}
 	if count == 0 {

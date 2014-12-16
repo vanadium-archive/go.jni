@@ -3,6 +3,7 @@
 package naming
 
 import (
+	"time"
 	"unsafe"
 
 	jutil "veyron.io/jni/util"
@@ -43,23 +44,20 @@ func Java_io_veyron_veyron_veyron_runtimes_google_naming_Namespace_nativeGlob(en
 		return C.jlong(0)
 	}
 	// We want to return chan interface{}, not chan naming.MountEntry, so we
-	// convert here.  We also convert naming.MountEntry into a similar struct
-	// which can be JSON-serialized.  (MounEntry has a field of type "error"
-	// which doesn't get JSON-serialized correctly.)
+	// convert here.  We also convert naming.MountEntry into naming.VDLMountEntry
+	// which can be VOM-encoded.
 	retChan := make(chan interface{}, 100)
 	go func() {
 		for entry := range entryChan {
-			s := struct {
-				Name    string
-				Servers []naming.MountedServer
-				Error   string
-			}{}
-			s.Name = entry.Name
-			s.Servers = entry.Servers
-			if entry.Error != nil {
-				s.Error = entry.Error.Error()
+			var vdlEntry naming.VDLMountEntry
+			vdlEntry.Name = entry.Name
+			for _, server := range entry.Servers {
+				var vdlServer naming.VDLMountedServer
+				vdlServer.Server = server.Server
+				vdlServer.TTL = uint32(server.Expires.Sub(time.Now()).Seconds())
+				vdlEntry.Servers = append(vdlEntry.Servers, vdlServer)
 			}
-			retChan <- s
+			retChan <- vdlEntry
 		}
 		close(retChan)
 	}()
