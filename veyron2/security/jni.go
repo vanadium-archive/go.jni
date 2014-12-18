@@ -341,6 +341,36 @@ func Java_io_veyron_veyron_veyron2_security_PrincipalImpl_nativePublicKey(env *C
 	return jKey
 }
 
+//export Java_io_veyron_veyron_veyron2_security_PrincipalImpl_nativeBlessingsByName
+func Java_io_veyron_veyron_veyron2_security_PrincipalImpl_nativeBlessingsByName(env *C.JNIEnv, jPrincipalImpl C.jobject, goPtr C.jlong, jPattern C.jobject) C.jobjectArray {
+	pattern, err := GoBlessingPattern(env, jPattern)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	blessings := (*(*security.Principal)(jutil.Ptr(goPtr))).BlessingsByName(pattern)
+	barr := make([]interface{}, len(blessings))
+	for i, b := range blessings {
+		var err error
+		if barr[i], err = JavaBlessings(env, b); err != nil {
+			jutil.JThrowV(env, err)
+			return nil
+		}
+	}
+	return C.jobjectArray(jutil.JObjectArray(env, barr))
+}
+
+//export Java_io_veyron_veyron_veyron2_security_PrincipalImpl_nativeBlessingsInfo
+func Java_io_veyron_veyron_veyron2_security_PrincipalImpl_nativeBlessingsInfo(env *C.JNIEnv, jPrincipalImpl C.jobject, goPtr C.jlong, jBlessings C.jobject) C.jobjectArray {
+	blessings, err := GoBlessings(env, jBlessings)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	names := (*(*security.Principal)(jutil.Ptr(goPtr))).BlessingsInfo(blessings)
+	return C.jobjectArray(jutil.JStringArray(env, names))
+}
+
 //export Java_io_veyron_veyron_veyron2_security_PrincipalImpl_nativeBlessingStore
 func Java_io_veyron_veyron_veyron2_security_PrincipalImpl_nativeBlessingStore(env *C.JNIEnv, jPrincipalImpl C.jobject, goPtr C.jlong) C.jobject {
 	store := (*(*security.Principal)(jutil.Ptr(goPtr))).BlessingStore()
@@ -541,6 +571,31 @@ func Java_io_veyron_veyron_veyron2_security_BlessingStoreImpl_nativePublicKey(en
 		return nil
 	}
 	return jKey
+}
+
+//export Java_io_veyron_veyron_veyron2_security_BlessingStoreImpl_nativePeerBlessings
+func Java_io_veyron_veyron_veyron2_security_BlessingStoreImpl_nativePeerBlessings(env *C.JNIEnv, jBlessingStoreImpl C.jobject, goPtr C.jlong) C.jobject {
+	blessingsMap := (*(*security.BlessingStore)(jutil.Ptr(goPtr))).PeerBlessings()
+	bmap := make(map[interface{}]interface{})
+	for pattern, blessings := range blessingsMap {
+		jPattern, err := JavaBlessingPattern(env, pattern)
+		if err != nil {
+			jutil.JThrowV(env, err)
+			return nil
+		}
+		jBlessings, err := JavaBlessings(env, blessings)
+		if err != nil {
+			jutil.JThrowV(env, err)
+			return nil
+		}
+		bmap[jPattern] = jBlessings
+	}
+	jBlessingsMap, err := jutil.JObjectMap(env, bmap)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	return C.jobject(jBlessingsMap)
 }
 
 //export Java_io_veyron_veyron_veyron2_security_BlessingStoreImpl_nativeDebugString

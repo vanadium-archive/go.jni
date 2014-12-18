@@ -38,6 +38,8 @@ var (
 	jObjectClass C.jclass
 	// Global reference for java.lang.String class.
 	jStringClass C.jclass
+	// Global reference for java.util.HashMap class.
+	jHashMapClass C.jclass
 	// Global reference for []byte class.
 	jByteArrayClass C.jclass
 )
@@ -57,6 +59,7 @@ func Init(jEnv interface{}) {
 	jSystemClass = JFindClassOrPrint(env, "java/lang/System")
 	jObjectClass = JFindClassOrPrint(env, "java/lang/Object")
 	jStringClass = JFindClassOrPrint(env, "java/lang/String")
+	jHashMapClass = JFindClassOrPrint(env, "java/util/HashMap")
 	jByteArrayClass = JFindClassOrPrint(env, "[B")
 }
 
@@ -455,6 +458,52 @@ func GoByteArrayArray(jEnv, jArr interface{}) (ret [][]byte) {
 		ret[i] = GoByteArray(env, C.GetObjectArrayElement(env, arr, C.jsize(i)))
 	}
 	return
+}
+
+// JObjectMap converts the provided Go map of Java objects into a Java
+// object map.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func JObjectMap(jEnv interface{}, goMap map[interface{}]interface{}) (C.jobject, error) {
+	env := getEnv(jEnv)
+	jMap, err := NewObject(env, jHashMapClass, nil)
+	if err != nil {
+		return nil, err
+	}
+	for jKey, jVal := range goMap {
+		if _, err := CallObjectMethod(env, jMap, "put", []Sign{ObjectSign, ObjectSign}, ObjectSign, getObject(jKey), getObject(jVal)); err != nil {
+			return nil, err
+		}
+	}
+	return jMap, nil
+}
+
+// GoObjectMap converts the provided Java object map into a Go map of Java
+// objects.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func GoObjectMap(jEnv, jObjMap interface{}) (map[C.jobject]C.jobject, error) {
+	env := getEnv(jEnv)
+	jMap := getObject(jObjMap)
+	jKeySet, err := CallObjectMethod(env, jMap, "keySet", nil, SetSign)
+	if err != nil {
+		return nil, err
+	}
+	keysArr, err := CallObjectArrayMethod(env, jKeySet, "toArray", nil, ObjectSign)
+	if err != nil {
+		return nil, err
+	}
+	ret := make(map[C.jobject]C.jobject)
+	for _, jKey := range keysArr {
+		jVal, err := CallObjectMethod(env, jMap, "get", []Sign{ObjectSign}, ObjectSign, jKey)
+		if err != nil {
+			return nil, err
+		}
+		ret[jKey] = jVal
+	}
+	return ret, nil
 }
 
 // JFieldIDPtr returns the Java field ID for the given object (i.e., non-static)

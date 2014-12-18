@@ -143,6 +143,36 @@ func (s *blessingStore) PublicKey() security.PublicKey {
 	return publicKey
 }
 
+func (s *blessingStore) PeerBlessings() map[security.BlessingPattern]security.Blessings {
+	env, freeFunc := jutil.GetEnv(s.jVM)
+	defer freeFunc()
+	jBlessingsMap, err := jutil.CallObjectMethod(env, s.jBlessingStore, "peerBlessings", nil, jutil.MapSign)
+	if err != nil {
+		log.Printf("Couldn't get Java peer blessings: %v", err)
+		return nil
+	}
+	bmap, err := jutil.GoObjectMap(env, jBlessingsMap)
+	if err != nil {
+		log.Printf("Couldn't convert Java object map into a Go object map: %v", err)
+		return nil
+	}
+	ret := make(map[security.BlessingPattern]security.Blessings)
+	for jPattern, jBlessings := range bmap {
+		pattern, err := GoBlessingPattern(env, C.jobject(jPattern))
+		if err != nil {
+			log.Printf("Couldn't convert Java pattern into Go: %v", err)
+			return nil
+		}
+		blessings, err := GoBlessings(env, C.jobject(jBlessings))
+		if err != nil {
+			log.Printf("Couldn't convert Java blessings into Go: %v", err)
+			return nil
+		}
+		ret[pattern] = blessings
+	}
+	return ret
+}
+
 func (r *blessingStore) DebugString() string {
 	env, freeFunc := jutil.GetEnv(r.jVM)
 	defer freeFunc()

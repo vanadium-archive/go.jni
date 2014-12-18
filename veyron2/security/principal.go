@@ -139,6 +139,46 @@ func (p *principal) PublicKey() security.PublicKey {
 	return key
 }
 
+func (p *principal) BlessingsByName(name security.BlessingPattern) []security.Blessings {
+	env, freeFunc := jutil.GetEnv(p.jVM)
+	defer freeFunc()
+	jName, err := JavaBlessingPattern(env, name)
+	if err != nil {
+		log.Printf("Couldn't convert Go blessing pattern: %v", err)
+		return nil
+	}
+	barr, err := jutil.CallObjectArrayMethod(env, p.jPrincipal, "blessingsByName", []jutil.Sign{blessingPatternSign}, blessingsSign, jName)
+	if err != nil {
+		log.Printf("Couldn't get Java blessings for name: %v", err)
+		return nil
+	}
+	ret := make([]security.Blessings, len(barr))
+	for i, jBlessings := range barr {
+		var err error
+		if ret[i], err = GoBlessings(env, jBlessings); err != nil {
+			log.Printf("Couldn't convert Java blessings to Go: %v", err)
+			return nil
+		}
+	}
+	return ret
+}
+
+func (p *principal) BlessingsInfo(blessings security.Blessings) []string {
+	env, freeFunc := jutil.GetEnv(p.jVM)
+	defer freeFunc()
+	jBlessings, err := JavaBlessings(env, blessings)
+	if err != nil {
+		log.Printf("Couldn't convert Go blessings to Java: %v", err)
+		return nil
+	}
+	ret, err := jutil.CallStringArrayMethod(env, p.jPrincipal, "blessingsInfo", []jutil.Sign{blessingsSign}, jBlessings)
+	if err != nil {
+		log.Printf("Couldn't get Java blessings info: %v", err)
+		return nil
+	}
+	return ret
+}
+
 func (p *principal) BlessingStore() security.BlessingStore {
 	env, freeFunc := jutil.GetEnv(p.jVM)
 	defer freeFunc()

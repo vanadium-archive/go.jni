@@ -33,6 +33,10 @@ var (
 	StringSign = ClassSign("java.lang.String")
 	// ObjectSign denotes a signature of a Java Object type.
 	ObjectSign = ClassSign("java.lang.Object")
+	// SetSign denotes a signature of a Java Set type.
+	SetSign = ClassSign("java.util.Set")
+	// MapSign denotes a signature of a Java Map type.
+	MapSign = ClassSign("java.util.Map")
 	// ByteArraySign denotes a signature of a Java byte array type.
 	ByteArraySign = ArraySign(ByteSign)
 )
