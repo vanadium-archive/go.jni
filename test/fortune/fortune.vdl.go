@@ -218,7 +218,7 @@ type FortuneServerMethods interface {
 	// Add stores a fortune in the set used by Get.
 	Add(ctx __ipc.ServerContext, Fortune string) error
 	// Get returns a random fortune.
-	Get(__ipc.ServerContext) (Fortune string, Err error)
+	Get(__ipc.ServerContext) (Fortune string, err error)
 	// StreamingGet returns a stream that can be used to obtain fortunes.
 	StreamingGet(FortuneStreamingGetContext) (total int32, err error)
 }
@@ -231,7 +231,7 @@ type FortuneServerStubMethods interface {
 	// Add stores a fortune in the set used by Get.
 	Add(ctx __ipc.ServerContext, Fortune string) error
 	// Get returns a random fortune.
-	Get(__ipc.ServerContext) (Fortune string, Err error)
+	Get(__ipc.ServerContext) (Fortune string, err error)
 	// StreamingGet returns a stream that can be used to obtain fortunes.
 	StreamingGet(*FortuneStreamingGetContextStub) (total int32, err error)
 }
@@ -312,7 +312,7 @@ var descFortune = __ipc.InterfaceDesc{
 			Doc:  "// Get returns a random fortune.",
 			OutArgs: []__ipc.ArgDesc{
 				{"Fortune", ``}, // string
-				{"Err", ``},     // error
+				{"err", ``},     // error
 			},
 			Tags: []__vdlutil.Any{access.Tag("Read")},
 		},
@@ -343,7 +343,7 @@ func (s implFortuneServerStub) Signature(ctx __ipc.ServerContext) (__ipc.Service
 		InArgs: []__ipc.MethodArgument{},
 		OutArgs: []__ipc.MethodArgument{
 			{Name: "Fortune", Type: 3},
-			{Name: "Err", Type: 65},
+			{Name: "err", Type: 65},
 		},
 	}
 	result.Methods["StreamingGet"] = __ipc.MethodSignature{

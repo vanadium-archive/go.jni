@@ -8,8 +8,8 @@ type Fortune interface {
  Add(Fortune string) error {access.Write}
 
  // Get returns a random fortune.
- Get() (Fortune string, Err error) {access.Read}
+ Get() (Fortune string | error) {access.Read}
 
  // StreamingGet returns a stream that can be used to obtain fortunes.
- StreamingGet() stream<bool, string> (total int32, err error) {access.Read}
+ StreamingGet() stream<bool, string> (total int32 | error) {access.Read}
 }
