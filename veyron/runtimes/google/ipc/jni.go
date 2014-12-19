@@ -19,7 +19,9 @@ import (
 import "C"
 
 var (
-	streamSign = jutil.ClassSign("io.veyron.veyron.veyron.runtimes.google.ipc.Stream")
+	optionsSign    = jutil.ClassSign("io.veyron.veyron.veyron2.Options")
+	streamSign     = jutil.ClassSign("io.veyron.veyron.veyron.runtimes.google.ipc.Stream")
+	listenAddrSign = jutil.ClassSign("io.veyron.veyron.veyron2.ipc.ListenSpec$Address")
 
 	// Global reference for io.veyron.veyron.veyron.runtimes.google.ipc.Server class.
 	jServerClass C.jclass
@@ -63,18 +65,22 @@ func Init(jEnv interface{}) {
 }
 
 //export Java_io_veyron_veyron_veyron_runtimes_google_ipc_Server_nativeListen
-func Java_io_veyron_veyron_veyron_runtimes_google_ipc_Server_nativeListen(env *C.JNIEnv, server C.jobject, goPtr C.jlong, jSpec C.jobject) C.jstring {
+func Java_io_veyron_veyron_veyron_runtimes_google_ipc_Server_nativeListen(env *C.JNIEnv, server C.jobject, goPtr C.jlong, jSpec C.jobject) C.jobjectArray {
 	spec, err := GoListenSpec(env, jSpec)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	ep, err := (*(*ipc.Server)(jutil.Ptr(goPtr))).Listen(spec)
+	eps, err := (*(*ipc.Server)(jutil.Ptr(goPtr))).Listen(spec)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return C.jstring(jutil.JString(env, ep.String()))
+	epStrs := make([]string, len(eps))
+	for i, ep := range eps {
+		epStrs[i] = ep.String()
+	}
+	return C.jobjectArray(jutil.JStringArray(env, epStrs))
 }
 
 //export Java_io_veyron_veyron_veyron_runtimes_google_ipc_Server_nativeServe

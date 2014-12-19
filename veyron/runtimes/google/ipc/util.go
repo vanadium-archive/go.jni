@@ -20,11 +20,11 @@ import "C"
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JavaServer(jEnv interface{}, server ipc.Server) (C.jobject, error) {
+func JavaServer(jEnv interface{}, server ipc.Server, jOptions interface{}) (C.jobject, error) {
 	if server == nil {
 		return nil, fmt.Errorf("Go Server value cannot be nil")
 	}
-	jServer, err := jutil.NewObject(jEnv, jServerClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&server)))
+	jServer, err := jutil.NewObject(jEnv, jServerClass, []jutil.Sign{jutil.LongSign, optionsSign}, int64(jutil.PtrValue(&server)), jOptions)
 	if err != nil {
 		return nil, err
 	}
@@ -108,21 +108,35 @@ func javaStream(env *C.JNIEnv, stream ipc.Stream) (C.jobject, error) {
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func GoListenSpec(jEnv, jSpec interface{}) (ipc.ListenSpec, error) {
-	protocol, err := jutil.CallStringMethod(jEnv, jSpec, "getProtocol", nil)
+	addrArr, err := jutil.CallObjectArrayMethod(jEnv, jSpec, "getAddresses", nil, listenAddrSign)
 	if err != nil {
 		return ipc.ListenSpec{}, err
+	}
+	addrs := make(ipc.ListenAddrs, len(addrArr))
+	for i, jAddr := range addrArr {
+		var err error
+		addrs[i].Protocol, err = jutil.CallStringMethod(jEnv, jAddr, "getProtocol", nil)
+		if err != nil {
+			return ipc.ListenSpec{}, err
+		}
+		addrs[i].Address, err = jutil.CallStringMethod(jEnv, jAddr, "getAddress", nil)
+		if err != nil {
+			return ipc.ListenSpec{}, err
+		}
 	}
 	proxy, err := jutil.CallStringMethod(jEnv, jSpec, "getProxy", nil)
 	if err != nil {
 		return ipc.ListenSpec{}, err
 	}
-	var spec ipc.ListenSpec
-	switch protocol {
-	case "tcp", "tcp4", "tcp6":
-		spec = roaming.ListenSpec
-	default:
-		return ipc.ListenSpec{}, fmt.Errorf("Unsupported protocol: %s", protocol)
+	isRoaming, err := jutil.CallBooleanMethod(jEnv, jSpec, "isRoaming", nil)
+	if err != nil {
+		return ipc.ListenSpec{}, err
 	}
+	var spec ipc.ListenSpec
+	if isRoaming {
+		spec = roaming.ListenSpec
+	}
+	spec.Addrs = addrs
 	spec.Proxy = proxy
 	return spec, nil
 }

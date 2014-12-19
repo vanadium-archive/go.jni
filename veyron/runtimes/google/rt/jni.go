@@ -70,13 +70,12 @@ func Java_io_veyron_veyron_veyron_runtimes_google_VRuntimeImpl_nativeNewClient(e
 
 //export Java_io_veyron_veyron_veyron_runtimes_google_VRuntimeImpl_nativeNewServer
 func Java_io_veyron_veyron_veyron_runtimes_google_VRuntimeImpl_nativeNewServer(env *C.JNIEnv, jRuntime C.jobject, goPtr C.jlong, jOptions C.jobject) C.jobject {
-	// No options supported yet.
 	server, err := (*(*veyron2.Runtime)(jutil.Ptr(goPtr))).NewServer()
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	jServer, err := jipc.JavaServer(env, server)
+	jServer, err := jipc.JavaServer(env, server, jOptions)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
