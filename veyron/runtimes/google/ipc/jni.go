@@ -6,11 +6,11 @@ import (
 	"io"
 	"unsafe"
 
-	jutil "veyron.io/jni/util"
-	jcontext "veyron.io/jni/veyron2/context"
-	jsecurity "veyron.io/jni/veyron2/security"
-	"veyron.io/veyron/veyron2/ipc"
-	"veyron.io/veyron/veyron2/vdl"
+	jutil "v.io/jni/util"
+	jcontext "v.io/jni/veyron2/context"
+	jsecurity "v.io/jni/veyron2/security"
+	"v.io/veyron/veyron2/ipc"
+	"v.io/veyron/veyron2/vdl"
 )
 
 // #cgo LDFLAGS: -ljniwrapper

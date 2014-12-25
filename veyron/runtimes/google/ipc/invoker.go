@@ -5,12 +5,12 @@ package ipc
 import (
 	"fmt"
 	"runtime"
-	jutil "veyron.io/jni/util"
-	jsecurity "veyron.io/jni/veyron2/security"
-	"veyron.io/veyron/veyron2/ipc"
-	"veyron.io/veyron/veyron2/vdl"
-	"veyron.io/veyron/veyron2/vdl/vdlroot/src/signature"
-	"veyron.io/veyron/veyron2/verror"
+	jutil "v.io/jni/util"
+	jsecurity "v.io/jni/veyron2/security"
+	"v.io/veyron/veyron2/ipc"
+	"v.io/veyron/veyron2/vdl"
+	"v.io/veyron/veyron2/vdl/vdlroot/src/signature"
+	"v.io/veyron/veyron2/verror"
 )
 
 // #cgo LDFLAGS: -llog -ljniwrapper

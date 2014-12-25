@@ -5,10 +5,10 @@ package google
 import (
 	"unsafe"
 
-	jutil "veyron.io/jni/util"
-	jipc "veyron.io/jni/veyron/runtimes/google/ipc"
-	jnaming "veyron.io/jni/veyron/runtimes/google/naming"
-	jrt "veyron.io/jni/veyron/runtimes/google/rt"
+	jutil "v.io/jni/util"
+	jipc "v.io/jni/veyron/runtimes/google/ipc"
+	jnaming "v.io/jni/veyron/runtimes/google/naming"
+	jrt "v.io/jni/veyron/runtimes/google/rt"
 )
 
 // #cgo LDFLAGS: -ljniwrapper

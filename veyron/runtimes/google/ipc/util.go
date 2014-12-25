@@ -5,11 +5,11 @@ package ipc
 import (
 	"fmt"
 
-	jutil "veyron.io/jni/util"
-	jcontext "veyron.io/jni/veyron2/context"
-	jsecurity "veyron.io/jni/veyron2/security"
-	"veyron.io/veyron/veyron/profiles/roaming"
-	"veyron.io/veyron/veyron2/ipc"
+	jutil "v.io/jni/util"
+	jcontext "v.io/jni/veyron2/context"
+	jsecurity "v.io/jni/veyron2/security"
+	"v.io/veyron/veyron/profiles/roaming"
+	"v.io/veyron/veyron2/ipc"
 )
 
 // #cgo LDFLAGS: -ljniwrapper

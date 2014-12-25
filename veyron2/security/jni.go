@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"unsafe"
 
-	jutil "veyron.io/jni/util"
-	vsecurity "veyron.io/veyron/veyron/security"
-	"veyron.io/veyron/veyron2/security"
+	jutil "v.io/jni/util"
+	vsecurity "v.io/veyron/veyron/security"
+	"v.io/veyron/veyron2/security"
 )
 
 // #cgo LDFLAGS: -ljniwrapper

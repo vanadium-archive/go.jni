@@ -3,10 +3,10 @@
 package veyron2
 
 import (
-	jandroid "veyron.io/jni/veyron2/android"
-	jcontext "veyron.io/jni/veyron2/context"
-	jsecurity "veyron.io/jni/veyron2/security"
-	jaccess "veyron.io/jni/veyron2/services/security/access"
+	jandroid "v.io/jni/veyron2/android"
+	jcontext "v.io/jni/veyron2/context"
+	jsecurity "v.io/jni/veyron2/security"
+	jaccess "v.io/jni/veyron2/services/security/access"
 )
 
 // #cgo LDFLAGS: -ljniwrapper

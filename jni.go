@@ -7,11 +7,11 @@ import (
 
 	"golang.org/x/mobile/app"
 
-	jutil "veyron.io/jni/util"
-	jgoogle "veyron.io/jni/veyron/runtimes/google"
-	jveyron2 "veyron.io/jni/veyron2"
-	_ "veyron.io/veyron/veyron/profiles/roaming"
-	"veyron.io/veyron/veyron2/vom2"
+	jutil "v.io/jni/util"
+	jgoogle "v.io/jni/veyron/runtimes/google"
+	jveyron2 "v.io/jni/veyron2"
+	_ "v.io/veyron/veyron/profiles/roaming"
+	"v.io/veyron/veyron2/vom2"
 )
 
 // #cgo LDFLAGS: -ljniwrapper

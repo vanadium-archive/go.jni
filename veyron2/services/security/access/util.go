@@ -3,8 +3,8 @@
 package access
 
 import (
-	jutil "veyron.io/jni/util"
-	"veyron.io/veyron/veyron2/services/security/access"
+	jutil "v.io/jni/util"
+	"v.io/veyron/veyron2/services/security/access"
 )
 
 // #cgo LDFLAGS: -ljniwrapper

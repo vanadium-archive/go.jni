@@ -5,15 +5,15 @@ package rt
 import (
 	"unsafe"
 
-	jutil "veyron.io/jni/util"
-	jipc "veyron.io/jni/veyron/runtimes/google/ipc"
-	jnaming "veyron.io/jni/veyron/runtimes/google/naming"
-	jcontext "veyron.io/jni/veyron2/context"
-	jsecurity "veyron.io/jni/veyron2/security"
+	jutil "v.io/jni/util"
+	jipc "v.io/jni/veyron/runtimes/google/ipc"
+	jnaming "v.io/jni/veyron/runtimes/google/naming"
+	jcontext "v.io/jni/veyron2/context"
+	jsecurity "v.io/jni/veyron2/security"
 
-	"veyron.io/veyron/veyron2"
-	"veyron.io/veyron/veyron2/options"
-	"veyron.io/veyron/veyron2/rt"
+	"v.io/veyron/veyron2"
+	"v.io/veyron/veyron2/options"
+	"v.io/veyron/veyron2/rt"
 )
 
 // #cgo LDFLAGS: -ljniwrapper

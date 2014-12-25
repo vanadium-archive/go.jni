@@ -5,9 +5,9 @@ package access
 import (
 	"unsafe"
 
-	jutil "veyron.io/jni/util"
-	jsecurity "veyron.io/jni/veyron2/security"
-	"veyron.io/veyron/veyron2/services/security/access"
+	jutil "v.io/jni/util"
+	jsecurity "v.io/jni/veyron2/security"
+	"v.io/veyron/veyron2/services/security/access"
 )
 
 // #cgo LDFLAGS: -ljniwrapper

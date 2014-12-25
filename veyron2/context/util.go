@@ -8,8 +8,8 @@ import (
 	"runtime"
 	"unsafe"
 
-	jutil "veyron.io/jni/util"
-	"veyron.io/veyron/veyron2/context"
+	jutil "v.io/jni/util"
+	"v.io/veyron/veyron2/context"
 )
 
 // #cgo LDFLAGS: -ljniwrapper

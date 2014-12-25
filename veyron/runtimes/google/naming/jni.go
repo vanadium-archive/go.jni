@@ -6,9 +6,9 @@ import (
 	"time"
 	"unsafe"
 
-	jutil "veyron.io/jni/util"
-	jcontext "veyron.io/jni/veyron2/context"
-	"veyron.io/veyron/veyron2/naming"
+	jutil "v.io/jni/util"
+	jcontext "v.io/jni/veyron2/context"
+	"v.io/veyron/veyron2/naming"
 )
 
 // #cgo LDFLAGS: -ljniwrapper

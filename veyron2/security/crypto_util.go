@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"math/big"
 
-	"veyron.io/veyron/veyron2/security"
+	"v.io/veyron/veyron2/security"
 )
 
 var (
