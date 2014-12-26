@@ -4,7 +4,7 @@ package naming
 
 import (
 	jutil "v.io/jni/util"
-	"v.io/veyron/veyron2/naming"
+	"v.io/core/veyron2/naming"
 )
 
 // #cgo LDFLAGS: -ljniwrapper

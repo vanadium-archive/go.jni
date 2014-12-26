@@ -8,7 +8,7 @@ import (
 	"unsafe"
 
 	jutil "v.io/jni/util"
-	"v.io/veyron/veyron2/security"
+	"v.io/core/veyron2/security"
 )
 
 // #cgo LDFLAGS: -ljniwrapper

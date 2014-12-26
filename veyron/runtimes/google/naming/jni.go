@@ -8,7 +8,7 @@ import (
 
 	jutil "v.io/jni/util"
 	jcontext "v.io/jni/veyron2/context"
-	"v.io/veyron/veyron2/naming"
+	"v.io/core/veyron2/naming"
 )
 
 // #cgo LDFLAGS: -ljniwrapper
@@ -27,7 +27,7 @@ var (
 // interface and then cast into the package-local environment type.
 func Init(jEnv interface{}) {
 	env := (*C.JNIEnv)(unsafe.Pointer(jutil.PtrValue(jEnv)))
-	jNamespaceImplClass = C.jclass(jutil.JFindClassOrPrint(env, "io/veyron/veyron/veyron/runtimes/google/naming/Namespace"))
+	jNamespaceImplClass = C.jclass(jutil.JFindClassOrPrint(env, "io/core/veyron/veyron/runtimes/google/naming/Namespace"))
 }
 
 //export Java_io_veyron_veyron_veyron_runtimes_google_naming_Namespace_nativeGlob

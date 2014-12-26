@@ -7,8 +7,8 @@ import (
 	"unsafe"
 
 	jutil "v.io/jni/util"
-	vsecurity "v.io/veyron/veyron/security"
-	"v.io/veyron/veyron2/security"
+	vsecurity "v.io/core/veyron/security"
+	"v.io/core/veyron2/security"
 )
 
 // #cgo LDFLAGS: -ljniwrapper
@@ -51,12 +51,12 @@ func Init(jEnv interface{}) {
 	// Cache global references to all Java classes used by the package.  This is
 	// necessary because JNI gets access to the class loader only in the system
 	// thread, so we aren't able to invoke FindClass in other threads.
-	jPrincipalImplClass = C.jclass(jutil.JFindClassOrPrint(env, "io/veyron/veyron/veyron2/security/PrincipalImpl"))
-	jBlessingStoreImplClass = C.jclass(jutil.JFindClassOrPrint(env, "io/veyron/veyron/veyron2/security/BlessingStoreImpl"))
-	jBlessingRootsImplClass = C.jclass(jutil.JFindClassOrPrint(env, "io/veyron/veyron/veyron2/security/BlessingRootsImpl"))
-	jContextImplClass = C.jclass(jutil.JFindClassOrPrint(env, "io/veyron/veyron/veyron2/security/ContextImpl"))
-	jBlessingPatternWrapperClass = C.jclass(jutil.JFindClassOrPrint(env, "io/veyron/veyron/veyron2/security/BlessingPatternWrapper"))
-	jUtilClass = C.jclass(jutil.JFindClassOrPrint(env, "io/veyron/veyron/veyron2/security/Util"))
+	jPrincipalImplClass = C.jclass(jutil.JFindClassOrPrint(env, "io/core/veyron/veyron2/security/PrincipalImpl"))
+	jBlessingStoreImplClass = C.jclass(jutil.JFindClassOrPrint(env, "io/core/veyron/veyron2/security/BlessingStoreImpl"))
+	jBlessingRootsImplClass = C.jclass(jutil.JFindClassOrPrint(env, "io/core/veyron/veyron2/security/BlessingRootsImpl"))
+	jContextImplClass = C.jclass(jutil.JFindClassOrPrint(env, "io/core/veyron/veyron2/security/ContextImpl"))
+	jBlessingPatternWrapperClass = C.jclass(jutil.JFindClassOrPrint(env, "io/core/veyron/veyron2/security/BlessingPatternWrapper"))
+	jUtilClass = C.jclass(jutil.JFindClassOrPrint(env, "io/core/veyron/veyron2/security/Util"))
 }
 
 //export Java_io_veyron_veyron_veyron2_security_ContextImpl_nativeTimestamp

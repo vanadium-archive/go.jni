@@ -11,9 +11,9 @@ import (
 	jcontext "v.io/jni/veyron2/context"
 	jsecurity "v.io/jni/veyron2/security"
 
-	"v.io/veyron/veyron2"
-	"v.io/veyron/veyron2/options"
-	"v.io/veyron/veyron2/rt"
+	"v.io/core/veyron2"
+	"v.io/core/veyron2/options"
+	"v.io/core/veyron2/rt"
 )
 
 // #cgo LDFLAGS: -ljniwrapper
@@ -33,7 +33,7 @@ var (
 // interface and then cast into the package-local environment type.
 func Init(jEnv interface{}) {
 	env := (*C.JNIEnv)(unsafe.Pointer(jutil.PtrValue(jEnv)))
-	jOptionDefsClass = C.jclass(jutil.JFindClassOrPrint(env, "io/veyron/veyron/veyron2/OptionDefs"))
+	jOptionDefsClass = C.jclass(jutil.JFindClassOrPrint(env, "io/core/veyron/veyron2/OptionDefs"))
 }
 
 //export Java_io_veyron_veyron_veyron_runtimes_google_VRuntimeImpl_nativeInit

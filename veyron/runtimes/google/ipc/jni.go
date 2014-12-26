@@ -9,8 +9,8 @@ import (
 	jutil "v.io/jni/util"
 	jcontext "v.io/jni/veyron2/context"
 	jsecurity "v.io/jni/veyron2/security"
-	"v.io/veyron/veyron2/ipc"
-	"v.io/veyron/veyron2/vdl"
+	"v.io/core/veyron2/ipc"
+	"v.io/core/veyron2/vdl"
 )
 
 // #cgo LDFLAGS: -ljniwrapper
@@ -53,13 +53,13 @@ func Init(jEnv interface{}) {
 	// Cache global references to all Java classes used by the package.  This is
 	// necessary because JNI gets access to the class loader only in the system
 	// thread, so we aren't able to invoke FindClass in other threads.
-	jServerClass = C.jclass(jutil.JFindClassOrPrint(env, "io/veyron/veyron/veyron/runtimes/google/ipc/Server"))
-	jClientClass = C.jclass(jutil.JFindClassOrPrint(env, "io/veyron/veyron/veyron/runtimes/google/ipc/Client"))
-	jCallClass = C.jclass(jutil.JFindClassOrPrint(env, "io/veyron/veyron/veyron/runtimes/google/ipc/Call"))
-	jServerCallClass = C.jclass(jutil.JFindClassOrPrint(env, "io/veyron/veyron/veyron/runtimes/google/ipc/ServerCall"))
-	jStreamClass = C.jclass(jutil.JFindClassOrPrint(env, "io/veyron/veyron/veyron/runtimes/google/ipc/Stream"))
-	jVDLInvokerClass = C.jclass(jutil.JFindClassOrPrint(env, "io/veyron/veyron/veyron/runtimes/google/ipc/VDLInvoker"))
-	jOptionDefsClass = C.jclass(jutil.JFindClassOrPrint(env, "io/veyron/veyron/veyron2/OptionDefs"))
+	jServerClass = C.jclass(jutil.JFindClassOrPrint(env, "io/core/veyron/veyron/runtimes/google/ipc/Server"))
+	jClientClass = C.jclass(jutil.JFindClassOrPrint(env, "io/core/veyron/veyron/runtimes/google/ipc/Client"))
+	jCallClass = C.jclass(jutil.JFindClassOrPrint(env, "io/core/veyron/veyron/runtimes/google/ipc/Call"))
+	jServerCallClass = C.jclass(jutil.JFindClassOrPrint(env, "io/core/veyron/veyron/runtimes/google/ipc/ServerCall"))
+	jStreamClass = C.jclass(jutil.JFindClassOrPrint(env, "io/core/veyron/veyron/runtimes/google/ipc/Stream"))
+	jVDLInvokerClass = C.jclass(jutil.JFindClassOrPrint(env, "io/core/veyron/veyron/runtimes/google/ipc/VDLInvoker"))
+	jOptionDefsClass = C.jclass(jutil.JFindClassOrPrint(env, "io/core/veyron/veyron2/OptionDefs"))
 	jEOFExceptionClass = C.jclass(jutil.JFindClassOrPrint(env, "java/io/EOFException"))
 	jStringClass = C.jclass(jutil.JFindClassOrPrint(env, "java/lang/String"))
 }

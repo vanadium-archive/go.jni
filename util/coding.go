@@ -3,8 +3,8 @@ package util
 import (
 	"bytes"
 
-	"v.io/veyron/veyron2/vdl"
-	"v.io/veyron/veyron2/vom2"
+	"v.io/core/veyron2/vdl"
+	"v.io/core/veyron2/vom2"
 )
 
 // VomEncode encodes the provided value using a new instance of a VOM encoder.

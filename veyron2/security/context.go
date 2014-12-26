@@ -10,9 +10,9 @@ import (
 	"unsafe"
 
 	jutil "v.io/jni/util"
-	inaming "v.io/veyron/veyron/runtimes/google/naming"
-	"v.io/veyron/veyron2/naming"
-	"v.io/veyron/veyron2/security"
+	inaming "v.io/core/veyron/runtimes/google/naming"
+	"v.io/core/veyron2/naming"
+	"v.io/core/veyron2/security"
 )
 
 // #cgo LDFLAGS: -ljniwrapper

@@ -10,8 +10,8 @@ import (
 	jutil "v.io/jni/util"
 	jgoogle "v.io/jni/veyron/runtimes/google"
 	jveyron2 "v.io/jni/veyron2"
-	_ "v.io/veyron/veyron/profiles/roaming"
-	"v.io/veyron/veyron2/vom2"
+	_ "v.io/core/veyron/profiles/roaming"
+	"v.io/core/veyron2/vom2"
 )
 
 // #cgo LDFLAGS: -ljniwrapper

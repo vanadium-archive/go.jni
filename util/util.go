@@ -12,7 +12,7 @@ import (
 	"unicode/utf8"
 	"unsafe"
 
-	"v.io/veyron/veyron2/verror"
+	"v.io/core/veyron2/verror"
 )
 
 // #cgo LDFLAGS: -ljniwrapper
@@ -52,7 +52,7 @@ var (
 // and then cast into their package local types.
 func Init(jEnv interface{}) {
 	env := getEnv(jEnv)
-	jVeyronExceptionClass = JFindClassOrPrint(env, "io/veyron/veyron/veyron2/VeyronException")
+	jVeyronExceptionClass = JFindClassOrPrint(env, "io/core/veyron/veyron2/VeyronException")
 	jDateTimeClass = JFindClassOrPrint(env, "org/joda/time/DateTime")
 	jDurationClass = JFindClassOrPrint(env, "org/joda/time/Duration")
 	jThrowableClass = JFindClassOrPrint(env, "java/lang/Throwable")

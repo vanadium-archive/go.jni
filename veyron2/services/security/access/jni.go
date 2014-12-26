@@ -7,7 +7,7 @@ import (
 
 	jutil "v.io/jni/util"
 	jsecurity "v.io/jni/veyron2/security"
-	"v.io/veyron/veyron2/services/security/access"
+	"v.io/core/veyron2/services/security/access"
 )
 
 // #cgo LDFLAGS: -ljniwrapper
@@ -25,8 +25,8 @@ var (
 
 func Init(jEnv interface{}) {
 	env := (*C.JNIEnv)(unsafe.Pointer(jutil.PtrValue(jEnv)))
-	jACLWrapperClass = C.jclass(jutil.JFindClassOrPrint(env, "io/veyron/veyron/veyron2/services/security/access/ACLWrapper"))
-	jUtilClass = C.jclass(jutil.JFindClassOrPrint(env, "io/veyron/veyron/veyron2/services/security/access/Util"))
+	jACLWrapperClass = C.jclass(jutil.JFindClassOrPrint(env, "io/core/veyron/veyron2/services/security/access/ACLWrapper"))
+	jUtilClass = C.jclass(jutil.JFindClassOrPrint(env, "io/core/veyron/veyron2/services/security/access/Util"))
 }
 
 //export Java_io_veyron_veyron_veyron2_services_security_access_ACLWrapper_nativeWrap

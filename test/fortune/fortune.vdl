@@ -1,6 +1,6 @@
 package fortune
 
-import "v.io/veyron/veyron2/services/security/access"
+import "v.io/core/veyron2/services/security/access"
 
 // Fortune allows clients to Get and Add fortune strings.
 type Fortune interface {

@@ -7,10 +7,10 @@ import (
 	"runtime"
 	jutil "v.io/jni/util"
 	jsecurity "v.io/jni/veyron2/security"
-	"v.io/veyron/veyron2/ipc"
-	"v.io/veyron/veyron2/vdl"
-	"v.io/veyron/veyron2/vdl/vdlroot/src/signature"
-	"v.io/veyron/veyron2/verror"
+	"v.io/core/veyron2/ipc"
+	"v.io/core/veyron2/vdl"
+	"v.io/core/veyron2/vdl/vdlroot/src/signature"
+	"v.io/core/veyron2/verror"
 )
 
 // #cgo LDFLAGS: -llog -ljniwrapper

@@ -4,7 +4,7 @@ package access
 
 import (
 	jutil "v.io/jni/util"
-	"v.io/veyron/veyron2/services/security/access"
+	"v.io/core/veyron2/services/security/access"
 )
 
 // #cgo LDFLAGS: -ljniwrapper
