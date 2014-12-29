@@ -26,11 +26,11 @@ const _ = __wiretype.TypeIDInvalid
 // Fortune allows clients to Get and Add fortune strings.
 type FortuneClientMethods interface {
 	// Add stores a fortune in the set used by Get.
-	Add(ctx __context.T, Fortune string, opts ...__ipc.CallOpt) error
+	Add(ctx *__context.T, Fortune string, opts ...__ipc.CallOpt) error
 	// Get returns a random fortune.
-	Get(__context.T, ...__ipc.CallOpt) (Fortune string, err error)
+	Get(*__context.T, ...__ipc.CallOpt) (Fortune string, err error)
 	// StreamingGet returns a stream that can be used to obtain fortunes.
-	StreamingGet(__context.T, ...__ipc.CallOpt) (FortuneStreamingGetCall, error)
+	StreamingGet(*__context.T, ...__ipc.CallOpt) (FortuneStreamingGetCall, error)
 }
 
 // FortuneClientStub adds universal methods to FortuneClientMethods.
@@ -55,14 +55,14 @@ type implFortuneClientStub struct {
 	client __ipc.Client
 }
 
-func (c implFortuneClientStub) c(ctx __context.T) __ipc.Client {
+func (c implFortuneClientStub) c(ctx *__context.T) __ipc.Client {
 	if c.client != nil {
 		return c.client
 	}
 	return __veyron2.RuntimeFromContext(ctx).Client()
 }
 
-func (c implFortuneClientStub) Add(ctx __context.T, i0 string, opts ...__ipc.CallOpt) (err error) {
+func (c implFortuneClientStub) Add(ctx *__context.T, i0 string, opts ...__ipc.CallOpt) (err error) {
 	var call __ipc.Call
 	if call, err = c.c(ctx).StartCall(ctx, c.name, "Add", []interface{}{i0}, opts...); err != nil {
 		return
@@ -73,7 +73,7 @@ func (c implFortuneClientStub) Add(ctx __context.T, i0 string, opts ...__ipc.Cal
 	return
 }
 
-func (c implFortuneClientStub) Get(ctx __context.T, opts ...__ipc.CallOpt) (o0 string, err error) {
+func (c implFortuneClientStub) Get(ctx *__context.T, opts ...__ipc.CallOpt) (o0 string, err error) {
 	var call __ipc.Call
 	if call, err = c.c(ctx).StartCall(ctx, c.name, "Get", nil, opts...); err != nil {
 		return
@@ -84,7 +84,7 @@ func (c implFortuneClientStub) Get(ctx __context.T, opts ...__ipc.CallOpt) (o0 s
 	return
 }
 
-func (c implFortuneClientStub) StreamingGet(ctx __context.T, opts ...__ipc.CallOpt) (ocall FortuneStreamingGetCall, err error) {
+func (c implFortuneClientStub) StreamingGet(ctx *__context.T, opts ...__ipc.CallOpt) (ocall FortuneStreamingGetCall, err error) {
 	var call __ipc.Call
 	if call, err = c.c(ctx).StartCall(ctx, c.name, "StreamingGet", nil, opts...); err != nil {
 		return
@@ -93,7 +93,7 @@ func (c implFortuneClientStub) StreamingGet(ctx __context.T, opts ...__ipc.CallO
 	return
 }
 
-func (c implFortuneClientStub) Signature(ctx __context.T, opts ...__ipc.CallOpt) (o0 __ipc.ServiceSignature, err error) {
+func (c implFortuneClientStub) Signature(ctx *__context.T, opts ...__ipc.CallOpt) (o0 __ipc.ServiceSignature, err error) {
 	var call __ipc.Call
 	if call, err = c.c(ctx).StartCall(ctx, c.name, "Signature", nil, opts...); err != nil {
 		return

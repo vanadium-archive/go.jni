@@ -8,8 +8,8 @@ import (
 	"runtime"
 	"unsafe"
 
-	jutil "v.io/jni/util"
 	"v.io/core/veyron2/context"
+	jutil "v.io/jni/util"
 )
 
 // #cgo LDFLAGS: -ljniwrapper
@@ -26,7 +26,7 @@ type goContextValue struct {
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JavaContext(jEnv interface{}, ctx context.T, cancel context.CancelFunc) (C.jobject, error) {
+func JavaContext(jEnv interface{}, ctx *context.T, cancel context.CancelFunc) (C.jobject, error) {
 	cancelPtr := int64(0)
 	if cancel != nil {
 		cancelPtr = int64(jutil.PtrValue(&cancel))
@@ -46,7 +46,7 @@ func JavaContext(jEnv interface{}, ctx context.T, cancel context.CancelFunc) (C.
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func GoContext(jEnv, jContextObj interface{}) (context.T, error) {
+func GoContext(jEnv, jContextObj interface{}) (*context.T, error) {
 	jContext := getObject(jContextObj)
 	if jContext == nil {
 		return nil, nil
