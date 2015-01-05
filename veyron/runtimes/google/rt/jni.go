@@ -21,7 +21,7 @@ import (
 import "C"
 
 var (
-	// Global reference for io.veyron.veyron.veyron2.OptionDefs class.
+	// Global reference for io.v.core.veyron2.OptionDefs class.
 	jOptionDefsClass C.jclass
 )
 
@@ -33,7 +33,7 @@ var (
 // interface and then cast into the package-local environment type.
 func Init(jEnv interface{}) {
 	env := (*C.JNIEnv)(unsafe.Pointer(jutil.PtrValue(jEnv)))
-	jOptionDefsClass = C.jclass(jutil.JFindClassOrPrint(env, "io/core/veyron/veyron2/OptionDefs"))
+	jOptionDefsClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron/veyron2/OptionDefs"))
 }
 
 //export Java_io_veyron_veyron_veyron_runtimes_google_VRuntimeImpl_nativeInit

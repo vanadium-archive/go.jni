@@ -5,9 +5,9 @@ package access
 import (
 	"unsafe"
 
+	"v.io/core/veyron2/services/security/access"
 	jutil "v.io/jni/util"
 	jsecurity "v.io/jni/veyron2/security"
-	"v.io/core/veyron2/services/security/access"
 )
 
 // #cgo LDFLAGS: -ljniwrapper
@@ -15,18 +15,18 @@ import (
 import "C"
 
 var (
-	aclSign = jutil.ClassSign("io.veyron.veyron.veyron2.services.security.access.ACL")
+	aclSign = jutil.ClassSign("io.v.core.veyron2.services.security.access.ACL")
 
-	// Global reference for io.veyron.veyron.veyron2.services.security.access.ACLWrapper class.
+	// Global reference for io.v.core.veyron2.services.security.access.ACLWrapper class.
 	jACLWrapperClass C.jclass
-	// Global reference for io.veyron.veyron.veyron2.services.security.access.Util class.
+	// Global reference for io.v.core.veyron2.services.security.access.Util class.
 	jUtilClass C.jclass
 )
 
 func Init(jEnv interface{}) {
 	env := (*C.JNIEnv)(unsafe.Pointer(jutil.PtrValue(jEnv)))
-	jACLWrapperClass = C.jclass(jutil.JFindClassOrPrint(env, "io/core/veyron/veyron2/services/security/access/ACLWrapper"))
-	jUtilClass = C.jclass(jutil.JFindClassOrPrint(env, "io/core/veyron/veyron2/services/security/access/Util"))
+	jACLWrapperClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron/veyron2/services/security/access/ACLWrapper"))
+	jUtilClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron/veyron2/services/security/access/Util"))
 }
 
 //export Java_io_veyron_veyron_veyron2_services_security_access_ACLWrapper_nativeWrap

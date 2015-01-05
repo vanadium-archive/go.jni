@@ -6,11 +6,11 @@ import (
 	"io"
 	"unsafe"
 
+	"v.io/core/veyron2/ipc"
+	"v.io/core/veyron2/vdl"
 	jutil "v.io/jni/util"
 	jcontext "v.io/jni/veyron2/context"
 	jsecurity "v.io/jni/veyron2/security"
-	"v.io/core/veyron2/ipc"
-	"v.io/core/veyron2/vdl"
 )
 
 // #cgo LDFLAGS: -ljniwrapper
@@ -19,23 +19,23 @@ import (
 import "C"
 
 var (
-	optionsSign    = jutil.ClassSign("io.veyron.veyron.veyron2.Options")
-	streamSign     = jutil.ClassSign("io.veyron.veyron.veyron.runtimes.google.ipc.Stream")
-	listenAddrSign = jutil.ClassSign("io.veyron.veyron.veyron2.ipc.ListenSpec$Address")
+	optionsSign    = jutil.ClassSign("io.v.core.veyron2.Options")
+	streamSign     = jutil.ClassSign("io.v.core.veyron.runtimes.google.ipc.Stream")
+	listenAddrSign = jutil.ClassSign("io.v.core.veyron2.ipc.ListenSpec$Address")
 
-	// Global reference for io.veyron.veyron.veyron.runtimes.google.ipc.Server class.
+	// Global reference for io.v.core.veyron.runtimes.google.ipc.Server class.
 	jServerClass C.jclass
-	// Global reference for io.veyron.veyron.veyron.runtimes.google.ipc.Client class.
+	// Global reference for io.v.core.veyron.runtimes.google.ipc.Client class.
 	jClientClass C.jclass
-	// Global reference for io.veyron.veyron.veyron.runtimes.google.ipc.Call class.
+	// Global reference for io.v.core.veyron.runtimes.google.ipc.Call class.
 	jCallClass C.jclass
-	// Global reference for io.veyron.veyron.veyron.runtimes.google.ipc.ServerCall class.
+	// Global reference for io.v.core.veyron.runtimes.google.ipc.ServerCall class.
 	jServerCallClass C.jclass
-	// Global reference for io.veyron.veyron.veyron.runtimes.google.ipc.Stream class.
+	// Global reference for io.v.core.veyron.runtimes.google.ipc.Stream class.
 	jStreamClass C.jclass
-	// Global reference for io.veyron.veyron.veyron.runtimes.google.ipc.VDLInvoker class.
+	// Global reference for io.v.core.veyron.runtimes.google.ipc.VDLInvoker class.
 	jVDLInvokerClass C.jclass
-	// Global reference for io.veyron.veyron.veyron2.OptionDefs class.
+	// Global reference for io.v.core.veyron2.OptionDefs class.
 	jOptionDefsClass C.jclass
 	// Global reference for java.io.EOFException class.
 	jEOFExceptionClass C.jclass
@@ -53,13 +53,13 @@ func Init(jEnv interface{}) {
 	// Cache global references to all Java classes used by the package.  This is
 	// necessary because JNI gets access to the class loader only in the system
 	// thread, so we aren't able to invoke FindClass in other threads.
-	jServerClass = C.jclass(jutil.JFindClassOrPrint(env, "io/core/veyron/veyron/runtimes/google/ipc/Server"))
-	jClientClass = C.jclass(jutil.JFindClassOrPrint(env, "io/core/veyron/veyron/runtimes/google/ipc/Client"))
-	jCallClass = C.jclass(jutil.JFindClassOrPrint(env, "io/core/veyron/veyron/runtimes/google/ipc/Call"))
-	jServerCallClass = C.jclass(jutil.JFindClassOrPrint(env, "io/core/veyron/veyron/runtimes/google/ipc/ServerCall"))
-	jStreamClass = C.jclass(jutil.JFindClassOrPrint(env, "io/core/veyron/veyron/runtimes/google/ipc/Stream"))
-	jVDLInvokerClass = C.jclass(jutil.JFindClassOrPrint(env, "io/core/veyron/veyron/runtimes/google/ipc/VDLInvoker"))
-	jOptionDefsClass = C.jclass(jutil.JFindClassOrPrint(env, "io/core/veyron/veyron2/OptionDefs"))
+	jServerClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron/runtimes/google/ipc/Server"))
+	jClientClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron/runtimes/google/ipc/Client"))
+	jCallClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron/runtimes/google/ipc/Call"))
+	jServerCallClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron/runtimes/google/ipc/ServerCall"))
+	jStreamClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron/runtimes/google/ipc/Stream"))
+	jVDLInvokerClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron/runtimes/google/ipc/VDLInvoker"))
+	jOptionDefsClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron2/OptionDefs"))
 	jEOFExceptionClass = C.jclass(jutil.JFindClassOrPrint(env, "java/io/EOFException"))
 	jStringClass = C.jclass(jutil.JFindClassOrPrint(env, "java/lang/String"))
 }
@@ -250,11 +250,6 @@ func Java_io_veyron_veyron_veyron_runtimes_google_ipc_Call_nativeFinish(env *C.J
 		}
 	}
 	return C.jobjectArray(jutil.JByteArrayArray(env, vomResults))
-}
-
-//export Java_io_veyron_veyron_veyron_runtimes_google_ipc_Call_nativeCancel
-func Java_io_veyron_veyron_veyron_runtimes_google_ipc_Call_nativeCancel(env *C.JNIEnv, jCall C.jobject, goPtr C.jlong) {
-	(*(*ipc.Call)(jutil.Ptr(goPtr))).Cancel()
 }
 
 //export Java_io_veyron_veyron_veyron_runtimes_google_ipc_Call_nativeFinalize

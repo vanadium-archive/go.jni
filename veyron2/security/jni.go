@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"unsafe"
 
-	jutil "v.io/jni/util"
 	vsecurity "v.io/core/veyron/security"
 	"v.io/core/veyron2/security"
+	jutil "v.io/jni/util"
 )
 
 // #cgo LDFLAGS: -ljniwrapper
@@ -16,29 +16,35 @@ import (
 import "C"
 
 var (
-	principalSign       = jutil.ClassSign("io.veyron.veyron.veyron2.security.Principal")
-	blessingsSign       = jutil.ClassSign("io.veyron.veyron.veyron2.security.Blessings")
-	wireBlessingsSign   = jutil.ClassSign("io.veyron.veyron.veyron2.security.WireBlessings")
-	blessingStoreSign   = jutil.ClassSign("io.veyron.veyron.veyron2.security.BlessingStore")
-	blessingRootsSign   = jutil.ClassSign("io.veyron.veyron.veyron2.security.BlessingRoots")
-	blessingPatternSign = jutil.ClassSign("io.veyron.veyron.veyron2.security.BlessingPattern")
-	signerSign          = jutil.ClassSign("io.veyron.veyron.veyron2.security.Signer")
-	caveatSign          = jutil.ClassSign("io.veyron.veyron.veyron2.security.Caveat")
-	signatureSign       = jutil.ClassSign("io.veyron.veyron.veyron2.security.Signature")
+	principalSign       = jutil.ClassSign("io.v.core.veyron2.security.Principal")
+	blessingsSign       = jutil.ClassSign("io.v.core.veyron2.security.Blessings")
+	wireBlessingsSign   = jutil.ClassSign("io.v.core.veyron2.security.WireBlessings")
+	blessingStoreSign   = jutil.ClassSign("io.v.core.veyron2.security.BlessingStore")
+	blessingRootsSign   = jutil.ClassSign("io.v.core.veyron2.security.BlessingRoots")
+	blessingPatternSign = jutil.ClassSign("io.v.core.veyron2.security.BlessingPattern")
+	signerSign          = jutil.ClassSign("io.v.core.veyron2.security.Signer")
+	caveatSign          = jutil.ClassSign("io.v.core.veyron2.security.Caveat")
+	signatureSign       = jutil.ClassSign("io.v.core.veyron2.security.Signature")
 	publicKeySign       = jutil.ClassSign("java.security.interfaces.ECPublicKey")
 
-	// Global reference for io.veyron.veyron.veyron2.security.PrincipalImpl class.
+	// Global reference for io.v.core.veyron2.security.Blessings class.
+	jBlessingsClass C.jclass
+	// Global reference for io.v.core.veyron2.security.PrincipalImpl class.
 	jPrincipalImplClass C.jclass
-	// Global reference for io.veyron.veyron.veyron2.security.BlessingStoreImpl class.
+	// Global reference for io.v.core.veyron2.security.BlessingsImpl class.
+	jBlessingsImplClass C.jclass
+	// Global reference for io.v.core.veyron2.security.BlessingStoreImpl class.
 	jBlessingStoreImplClass C.jclass
-	// Global reference for io.veyron.veyron.veyron2.security.BlessingRootsImpl class.
+	// Global reference for io.v.core.veyron2.security.BlessingRootsImpl class.
 	jBlessingRootsImplClass C.jclass
-	// Global reference for io.veyron.veyron.veyron2.security.ContextImpl class.
+	// Global reference for io.v.core.veyron2.security.ContextImpl class.
 	jContextImplClass C.jclass
-	// Global reference for io.veyron.veyron.veyron2.security.BlessingPatternWrapper class.
+	// Global reference for io.v.core.veyron2.security.BlessingPatternWrapper class.
 	jBlessingPatternWrapperClass C.jclass
-	// Global reference for io.veyron.veyron.veyron2.security.Util class.
+	// Global reference for io.v.core.veyron2.security.Util class.
 	jUtilClass C.jclass
+	// Global reference for java.lang.Object class.
+	jObjectClass C.jclass
 )
 
 // Init initializes the JNI code with the given Java evironment. This method
@@ -51,12 +57,15 @@ func Init(jEnv interface{}) {
 	// Cache global references to all Java classes used by the package.  This is
 	// necessary because JNI gets access to the class loader only in the system
 	// thread, so we aren't able to invoke FindClass in other threads.
-	jPrincipalImplClass = C.jclass(jutil.JFindClassOrPrint(env, "io/core/veyron/veyron2/security/PrincipalImpl"))
-	jBlessingStoreImplClass = C.jclass(jutil.JFindClassOrPrint(env, "io/core/veyron/veyron2/security/BlessingStoreImpl"))
-	jBlessingRootsImplClass = C.jclass(jutil.JFindClassOrPrint(env, "io/core/veyron/veyron2/security/BlessingRootsImpl"))
-	jContextImplClass = C.jclass(jutil.JFindClassOrPrint(env, "io/core/veyron/veyron2/security/ContextImpl"))
-	jBlessingPatternWrapperClass = C.jclass(jutil.JFindClassOrPrint(env, "io/core/veyron/veyron2/security/BlessingPatternWrapper"))
-	jUtilClass = C.jclass(jutil.JFindClassOrPrint(env, "io/core/veyron/veyron2/security/Util"))
+	jBlessingsClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron2/security/Blessings"))
+	jPrincipalImplClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron2/security/PrincipalImpl"))
+	jBlessingsImplClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron2/security/BlessingsImpl"))
+	jBlessingStoreImplClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron2/security/BlessingStoreImpl"))
+	jBlessingRootsImplClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron2/security/BlessingRootsImpl"))
+	jContextImplClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron2/security/ContextImpl"))
+	jBlessingPatternWrapperClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron2/security/BlessingPatternWrapper"))
+	jUtilClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron2/security/Util"))
+	jObjectClass = C.jclass(jutil.JFindClassOrPrint(env, "java/lang/Object"))
 }
 
 //export Java_io_veyron_veyron_veyron2_security_ContextImpl_nativeTimestamp
@@ -357,7 +366,7 @@ func Java_io_veyron_veyron_veyron2_security_PrincipalImpl_nativeBlessingsByName(
 			return nil
 		}
 	}
-	return C.jobjectArray(jutil.JObjectArray(env, barr))
+	return C.jobjectArray(jutil.JObjectArray(env, barr, jBlessingsClass))
 }
 
 //export Java_io_veyron_veyron_veyron2_security_PrincipalImpl_nativeBlessingsInfo
@@ -411,19 +420,43 @@ func Java_io_veyron_veyron_veyron2_security_PrincipalImpl_nativeFinalize(env *C.
 }
 
 //export Java_io_veyron_veyron_veyron2_security_BlessingsImpl_nativeCreate
-func Java_io_veyron_veyron_veyron2_security_BlessingsImpl_nativeCreate(env *C.JNIEnv, jBlessingsImplClass C.jclass, jWire C.jobject) C.jlong {
+func Java_io_veyron_veyron_veyron2_security_BlessingsImpl_nativeCreate(env *C.JNIEnv, jBlessingsImplClass C.jclass, jWire C.jobject) C.jobject {
 	wire, err := GoWireBlessings(env, jWire)
 	if err != nil {
 		jutil.JThrowV(env, err)
-		return C.jlong(0)
+		return nil
 	}
 	blessings, err := security.NewBlessings(wire)
 	if err != nil {
 		jutil.JThrowV(env, err)
-		return C.jlong(0)
+		return nil
 	}
-	jutil.GoRef(&blessings) // Un-refed when the Java BlessingsImpl is finalized.
-	return C.jlong(jutil.PtrValue(&blessings))
+	jBlessings, err := JavaBlessings(env, blessings)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	return jBlessings
+}
+
+//export Java_io_veyron_veyron_veyron2_security_BlessingsImpl_nativeCreateUnion
+func Java_io_veyron_veyron_veyron2_security_BlessingsImpl_nativeCreateUnion(env *C.JNIEnv, jBlessingsImplClass C.jclass, jBlessingsArr C.jobjectArray) C.jobject {
+	blessingsArr, err := GoBlessingsArray(env, jBlessingsArr)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	blessings, err := security.UnionOfBlessings(blessingsArr...)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	jBlessings, err := JavaBlessings(env, blessings)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	return jBlessings
 }
 
 //export Java_io_veyron_veyron_veyron2_security_BlessingsImpl_nativeForContext

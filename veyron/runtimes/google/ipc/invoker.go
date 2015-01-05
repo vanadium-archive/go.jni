@@ -5,12 +5,12 @@ package ipc
 import (
 	"fmt"
 	"runtime"
-	jutil "v.io/jni/util"
-	jsecurity "v.io/jni/veyron2/security"
 	"v.io/core/veyron2/ipc"
 	"v.io/core/veyron2/vdl"
 	"v.io/core/veyron2/vdl/vdlroot/src/signature"
 	"v.io/core/veyron2/verror"
+	jutil "v.io/jni/util"
+	jsecurity "v.io/jni/veyron2/security"
 )
 
 // #cgo LDFLAGS: -llog -ljniwrapper
@@ -94,8 +94,8 @@ func (i *invoker) Invoke(method string, call ipc.ServerCall, argptrs []interface
 		return nil, err
 	}
 	// Invoke the method.
-	callSign := jutil.ClassSign("io.veyron.veyron.veyron2.ipc.ServerCall")
-	replySign := jutil.ClassSign("io.veyron.veyron.veyron.runtimes.google.ipc.VDLInvoker$InvokeReply")
+	callSign := jutil.ClassSign("io.v.core.veyron2.ipc.ServerCall")
+	replySign := jutil.ClassSign("io.v.core.veyron.runtimes.google.ipc.VDLInvoker$InvokeReply")
 	jReply, err := jutil.CallObjectMethod(env, i.jInvoker, "invoke", []jutil.Sign{jutil.StringSign, callSign, jutil.ArraySign(jutil.ArraySign(jutil.ByteSign))}, replySign, jutil.CamelCase(method), jServerCall, jVomArgs)
 	if err != nil {
 		return nil, fmt.Errorf("error invoking Java method %q: %v", method, err)

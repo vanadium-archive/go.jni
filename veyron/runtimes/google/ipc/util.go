@@ -5,11 +5,11 @@ package ipc
 import (
 	"fmt"
 
+	"v.io/core/veyron/profiles/roaming"
+	"v.io/core/veyron2/ipc"
 	jutil "v.io/jni/util"
 	jcontext "v.io/jni/veyron2/context"
 	jsecurity "v.io/jni/veyron2/security"
-	"v.io/core/veyron/profiles/roaming"
-	"v.io/core/veyron2/ipc"
 )
 
 // #cgo LDFLAGS: -ljniwrapper
@@ -66,8 +66,8 @@ func javaServerCall(env *C.JNIEnv, call ipc.ServerCall) (C.jobject, error) {
 	if err != nil {
 		return nil, err
 	}
-	contextSign := jutil.ClassSign("io.veyron.veyron.veyron2.context.Context")
-	securityContextSign := jutil.ClassSign("io.veyron.veyron.veyron2.security.Context")
+	contextSign := jutil.ClassSign("io.v.core.veyron2.context.Context")
+	securityContextSign := jutil.ClassSign("io.v.core.veyron2.security.Context")
 	jServerCall, err := jutil.NewObject(env, jServerCallClass, []jutil.Sign{jutil.LongSign, streamSign, contextSign, securityContextSign}, int64(jutil.PtrValue(&call)), jStream, jContext, jSecurityContext)
 	if err != nil {
 		return nil, err

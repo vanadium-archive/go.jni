@@ -5,8 +5,8 @@ package context
 import (
 	"unsafe"
 
-	jutil "v.io/jni/util"
 	"v.io/core/veyron2/context"
+	jutil "v.io/jni/util"
 )
 
 // #cgo LDFLAGS: -ljniwrapper
@@ -16,7 +16,7 @@ import "C"
 
 var (
 	classSign = jutil.ClassSign("java.lang.Class")
-	// Global reference for io.veyron.veyron.veyron2.context.ContextImpl class.
+	// Global reference for io.v.core.veyron2.context.ContextImpl class.
 	jContextImplClass C.jclass
 	// Global reference for java.jutil.concurrent.CountDownLatch class.
 	jCountDownLatchClass C.jclass
@@ -32,7 +32,7 @@ func Init(jEnv interface{}) {
 	// Cache global references to all Java classes used by the package.  This is
 	// necessary because JNI gets access to the class loader only in the system
 	// thread, so we aren't able to invoke FindClass in other threads.
-	jContextImplClass = C.jclass(jutil.JFindClassOrPrint(env, "io/core/veyron/veyron2/context/ContextImpl"))
+	jContextImplClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron/veyron2/context/ContextImpl"))
 	jCountDownLatchClass = C.jclass(jutil.JFindClassOrPrint(env, "java/util/concurrent/CountDownLatch"))
 }
 

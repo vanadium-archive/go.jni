@@ -7,8 +7,8 @@ import (
 	"runtime"
 	"unsafe"
 
-	jutil "v.io/jni/util"
 	"v.io/core/veyron2/security"
+	jutil "v.io/jni/util"
 )
 
 // #cgo LDFLAGS: -ljniwrapper
@@ -24,14 +24,15 @@ func JavaBlessings(jEnv interface{}, blessings security.Blessings) (C.jobject, e
 		return nil, nil
 	}
 	wire := security.MarshalBlessings(blessings)
-	encoded, err := jutil.VomEncode(wire)
+	jWire, err := JavaWireBlessings(jEnv, wire)
 	if err != nil {
 		return nil, err
 	}
-	jBlessings, err := jutil.CallStaticObjectMethod(jEnv, jUtilClass, "decodeBlessings", []jutil.Sign{jutil.ByteArraySign}, blessingsSign, encoded)
+	jBlessings, err := jutil.NewObject(jEnv, jBlessingsImplClass, []jutil.Sign{jutil.LongSign, wireBlessingsSign}, int64(jutil.PtrValue(&blessings)), jWire)
 	if err != nil {
 		return nil, err
 	}
+	jutil.GoRef(&blessings) // Un-refed when the Java BlessingsImpl object is finalized.
 	return C.jobject(jBlessings), nil
 }
 
@@ -39,20 +40,33 @@ func JavaBlessings(jEnv interface{}, blessings security.Blessings) (C.jobject, e
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func GoBlessings(jEnv, jBless interface{}) (security.Blessings, error) {
-	jBlessings := getObject(jBless)
-	if jBlessings == nil {
-		return nil, nil
-	}
-	encoded, err := jutil.CallStaticByteArrayMethod(jEnv, jUtilClass, "encodeBlessings", []jutil.Sign{blessingsSign}, jBlessings)
+func GoBlessings(jEnv, jBlessings interface{}) (security.Blessings, error) {
+	jWire, err := jutil.CallObjectMethod(jEnv, jBlessings, "wireFormat", nil, wireBlessingsSign)
 	if err != nil {
 		return nil, err
 	}
-	var wire security.WireBlessings
-	if err := jutil.VomDecode(encoded, &wire); err != nil {
+	wire, err := GoWireBlessings(jEnv, jWire)
+	if err != nil {
 		return nil, err
 	}
 	return security.NewBlessings(wire)
+}
+
+// GoBlessingsArray converts the provided Java Blessings array into a Go
+// Blessings slice.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func GoBlessingsArray(jEnv, jBlessingsArr interface{}) ([]security.Blessings, error) {
+	barr := jutil.GoObjectArray(jEnv, jBlessingsArr)
+	ret := make([]security.Blessings, len(barr))
+	for i, jBlessings := range barr {
+		var err error
+		if ret[i], err = GoBlessings(jEnv, jBlessings); err != nil {
+			return nil, err
+		}
+	}
+	return ret, nil
 }
 
 // JavaWireBlessings converts the provided Go WireBlessings into Java WireBlessings.
@@ -328,7 +342,7 @@ func JavaTags(jEnv interface{}, tags []interface{}) (C.jobjectArray, error) {
 		}
 		tagsJava[i] = jniTag.jTag
 	}
-	jTags := jutil.JObjectArray(jEnv, tagsJava)
+	jTags := jutil.JObjectArray(jEnv, tagsJava, jObjectClass)
 	return C.jobjectArray(jTags), nil
 }
 

@@ -24,7 +24,7 @@ import (
 import "C"
 
 var (
-	// Global reference for io.veyron.veyron.veyron2.VeyronException class.
+	// Global reference for io.v.core.veyron2.VeyronException class.
 	jVeyronExceptionClass C.jclass
 	// Global reference for org.joda.time.DateTime class.
 	jDateTimeClass C.jclass
@@ -52,7 +52,7 @@ var (
 // and then cast into their package local types.
 func Init(jEnv interface{}) {
 	env := getEnv(jEnv)
-	jVeyronExceptionClass = JFindClassOrPrint(env, "io/core/veyron/veyron2/VeyronException")
+	jVeyronExceptionClass = JFindClassOrPrint(env, "io/v/core/veyron2/VeyronException")
 	jDateTimeClass = JFindClassOrPrint(env, "org/joda/time/DateTime")
 	jDurationClass = JFindClassOrPrint(env, "org/joda/time/Duration")
 	jThrowableClass = JFindClassOrPrint(env, "java/lang/Throwable")
@@ -316,16 +316,17 @@ func JStaticStringField(jEnv, jClass interface{}, field string) (string, error) 
 }
 
 // JObjectArray converts the provided slice of C.jobject pointers into a Java
-// Object array.
+// array of the provided element type.
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JObjectArray(jEnv interface{}, arr []interface{}) C.jobjectArray {
+func JObjectArray(jEnv interface{}, arr []interface{}, jElemClass interface{}) C.jobjectArray {
 	if arr == nil {
 		return nil
 	}
 	env := getEnv(jEnv)
-	ret := C.NewObjectArray(env, C.jsize(len(arr)), jObjectClass, nil)
+	jElementClass := getClass(jElemClass)
+	ret := C.NewObjectArray(env, C.jsize(len(arr)), jElementClass, nil)
 	for i, elem := range arr {
 		jElem := getObject(elem)
 		C.SetObjectArrayElement(env, ret, C.jsize(i), jElem)

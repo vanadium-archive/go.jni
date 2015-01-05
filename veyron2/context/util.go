@@ -55,7 +55,7 @@ func GoContext(jEnv, jContextObj interface{}) (*context.T, error) {
 	if err != nil {
 		return nil, err
 	}
-	return *(*context.T)(jutil.Ptr(goCtxPtr)), nil
+	return (*context.T)(jutil.Ptr(goCtxPtr)), nil
 }
 
 // JavaCountDownLatch creates a Java CountDownLatch object with an initial count
