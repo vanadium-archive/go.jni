@@ -17,7 +17,7 @@ import "C"
 // interface and then cast into the package-local environment type.
 func Init(jEnv interface{}) {}
 
-//export Java_io_veyron_veyron_veyron2_android_RedirectStderr_nativeStart
-func Java_io_veyron_veyron_veyron2_android_RedirectStderr_nativeStart(env *C.JNIEnv, jRuntime C.jclass, fileno C.jint) {
+//export Java_io_v_core_veyron2_android_RedirectStderr_nativeStart
+func Java_io_v_core_veyron2_android_RedirectStderr_nativeStart(env *C.JNIEnv, jRuntime C.jclass, fileno C.jint) {
 	syscall.Dup2(int(fileno), syscall.Stderr)
 }

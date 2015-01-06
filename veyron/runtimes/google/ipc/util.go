@@ -58,7 +58,7 @@ func javaServerCall(env *C.JNIEnv, call ipc.ServerCall) (C.jobject, error) {
 	if err != nil {
 		return nil, err
 	}
-	jContext, err := jcontext.JavaContext(env, call, nil)
+	jContext, err := jcontext.JavaContext(env, call.Context(), nil)
 	if err != nil {
 		return nil, err
 	}
