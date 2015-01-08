@@ -31,7 +31,7 @@ func JavaContext(jEnv interface{}, ctx *context.T, cancel context.CancelFunc) (C
 	if cancel != nil {
 		cancelPtr = int64(jutil.PtrValue(&cancel))
 	}
-	jCtx, err := jutil.NewObject(jEnv, jContextImplClass, []jutil.Sign{jutil.LongSign, jutil.LongSign}, int64(jutil.PtrValue(&ctx)), cancelPtr)
+	jCtx, err := jutil.NewObject(jEnv, jContextImplClass, []jutil.Sign{jutil.LongSign, jutil.LongSign}, int64(jutil.PtrValue(ctx)), cancelPtr)
 	if err != nil {
 		return nil, err
 	}

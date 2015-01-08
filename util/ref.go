@@ -184,32 +184,32 @@ type safeRefCounter struct {
 	refs map[interface{}]int
 }
 
-func (c *safeRefCounter) ref(value interface{}) {
+func (c *safeRefCounter) ref(valptr interface{}) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
-	count, ok := c.refs[value]
+	count, ok := c.refs[valptr]
 	if !ok {
-		c.refs[value] = 1
+		c.refs[valptr] = 1
 	} else {
-		c.refs[value] = count + 1
+		c.refs[valptr] = count + 1
 	}
 }
 
-func (c *safeRefCounter) unref(value interface{}) {
+func (c *safeRefCounter) unref(valptr interface{}) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
-	count, ok := c.refs[value]
+	count, ok := c.refs[valptr]
 	if !ok {
-		log.Printf("Unrefing value %v or type %T that hasn't been refed before, stack: ", value, value, string(debug.Stack()))
+		log.Printf("Unrefing pointer %d of type %T that hasn't been refed before, stack: %s", int64(PtrValue(valptr)), valptr, string(debug.Stack()))
 		return
 	}
 	if count == 0 {
-		log.Printf("Ref count for value %v is zero: that shouldn't happen, stack: %s", value, string(debug.Stack()))
+		log.Printf("Ref count for pointer %d of type %T is zero: that shouldn't happen, stack: %s", int64(PtrValue(valptr)), valptr, string(debug.Stack()))
 		return
 	}
 	if count > 1 {
-		c.refs[value] = count - 1
+		c.refs[valptr] = count - 1
 		return
 	}
-	delete(c.refs, value)
+	delete(c.refs, valptr)
 }
