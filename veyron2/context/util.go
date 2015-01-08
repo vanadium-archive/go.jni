@@ -35,7 +35,7 @@ func JavaContext(jEnv interface{}, ctx *context.T, cancel context.CancelFunc) (C
 	if err != nil {
 		return nil, err
 	}
-	jutil.GoRef(&ctx) // Un-refed when the Java context object is finalized.
+	jutil.GoRef(ctx) // Un-refed when the Java context object is finalized.
 	if cancel != nil {
 		jutil.GoRef(&cancel) // Un-refed when the Java context object is finalized.
 	}

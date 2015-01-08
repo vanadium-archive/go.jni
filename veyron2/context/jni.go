@@ -148,6 +148,6 @@ func Java_io_v_core_veyron2_context_ContextImpl_nativeCancel(env *C.JNIEnv, jCon
 func Java_io_v_core_veyron2_context_ContextImpl_nativeFinalize(env *C.JNIEnv, jContextObj C.jobject, goPtr C.jlong, goCancelPtr C.jlong) {
 	jutil.GoUnref((*context.T)(jutil.Ptr(goPtr)))
 	if goCancelPtr != 0 {
-		jutil.GoUnref((*context.CancelFunc)(jutil.Ptr(goPtr)))
+		jutil.GoUnref((*context.CancelFunc)(jutil.Ptr(goCancelPtr)))
 	}
 }

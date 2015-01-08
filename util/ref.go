@@ -7,6 +7,7 @@ import (
 	"log"
 	"reflect"
 	"runtime"
+	"runtime/debug"
 	"sync"
 	"unsafe"
 )
@@ -199,11 +200,11 @@ func (c *safeRefCounter) unref(value interface{}) {
 	defer c.lock.Unlock()
 	count, ok := c.refs[value]
 	if !ok {
-		log.Println("Unrefing value %v or type %T that hasn't been refed before", value, value)
+		log.Printf("Unrefing value %v or type %T that hasn't been refed before, stack: ", value, value, string(debug.Stack()))
 		return
 	}
 	if count == 0 {
-		log.Println("Ref count for value %v is zero: that shouldn't happen", value)
+		log.Printf("Ref count for value %v is zero: that shouldn't happen, stack: %s", value, string(debug.Stack()))
 		return
 	}
 	if count > 1 {

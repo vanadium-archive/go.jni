@@ -56,8 +56,7 @@ type invoker struct {
 }
 
 func (i *invoker) Prepare(method string, numArgs int) (argptrs, tags []interface{}, err error) {
-	jEnv, freeFunc := jutil.GetEnv(i.jVM)
-	env := (*C.JNIEnv)(jEnv)
+	env, freeFunc := jutil.GetEnv(i.jVM)
 	defer freeFunc()
 
 	// Have all input arguments be decoded into *vdl.Value.

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"runtime"
 	"time"
 	"unicode"
 	"unicode/utf8"
@@ -94,13 +95,28 @@ func GoString(jEnv, jStr interface{}) string {
 // and the function must be invoked by the same thread as well.
 func GetEnv(javaVM interface{}) (jEnv unsafe.Pointer, free func()) {
 	jVM := getJVM(javaVM)
+	// Lock the goroutine to the current OS thread.  This is necessary as
+	// *C.JNIEnv must not be shared across threads.  The scenario that can break
+	// this requrement is:
+	//   - goroutine A executing on thread X, obtaining a *C.JNIEnv pointer P.
+	//   - goroutine A gets re-scheduled on thread Y, maintaining the pointer P.
+	//   - goroutine B starts executing on thread X, obtaining pointer P.
+	//
+	// By locking the goroutines to their OS thread while they hold the pointer
+	// to *C.JNIEnv, the above scenario can never occur.
+	runtime.LockOSThread()
 	var env *C.JNIEnv
 	if C.GetEnv(jVM, &env, C.JNI_VERSION_1_6) == C.JNI_OK {
-		return unsafe.Pointer(env), func() {}
+		return unsafe.Pointer(env), func() {
+			runtime.UnlockOSThread()
+		}
 	}
 	// Couldn't get env, attach the thread.
 	C.AttachCurrentThread(jVM, &env, nil)
-	return unsafe.Pointer(env), func() { C.DetachCurrentThread(jVM) }
+	return unsafe.Pointer(env), func() {
+		C.DetachCurrentThread(jVM)
+		runtime.UnlockOSThread()
+	}
 }
 
 // IsInstanceOf returns true iff the provided Java object is an instance of the
