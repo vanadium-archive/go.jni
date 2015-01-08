@@ -59,7 +59,7 @@ func (c implFortuneClientStub) c(ctx *__context.T) __ipc.Client {
 	if c.client != nil {
 		return c.client
 	}
-	return __veyron2.RuntimeFromContext(ctx).Client()
+	return __veyron2.GetClient(ctx)
 }
 
 func (c implFortuneClientStub) Add(ctx *__context.T, i0 string, opts ...__ipc.CallOpt) (err error) {
