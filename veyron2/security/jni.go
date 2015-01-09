@@ -370,14 +370,29 @@ func Java_io_v_core_veyron2_security_PrincipalImpl_nativeBlessingsByName(env *C.
 }
 
 //export Java_io_v_core_veyron2_security_PrincipalImpl_nativeBlessingsInfo
-func Java_io_v_core_veyron2_security_PrincipalImpl_nativeBlessingsInfo(env *C.JNIEnv, jPrincipalImpl C.jobject, goPtr C.jlong, jBlessings C.jobject) C.jobjectArray {
+func Java_io_v_core_veyron2_security_PrincipalImpl_nativeBlessingsInfo(env *C.JNIEnv, jPrincipalImpl C.jobject, goPtr C.jlong, jBlessings C.jobject) C.jobject {
 	blessings, err := GoBlessings(env, jBlessings)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	names := (*(*security.Principal)(jutil.Ptr(goPtr))).BlessingsInfo(blessings)
-	return C.jobjectArray(jutil.JStringArray(env, names))
+	info := (*(*security.Principal)(jutil.Ptr(goPtr))).BlessingsInfo(blessings)
+	infomap := make(map[interface{}]interface{})
+	for name, caveats := range info {
+		jName := jutil.JString(env, name)
+		jCaveatArray, err := JavaCaveats(env, caveats)
+		if err != nil {
+			jutil.JThrowV(env, err)
+			return nil
+		}
+		infomap[jName] = jCaveatArray
+	}
+	jInfo, err := jutil.JObjectMap(env, infomap)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	return C.jobject(jInfo)
 }
 
 //export Java_io_v_core_veyron2_security_PrincipalImpl_nativeBlessingStore

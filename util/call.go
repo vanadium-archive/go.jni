@@ -140,7 +140,7 @@ func NewObject(env interface{}, class interface{}, argSigns []Sign, args ...inte
 	return ret, err
 }
 
-// setupMethodCall performs the shared preparation operations between various java method invocation functions.
+// setupMethodCall performs the shared preparation operations between various Java method invocation functions.
 func setupMethodCall(env interface{}, object interface{}, name string, argSigns []Sign, retSign Sign, args []interface{}) (jenv *C.JNIEnv, jobject C.jobject, jmid C.jmethodID, jvalArray *C.jvalue, freeFunc func(), err error) {
 	jenv = getEnv(env)
 	jobject = getObject(object)
@@ -154,7 +154,7 @@ func setupMethodCall(env interface{}, object interface{}, name string, argSigns 
 	return
 }
 
-// CallObjectMethod calls a java method that returns a java object.
+// CallObjectMethod calls a Java method that returns a java object.
 func CallObjectMethod(env interface{}, object interface{}, name string, argSigns []Sign, retSign Sign, args ...interface{}) (C.jobject, error) {
 	switch retSign {
 	case ByteSign, CharSign, ShortSign, LongSign, FloatSign, DoubleSign, BoolSign, IntSign, VoidSign:
@@ -169,13 +169,13 @@ func CallObjectMethod(env interface{}, object interface{}, name string, argSigns
 	return ret, JExceptionMsg(env)
 }
 
-// CallStringMethod calls a java method that returns a string.
+// CallStringMethod calls a Java method that returns a string.
 func CallStringMethod(env interface{}, object interface{}, name string, argSigns []Sign, args ...interface{}) (string, error) {
 	jstr, err := CallObjectMethod(env, object, name, argSigns, StringSign, args...)
 	return GoString(env, jstr), err
 }
 
-// CallByteArrayMethod calls a java method that returns a byte array.
+// CallByteArrayMethod calls a Java method that returns a byte array.
 func CallByteArrayMethod(env interface{}, object interface{}, name string, argSigns []Sign, args ...interface{}) ([]byte, error) {
 	jArr, err := CallObjectMethod(env, object, name, argSigns, ArraySign(ByteSign), args...)
 	if err != nil {
@@ -184,21 +184,24 @@ func CallByteArrayMethod(env interface{}, object interface{}, name string, argSi
 	return GoByteArray(env, jArr), nil
 }
 
-// CallObjectArrayMethod calls a java method that returns an object array.
+// CallObjectArrayMethod calls a Java method that returns an object array.
 func CallObjectArrayMethod(env interface{}, object interface{}, name string, argSigns []Sign, retElemSign Sign, args ...interface{}) ([]C.jobject, error) {
 	jenv := getEnv(env)
-	jarr, err := CallObjectMethod(env, object, name, argSigns, ArraySign(retElemSign), args...)
+	jArr, err := CallObjectMethod(env, object, name, argSigns, ArraySign(retElemSign), args...)
 	if err != nil {
 		return nil, err
 	}
-	garr := make([]C.jobject, int(C.GetArrayLength(jenv, C.jarray(jarr))))
-	for i, _ := range garr {
-		garr[i] = C.jobject(C.GetObjectArrayElement(jenv, C.jobjectArray(jarr), C.jsize(i)))
+	if jArr == nil {
+		return nil, nil
 	}
-	return garr, nil
+	ret := make([]C.jobject, int(C.GetArrayLength(jenv, C.jarray(jArr))))
+	for i, _ := range ret {
+		ret[i] = C.jobject(C.GetObjectArrayElement(jenv, C.jobjectArray(jArr), C.jsize(i)))
+	}
+	return ret, nil
 }
 
-// CallStringArrayMethod calls a java method that returns an string array.
+// CallStringArrayMethod calls a Java method that returns an string array.
 func CallStringArrayMethod(env interface{}, object interface{}, name string, argSigns []Sign, args ...interface{}) ([]string, error) {
 	objarr, err := CallObjectArrayMethod(env, object, name, argSigns, StringSign, args...)
 	if err != nil {
@@ -211,7 +214,48 @@ func CallStringArrayMethod(env interface{}, object interface{}, name string, arg
 	return strs, nil
 }
 
-// CallBooleanMethod calls a java method that returns a boolean.
+// CallMapMethod calls a Java method that returns a Map.
+func CallMapMethod(env interface{}, object interface{}, name string, argSigns []Sign, args ...interface{}) (map[C.jobject]C.jobject, error) {
+	jMap, err := CallObjectMethod(env, object, name, argSigns, MapSign, args...)
+	if err != nil {
+		return nil, err
+	}
+	if jMap == nil {
+		return nil, nil
+	}
+	jEntrySet, err := CallObjectMethod(env, jMap, "entrySet", nil, SetSign)
+	if err != nil {
+		return nil, err
+	}
+	jIter, err := CallObjectMethod(env, jEntrySet, "iterator", nil, IteratorSign)
+	if err != nil {
+		return nil, err
+	}
+	ret := make(map[C.jobject]C.jobject)
+	for {
+		if hasNext, err := CallBooleanMethod(env, jIter, "hasNext", nil); err != nil {
+			return nil, err
+		} else if !hasNext {
+			break
+		}
+		jEntry, err := CallObjectMethod(env, jIter, "next", nil, ObjectSign)
+		if err != nil {
+			return nil, err
+		}
+		jKey, err := CallObjectMethod(env, jEntry, "getKey", nil, ObjectSign)
+		if err != nil {
+			return nil, err
+		}
+		jValue, err := CallObjectMethod(env, jEntry, "getValue", nil, ObjectSign)
+		if err != nil {
+			return nil, err
+		}
+		ret[jKey] = jValue
+	}
+	return ret, nil
+}
+
+// CallBooleanMethod calls a Java method that returns a boolean.
 func CallBooleanMethod(env interface{}, object interface{}, name string, argSigns []Sign, args ...interface{}) (bool, error) {
 	jenv, jobject, jmid, valArray, freeFunc, err := setupMethodCall(env, object, name, argSigns, BoolSign, args)
 	if err != nil {
@@ -222,7 +266,7 @@ func CallBooleanMethod(env interface{}, object interface{}, name string, argSign
 	return ret, JExceptionMsg(env)
 }
 
-// CallIntMethod calls a java method that returns an int.
+// CallIntMethod calls a Java method that returns an int.
 func CallIntMethod(env interface{}, object interface{}, name string, argSigns []Sign, args ...interface{}) (int, error) {
 	jenv, jobject, jmid, valArray, freeFunc, err := setupMethodCall(env, object, name, argSigns, IntSign, args)
 	if err != nil {
@@ -233,7 +277,7 @@ func CallIntMethod(env interface{}, object interface{}, name string, argSigns []
 	return ret, JExceptionMsg(env)
 }
 
-// CallLongMethod calls a java method that returns an int64.
+// CallLongMethod calls a Java method that returns an int64.
 func CallLongMethod(env interface{}, object interface{}, name string, argSigns []Sign, args ...interface{}) (int64, error) {
 	jenv, jobject, jmid, valArray, freeFunc, err := setupMethodCall(env, object, name, argSigns, LongSign, args)
 	if err != nil {
@@ -244,7 +288,7 @@ func CallLongMethod(env interface{}, object interface{}, name string, argSigns [
 	return ret, JExceptionMsg(env)
 }
 
-// CallVoidMethod calls a java method that "returns" void.
+// CallVoidMethod calls a Java method that "returns" void.
 func CallVoidMethod(env interface{}, object interface{}, name string, argSigns []Sign, args ...interface{}) error {
 	jenv, jobject, jmid, valArray, freeFunc, err := setupMethodCall(env, object, name, argSigns, VoidSign, args)
 	if err != nil {
@@ -277,13 +321,13 @@ func CallStaticObjectMethod(env interface{}, class interface{}, name string, arg
 	return ret, JExceptionMsg(env)
 }
 
-// CallStaticStringMethod calls a static java method that returns a string.
+// CallStaticStringMethod calls a static Java method that returns a string.
 func CallStaticStringMethod(env interface{}, class interface{}, name string, argSigns []Sign, args ...interface{}) (string, error) {
 	jString, err := CallStaticObjectMethod(env, class, name, argSigns, StringSign, args...)
 	return GoString(env, jString), err
 }
 
-// CallStaticByteArrayMethod calls a static java method that returns a byte array.
+// CallStaticByteArrayMethod calls a static Java method that returns a byte array.
 func CallStaticByteArrayMethod(env interface{}, class interface{}, name string, argSigns []Sign, args ...interface{}) ([]byte, error) {
 	jArr, err := CallStaticObjectMethod(env, class, name, argSigns, ArraySign(ByteSign), args...)
 	if err != nil {

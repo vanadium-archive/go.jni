@@ -37,6 +37,8 @@ var (
 	SetSign = ClassSign("java.util.Set")
 	// MapSign denotes a signature of a Java Map type.
 	MapSign = ClassSign("java.util.Map")
+	// IteratorSign denotes a signature of a Java Iterator type.
+	IteratorSign = ClassSign("java.util.Iterator")
 	// ByteArraySign denotes a signature of a Java byte array type.
 	ByteArraySign = ArraySign(ByteSign)
 )
