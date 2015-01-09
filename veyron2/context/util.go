@@ -66,6 +66,9 @@ func GoContext(jEnv, jContextObj interface{}) (*context.T, error) {
 // and then cast into their package local types.
 func JavaCountDownLatch(jEnv interface{}, c <-chan struct{}) (C.jobject, error) {
 	env := getEnv(jEnv)
+	if c == nil {
+		return nil, nil
+	}
 	jLatchObj, err := jutil.NewObject(env, jCountDownLatchClass, []jutil.Sign{jutil.IntSign}, int(1))
 	if err != nil {
 		return nil, err

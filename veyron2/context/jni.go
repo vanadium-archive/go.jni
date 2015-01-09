@@ -75,7 +75,7 @@ func Java_io_v_core_veyron2_context_ContextImpl_nativeValue(env *C.JNIEnv, jCont
 
 //export Java_io_v_core_veyron2_context_ContextImpl_nativeWithCancel
 func Java_io_v_core_veyron2_context_ContextImpl_nativeWithCancel(env *C.JNIEnv, jContextObj C.jobject, goPtr C.jlong) C.jobject {
-	ctx, cancelFunc := (*(*context.T)(jutil.Ptr(goPtr))).WithCancel()
+	ctx, cancelFunc := context.WithCancel((*context.T)(jutil.Ptr(goPtr)))
 	jCtx, err := JavaContext(env, ctx, cancelFunc)
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -91,7 +91,7 @@ func Java_io_v_core_veyron2_context_ContextImpl_nativeWithDeadline(env *C.JNIEnv
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	ctx, cancelFunc := (*(*context.T)(jutil.Ptr(goPtr))).WithDeadline(deadline)
+	ctx, cancelFunc := context.WithDeadline((*context.T)(jutil.Ptr(goPtr)), deadline)
 	jCtx, err := JavaContext(env, ctx, cancelFunc)
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -107,7 +107,7 @@ func Java_io_v_core_veyron2_context_ContextImpl_nativeWithTimeout(env *C.JNIEnv,
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	ctx, cancelFunc := (*(*context.T)(jutil.Ptr(goPtr))).WithTimeout(timeout)
+	ctx, cancelFunc := context.WithTimeout((*context.T)(jutil.Ptr(goPtr)), timeout)
 	jCtx, err := JavaContext(env, ctx, cancelFunc)
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -128,7 +128,7 @@ func Java_io_v_core_veyron2_context_ContextImpl_nativeWithValue(env *C.JNIEnv, j
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	ctx := (*(*context.T)(jutil.Ptr(goPtr))).WithValue(key, value)
+	ctx := context.WithValue((*context.T)(jutil.Ptr(goPtr)), key, value)
 	jCtx, err := JavaContext(env, ctx, nil)
 	if err != nil {
 		jutil.JThrowV(env, err)
