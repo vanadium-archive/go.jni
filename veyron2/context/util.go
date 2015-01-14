@@ -158,6 +158,9 @@ func GoContextValue(jEnv, jValueObj interface{}) (interface{}, error) {
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func JavaContextValue(jEnv interface{}, value interface{}) (C.jobject, error) {
+	if value == nil {
+		return nil, nil
+	}
 	val, ok := value.(*goContextValue)
 	if !ok {
 		return nil, fmt.Errorf("Invalid type %T for value %v, wanted goContextValue", value, value)

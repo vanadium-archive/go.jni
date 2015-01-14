@@ -27,7 +27,7 @@ var (
 	signerSign          = jutil.ClassSign("io.v.core.veyron2.security.Signer")
 	caveatSign          = jutil.ClassSign("io.v.core.veyron2.security.Caveat")
 	caveatValidatorSign = jutil.ClassSign("io.v.core.veyron2.security.CaveatValidator")
-	contextSign         = jutil.ClassSign("io.v.core.veyron2.security.Context")
+	contextSign         = jutil.ClassSign("io.v.core.veyron2.security.VContext")
 	signatureSign       = jutil.ClassSign("io.v.core.veyron2.security.Signature")
 	publicKeySign       = jutil.ClassSign("java.security.interfaces.ECPublicKey")
 
@@ -41,7 +41,7 @@ var (
 	jBlessingStoreImplClass C.jclass
 	// Global reference for io.v.core.veyron2.security.BlessingRootsImpl class.
 	jBlessingRootsImplClass C.jclass
-	// Global reference for io.v.core.veyron2.security.ContextImpl class.
+	// Global reference for io.v.core.veyron2.security.VContextImpl class.
 	jContextImplClass C.jclass
 	// Global reference for io.v.core.veyron2.security.BlessingPatternWrapper class.
 	jBlessingPatternWrapperClass C.jclass
@@ -71,7 +71,7 @@ func Init(jEnv interface{}) error {
 	jBlessingsImplClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron2/security/BlessingsImpl"))
 	jBlessingStoreImplClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron2/security/BlessingStoreImpl"))
 	jBlessingRootsImplClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron2/security/BlessingRootsImpl"))
-	jContextImplClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron2/security/ContextImpl"))
+	jContextImplClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron2/security/VContextImpl"))
 	jBlessingPatternWrapperClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron2/security/BlessingPatternWrapper"))
 	jCaveatCoderClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron2/security/CaveatCoder"))
 	jUtilClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron2/security/Util"))
@@ -79,8 +79,8 @@ func Init(jEnv interface{}) error {
 	return nil
 }
 
-//export Java_io_v_core_veyron2_security_ContextImpl_nativeTimestamp
-func Java_io_v_core_veyron2_security_ContextImpl_nativeTimestamp(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) C.jobject {
+//export Java_io_v_core_veyron2_security_VContextImpl_nativeTimestamp
+func Java_io_v_core_veyron2_security_VContextImpl_nativeTimestamp(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) C.jobject {
 	t := (*(*security.Context)(jutil.Ptr(goContextPtr))).Timestamp()
 	jTime, err := jutil.JTime(env, t)
 	if err != nil {
@@ -90,13 +90,13 @@ func Java_io_v_core_veyron2_security_ContextImpl_nativeTimestamp(env *C.JNIEnv, 
 	return C.jobject(jTime)
 }
 
-//export Java_io_v_core_veyron2_security_ContextImpl_nativeMethod
-func Java_io_v_core_veyron2_security_ContextImpl_nativeMethod(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) C.jstring {
+//export Java_io_v_core_veyron2_security_VContextImpl_nativeMethod
+func Java_io_v_core_veyron2_security_VContextImpl_nativeMethod(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) C.jstring {
 	return C.jstring(jutil.JString(env, (*(*security.Context)(jutil.Ptr(goContextPtr))).Method()))
 }
 
-//export Java_io_v_core_veyron2_security_ContextImpl_nativeMethodTags
-func Java_io_v_core_veyron2_security_ContextImpl_nativeMethodTags(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) C.jobjectArray {
+//export Java_io_v_core_veyron2_security_VContextImpl_nativeMethodTags
+func Java_io_v_core_veyron2_security_VContextImpl_nativeMethodTags(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) C.jobjectArray {
 	tags := (*(*security.Context)(jutil.Ptr(goContextPtr))).MethodTags()
 	jTags, err := JavaTags(env, tags)
 	if err != nil {
@@ -106,28 +106,28 @@ func Java_io_v_core_veyron2_security_ContextImpl_nativeMethodTags(env *C.JNIEnv,
 	return jTags
 }
 
-//export Java_io_v_core_veyron2_security_ContextImpl_nativeName
-func Java_io_v_core_veyron2_security_ContextImpl_nativeName(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) C.jstring {
+//export Java_io_v_core_veyron2_security_VContextImpl_nativeName
+func Java_io_v_core_veyron2_security_VContextImpl_nativeName(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) C.jstring {
 	return C.jstring(jutil.JString(env, (*(*security.Context)(jutil.Ptr(goContextPtr))).Name()))
 }
 
-//export Java_io_v_core_veyron2_security_ContextImpl_nativeSuffix
-func Java_io_v_core_veyron2_security_ContextImpl_nativeSuffix(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) C.jstring {
+//export Java_io_v_core_veyron2_security_VContextImpl_nativeSuffix
+func Java_io_v_core_veyron2_security_VContextImpl_nativeSuffix(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) C.jstring {
 	return C.jstring(jutil.JString(env, (*(*security.Context)(jutil.Ptr(goContextPtr))).Suffix()))
 }
 
-//export Java_io_v_core_veyron2_security_ContextImpl_nativeLocalEndpoint
-func Java_io_v_core_veyron2_security_ContextImpl_nativeLocalEndpoint(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) C.jstring {
+//export Java_io_v_core_veyron2_security_VContextImpl_nativeLocalEndpoint
+func Java_io_v_core_veyron2_security_VContextImpl_nativeLocalEndpoint(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) C.jstring {
 	return C.jstring(jutil.JString(env, (*(*security.Context)(jutil.Ptr(goContextPtr))).LocalEndpoint().String()))
 }
 
-//export Java_io_v_core_veyron2_security_ContextImpl_nativeRemoteEndpoint
-func Java_io_v_core_veyron2_security_ContextImpl_nativeRemoteEndpoint(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) C.jstring {
+//export Java_io_v_core_veyron2_security_VContextImpl_nativeRemoteEndpoint
+func Java_io_v_core_veyron2_security_VContextImpl_nativeRemoteEndpoint(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) C.jstring {
 	return C.jstring(jutil.JString(env, (*(*security.Context)(jutil.Ptr(goContextPtr))).RemoteEndpoint().String()))
 }
 
-//export Java_io_v_core_veyron2_security_ContextImpl_nativeLocalPrincipal
-func Java_io_v_core_veyron2_security_ContextImpl_nativeLocalPrincipal(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) C.jobject {
+//export Java_io_v_core_veyron2_security_VContextImpl_nativeLocalPrincipal
+func Java_io_v_core_veyron2_security_VContextImpl_nativeLocalPrincipal(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) C.jobject {
 	principal := (*(*security.Context)(jutil.Ptr(goContextPtr))).LocalPrincipal()
 	jPrincipal, err := JavaPrincipal(env, principal)
 	if err != nil {
@@ -137,8 +137,8 @@ func Java_io_v_core_veyron2_security_ContextImpl_nativeLocalPrincipal(env *C.JNI
 	return C.jobject(jPrincipal)
 }
 
-//export Java_io_v_core_veyron2_security_ContextImpl_nativeLocalBlessings
-func Java_io_v_core_veyron2_security_ContextImpl_nativeLocalBlessings(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) C.jobject {
+//export Java_io_v_core_veyron2_security_VContextImpl_nativeLocalBlessings
+func Java_io_v_core_veyron2_security_VContextImpl_nativeLocalBlessings(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) C.jobject {
 	blessings := (*(*security.Context)(jutil.Ptr(goContextPtr))).LocalBlessings()
 	jBlessings, err := JavaBlessings(env, blessings)
 	if err != nil {
@@ -148,8 +148,8 @@ func Java_io_v_core_veyron2_security_ContextImpl_nativeLocalBlessings(env *C.JNI
 	return C.jobject(jBlessings)
 }
 
-//export Java_io_v_core_veyron2_security_ContextImpl_nativeRemoteBlessings
-func Java_io_v_core_veyron2_security_ContextImpl_nativeRemoteBlessings(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) C.jobject {
+//export Java_io_v_core_veyron2_security_VContextImpl_nativeRemoteBlessings
+func Java_io_v_core_veyron2_security_VContextImpl_nativeRemoteBlessings(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) C.jobject {
 	blessings := (*(*security.Context)(jutil.Ptr(goContextPtr))).RemoteBlessings()
 	jBlessings, err := JavaBlessings(env, blessings)
 	if err != nil {
@@ -159,8 +159,8 @@ func Java_io_v_core_veyron2_security_ContextImpl_nativeRemoteBlessings(env *C.JN
 	return C.jobject(jBlessings)
 }
 
-//export Java_io_v_core_veyron2_security_ContextImpl_nativeFinalize
-func Java_io_v_core_veyron2_security_ContextImpl_nativeFinalize(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) {
+//export Java_io_v_core_veyron2_security_VContextImpl_nativeFinalize
+func Java_io_v_core_veyron2_security_VContextImpl_nativeFinalize(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) {
 	jutil.GoUnref((*security.Context)(jutil.Ptr(goContextPtr)))
 }
 

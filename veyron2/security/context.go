@@ -9,10 +9,10 @@ import (
 	"time"
 	"unsafe"
 
-	jutil "v.io/jni/util"
 	inaming "v.io/core/veyron/runtimes/google/naming"
 	"v.io/core/veyron2/naming"
 	"v.io/core/veyron2/security"
+	jutil "v.io/jni/util"
 )
 
 // #cgo LDFLAGS: -ljniwrapper
@@ -114,11 +114,6 @@ func (c *context) Name() string {
 
 func (c *context) Suffix() string {
 	return c.callStringMethod("suffix")
-}
-
-// TODO(spetrovic): remove when the method is removed from the Context interface.
-func (c *context) Label() security.Label {
-	return security.Label(0)
 }
 
 func (c *context) RemoteDischarges() map[string]security.Discharge {

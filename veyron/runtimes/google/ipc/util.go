@@ -66,8 +66,8 @@ func javaServerCall(env *C.JNIEnv, call ipc.ServerCall) (C.jobject, error) {
 	if err != nil {
 		return nil, err
 	}
-	contextSign := jutil.ClassSign("io.v.core.veyron2.context.Context")
-	securityContextSign := jutil.ClassSign("io.v.core.veyron2.security.Context")
+	contextSign := jutil.ClassSign("io.v.core.veyron2.context.VContext")
+	securityContextSign := jutil.ClassSign("io.v.core.veyron2.security.VContext")
 	jServerCall, err := jutil.NewObject(env, jServerCallClass, []jutil.Sign{jutil.LongSign, streamSign, contextSign, securityContextSign}, int64(jutil.PtrValue(&call)), jStream, jContext, jSecurityContext)
 	if err != nil {
 		return nil, err
