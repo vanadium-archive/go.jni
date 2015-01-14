@@ -1,0 +1,10 @@
+package security
+
+import (
+	"v.io/core/veyron2/security"
+)
+
+// jniCaveat is a Go wrapper for a Java caveat.
+type jniCaveat struct {
+	Caveat security.Caveat
+}

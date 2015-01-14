@@ -74,6 +74,7 @@ func GoBlessingsArray(jEnv, jBlessingsArr interface{}) ([]security.Blessings, er
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func JavaWireBlessings(jEnv interface{}, wire security.WireBlessings) (C.jobject, error) {
+	wire = unwrapCaveats(wire)
 	encoded, err := jutil.VomEncode(wire)
 	if err != nil {
 		return nil, err
@@ -91,7 +92,6 @@ func JavaWireBlessings(jEnv interface{}, wire security.WireBlessings) (C.jobject
 // and then cast into their package local types.
 func GoWireBlessings(jEnv, jWireBless interface{}) (security.WireBlessings, error) {
 	jWireBlessings := getObject(jWireBless)
-
 	encoded, err := jutil.CallStaticByteArrayMethod(jEnv, jUtilClass, "encodeWireBlessings", []jutil.Sign{wireBlessingsSign}, jWireBlessings)
 	if err != nil {
 		return security.WireBlessings{}, err
@@ -100,7 +100,41 @@ func GoWireBlessings(jEnv, jWireBless interface{}) (security.WireBlessings, erro
 	if err := jutil.VomDecode(encoded, &wire); err != nil {
 		return security.WireBlessings{}, err
 	}
+	if wire, err = wrapCaveats(wire); err != nil {
+		return security.WireBlessings{}, err
+	}
 	return wire, nil
+}
+
+// wrapCaveats wraps a jniCaveat around all of the provided (Java) caveats.
+func wrapCaveats(wire security.WireBlessings) (security.WireBlessings, error) {
+	for _, chain := range wire.CertificateChains {
+		for i, cert := range chain {
+			for j, caveat := range cert.Caveats {
+				var err error
+				if cert.Caveats[j], err = security.NewCaveat(jniCaveat{caveat}); err != nil {
+					return security.WireBlessings{}, err
+				}
+			}
+			chain[i] = cert
+		}
+	}
+	return wire, nil
+}
+
+// unwrapCaveats unwraps all previously wrapped (Java) caveats (see wrapCaveats).
+func unwrapCaveats(wire security.WireBlessings) security.WireBlessings {
+	for _, chain := range wire.CertificateChains {
+		for i, cert := range chain {
+			for j, caveat := range cert.Caveats {
+				if jni, ok := isJNICaveat(caveat); ok {
+					cert.Caveats[j] = jni.Caveat
+				}
+			}
+			chain[i] = cert
+		}
+	}
+	return wire
 }
 
 // JavaBlessingPattern converts the provided Go BlessingPattern into Java BlessingPattern.

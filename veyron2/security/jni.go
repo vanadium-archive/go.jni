@@ -16,6 +16,8 @@ import (
 import "C"
 
 var (
+	javaVM *C.JavaVM
+
 	principalSign       = jutil.ClassSign("io.v.core.veyron2.security.Principal")
 	blessingsSign       = jutil.ClassSign("io.v.core.veyron2.security.Blessings")
 	wireBlessingsSign   = jutil.ClassSign("io.v.core.veyron2.security.WireBlessings")
@@ -24,6 +26,8 @@ var (
 	blessingPatternSign = jutil.ClassSign("io.v.core.veyron2.security.BlessingPattern")
 	signerSign          = jutil.ClassSign("io.v.core.veyron2.security.Signer")
 	caveatSign          = jutil.ClassSign("io.v.core.veyron2.security.Caveat")
+	caveatValidatorSign = jutil.ClassSign("io.v.core.veyron2.security.CaveatValidator")
+	contextSign         = jutil.ClassSign("io.v.core.veyron2.security.Context")
 	signatureSign       = jutil.ClassSign("io.v.core.veyron2.security.Signature")
 	publicKeySign       = jutil.ClassSign("java.security.interfaces.ECPublicKey")
 
@@ -41,6 +45,8 @@ var (
 	jContextImplClass C.jclass
 	// Global reference for io.v.core.veyron2.security.BlessingPatternWrapper class.
 	jBlessingPatternWrapperClass C.jclass
+	// Global reference for io.v.core.veyron2.security.CaveatCoder class.
+	jCaveatCoderClass C.jclass
 	// Global reference for io.v.core.veyron2.security.Util class.
 	jUtilClass C.jclass
 	// Global reference for java.lang.Object class.
@@ -52,8 +58,11 @@ var (
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java environment is passed in an empty
 // interface and then cast into the package-local environment type.
-func Init(jEnv interface{}) {
+func Init(jEnv interface{}) error {
 	env := (*C.JNIEnv)(unsafe.Pointer(jutil.PtrValue(jEnv)))
+	if status := C.GetJavaVM(env, &javaVM); status != 0 {
+		return fmt.Errorf("Couldn't get the Java VM.")
+	}
 	// Cache global references to all Java classes used by the package.  This is
 	// necessary because JNI gets access to the class loader only in the system
 	// thread, so we aren't able to invoke FindClass in other threads.
@@ -64,8 +73,10 @@ func Init(jEnv interface{}) {
 	jBlessingRootsImplClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron2/security/BlessingRootsImpl"))
 	jContextImplClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron2/security/ContextImpl"))
 	jBlessingPatternWrapperClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron2/security/BlessingPatternWrapper"))
+	jCaveatCoderClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron2/security/CaveatCoder"))
 	jUtilClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron2/security/Util"))
 	jObjectClass = C.jclass(jutil.JFindClassOrPrint(env, "java/lang/Object"))
+	return nil
 }
 
 //export Java_io_v_core_veyron2_security_ContextImpl_nativeTimestamp
