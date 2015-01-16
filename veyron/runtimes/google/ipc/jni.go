@@ -8,6 +8,8 @@ import (
 
 	"v.io/core/veyron2/ipc"
 	"v.io/core/veyron2/vdl"
+	"v.io/core/veyron2/vom2"
+
 	jutil "v.io/jni/util"
 	jcontext "v.io/jni/veyron2/context"
 	jsecurity "v.io/jni/veyron2/security"
@@ -194,7 +196,7 @@ func Java_io_v_core_veyron_runtimes_google_ipc_Stream_nativeRecv(env *C.JNIEnv, 
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	vomResult, err := jutil.VomEncode(result)
+	vomResult, err := vom2.Encode(result)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -244,7 +246,7 @@ func Java_io_v_core_veyron_runtimes_google_ipc_Call_nativeFinish(env *C.JNIEnv, 
 		// as resultPtr is of type interface{}.
 		result := interface{}(jutil.DerefOrDie(resultPtr))
 		var err error
-		if vomResults[i], err = jutil.VomEncode(result); err != nil {
+		if vomResults[i], err = vom2.Encode(result); err != nil {
 			jutil.JThrowV(env, err)
 			return nil
 		}

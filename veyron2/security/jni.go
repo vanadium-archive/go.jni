@@ -33,6 +33,8 @@ var (
 
 	// Global reference for io.v.core.veyron2.security.Blessings class.
 	jBlessingsClass C.jclass
+	// Global reference for io.v.core.veyron2.security.Caveat class.
+	jCaveatClass C.jclass
 	// Global reference for io.v.core.veyron2.security.PrincipalImpl class.
 	jPrincipalImplClass C.jclass
 	// Global reference for io.v.core.veyron2.security.BlessingsImpl class.
@@ -67,6 +69,7 @@ func Init(jEnv interface{}) error {
 	// necessary because JNI gets access to the class loader only in the system
 	// thread, so we aren't able to invoke FindClass in other threads.
 	jBlessingsClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron2/security/Blessings"))
+	jCaveatClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron2/security/Caveat"))
 	jPrincipalImplClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron2/security/PrincipalImpl"))
 	jBlessingsImplClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron2/security/BlessingsImpl"))
 	jBlessingStoreImplClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron2/security/BlessingStoreImpl"))

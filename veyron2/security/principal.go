@@ -22,6 +22,9 @@ import "C"
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func JavaPrincipal(jEnv interface{}, principal security.Principal) (C.jobject, error) {
+	if principal == nil {
+		return nil, nil
+	}
 	jPrincipal, err := jutil.NewObject(jEnv, jPrincipalImplClass, []jutil.Sign{jutil.LongSign, signerSign, blessingStoreSign, blessingRootsSign}, int64(jutil.PtrValue(&principal)), C.jobject(nil), C.jobject(nil), C.jobject(nil))
 	if err != nil {
 		return nil, err
@@ -37,6 +40,10 @@ func JavaPrincipal(jEnv interface{}, principal security.Principal) (C.jobject, e
 func GoPrincipal(jEnv, jPrincipalObj interface{}) (security.Principal, error) {
 	env := (*C.JNIEnv)(unsafe.Pointer(jutil.PtrValue(jEnv)))
 	jPrincipal := C.jobject(unsafe.Pointer(jutil.PtrValue(jPrincipalObj)))
+
+	if jPrincipal == nil {
+		return nil, nil
+	}
 
 	// We cannot cache Java environments as they are only valid in the current
 	// thread.  We can, however, cache the Java VM and obtain an environment

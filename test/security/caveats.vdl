@@ -1,0 +1,4 @@
+package security
+
+// TestCaveat is a caveat that's used in various security tests.
+type TestCaveat string

@@ -634,9 +634,10 @@ func JFindClassOrPrint(jEnv interface{}, name string) C.jclass {
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func GoTime(jEnv, jTime interface{}) (time.Time, error) {
+func GoTime(jEnv, jTimeObj interface{}) (time.Time, error) {
+	jTime := getObject(jTimeObj)
 	if jTime == nil {
-		return time.Time{}, fmt.Errorf("Nil Java time.")
+		return time.Time{}, nil
 	}
 	millis, err := CallLongMethod(jEnv, jTime, "getMillis", nil)
 	if err != nil {

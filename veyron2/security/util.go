@@ -8,6 +8,7 @@ import (
 	"unsafe"
 
 	"v.io/core/veyron2/security"
+	"v.io/core/veyron2/vom2"
 	jutil "v.io/jni/util"
 )
 
@@ -40,7 +41,11 @@ func JavaBlessings(jEnv interface{}, blessings security.Blessings) (C.jobject, e
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func GoBlessings(jEnv, jBlessings interface{}) (security.Blessings, error) {
+func GoBlessings(jEnv, jBlessingsObj interface{}) (security.Blessings, error) {
+	jBlessings := C.jobject(unsafe.Pointer(jutil.PtrValue(jBlessingsObj)))
+	if jBlessings == nil {
+		return nil, nil
+	}
 	jWire, err := jutil.CallObjectMethod(jEnv, jBlessings, "wireFormat", nil, wireBlessingsSign)
 	if err != nil {
 		return nil, err
@@ -74,8 +79,11 @@ func GoBlessingsArray(jEnv, jBlessingsArr interface{}) ([]security.Blessings, er
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func JavaWireBlessings(jEnv interface{}, wire security.WireBlessings) (C.jobject, error) {
-	wire = unwrapCaveats(wire)
-	encoded, err := jutil.VomEncode(wire)
+	var err error
+	if wire, err = unwrapCaveats(wire); err != nil {
+		return nil, err
+	}
+	encoded, err := vom2.Encode(wire)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +105,7 @@ func GoWireBlessings(jEnv, jWireBless interface{}) (security.WireBlessings, erro
 		return security.WireBlessings{}, err
 	}
 	var wire security.WireBlessings
-	if err := jutil.VomDecode(encoded, &wire); err != nil {
+	if err := vom2.Decode(encoded, &wire); err != nil {
 		return security.WireBlessings{}, err
 	}
 	if wire, err = wrapCaveats(wire); err != nil {
@@ -106,35 +114,125 @@ func GoWireBlessings(jEnv, jWireBless interface{}) (security.WireBlessings, erro
 	return wire, nil
 }
 
-// wrapCaveats wraps a jniCaveat around all of the provided (Java) caveats.
+// JavaCaveat converts the provided Go Caveat into a Java Caveat.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func JavaCaveat(jEnv interface{}, caveat security.Caveat) (C.jobject, error) {
+	caveat = unwrapCaveat(caveat)
+	encoded, err := vom2.Encode(caveat)
+	if err != nil {
+		return nil, err
+	}
+	jCaveat, err := jutil.CallStaticObjectMethod(jEnv, jUtilClass, "decodeCaveat", []jutil.Sign{jutil.ByteArraySign}, caveatSign, encoded)
+	if err != nil {
+		return nil, err
+	}
+	return C.jobject(jCaveat), nil
+}
+
+// GoCaveat converts the provided Java Caveat into a Go Caveat.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func GoCaveat(jEnv, jCav interface{}) (security.Caveat, error) {
+	jCaveat := getObject(jCav)
+	encoded, err := jutil.CallStaticByteArrayMethod(jEnv, jUtilClass, "encodeCaveat", []jutil.Sign{caveatSign}, jCaveat)
+	if err != nil {
+		return security.Caveat{}, err
+	}
+	var caveat security.Caveat
+	if err := vom2.Decode(encoded, &caveat); err != nil {
+		return security.Caveat{}, err
+	}
+	return wrapCaveat(caveat)
+}
+
+// JavaCaveats converts the provided Go Caveat slice into a Java Caveat array.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func JavaCaveats(jEnv interface{}, caveats []security.Caveat) (C.jobjectArray, error) {
+	cavarr := make([]interface{}, len(caveats))
+	for i, caveat := range caveats {
+		var err error
+		if cavarr[i], err = JavaCaveat(jEnv, caveat); err != nil {
+			return nil, err
+		}
+	}
+	jCaveats := jutil.JObjectArray(jEnv, cavarr, jCaveatClass)
+	return C.jobjectArray(jCaveats), nil
+}
+
+// GoCaveats converts the provided Java Caveat array into a Go Caveat slice.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func GoCaveats(jEnv, jCaveats interface{}) ([]security.Caveat, error) {
+	cavarr := jutil.GoObjectArray(jEnv, jCaveats)
+	caveats := make([]security.Caveat, len(cavarr))
+	for i, jCaveat := range cavarr {
+		var err error
+		if caveats[i], err = GoCaveat(jEnv, jCaveat); err != nil {
+			return nil, err
+		}
+	}
+	return caveats, nil
+}
+
+// wrapCaveats wraps a jniCaveat around all of the Java caveats in the provided
+// blessings.
 func wrapCaveats(wire security.WireBlessings) (security.WireBlessings, error) {
-	for _, chain := range wire.CertificateChains {
+	var ret security.WireBlessings
+	if err := jutil.VomCopy(wire, &ret); err != nil {
+		return ret, err
+	}
+	for _, chain := range ret.CertificateChains {
 		for i, cert := range chain {
 			for j, caveat := range cert.Caveats {
 				var err error
-				if cert.Caveats[j], err = security.NewCaveat(jniCaveat{caveat}); err != nil {
+				if cert.Caveats[j], err = wrapCaveat(caveat); err != nil {
 					return security.WireBlessings{}, err
 				}
 			}
 			chain[i] = cert
 		}
 	}
-	return wire, nil
+	return ret, nil
 }
 
-// unwrapCaveats unwraps all previously wrapped (Java) caveats (see wrapCaveats).
-func unwrapCaveats(wire security.WireBlessings) security.WireBlessings {
-	for _, chain := range wire.CertificateChains {
+// unwrapCaveats unwraps all previously wrapped Java caveats in the provided
+// blessings.
+func unwrapCaveats(wire security.WireBlessings) (security.WireBlessings, error) {
+	var ret security.WireBlessings
+	if err := jutil.VomCopy(wire, &ret); err != nil {
+		return ret, err
+	}
+	for _, chain := range ret.CertificateChains {
 		for i, cert := range chain {
 			for j, caveat := range cert.Caveats {
-				if jni, ok := isJNICaveat(caveat); ok {
-					cert.Caveats[j] = jni.Caveat
-				}
+				cert.Caveats[j] = unwrapCaveat(caveat)
 			}
 			chain[i] = cert
 		}
 	}
-	return wire
+	return ret, nil
+}
+
+// wrapCaveat wraps a jniCaveat around the provided Java caveat.
+func wrapCaveat(caveat security.Caveat) (security.Caveat, error) {
+	if _, ok := isJNICaveat(caveat); ok {
+		return caveat, nil
+	}
+	return security.NewCaveat(jniCaveat{caveat})
+}
+
+// unwrapCaveat unwraps the previously wrapped Java caveat.
+func unwrapCaveat(caveat security.Caveat) security.Caveat {
+	if jni, ok := isJNICaveat(caveat); ok {
+		return jni.Caveat
+	}
+	return caveat
 }
 
 // JavaBlessingPattern converts the provided Go BlessingPattern into Java BlessingPattern.
@@ -196,7 +294,7 @@ func GoPublicKey(jEnv, jKey interface{}) (security.PublicKey, error) {
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func JavaSignature(jEnv interface{}, sig security.Signature) (C.jobject, error) {
-	encoded, err := jutil.VomEncode(sig)
+	encoded, err := vom2.Encode(sig)
 	if err != nil {
 		return nil, err
 	}
@@ -218,77 +316,10 @@ func GoSignature(jEnv, jSig interface{}) (security.Signature, error) {
 		return security.Signature{}, err
 	}
 	var sig security.Signature
-	if err := jutil.VomDecode(encoded, &sig); err != nil {
+	if err := vom2.Decode(encoded, &sig); err != nil {
 		return security.Signature{}, err
 	}
 	return sig, nil
-}
-
-// JavaCaveat converts the provided Go Caveat into a Java Caveat.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func JavaCaveat(jEnv interface{}, caveat security.Caveat) (C.jobject, error) {
-	encoded, err := jutil.VomEncode(caveat)
-	if err != nil {
-		return nil, err
-	}
-	jCaveat, err := jutil.CallStaticObjectMethod(jEnv, jUtilClass, "decodeCaveat", []jutil.Sign{jutil.ByteArraySign}, caveatSign, encoded)
-	if err != nil {
-		return nil, err
-	}
-	return C.jobject(jCaveat), nil
-}
-
-// GoCaveat converts the provided Java Caveat into a Go Caveat.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func GoCaveat(jEnv, jCav interface{}) (security.Caveat, error) {
-	jCaveat := getObject(jCav)
-	encoded, err := jutil.CallStaticByteArrayMethod(jEnv, jUtilClass, "encodeCaveat", []jutil.Sign{caveatSign}, jCaveat)
-	if err != nil {
-		return security.Caveat{}, err
-	}
-	var caveat security.Caveat
-	if err := jutil.VomDecode(encoded, &caveat); err != nil {
-		return security.Caveat{}, err
-	}
-	return caveat, nil
-}
-
-// JavaCaveats converts the provided Go Caveat slice into a Java Caveat array.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func JavaCaveats(jEnv interface{}, caveats []security.Caveat) (C.jobjectArray, error) {
-	encoded, err := jutil.VomEncode(caveats)
-	if err != nil {
-		return nil, err
-	}
-	jCaveats, err := jutil.CallStaticObjectMethod(jEnv, jUtilClass, "decodeCaveats", []jutil.Sign{jutil.ByteArraySign}, jutil.ArraySign(caveatSign), encoded)
-	if err != nil {
-		return nil, err
-	}
-	return C.jobjectArray(jCaveats), nil
-
-}
-
-// GoCaveats converts the provided Java Caveat array into a Go Caveat slice.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func GoCaveats(jEnv, jCavs interface{}) ([]security.Caveat, error) {
-	jCaveats := getObject(jCavs)
-	encoded, err := jutil.CallStaticByteArrayMethod(jEnv, jUtilClass, "encodeCaveats", []jutil.Sign{jutil.ArraySign(caveatSign)}, jCaveats)
-	if err != nil {
-		return nil, err
-	}
-	var caveats []security.Caveat
-	if err := jutil.VomDecode(encoded, &caveats); err != nil {
-		return nil, err
-	}
-	return caveats, nil
 }
 
 // JavaBlessingPatternWrapper converts the provided Go BlessingPattern into a Java
