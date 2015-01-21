@@ -16,8 +16,6 @@ import (
 import "C"
 
 var (
-	javaVM *C.JavaVM
-
 	principalSign       = jutil.ClassSign("io.v.core.veyron2.security.Principal")
 	blessingsSign       = jutil.ClassSign("io.v.core.veyron2.security.Blessings")
 	wireBlessingsSign   = jutil.ClassSign("io.v.core.veyron2.security.WireBlessings")
@@ -53,6 +51,8 @@ var (
 	jUtilClass C.jclass
 	// Global reference for java.lang.Object class.
 	jObjectClass C.jclass
+
+	javaVM *C.JavaVM
 )
 
 // Init initializes the JNI code with the given Java evironment. This method
@@ -62,9 +62,14 @@ var (
 // interface and then cast into the package-local environment type.
 func Init(jEnv interface{}) error {
 	env := (*C.JNIEnv)(unsafe.Pointer(jutil.PtrValue(jEnv)))
+	// We cannot cache Java environments as they are only valid in the current
+	// thread.  We can, however, cache the Java VM and obtain an environment
+	// from it in whatever thread happens to be running at the time.
 	if status := C.GetJavaVM(env, &javaVM); status != 0 {
-		return fmt.Errorf("Couldn't get the Java VM.")
+		return fmt.Errorf("couldn't get Java VM from the (Java) environment")
 	}
+	security.RegisterCaveatDecoder(caveatDecoder)
+
 	// Cache global references to all Java classes used by the package.  This is
 	// necessary because JNI gets access to the class loader only in the system
 	// thread, so we aren't able to invoke FindClass in other threads.

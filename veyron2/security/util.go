@@ -80,9 +80,6 @@ func GoBlessingsArray(jEnv, jBlessingsArr interface{}) ([]security.Blessings, er
 // and then cast into their package local types.
 func JavaWireBlessings(jEnv interface{}, wire security.WireBlessings) (C.jobject, error) {
 	var err error
-	if wire, err = unwrapCaveats(wire); err != nil {
-		return nil, err
-	}
 	encoded, err := vom2.Encode(wire)
 	if err != nil {
 		return nil, err
@@ -108,9 +105,6 @@ func GoWireBlessings(jEnv, jWireBless interface{}) (security.WireBlessings, erro
 	if err := vom2.Decode(encoded, &wire); err != nil {
 		return security.WireBlessings{}, err
 	}
-	if wire, err = wrapCaveats(wire); err != nil {
-		return security.WireBlessings{}, err
-	}
 	return wire, nil
 }
 
@@ -119,7 +113,6 @@ func GoWireBlessings(jEnv, jWireBless interface{}) (security.WireBlessings, erro
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func JavaCaveat(jEnv interface{}, caveat security.Caveat) (C.jobject, error) {
-	caveat = unwrapCaveat(caveat)
 	encoded, err := vom2.Encode(caveat)
 	if err != nil {
 		return nil, err
@@ -145,7 +138,7 @@ func GoCaveat(jEnv, jCav interface{}) (security.Caveat, error) {
 	if err := vom2.Decode(encoded, &caveat); err != nil {
 		return security.Caveat{}, err
 	}
-	return wrapCaveat(caveat)
+	return caveat, nil
 }
 
 // JavaCaveats converts the provided Go Caveat slice into a Java Caveat array.
@@ -178,61 +171,6 @@ func GoCaveats(jEnv, jCaveats interface{}) ([]security.Caveat, error) {
 		}
 	}
 	return caveats, nil
-}
-
-// wrapCaveats wraps a jniCaveat around all of the Java caveats in the provided
-// blessings.
-func wrapCaveats(wire security.WireBlessings) (security.WireBlessings, error) {
-	var ret security.WireBlessings
-	if err := jutil.VomCopy(wire, &ret); err != nil {
-		return ret, err
-	}
-	for _, chain := range ret.CertificateChains {
-		for i, cert := range chain {
-			for j, caveat := range cert.Caveats {
-				var err error
-				if cert.Caveats[j], err = wrapCaveat(caveat); err != nil {
-					return security.WireBlessings{}, err
-				}
-			}
-			chain[i] = cert
-		}
-	}
-	return ret, nil
-}
-
-// unwrapCaveats unwraps all previously wrapped Java caveats in the provided
-// blessings.
-func unwrapCaveats(wire security.WireBlessings) (security.WireBlessings, error) {
-	var ret security.WireBlessings
-	if err := jutil.VomCopy(wire, &ret); err != nil {
-		return ret, err
-	}
-	for _, chain := range ret.CertificateChains {
-		for i, cert := range chain {
-			for j, caveat := range cert.Caveats {
-				cert.Caveats[j] = unwrapCaveat(caveat)
-			}
-			chain[i] = cert
-		}
-	}
-	return ret, nil
-}
-
-// wrapCaveat wraps a jniCaveat around the provided Java caveat.
-func wrapCaveat(caveat security.Caveat) (security.Caveat, error) {
-	if _, ok := isJNICaveat(caveat); ok {
-		return caveat, nil
-	}
-	return security.NewCaveat(jniCaveat{caveat})
-}
-
-// unwrapCaveat unwraps the previously wrapped Java caveat.
-func unwrapCaveat(caveat security.Caveat) security.Caveat {
-	if jni, ok := isJNICaveat(caveat); ok {
-		return jni.Caveat
-	}
-	return caveat
 }
 
 // JavaBlessingPattern converts the provided Go BlessingPattern into Java BlessingPattern.
