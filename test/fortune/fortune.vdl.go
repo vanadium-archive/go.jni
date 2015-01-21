@@ -12,13 +12,7 @@ import (
 	__context "v.io/core/veyron2/context"
 	__ipc "v.io/core/veyron2/ipc"
 	__vdlutil "v.io/core/veyron2/vdl/vdlutil"
-	__wiretype "v.io/core/veyron2/wiretype"
 )
-
-// TODO(toddw): Remove this line once the new signature support is done.
-// It corrects a bug where __wiretype is unused in VDL pacakges where only
-// bootstrap types are used on interfaces.
-const _ = __wiretype.TypeIDInvalid
 
 // FortuneClientMethods is the client interface
 // containing Fortune methods.
@@ -90,17 +84,6 @@ func (c implFortuneClientStub) StreamingGet(ctx *__context.T, opts ...__ipc.Call
 		return
 	}
 	ocall = &implFortuneStreamingGetCall{Call: call}
-	return
-}
-
-func (c implFortuneClientStub) Signature(ctx *__context.T, opts ...__ipc.CallOpt) (o0 __ipc.ServiceSignature, err error) {
-	var call __ipc.Call
-	if call, err = c.c(ctx).StartCall(ctx, c.name, "Signature", nil, opts...); err != nil {
-		return
-	}
-	if ierr := call.Finish(&o0, &err); ierr != nil {
-		err = ierr
-	}
 	return
 }
 
@@ -239,8 +222,6 @@ type FortuneServerStub interface {
 	FortuneServerStubMethods
 	// Describe the Fortune interfaces.
 	Describe__() []__ipc.InterfaceDesc
-	// Signature will be replaced with Describe__.
-	Signature(ctx __ipc.ServerContext) (__ipc.ServiceSignature, error)
 }
 
 // FortuneServer returns a server stub for Fortune.
@@ -324,40 +305,6 @@ var descFortune = __ipc.InterfaceDesc{
 			Tags: []__vdlutil.Any{access.Tag("Read")},
 		},
 	},
-}
-
-func (s implFortuneServerStub) Signature(ctx __ipc.ServerContext) (__ipc.ServiceSignature, error) {
-	// TODO(toddw): Replace with new Describe__ implementation.
-	result := __ipc.ServiceSignature{Methods: make(map[string]__ipc.MethodSignature)}
-	result.Methods["Add"] = __ipc.MethodSignature{
-		InArgs: []__ipc.MethodArgument{
-			{Name: "Fortune", Type: 3},
-		},
-		OutArgs: []__ipc.MethodArgument{
-			{Name: "", Type: 65},
-		},
-	}
-	result.Methods["Get"] = __ipc.MethodSignature{
-		InArgs: []__ipc.MethodArgument{},
-		OutArgs: []__ipc.MethodArgument{
-			{Name: "Fortune", Type: 3},
-			{Name: "err", Type: 65},
-		},
-	}
-	result.Methods["StreamingGet"] = __ipc.MethodSignature{
-		InArgs: []__ipc.MethodArgument{},
-		OutArgs: []__ipc.MethodArgument{
-			{Name: "total", Type: 36},
-			{Name: "err", Type: 65},
-		},
-		InStream:  2,
-		OutStream: 3,
-	}
-
-	result.TypeDefs = []__vdlutil.Any{
-		__wiretype.NamedPrimitiveType{Type: 0x1, Name: "error", Tags: []string(nil)}}
-
-	return result, nil
 }
 
 // FortuneStreamingGetServerStream is the server stream for Fortune.StreamingGet.

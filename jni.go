@@ -8,7 +8,6 @@ import (
 	"golang.org/x/mobile/app"
 
 	_ "v.io/core/veyron/profiles/roaming"
-	"v.io/core/veyron2/vom2"
 	jutil "v.io/jni/util"
 	jgoogle "v.io/jni/veyron/runtimes/google"
 	jveyron2 "v.io/jni/veyron2"
@@ -32,8 +31,6 @@ func Java_io_v_core_veyron2_V_nativeInit(env *C.JNIEnv, jVRuntimeClass C.jclass)
 }
 
 func main() {
-	// Explicitly enable VOM2 encoding.
-	vom2.SetEnabled(true)
 	// Send all logging to stderr, so that the output is visible in Android.  Note that if this
 	// flag is removed, the process will likely crash as android requires that all logs are written
 	// into a specific directory.
