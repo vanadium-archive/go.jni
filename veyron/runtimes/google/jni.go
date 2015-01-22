@@ -5,7 +5,7 @@ package google
 import (
 	"unsafe"
 
-	"v.io/core/veyron2/vom2"
+	"v.io/core/veyron2/vom"
 	jutil "v.io/jni/util"
 	jipc "v.io/jni/veyron/runtimes/google/ipc"
 	jnaming "v.io/jni/veyron/runtimes/google/naming"
@@ -53,7 +53,7 @@ func Java_io_v_core_veyron_runtimes_google_InputChannel_nativeReadValue(env *C.J
 		jutil.JThrow(env, jEOFExceptionClass, "Channel closed.")
 		return nil
 	}
-	bytes, err := vom2.Encode(val)
+	bytes, err := vom.Encode(val)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil

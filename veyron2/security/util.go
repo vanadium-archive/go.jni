@@ -8,7 +8,7 @@ import (
 	"unsafe"
 
 	"v.io/core/veyron2/security"
-	"v.io/core/veyron2/vom2"
+	"v.io/core/veyron2/vom"
 	jutil "v.io/jni/util"
 )
 
@@ -80,7 +80,7 @@ func GoBlessingsArray(jEnv, jBlessingsArr interface{}) ([]security.Blessings, er
 // and then cast into their package local types.
 func JavaWireBlessings(jEnv interface{}, wire security.WireBlessings) (C.jobject, error) {
 	var err error
-	encoded, err := vom2.Encode(wire)
+	encoded, err := vom.Encode(wire)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +102,7 @@ func GoWireBlessings(jEnv, jWireBless interface{}) (security.WireBlessings, erro
 		return security.WireBlessings{}, err
 	}
 	var wire security.WireBlessings
-	if err := vom2.Decode(encoded, &wire); err != nil {
+	if err := vom.Decode(encoded, &wire); err != nil {
 		return security.WireBlessings{}, err
 	}
 	return wire, nil
@@ -113,7 +113,7 @@ func GoWireBlessings(jEnv, jWireBless interface{}) (security.WireBlessings, erro
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func JavaCaveat(jEnv interface{}, caveat security.Caveat) (C.jobject, error) {
-	encoded, err := vom2.Encode(caveat)
+	encoded, err := vom.Encode(caveat)
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +135,7 @@ func GoCaveat(jEnv, jCav interface{}) (security.Caveat, error) {
 		return security.Caveat{}, err
 	}
 	var caveat security.Caveat
-	if err := vom2.Decode(encoded, &caveat); err != nil {
+	if err := vom.Decode(encoded, &caveat); err != nil {
 		return security.Caveat{}, err
 	}
 	return caveat, nil
@@ -232,7 +232,7 @@ func GoPublicKey(jEnv, jKey interface{}) (security.PublicKey, error) {
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func JavaSignature(jEnv interface{}, sig security.Signature) (C.jobject, error) {
-	encoded, err := vom2.Encode(sig)
+	encoded, err := vom.Encode(sig)
 	if err != nil {
 		return nil, err
 	}
@@ -254,7 +254,7 @@ func GoSignature(jEnv, jSig interface{}) (security.Signature, error) {
 		return security.Signature{}, err
 	}
 	var sig security.Signature
-	if err := vom2.Decode(encoded, &sig); err != nil {
+	if err := vom.Decode(encoded, &sig); err != nil {
 		return security.Signature{}, err
 	}
 	return sig, nil

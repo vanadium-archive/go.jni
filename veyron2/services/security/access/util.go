@@ -4,7 +4,7 @@ package access
 
 import (
 	"v.io/core/veyron2/services/security/access"
-	"v.io/core/veyron2/vom2"
+	"v.io/core/veyron2/vom"
 	jutil "v.io/jni/util"
 )
 
@@ -17,7 +17,7 @@ import "C"
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func JavaACL(jEnv interface{}, acl access.ACL) (C.jobject, error) {
-	encoded, err := vom2.Encode(acl)
+	encoded, err := vom.Encode(acl)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +38,7 @@ func GoACL(jEnv, jACL interface{}) (access.ACL, error) {
 		return access.ACL{}, err
 	}
 	var a access.ACL
-	if err := vom2.Decode(encoded, &a); err != nil {
+	if err := vom.Decode(encoded, &a); err != nil {
 		return access.ACL{}, err
 	}
 	return a, nil

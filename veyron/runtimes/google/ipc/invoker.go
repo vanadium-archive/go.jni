@@ -9,7 +9,7 @@ import (
 	"v.io/core/veyron2/vdl"
 	"v.io/core/veyron2/vdl/vdlroot/src/signature"
 	"v.io/core/veyron2/verror"
-	"v.io/core/veyron2/vom2"
+	"v.io/core/veyron2/vom"
 	jutil "v.io/jni/util"
 	jsecurity "v.io/jni/veyron2/security"
 )
@@ -126,7 +126,7 @@ func encodeArgs(env *C.JNIEnv, argptrs []interface{}) (C.jobjectArray, error) {
 	for i, argptr := range argptrs {
 		arg := interface{}(jutil.DerefOrDie(argptr))
 		var err error
-		if vomArgs[i], err = vom2.Encode(arg); err != nil {
+		if vomArgs[i], err = vom.Encode(arg); err != nil {
 			return nil, err
 		}
 	}

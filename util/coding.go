@@ -4,13 +4,13 @@ import (
 	"bytes"
 
 	"v.io/core/veyron2/vdl"
-	"v.io/core/veyron2/vom2"
+	"v.io/core/veyron2/vom"
 )
 
 // VomDecodeToValue VOM-decodes the provided value into *vdl.Value using a new
 // instance of a VOM decoder.
 func VomDecodeToValue(data []byte) (*vdl.Value, error) {
-	decoder, err := vom2.NewDecoder(bytes.NewReader(data))
+	decoder, err := vom.NewDecoder(bytes.NewReader(data))
 	if err != nil {
 		return nil, err
 	}
@@ -22,9 +22,9 @@ func VomDecodeToValue(data []byte) (*vdl.Value, error) {
 }
 
 func VomCopy(src interface{}, dstptr interface{}) error {
-	data, err := vom2.Encode(src)
+	data, err := vom.Encode(src)
 	if err != nil {
 		return err
 	}
-	return vom2.Decode(data, dstptr)
+	return vom.Decode(data, dstptr)
 }
