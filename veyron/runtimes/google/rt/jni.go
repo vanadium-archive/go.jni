@@ -10,7 +10,6 @@ import (
 	jsecurity "v.io/jni/veyron2/security"
 
 	"v.io/core/veyron2"
-	"v.io/core/veyron2/rt"
 )
 
 // #cgo LDFLAGS: -ljniwrapper
@@ -26,14 +25,8 @@ import "C"
 func Init(jEnv interface{}) {}
 
 //export Java_io_v_core_veyron_runtimes_google_VRuntime_nativeInit
-func Java_io_v_core_veyron_runtimes_google_VRuntime_nativeInit(env *C.JNIEnv, jRuntime C.jclass, jOptions C.jobject) C.jobject {
-	// No options supported yet.
-	r, err := rt.New()
-	if err != nil {
-		jutil.JThrowV(env, err)
-		return nil
-	}
-	ctx := r.NewContext()
+func Java_io_v_core_veyron_runtimes_google_VRuntime_nativeInit(env *C.JNIEnv, jRuntime C.jclass) C.jobject {
+	ctx, _ := veyron2.Init()
 	jCtx, err := jcontext.JavaContext(env, ctx, nil)
 	if err != nil {
 		jutil.JThrowV(env, err)
