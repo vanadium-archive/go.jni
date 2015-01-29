@@ -80,7 +80,7 @@ func Java_io_v_core_veyron_runtimes_google_VRuntime_nativeGetClient(env *C.JNIEn
 }
 
 //export Java_io_v_core_veyron_runtimes_google_VRuntime_nativeNewServer
-func Java_io_v_core_veyron_runtimes_google_VRuntime_nativeNewServer(env *C.JNIEnv, jRuntime C.jclass, jContext C.jobject, jOptions C.jobject) C.jobject {
+func Java_io_v_core_veyron_runtimes_google_VRuntime_nativeNewServer(env *C.JNIEnv, jRuntime C.jclass, jContext C.jobject, jListenSpec C.jobject) C.jobject {
 	// TODO(spetrovic): Have Java context support nativePtr()?
 	ctx, err := jcontext.GoContext(env, jContext)
 	if err != nil {
@@ -92,7 +92,7 @@ func Java_io_v_core_veyron_runtimes_google_VRuntime_nativeNewServer(env *C.JNIEn
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	jServer, err := jipc.JavaServer(env, server, jOptions)
+	jServer, err := jipc.JavaServer(env, server, jListenSpec)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil

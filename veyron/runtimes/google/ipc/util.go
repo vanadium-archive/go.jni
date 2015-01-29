@@ -19,11 +19,15 @@ import "C"
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JavaServer(jEnv interface{}, server ipc.Server, jOptions interface{}) (C.jobject, error) {
+func JavaServer(jEnv interface{}, server ipc.Server, jListenSpec interface{}) (C.jobject, error) {
 	if server == nil {
 		return nil, fmt.Errorf("Go Server value cannot be nil")
 	}
-	jServer, err := jutil.NewObject(jEnv, jServerClass, []jutil.Sign{jutil.LongSign, optionsSign}, int64(jutil.PtrValue(&server)), jOptions)
+	if jListenSpec == nil {
+		return nil, fmt.Errorf("Can't pass in null Java listen spec.")
+	}
+	listenSpecSign := jutil.ClassSign("io.v.core.veyron2.ipc.ListenSpec")
+	jServer, err := jutil.NewObject(jEnv, jServerClass, []jutil.Sign{jutil.LongSign, listenSpecSign}, int64(jutil.PtrValue(&server)), jListenSpec)
 	if err != nil {
 		return nil, err
 	}
