@@ -74,8 +74,7 @@ type context struct {
 func (c *context) Timestamp() time.Time {
 	env, freeFunc := jutil.GetEnv(c.jVM)
 	defer freeFunc()
-	dateTimeSign := jutil.ClassSign("org.joda.time.DateTime")
-	jTime, err := jutil.CallObjectMethod(env, c.jContext, "timestamp", nil, dateTimeSign)
+	jTime, err := jutil.CallObjectMethod(env, c.jContext, "timestamp", nil, jutil.DateTimeSign)
 	if err != nil {
 		log.Println("Couldn't call Java timestamp method: ", err)
 		return time.Time{}

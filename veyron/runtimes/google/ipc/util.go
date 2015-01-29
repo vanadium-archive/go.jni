@@ -5,7 +5,6 @@ package ipc
 import (
 	"fmt"
 
-	"v.io/core/veyron/profiles/roaming"
 	"v.io/core/veyron2/ipc"
 	jutil "v.io/jni/util"
 	jcontext "v.io/jni/veyron2/context"
@@ -103,6 +102,118 @@ func javaStream(env *C.JNIEnv, stream ipc.Stream) (C.jobject, error) {
 	return C.jobject(jStream), nil
 }
 
+// JavaServerStatus converts the provided ipc.ServerStatus value into a Java
+// ServerStatus object.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func JavaServerStatus(jEnv interface{}, status ipc.ServerStatus) (C.jobject, error) {
+	// Create Java state enum value.
+	jState, err := JavaServerState(jEnv, status.State)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create Java array of mounts.
+	mountarr := make([]interface{}, len(status.Mounts))
+	for i, mount := range status.Mounts {
+		var err error
+		if mountarr[i], err = JavaMountStatus(jEnv, mount); err != nil {
+			return nil, err
+		}
+	}
+	jMounts := jutil.JObjectArray(jEnv, mountarr, jMountStatusClass)
+
+	// Create Java array of endpoints.
+	eps := make([]string, len(status.Endpoints))
+	for i, ep := range status.Endpoints {
+		eps[i] = ep.String()
+	}
+	jEndpoints := jutil.JStringArray(jEnv, eps)
+
+	// Create Java array of proxies.
+	proxarr := make([]interface{}, len(status.Proxies))
+	for i, proxy := range status.Proxies {
+		var err error
+		if proxarr[i], err = JavaProxyStatus(jEnv, proxy); err != nil {
+			return nil, err
+		}
+	}
+	jProxies := jutil.JObjectArray(jEnv, proxarr, jProxyStatusClass)
+
+	// Create final server status.
+	serverStateSign := jutil.ClassSign("io.v.core.veyron2.ipc.ServerState")
+	mountStatusSign := jutil.ClassSign("io.v.core.veyron2.ipc.MountStatus")
+	proxyStatusSign := jutil.ClassSign("io.v.core.veyron2.ipc.ProxyStatus")
+	jServerStatus, err := jutil.NewObject(jEnv, jServerStatusClass, []jutil.Sign{serverStateSign, jutil.BoolSign, jutil.ArraySign(mountStatusSign), jutil.ArraySign(jutil.StringSign), jutil.ArraySign(proxyStatusSign)}, jState, status.ServesMountTable, jMounts, jEndpoints, jProxies)
+	if err != nil {
+		return nil, err
+	}
+	return C.jobject(jServerStatus), nil
+}
+
+// JavaServerState converts the provided ipc.ServerState value into a Java
+// ServerState enum.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func JavaServerState(jEnv interface{}, state ipc.ServerState) (C.jobject, error) {
+	var name string
+	switch state {
+	case ipc.ServerInit:
+		name = "SERVER_INIT"
+	case ipc.ServerActive:
+		name = "SERVER_ACTIVE"
+	case ipc.ServerStopping:
+		name = "SERVER_STOPPING"
+	case ipc.ServerStopped:
+		name = "SERVER_STOPPED"
+	default:
+		return nil, fmt.Errorf("Unrecognized state: %d", state)
+	}
+	serverStateSign := jutil.ClassSign("io.v.core.veyron2.ipc.ServerState")
+	jState, err := jutil.CallStaticObjectMethod(jEnv, jServerStateClass, "valueOf", []jutil.Sign{jutil.StringSign}, serverStateSign, name)
+	if err != nil {
+		return nil, err
+	}
+	return C.jobject(jState), nil
+}
+
+// JavaMountStatus converts the provided ipc.MountStatus value into a Java
+// MountStatus object.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func JavaMountStatus(jEnv interface{}, status ipc.MountStatus) (C.jobject, error) {
+	jStatus, err := jutil.NewObject(jEnv, jMountStatusClass, []jutil.Sign{jutil.StringSign, jutil.StringSign, jutil.DateTimeSign, jutil.VeyronExceptionSign, jutil.DurationSign, jutil.DateTimeSign, jutil.VeyronExceptionSign}, status.Name, status.Server, status.LastMount, status.LastMountErr, status.TTL, status.LastUnmount, status.LastUnmountErr)
+	if err != nil {
+		return nil, err
+	}
+	return C.jobject(jStatus), nil
+}
+
+// JavaProxyStatus converts the provided ipc.ProxyStatus value into a Java
+// ProxyStatus object.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func JavaProxyStatus(jEnv interface{}, status ipc.ProxyStatus) (C.jobject, error) {
+	jStatus, err := jutil.NewObject(jEnv, jProxyStatusClass, []jutil.Sign{jutil.StringSign, jutil.StringSign, jutil.VeyronExceptionSign}, status.Proxy, status.Endpoint.String(), status.Error)
+	if err != nil {
+		return nil, err
+	}
+	return C.jobject(jStatus), nil
+}
+
+var (
+	roamingSpec ipc.ListenSpec
+)
+
+// SetRoamingSpec saves the provided roaming spec for later use.
+func SetRoamingSpec(spec ipc.ListenSpec) {
+	roamingSpec = spec
+}
+
 // GoListenSpec converts the provided Java ListenSpec into a Go ListenSpec.
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
@@ -132,11 +243,39 @@ func GoListenSpec(jEnv, jSpec interface{}) (ipc.ListenSpec, error) {
 	if err != nil {
 		return ipc.ListenSpec{}, err
 	}
+	// TODO(spetrovic): fix this roaming hack, probably by implementing
+	// Publisher and AddressChooser in Java as well (ugh!).
 	var spec ipc.ListenSpec
 	if isRoaming {
-		spec = roaming.ListenSpec
+		spec = roamingSpec
 	}
 	spec.Addrs = addrs
 	spec.Proxy = proxy
 	return spec, nil
+}
+
+// GoListenSpec converts the provided Go ListenSpec into a Java ListenSpec.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func JavaListenSpec(jEnv interface{}, spec ipc.ListenSpec) (C.jobject, error) {
+	addrarr := make([]interface{}, len(spec.Addrs))
+	for i, addr := range spec.Addrs {
+		var err error
+		if addrarr[i], err = jutil.NewObject(jEnv, jListenSpecAddressClass, []jutil.Sign{jutil.StringSign, jutil.StringSign}, addr.Protocol, addr.Address); err != nil {
+			return nil, err
+		}
+	}
+	jAddrs := jutil.JObjectArray(jEnv, addrarr, jListenSpecAddressClass)
+	isRoaming := false
+	if spec.StreamPublisher != nil || spec.AddressChooser != nil {
+		// Our best guess that this is a roaming spec.
+		isRoaming = true
+	}
+	addressSign := jutil.ClassSign("io.v.core.veyron2.ipc.ListenSpec$Address")
+	jSpec, err := jutil.NewObject(jEnv, jListenSpecClass, []jutil.Sign{jutil.ArraySign(addressSign), jutil.StringSign, jutil.BoolSign}, jAddrs, spec.Proxy, isRoaming)
+	if err != nil {
+		return nil, err
+	}
+	return C.jobject(jSpec), nil
 }

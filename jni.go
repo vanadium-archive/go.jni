@@ -7,7 +7,6 @@ import (
 
 	"golang.org/x/mobile/app"
 
-	_ "v.io/core/veyron/profiles/roaming"
 	jutil "v.io/jni/util"
 	jgoogle "v.io/jni/veyron/runtimes/google"
 	jveyron2 "v.io/jni/veyron2"

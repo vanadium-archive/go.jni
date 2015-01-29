@@ -5,6 +5,7 @@ package util
 import (
 	"fmt"
 	"reflect"
+	"time"
 	"unsafe"
 )
 
@@ -24,75 +25,112 @@ import "C"
 
 // jArg converts a Go argument to a Java argument.  It uses the provided sign to
 // validate that the argument is of a compatible type.
-func jArg(env *C.JNIEnv, v interface{}, sign Sign) (C.jvalue, bool) {
-	var errValue C.jvalue
+func jArg(env *C.JNIEnv, v interface{}, sign Sign) (unsafe.Pointer, bool) {
 	rv := reflect.ValueOf(v)
+	if !rv.IsValid() { // nil value
+		jv := C.jobject(nil)
+		return unsafe.Pointer(&jv), true
+	}
+	if rv.Type() == reflect.TypeOf(time.Time{}) {
+		if sign != DateTimeSign {
+			return unsafe.Pointer(nil), false
+		}
+		jv, err := JTime(env, rv.Interface().(time.Time))
+		if err != nil {
+			return unsafe.Pointer(nil), false
+		}
+		return unsafe.Pointer(&jv), true
+	}
+	if rv.Type() == reflect.TypeOf(time.Duration(0)) {
+		if sign != DurationSign {
+			return unsafe.Pointer(nil), false
+		}
+		jv, err := JDuration(env, rv.Interface().(time.Duration))
+		if err != nil {
+			return unsafe.Pointer(nil), false
+		}
+		return unsafe.Pointer(&jv), true
+	}
+	if rv.Type().Implements(reflect.TypeOf((*error)(nil)).Elem()) {
+		if sign != VeyronExceptionSign {
+			return unsafe.Pointer(nil), false
+		}
+		jv, err := JVException(env, rv.Interface().(error))
+		if err != nil {
+			return unsafe.Pointer(nil), false
+		}
+		return unsafe.Pointer(&jv), true
+	}
 	if rv.Kind() == reflect.Ptr || rv.Kind() == reflect.UnsafePointer {
 		rv = reflect.ValueOf(rv.Pointer()) // Convert the pointer's address to a uintptr
 	}
-	var ptr unsafe.Pointer
 	switch rv.Kind() {
+	case reflect.Bool:
+		if sign != BoolSign {
+			return unsafe.Pointer(nil), false
+		}
+		jv := C.jboolean(C.JNI_FALSE)
+		if rv.Bool() {
+			jv = C.JNI_TRUE
+		}
+		return unsafe.Pointer(&jv), true
 	case reflect.Int, reflect.Int32, reflect.Int16, reflect.Int8, reflect.Uint, reflect.Uint32, reflect.Uint16, reflect.Uint8:
 		if !isSignOneOf(sign, []Sign{ByteSign, ShortSign, IntSign, LongSign}) {
-			return errValue, false
+			return unsafe.Pointer(nil), false
 		}
 		jv := C.jint(rv.Int())
-		ptr = unsafe.Pointer(&jv)
+		return unsafe.Pointer(&jv), true
 	case reflect.Int64:
 		if sign != LongSign {
-			return errValue, false
+			return unsafe.Pointer(nil), false
 		}
 		jv := C.jlong(rv.Int())
-		ptr = unsafe.Pointer(&jv)
+		return unsafe.Pointer(&jv), true
 	case reflect.Uint64:
 		if sign != LongSign {
-			return errValue, false
+			return unsafe.Pointer(nil), false
 		}
 		jv := C.jlong(rv.Uint())
-		ptr = unsafe.Pointer(&jv)
+		return unsafe.Pointer(&jv), true
 	case reflect.Uintptr:
 		if isSignOneOf(sign, []Sign{ByteSign, BoolSign, CharSign, ShortSign, IntSign, FloatSign, DoubleSign}) {
-			return errValue, false
+			return unsafe.Pointer(nil), false
 		}
 		jv := C.jlong(rv.Uint())
-		ptr = unsafe.Pointer(&jv)
+		return unsafe.Pointer(&jv), true
 	case reflect.String:
 		if sign != StringSign {
-			return errValue, false
+			return unsafe.Pointer(nil), false
 		}
 		// JString allocates the strings locally, so they are freed automatically when we return to Java.
 		jv := JString(env, rv.String())
 		if jv == nil {
-			return errValue, false
+			return unsafe.Pointer(nil), false
 		}
-		ptr = unsafe.Pointer(&jv)
+		return unsafe.Pointer(&jv), true
 	case reflect.Slice, reflect.Array:
 		switch rv.Type().Elem().Kind() {
 		case reflect.Uint8:
 			if sign != ArraySign(ByteSign) {
-				return errValue, false
+				return unsafe.Pointer(nil), false
 			}
 			bs := rv.Interface().([]byte)
 			jv := JByteArray(env, bs)
-			ptr = unsafe.Pointer(&jv)
+			return unsafe.Pointer(&jv), true
 		case reflect.String:
 			if sign != ArraySign(StringSign) {
-				return errValue, false
+				return unsafe.Pointer(nil), false
 			}
 			// TODO(bprosnitz) We should handle objects by calling jArg recursively. We need a way to get the sign of the target type or treat it as an Object for non-string types.
 			strs := rv.Interface().([]string)
 			jv := JStringArray(env, strs)
-			ptr = unsafe.Pointer(&jv)
+			return unsafe.Pointer(&jv), true
 		default:
-			return errValue, false
+			return unsafe.Pointer(nil), false
 		}
 	default:
-		return errValue, false
+		return unsafe.Pointer(nil), false
 	}
-	if ptr == nil {
-		return errValue, false
-	}
-	return *(*C.jvalue)(ptr), true
 }
 
 // jArgArray converts a slice of Go args to an array of Java args.  It uses the provided slice of
@@ -104,11 +142,11 @@ func jArgArray(env *C.JNIEnv, args []interface{}, argSigns []Sign) (jArr *C.jval
 	jvalueArr := C.allocJValueArray(C.int(len(args)))
 	for i, arg := range args {
 		sign := argSigns[i]
-		jval, ok := jArg(env, arg, sign)
+		jValPtr, ok := jArg(env, arg, sign)
 		if !ok {
 			return (*C.jvalue)(nil), nil, fmt.Errorf("couldn't get Java value for argument #%d [%v] of expected type %v", i, arg, sign)
 		}
-		C.setJValueArrayElement(jvalueArr, C.int(i), jval)
+		C.setJValueArrayElement(jvalueArr, C.int(i), *(*C.jvalue)(jValPtr))
 	}
 	freeFunc := func() {
 		C.free(unsafe.Pointer(jvalueArr))

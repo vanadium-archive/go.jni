@@ -41,6 +41,12 @@ var (
 	IteratorSign = ClassSign("java.util.Iterator")
 	// ByteArraySign denotes a signature of a Java byte array type.
 	ByteArraySign = ArraySign(ByteSign)
+	// DateTimeSign denotes a signature of a Java DateTime type.
+	DateTimeSign = ClassSign("org.joda.time.DateTime")
+	// DurationSign denotes a signature of a Java Duration type.
+	DurationSign = ClassSign("org.joda.time.Duration")
+	// VeyronExceptionSign denotes a signature of a Java VeyronException type.
+	VeyronExceptionSign = ClassSign("io.v.core.veyron2.VeyronException")
 )
 
 // ArraySign returns the array signature, given the underlying array type.

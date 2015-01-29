@@ -170,14 +170,23 @@ func JThrow(jEnv, jClass interface{}, msg string) {
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func JThrowV(jEnv interface{}, err error) {
-	env := getEnv(jEnv)
-	verr := verror.Convert(err)
-	jObj, errNew := NewObject(env, jVeyronExceptionClass, []Sign{StringSign, StringSign}, verr.Error(), string(verr.ErrorID()))
+	jObj, errNew := JVException(jEnv, err)
 	if errNew != nil {
 		log.Printf("Couldn't throw exception %v: %v", err, errNew)
 		return
 	}
+	env := getEnv(jEnv)
 	C.Throw(env, C.jthrowable(jObj))
+}
+
+// JVException returns the Java VeyronException given the Go error.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func JVException(jEnv interface{}, err error) (C.jobject, error) {
+	env := getEnv(jEnv)
+	verr := verror.Convert(err)
+	return NewObject(env, jVeyronExceptionClass, []Sign{StringSign, StringSign}, verr.Error(), string(verr.ErrorID()))
 }
 
 // JExceptionMsg returns the exception message if an exception occurred, or

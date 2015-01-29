@@ -9,6 +9,7 @@ import (
 	jcontext "v.io/jni/veyron2/context"
 	jsecurity "v.io/jni/veyron2/security"
 
+	_ "v.io/core/veyron/profiles/roaming"
 	"v.io/core/veyron2"
 )
 
@@ -27,6 +28,10 @@ func Init(jEnv interface{}) {}
 //export Java_io_v_core_veyron_runtimes_google_VRuntime_nativeInit
 func Java_io_v_core_veyron_runtimes_google_VRuntime_nativeInit(env *C.JNIEnv, jRuntime C.jclass) C.jobject {
 	ctx, _ := veyron2.Init()
+	// Get the original spec, which is guaranteed to be a roaming spec (as we
+	// import the roaming profile).
+	roamingSpec := veyron2.GetListenSpec(ctx)
+	jipc.SetRoamingSpec(roamingSpec)
 	jCtx, err := jcontext.JavaContext(env, ctx, nil)
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -36,7 +41,7 @@ func Java_io_v_core_veyron_runtimes_google_VRuntime_nativeInit(env *C.JNIEnv, jR
 }
 
 //export Java_io_v_core_veyron_runtimes_google_VRuntime_nativeSetNewClient
-func Java_io_v_core_veyron_runtimes_google_VRuntime_nativeSetNewClient(env *C.JNIEnv, jRuntime C.jobject, jContext C.jobject, jOptions C.jobject) C.jobject {
+func Java_io_v_core_veyron_runtimes_google_VRuntime_nativeSetNewClient(env *C.JNIEnv, jRuntime C.jclass, jContext C.jobject, jOptions C.jobject) C.jobject {
 	// TODO(spetrovic): Have Java context support nativePtr()?
 	ctx, err := jcontext.GoContext(env, jContext)
 	if err != nil {
@@ -58,7 +63,7 @@ func Java_io_v_core_veyron_runtimes_google_VRuntime_nativeSetNewClient(env *C.JN
 }
 
 //export Java_io_v_core_veyron_runtimes_google_VRuntime_nativeGetClient
-func Java_io_v_core_veyron_runtimes_google_VRuntime_nativeGetClient(env *C.JNIEnv, jRuntime C.jobject, jContext C.jobject) C.jobject {
+func Java_io_v_core_veyron_runtimes_google_VRuntime_nativeGetClient(env *C.JNIEnv, jRuntime C.jclass, jContext C.jobject) C.jobject {
 	// TODO(spetrovic): Have Java context support nativePtr()?
 	ctx, err := jcontext.GoContext(env, jContext)
 	if err != nil {
@@ -75,7 +80,7 @@ func Java_io_v_core_veyron_runtimes_google_VRuntime_nativeGetClient(env *C.JNIEn
 }
 
 //export Java_io_v_core_veyron_runtimes_google_VRuntime_nativeNewServer
-func Java_io_v_core_veyron_runtimes_google_VRuntime_nativeNewServer(env *C.JNIEnv, jRuntime C.jobject, jContext C.jobject, jOptions C.jobject) C.jobject {
+func Java_io_v_core_veyron_runtimes_google_VRuntime_nativeNewServer(env *C.JNIEnv, jRuntime C.jclass, jContext C.jobject, jOptions C.jobject) C.jobject {
 	// TODO(spetrovic): Have Java context support nativePtr()?
 	ctx, err := jcontext.GoContext(env, jContext)
 	if err != nil {
@@ -96,7 +101,7 @@ func Java_io_v_core_veyron_runtimes_google_VRuntime_nativeNewServer(env *C.JNIEn
 }
 
 //export Java_io_v_core_veyron_runtimes_google_VRuntime_nativeSetPrincipal
-func Java_io_v_core_veyron_runtimes_google_VRuntime_nativeSetPrincipal(env *C.JNIEnv, jRuntime C.jobject, jContext C.jobject, jPrincipal C.jobject) C.jobject {
+func Java_io_v_core_veyron_runtimes_google_VRuntime_nativeSetPrincipal(env *C.JNIEnv, jRuntime C.jclass, jContext C.jobject, jPrincipal C.jobject) C.jobject {
 	// TODO(spetrovic): Have Java context support nativePtr()?
 	ctx, err := jcontext.GoContext(env, jContext)
 	if err != nil {
@@ -122,7 +127,7 @@ func Java_io_v_core_veyron_runtimes_google_VRuntime_nativeSetPrincipal(env *C.JN
 }
 
 //export Java_io_v_core_veyron_runtimes_google_VRuntime_nativeGetPrincipal
-func Java_io_v_core_veyron_runtimes_google_VRuntime_nativeGetPrincipal(env *C.JNIEnv, jRuntime C.jobject, jContext C.jobject) C.jobject {
+func Java_io_v_core_veyron_runtimes_google_VRuntime_nativeGetPrincipal(env *C.JNIEnv, jRuntime C.jclass, jContext C.jobject) C.jobject {
 	// TODO(spetrovic): Have Java context support nativePtr()?
 	ctx, err := jcontext.GoContext(env, jContext)
 	if err != nil {
@@ -139,7 +144,7 @@ func Java_io_v_core_veyron_runtimes_google_VRuntime_nativeGetPrincipal(env *C.JN
 }
 
 //export Java_io_v_core_veyron_runtimes_google_VRuntime_nativeSetNamespace
-func Java_io_v_core_veyron_runtimes_google_VRuntime_nativeSetNamespace(env *C.JNIEnv, jRuntime C.jobject, jContext C.jobject, jRoots C.jobjectArray) C.jobject {
+func Java_io_v_core_veyron_runtimes_google_VRuntime_nativeSetNamespace(env *C.JNIEnv, jRuntime C.jclass, jContext C.jobject, jRoots C.jobjectArray) C.jobject {
 	// TODO(spetrovic): Have Java context support nativePtr()?
 	ctx, err := jcontext.GoContext(env, jContext)
 	if err != nil {
@@ -161,7 +166,7 @@ func Java_io_v_core_veyron_runtimes_google_VRuntime_nativeSetNamespace(env *C.JN
 }
 
 //export Java_io_v_core_veyron_runtimes_google_VRuntime_nativeGetNamespace
-func Java_io_v_core_veyron_runtimes_google_VRuntime_nativeGetNamespace(env *C.JNIEnv, jRuntime C.jobject, jContext C.jobject) C.jobject {
+func Java_io_v_core_veyron_runtimes_google_VRuntime_nativeGetNamespace(env *C.JNIEnv, jRuntime C.jclass, jContext C.jobject) C.jobject {
 	// TODO(spetrovic): Have Java context support nativePtr()?
 	ctx, err := jcontext.GoContext(env, jContext)
 	if err != nil {
@@ -175,4 +180,20 @@ func Java_io_v_core_veyron_runtimes_google_VRuntime_nativeGetNamespace(env *C.JN
 		return nil
 	}
 	return C.jobject(jNamespace)
+}
+
+//export Java_io_v_core_veyron_runtimes_google_VRuntime_nativeGetListenSpec
+func Java_io_v_core_veyron_runtimes_google_VRuntime_nativeGetListenSpec(env *C.JNIEnv, jRuntime C.jclass, jContext C.jobject) C.jobject {
+	ctx, err := jcontext.GoContext(env, jContext)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	spec := veyron2.GetListenSpec(ctx)
+	jSpec, err := jipc.JavaListenSpec(env, spec)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	return C.jobject(jSpec)
 }
