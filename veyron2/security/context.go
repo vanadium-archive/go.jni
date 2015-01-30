@@ -107,10 +107,6 @@ func (c *context) MethodTags() []interface{} {
 	return tags
 }
 
-func (c *context) Name() string {
-	return c.callStringMethod("name")
-}
-
 func (c *context) Suffix() string {
 	return c.callStringMethod("suffix")
 }

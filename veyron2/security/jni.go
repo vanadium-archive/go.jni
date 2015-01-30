@@ -114,11 +114,6 @@ func Java_io_v_core_veyron2_security_VContextImpl_nativeMethodTags(env *C.JNIEnv
 	return jTags
 }
 
-//export Java_io_v_core_veyron2_security_VContextImpl_nativeName
-func Java_io_v_core_veyron2_security_VContextImpl_nativeName(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) C.jstring {
-	return C.jstring(jutil.JString(env, (*(*security.Context)(jutil.Ptr(goContextPtr))).Name()))
-}
-
 //export Java_io_v_core_veyron2_security_VContextImpl_nativeSuffix
 func Java_io_v_core_veyron2_security_VContextImpl_nativeSuffix(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) C.jstring {
 	return C.jstring(jutil.JString(env, (*(*security.Context)(jutil.Ptr(goContextPtr))).Suffix()))
