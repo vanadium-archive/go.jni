@@ -5,6 +5,7 @@ package veyron2
 import (
 	jandroid "v.io/jni/veyron2/android"
 	jcontext "v.io/jni/veyron2/context"
+	ji18n "v.io/jni/veyron2/i18n"
 	jsecurity "v.io/jni/veyron2/security"
 	jaccess "v.io/jni/veyron2/services/security/access"
 )
@@ -21,6 +22,7 @@ import "C"
 // interface and then cast into the package-local environment type.
 func Init(jEnv interface{}) {
 	jcontext.Init(jEnv)
+	ji18n.Init(jEnv)
 	jsecurity.Init(jEnv)
 	jandroid.Init(jEnv)
 	jaccess.Init(jEnv)
