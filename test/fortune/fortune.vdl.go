@@ -4,14 +4,15 @@
 package fortune
 
 import (
-	"v.io/core/veyron2/services/security/access"
+	// VDL system imports
+	"io"
+	"v.io/core/veyron2"
+	"v.io/core/veyron2/context"
+	"v.io/core/veyron2/ipc"
+	"v.io/core/veyron2/vdl"
 
-	// The non-user imports are prefixed with "__" to prevent collisions.
-	__io "io"
-	__veyron2 "v.io/core/veyron2"
-	__context "v.io/core/veyron2/context"
-	__ipc "v.io/core/veyron2/ipc"
-	__vdl "v.io/core/veyron2/vdl"
+	// VDL user imports
+	"v.io/core/veyron2/services/security/access"
 )
 
 // FortuneClientMethods is the client interface
@@ -20,24 +21,24 @@ import (
 // Fortune allows clients to Get and Add fortune strings.
 type FortuneClientMethods interface {
 	// Add stores a fortune in the set used by Get.
-	Add(ctx *__context.T, Fortune string, opts ...__ipc.CallOpt) error
+	Add(ctx *context.T, Fortune string, opts ...ipc.CallOpt) error
 	// Get returns a random fortune.
-	Get(*__context.T, ...__ipc.CallOpt) (Fortune string, err error)
+	Get(*context.T, ...ipc.CallOpt) (Fortune string, err error)
 	// StreamingGet returns a stream that can be used to obtain fortunes.
-	StreamingGet(*__context.T, ...__ipc.CallOpt) (FortuneStreamingGetCall, error)
+	StreamingGet(*context.T, ...ipc.CallOpt) (FortuneStreamingGetCall, error)
 }
 
 // FortuneClientStub adds universal methods to FortuneClientMethods.
 type FortuneClientStub interface {
 	FortuneClientMethods
-	__ipc.UniversalServiceMethods
+	ipc.UniversalServiceMethods
 }
 
 // FortuneClient returns a client stub for Fortune.
-func FortuneClient(name string, opts ...__ipc.BindOpt) FortuneClientStub {
-	var client __ipc.Client
+func FortuneClient(name string, opts ...ipc.BindOpt) FortuneClientStub {
+	var client ipc.Client
 	for _, opt := range opts {
-		if clientOpt, ok := opt.(__ipc.Client); ok {
+		if clientOpt, ok := opt.(ipc.Client); ok {
 			client = clientOpt
 		}
 	}
@@ -46,18 +47,18 @@ func FortuneClient(name string, opts ...__ipc.BindOpt) FortuneClientStub {
 
 type implFortuneClientStub struct {
 	name   string
-	client __ipc.Client
+	client ipc.Client
 }
 
-func (c implFortuneClientStub) c(ctx *__context.T) __ipc.Client {
+func (c implFortuneClientStub) c(ctx *context.T) ipc.Client {
 	if c.client != nil {
 		return c.client
 	}
-	return __veyron2.GetClient(ctx)
+	return veyron2.GetClient(ctx)
 }
 
-func (c implFortuneClientStub) Add(ctx *__context.T, i0 string, opts ...__ipc.CallOpt) (err error) {
-	var call __ipc.Call
+func (c implFortuneClientStub) Add(ctx *context.T, i0 string, opts ...ipc.CallOpt) (err error) {
+	var call ipc.Call
 	if call, err = c.c(ctx).StartCall(ctx, c.name, "Add", []interface{}{i0}, opts...); err != nil {
 		return
 	}
@@ -67,8 +68,8 @@ func (c implFortuneClientStub) Add(ctx *__context.T, i0 string, opts ...__ipc.Ca
 	return
 }
 
-func (c implFortuneClientStub) Get(ctx *__context.T, opts ...__ipc.CallOpt) (o0 string, err error) {
-	var call __ipc.Call
+func (c implFortuneClientStub) Get(ctx *context.T, opts ...ipc.CallOpt) (o0 string, err error) {
+	var call ipc.Call
 	if call, err = c.c(ctx).StartCall(ctx, c.name, "Get", nil, opts...); err != nil {
 		return
 	}
@@ -78,8 +79,8 @@ func (c implFortuneClientStub) Get(ctx *__context.T, opts ...__ipc.CallOpt) (o0 
 	return
 }
 
-func (c implFortuneClientStub) StreamingGet(ctx *__context.T, opts ...__ipc.CallOpt) (ocall FortuneStreamingGetCall, err error) {
-	var call __ipc.Call
+func (c implFortuneClientStub) StreamingGet(ctx *context.T, opts ...ipc.CallOpt) (ocall FortuneStreamingGetCall, err error) {
+	var call ipc.Call
 	if call, err = c.c(ctx).StartCall(ctx, c.name, "StreamingGet", nil, opts...); err != nil {
 		return
 	}
@@ -137,7 +138,7 @@ type FortuneStreamingGetCall interface {
 }
 
 type implFortuneStreamingGetCall struct {
-	__ipc.Call
+	ipc.Call
 	valRecv string
 	errRecv error
 }
@@ -162,7 +163,7 @@ func (c implFortuneStreamingGetCallRecv) Value() string {
 	return c.c.valRecv
 }
 func (c implFortuneStreamingGetCallRecv) Err() error {
-	if c.c.errRecv == __io.EOF {
+	if c.c.errRecv == io.EOF {
 		return nil
 	}
 	return c.c.errRecv
@@ -197,9 +198,9 @@ func (c *implFortuneStreamingGetCall) Finish() (o0 int32, err error) {
 // Fortune allows clients to Get and Add fortune strings.
 type FortuneServerMethods interface {
 	// Add stores a fortune in the set used by Get.
-	Add(ctx __ipc.ServerContext, Fortune string) error
+	Add(ctx ipc.ServerContext, Fortune string) error
 	// Get returns a random fortune.
-	Get(__ipc.ServerContext) (Fortune string, err error)
+	Get(ipc.ServerContext) (Fortune string, err error)
 	// StreamingGet returns a stream that can be used to obtain fortunes.
 	StreamingGet(FortuneStreamingGetContext) (total int32, err error)
 }
@@ -210,9 +211,9 @@ type FortuneServerMethods interface {
 // is the streaming methods.
 type FortuneServerStubMethods interface {
 	// Add stores a fortune in the set used by Get.
-	Add(ctx __ipc.ServerContext, Fortune string) error
+	Add(ctx ipc.ServerContext, Fortune string) error
 	// Get returns a random fortune.
-	Get(__ipc.ServerContext) (Fortune string, err error)
+	Get(ipc.ServerContext) (Fortune string, err error)
 	// StreamingGet returns a stream that can be used to obtain fortunes.
 	StreamingGet(*FortuneStreamingGetContextStub) (total int32, err error)
 }
@@ -221,7 +222,7 @@ type FortuneServerStubMethods interface {
 type FortuneServerStub interface {
 	FortuneServerStubMethods
 	// Describe the Fortune interfaces.
-	Describe__() []__ipc.InterfaceDesc
+	Describe__() []ipc.InterfaceDesc
 }
 
 // FortuneServer returns a server stub for Fortune.
@@ -233,9 +234,9 @@ func FortuneServer(impl FortuneServerMethods) FortuneServerStub {
 	}
 	// Initialize GlobState; always check the stub itself first, to handle the
 	// case where the user has the Glob method defined in their VDL source.
-	if gs := __ipc.NewGlobState(stub); gs != nil {
+	if gs := ipc.NewGlobState(stub); gs != nil {
 		stub.gs = gs
-	} else if gs := __ipc.NewGlobState(impl); gs != nil {
+	} else if gs := ipc.NewGlobState(impl); gs != nil {
 		stub.gs = gs
 	}
 	return stub
@@ -243,14 +244,14 @@ func FortuneServer(impl FortuneServerMethods) FortuneServerStub {
 
 type implFortuneServerStub struct {
 	impl FortuneServerMethods
-	gs   *__ipc.GlobState
+	gs   *ipc.GlobState
 }
 
-func (s implFortuneServerStub) Add(ctx __ipc.ServerContext, i0 string) error {
+func (s implFortuneServerStub) Add(ctx ipc.ServerContext, i0 string) error {
 	return s.impl.Add(ctx, i0)
 }
 
-func (s implFortuneServerStub) Get(ctx __ipc.ServerContext) (string, error) {
+func (s implFortuneServerStub) Get(ctx ipc.ServerContext) (string, error) {
 	return s.impl.Get(ctx)
 }
 
@@ -258,51 +259,51 @@ func (s implFortuneServerStub) StreamingGet(ctx *FortuneStreamingGetContextStub)
 	return s.impl.StreamingGet(ctx)
 }
 
-func (s implFortuneServerStub) Globber() *__ipc.GlobState {
+func (s implFortuneServerStub) Globber() *ipc.GlobState {
 	return s.gs
 }
 
-func (s implFortuneServerStub) Describe__() []__ipc.InterfaceDesc {
-	return []__ipc.InterfaceDesc{FortuneDesc}
+func (s implFortuneServerStub) Describe__() []ipc.InterfaceDesc {
+	return []ipc.InterfaceDesc{FortuneDesc}
 }
 
 // FortuneDesc describes the Fortune interface.
-var FortuneDesc __ipc.InterfaceDesc = descFortune
+var FortuneDesc ipc.InterfaceDesc = descFortune
 
 // descFortune hides the desc to keep godoc clean.
-var descFortune = __ipc.InterfaceDesc{
+var descFortune = ipc.InterfaceDesc{
 	Name:    "Fortune",
 	PkgPath: "v.io/jni/test/fortune",
 	Doc:     "// Fortune allows clients to Get and Add fortune strings.",
-	Methods: []__ipc.MethodDesc{
+	Methods: []ipc.MethodDesc{
 		{
 			Name: "Add",
 			Doc:  "// Add stores a fortune in the set used by Get.",
-			InArgs: []__ipc.ArgDesc{
+			InArgs: []ipc.ArgDesc{
 				{"Fortune", ``}, // string
 			},
-			OutArgs: []__ipc.ArgDesc{
+			OutArgs: []ipc.ArgDesc{
 				{"", ``}, // error
 			},
-			Tags: []__vdl.AnyRep{access.Tag("Write")},
+			Tags: []vdl.AnyRep{access.Tag("Write")},
 		},
 		{
 			Name: "Get",
 			Doc:  "// Get returns a random fortune.",
-			OutArgs: []__ipc.ArgDesc{
+			OutArgs: []ipc.ArgDesc{
 				{"Fortune", ``}, // string
 				{"err", ``},     // error
 			},
-			Tags: []__vdl.AnyRep{access.Tag("Read")},
+			Tags: []vdl.AnyRep{access.Tag("Read")},
 		},
 		{
 			Name: "StreamingGet",
 			Doc:  "// StreamingGet returns a stream that can be used to obtain fortunes.",
-			OutArgs: []__ipc.ArgDesc{
+			OutArgs: []ipc.ArgDesc{
 				{"total", ``}, // int32
 				{"err", ``},   // error
 			},
-			Tags: []__vdl.AnyRep{access.Tag("Read")},
+			Tags: []vdl.AnyRep{access.Tag("Read")},
 		},
 	},
 }
@@ -332,20 +333,20 @@ type FortuneStreamingGetServerStream interface {
 
 // FortuneStreamingGetContext represents the context passed to Fortune.StreamingGet.
 type FortuneStreamingGetContext interface {
-	__ipc.ServerContext
+	ipc.ServerContext
 	FortuneStreamingGetServerStream
 }
 
 // FortuneStreamingGetContextStub is a wrapper that converts ipc.ServerCall into
 // a typesafe stub that implements FortuneStreamingGetContext.
 type FortuneStreamingGetContextStub struct {
-	__ipc.ServerCall
+	ipc.ServerCall
 	valRecv bool
 	errRecv error
 }
 
 // Init initializes FortuneStreamingGetContextStub from ipc.ServerCall.
-func (s *FortuneStreamingGetContextStub) Init(call __ipc.ServerCall) {
+func (s *FortuneStreamingGetContextStub) Init(call ipc.ServerCall) {
 	s.ServerCall = call
 }
 
@@ -370,7 +371,7 @@ func (s implFortuneStreamingGetContextRecv) Value() bool {
 	return s.s.valRecv
 }
 func (s implFortuneStreamingGetContextRecv) Err() error {
-	if s.s.errRecv == __io.EOF {
+	if s.s.errRecv == io.EOF {
 		return nil
 	}
 	return s.s.errRecv

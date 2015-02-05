@@ -4,8 +4,8 @@
 package security
 
 import (
-	// The non-user imports are prefixed with "__" to prevent collisions.
-	__vdl "v.io/core/veyron2/vdl"
+	// VDL system imports
+	"v.io/core/veyron2/vdl"
 )
 
 // TestCaveat is a caveat that's used in various security tests.
@@ -17,5 +17,5 @@ func (TestCaveat) __VDLReflect(struct {
 }
 
 func init() {
-	__vdl.Register(TestCaveat(""))
+	vdl.Register(TestCaveat(""))
 }

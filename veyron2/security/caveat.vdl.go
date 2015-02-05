@@ -4,10 +4,11 @@
 package security
 
 import (
-	"v.io/core/veyron2/security"
+	// VDL system imports
+	"v.io/core/veyron2/vdl"
 
-	// The non-user imports are prefixed with "__" to prevent collisions.
-	__vdl "v.io/core/veyron2/vdl"
+	// VDL user imports
+	"v.io/core/veyron2/security"
 )
 
 // jniCaveat is a Go wrapper for a Java caveat.
@@ -21,5 +22,5 @@ func (jniCaveat) __VDLReflect(struct {
 }
 
 func init() {
-	__vdl.Register(jniCaveat{})
+	vdl.Register(jniCaveat{})
 }
