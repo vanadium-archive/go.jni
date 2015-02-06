@@ -178,13 +178,28 @@ func NewObject(env interface{}, class interface{}, argSigns []Sign, args ...inte
 	return ret, err
 }
 
-// setupMethodCall performs the shared preparation operations between various Java method invocation functions.
+// setupMethodCall performs the shared preparation operations between various
+// Java method invocation functions.
 func setupMethodCall(env interface{}, object interface{}, name string, argSigns []Sign, retSign Sign, args []interface{}) (jenv *C.JNIEnv, jobject C.jobject, jmid C.jmethodID, jvalArray *C.jvalue, freeFunc func(), err error) {
 	jenv = getEnv(env)
 	jobject = getObject(object)
 	jclass := C.GetObjectClass(jenv, jobject)
 
 	jmid, err = JMethodID(jenv, jclass, name, FuncSign(argSigns, retSign))
+	if err != nil {
+		return
+	}
+	jvalArray, freeFunc, err = jArgArray(jenv, args, argSigns)
+	return
+}
+
+// setupStaticMethodCall performs the shared preparation operations between
+// various Java static method invocation functions.
+func setupStaticMethodCall(env interface{}, class interface{}, name string, argSigns []Sign, retSign Sign, args []interface{}) (jenv *C.JNIEnv, jclass C.jclass, jmid C.jmethodID, jvalArray *C.jvalue, freeFunc func(), err error) {
+	jenv = getEnv(env)
+	jclass = getClass(class)
+
+	jmid, err = JStaticMethodID(jenv, jclass, name, FuncSign(argSigns, retSign))
 	if err != nil {
 		return
 	}
@@ -326,14 +341,14 @@ func CallLongMethod(env interface{}, object interface{}, name string, argSigns [
 	return ret, JExceptionMsg(env)
 }
 
-// CallVoidMethod calls a Java method that "returns" void.
+// CallVoidMethod calls a Java method that doesn't return anything.
 func CallVoidMethod(env interface{}, object interface{}, name string, argSigns []Sign, args ...interface{}) error {
 	jenv, jobject, jmid, valArray, freeFunc, err := setupMethodCall(env, object, name, argSigns, VoidSign, args)
 	if err != nil {
 		return err
 	}
+	defer freeFunc()
 	C.CallVoidMethodA(jenv, jobject, jmid, valArray)
-	freeFunc()
 	return JExceptionMsg(env)
 }
 
@@ -341,16 +356,9 @@ func CallVoidMethod(env interface{}, object interface{}, name string, argSigns [
 func CallStaticObjectMethod(env interface{}, class interface{}, name string, argSigns []Sign, retSign Sign, args ...interface{}) (C.jobject, error) {
 	switch retSign {
 	case ByteSign, CharSign, ShortSign, LongSign, FloatSign, DoubleSign, BoolSign, IntSign, VoidSign:
-		panic(fmt.Sprintf("Illegal call to CallObjectMethod on method with return sign %s", retSign))
+		panic(fmt.Sprintf("Illegal call to CallStaticObjectMethod on method with return sign %s", retSign))
 	}
-	jenv := getEnv(env)
-	jclass := getClass(class)
-
-	jmid, err := JStaticMethodID(jenv, jclass, name, FuncSign(argSigns, retSign))
-	if err != nil {
-		return nil, err
-	}
-	jvalArray, freeFunc, err := jArgArray(jenv, args, argSigns)
+	jenv, jclass, jmid, jvalArray, freeFunc, err := setupStaticMethodCall(env, class, name, argSigns, retSign, args)
 	if err != nil {
 		return nil, err
 	}
@@ -376,20 +384,24 @@ func CallStaticByteArrayMethod(env interface{}, class interface{}, name string, 
 
 // CallStaticIntMethod calls a static Java method that returns an int.
 func CallStaticIntMethod(env interface{}, class interface{}, name string, argSigns []Sign, args ...interface{}) (int, error) {
-	jenv := getEnv(env)
-	jclass := getClass(class)
-
-	jmid, err := JStaticMethodID(jenv, jclass, name, FuncSign(argSigns, IntSign))
+	jenv, jclass, jmid, jvalArray, freeFunc, err := setupStaticMethodCall(env, class, name, argSigns, IntSign, args)
 	if err != nil {
 		return 0, err
-	}
-	jvalArray, freeFunc, err := jArgArray(jenv, args, argSigns)
-	if err != nil {
-		return -1, err
 	}
 	defer freeFunc()
 	ret := int(C.CallStaticIntMethodA(jenv, jclass, jmid, jvalArray))
 	return ret, JExceptionMsg(env)
+}
+
+// CallStaticVoidMethod calls a static Java method doesn't return anything.
+func CallStaticVoidMethod(env interface{}, class interface{}, name string, argSigns []Sign, args ...interface{}) error {
+	jenv, jclass, jmid, jvalArray, freeFunc, err := setupStaticMethodCall(env, class, name, argSigns, VoidSign, args)
+	if err != nil {
+		return err
+	}
+	defer freeFunc()
+	C.CallStaticVoidMethodA(jenv, jclass, jmid, jvalArray)
+	return JExceptionMsg(env)
 }
 
 func handleError(name string, err error) {

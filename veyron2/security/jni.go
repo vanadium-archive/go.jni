@@ -24,7 +24,6 @@ var (
 	blessingPatternSign = jutil.ClassSign("io.v.core.veyron2.security.BlessingPattern")
 	signerSign          = jutil.ClassSign("io.v.core.veyron2.security.Signer")
 	caveatSign          = jutil.ClassSign("io.v.core.veyron2.security.Caveat")
-	caveatValidatorSign = jutil.ClassSign("io.v.core.veyron2.security.CaveatValidator")
 	contextSign         = jutil.ClassSign("io.v.core.veyron2.security.VContext")
 	signatureSign       = jutil.ClassSign("io.v.core.veyron2.security.Signature")
 	publicKeySign       = jutil.ClassSign("java.security.interfaces.ECPublicKey")
@@ -45,8 +44,8 @@ var (
 	jContextImplClass C.jclass
 	// Global reference for io.v.core.veyron2.security.BlessingPatternWrapper class.
 	jBlessingPatternWrapperClass C.jclass
-	// Global reference for io.v.core.veyron2.security.CaveatCoder class.
-	jCaveatCoderClass C.jclass
+	// Global reference for io.v.core.veyron2.security.CaveatRegistry class.
+	jCaveatRegistryClass C.jclass
 	// Global reference for io.v.core.veyron2.security.Util class.
 	jUtilClass C.jclass
 	// Global reference for java.lang.Object class.
@@ -68,7 +67,7 @@ func Init(jEnv interface{}) error {
 	if status := C.GetJavaVM(env, &javaVM); status != 0 {
 		return fmt.Errorf("couldn't get Java VM from the (Java) environment")
 	}
-	security.RegisterCaveatDecoder(caveatDecoder)
+	security.SetCaveatValidator(caveatValidator)
 
 	// Cache global references to all Java classes used by the package.  This is
 	// necessary because JNI gets access to the class loader only in the system
@@ -81,7 +80,7 @@ func Init(jEnv interface{}) error {
 	jBlessingRootsImplClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron2/security/BlessingRootsImpl"))
 	jContextImplClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron2/security/VContextImpl"))
 	jBlessingPatternWrapperClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron2/security/BlessingPatternWrapper"))
-	jCaveatCoderClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron2/security/CaveatCoder"))
+	jCaveatRegistryClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron2/security/CaveatRegistry"))
 	jUtilClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron2/security/Util"))
 	jObjectClass = C.jclass(jutil.JFindClassOrPrint(env, "java/lang/Object"))
 	return nil
@@ -711,10 +710,10 @@ func Java_io_v_core_veyron2_security_BlessingPatternWrapper_nativeIsValid(env *C
 	return C.JNI_FALSE
 }
 
-//export Java_io_v_core_veyron2_security_BlessingPatternWrapper_nativeMakeGlob
-func Java_io_v_core_veyron2_security_BlessingPatternWrapper_nativeMakeGlob(env *C.JNIEnv, jBlessingPatternWrapper C.jobject, goPtr C.jlong) C.jobject {
-	glob := (*(*security.BlessingPattern)(jutil.Ptr(goPtr))).MakeGlob()
-	jWrapper, err := JavaBlessingPatternWrapper(env, glob)
+//export Java_io_v_core_veyron2_security_BlessingPatternWrapper_nativeMakeNonExtendable
+func Java_io_v_core_veyron2_security_BlessingPatternWrapper_nativeMakeNonExtendable(env *C.JNIEnv, jBlessingPatternWrapper C.jobject, goPtr C.jlong) C.jobject {
+	p := (*(*security.BlessingPattern)(jutil.Ptr(goPtr))).MakeNonExtendable()
+	jWrapper, err := JavaBlessingPatternWrapper(env, p)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil

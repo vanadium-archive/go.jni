@@ -6,16 +6,31 @@ package security
 import (
 	// VDL system imports
 	"v.io/core/veyron2/vdl"
+
+	// VDL user imports
+	"v.io/core/veyron2/security"
+	"v.io/core/veyron2/uniqueid"
 )
 
 // TestCaveat is a caveat that's used in various security tests.
-type TestCaveat string
-
-func (TestCaveat) __VDLReflect(struct {
-	Name string "v.io/jni/test/security.TestCaveat"
-}) {
-}
-
-func init() {
-	vdl.Register(TestCaveat(""))
+var TestCaveat = security.CaveatDescriptor{
+	Id: uniqueid.Id{
+		184,
+		233,
+		38,
+		142,
+		141,
+		25,
+		29,
+		70,
+		27,
+		237,
+		78,
+		199,
+		224,
+		157,
+		128,
+		0,
+	},
+	ParamType: vdl.TypeOf(""),
 }

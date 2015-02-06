@@ -126,7 +126,7 @@ func (p *principal) Sign(message []byte) (security.Signature, error) {
 	return GoSignature(env, jSig)
 }
 
-func (p *principal) MintDischarge(tp security.ThirdPartyCaveat, caveat security.Caveat, additionalCaveats ...security.Caveat) (security.Discharge, error) {
+func (p *principal) MintDischarge(forThirdPartyCaveat, caveatOnDischarge security.Caveat, additionalCaveatsOnDischarge ...security.Caveat) (security.Discharge, error) {
 	return nil, fmt.Errorf("MintDischarge not yet implemented")
 }
 
