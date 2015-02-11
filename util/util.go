@@ -13,7 +13,7 @@ import (
 	"unicode/utf8"
 	"unsafe"
 
-	"v.io/core/veyron2/verror"
+	verror "v.io/core/veyron2/verror2"
 )
 
 // #cgo LDFLAGS: -ljniwrapper
@@ -185,8 +185,8 @@ func JThrowV(jEnv interface{}, err error) {
 // and then cast into their package local types.
 func JVException(jEnv interface{}, err error) (C.jobject, error) {
 	env := getEnv(jEnv)
-	verr := verror.Convert(err)
-	return NewObject(env, jVeyronExceptionClass, []Sign{StringSign, StringSign}, verr.Error(), string(verr.ErrorID()))
+	verr := verror.Convert(verror.Unknown.ID, nil, err)
+	return NewObject(env, jVeyronExceptionClass, []Sign{StringSign, StringSign}, verr.Error(), string(verror.ErrorID(verr)))
 }
 
 // JExceptionMsg returns the exception message if an exception occurred, or
