@@ -9,7 +9,7 @@ import (
 	"v.io/core/veyron2/ipc"
 	"v.io/core/veyron2/vdl"
 	"v.io/core/veyron2/vdl/vdlroot/src/signature"
-	verror "v.io/core/veyron2/verror2"
+	"v.io/core/veyron2/verror"
 	"v.io/core/veyron2/vom"
 	jutil "v.io/jni/util"
 	jsecurity "v.io/jni/veyron2/security"
@@ -157,7 +157,7 @@ func decodeResults(ctx context.T, env *C.JNIEnv, jReply C.jobject) ([]interface{
 	// Check for app error.
 	var appErr error
 	if hasAppErr {
-		appErr = verror.Make(verror.IDAction{verror.ID(errorID), verror.NoRetry}, ctx, errorMsg)
+		appErr = verror.New(verror.IDAction{verror.ID(errorID), verror.NoRetry}, ctx, errorMsg)
 	}
 	// VOM-decode results into *vdl.Value instances and append the error (if any).
 	ret := make([]interface{}, len(results)+1)
