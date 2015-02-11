@@ -8,12 +8,49 @@ import (
 	"io"
 	"v.io/core/veyron2"
 	"v.io/core/veyron2/context"
+	"v.io/core/veyron2/i18n"
 	"v.io/core/veyron2/ipc"
 	"v.io/core/veyron2/vdl"
+	"v.io/core/veyron2/verror"
 
 	// VDL user imports
 	"v.io/core/veyron2/services/security/access"
 )
+
+type ComplexErrorParam struct {
+	Str  string
+	Num  int32
+	List []uint32
+}
+
+func (ComplexErrorParam) __VDLReflect(struct {
+	Name string "v.io/jni/test/fortune.ComplexErrorParam"
+}) {
+}
+
+func init() {
+	vdl.Register((*ComplexErrorParam)(nil))
+}
+
+var (
+	ErrErrNoFortunes = verror.Register("v.io/jni/test/fortune.ErrNoFortunes", verror.NoRetry, "{1:}{2:} no fortunes added")
+	ErrErrComplex    = verror.Register("v.io/jni/test/fortune.ErrComplex", verror.NoRetry, "{1:}{2:} this is a complex error with params {3} {4} {5}")
+)
+
+func init() {
+	i18n.Cat().SetWithBase(i18n.LangID("en"), i18n.MsgID(ErrErrNoFortunes.ID), "{1:}{2:} no fortunes added")
+	i18n.Cat().SetWithBase(i18n.LangID("en"), i18n.MsgID(ErrErrComplex.ID), "{1:}{2:} this is a complex error with params {3} {4} {5}")
+}
+
+// NewErrErrNoFortunes returns an error with the ErrErrNoFortunes ID.
+func NewErrErrNoFortunes(ctx *context.T) error {
+	return verror.New(ErrErrNoFortunes, ctx)
+}
+
+// NewErrErrComplex returns an error with the ErrErrComplex ID.
+func NewErrErrComplex(ctx *context.T, first ComplexErrorParam, second string, third int32) error {
+	return verror.New(ErrErrComplex, ctx, first, second, third)
+}
 
 // FortuneClientMethods is the client interface
 // containing Fortune methods.
@@ -26,6 +63,8 @@ type FortuneClientMethods interface {
 	Get(*context.T, ...ipc.CallOpt) (Fortune string, err error)
 	// StreamingGet returns a stream that can be used to obtain fortunes.
 	StreamingGet(*context.T, ...ipc.CallOpt) (FortuneStreamingGetCall, error)
+	// GetComplexError returns (always!) ErrComplex.
+	GetComplexError(*context.T, ...ipc.CallOpt) error
 }
 
 // FortuneClientStub adds universal methods to FortuneClientMethods.
@@ -85,6 +124,17 @@ func (c implFortuneClientStub) StreamingGet(ctx *context.T, opts ...ipc.CallOpt)
 		return
 	}
 	ocall = &implFortuneStreamingGetCall{Call: call}
+	return
+}
+
+func (c implFortuneClientStub) GetComplexError(ctx *context.T, opts ...ipc.CallOpt) (err error) {
+	var call ipc.Call
+	if call, err = c.c(ctx).StartCall(ctx, c.name, "GetComplexError", nil, opts...); err != nil {
+		return
+	}
+	if ierr := call.Finish(&err); ierr != nil {
+		err = ierr
+	}
 	return
 }
 
@@ -203,6 +253,8 @@ type FortuneServerMethods interface {
 	Get(ipc.ServerContext) (Fortune string, err error)
 	// StreamingGet returns a stream that can be used to obtain fortunes.
 	StreamingGet(FortuneStreamingGetContext) (total int32, err error)
+	// GetComplexError returns (always!) ErrComplex.
+	GetComplexError(ipc.ServerContext) error
 }
 
 // FortuneServerStubMethods is the server interface containing
@@ -216,6 +268,8 @@ type FortuneServerStubMethods interface {
 	Get(ipc.ServerContext) (Fortune string, err error)
 	// StreamingGet returns a stream that can be used to obtain fortunes.
 	StreamingGet(*FortuneStreamingGetContextStub) (total int32, err error)
+	// GetComplexError returns (always!) ErrComplex.
+	GetComplexError(ipc.ServerContext) error
 }
 
 // FortuneServerStub adds universal methods to FortuneServerStubMethods.
@@ -257,6 +311,10 @@ func (s implFortuneServerStub) Get(ctx ipc.ServerContext) (string, error) {
 
 func (s implFortuneServerStub) StreamingGet(ctx *FortuneStreamingGetContextStub) (int32, error) {
 	return s.impl.StreamingGet(ctx)
+}
+
+func (s implFortuneServerStub) GetComplexError(ctx ipc.ServerContext) error {
+	return s.impl.GetComplexError(ctx)
 }
 
 func (s implFortuneServerStub) Globber() *ipc.GlobState {
@@ -302,6 +360,14 @@ var descFortune = ipc.InterfaceDesc{
 			OutArgs: []ipc.ArgDesc{
 				{"total", ``}, // int32
 				{"err", ``},   // error
+			},
+			Tags: []vdl.AnyRep{access.Tag("Read")},
+		},
+		{
+			Name: "GetComplexError",
+			Doc:  "// GetComplexError returns (always!) ErrComplex.",
+			OutArgs: []ipc.ArgDesc{
+				{"", ``}, // error
 			},
 			Tags: []vdl.AnyRep{access.Tag("Read")},
 		},
