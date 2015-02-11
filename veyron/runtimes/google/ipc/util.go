@@ -189,7 +189,7 @@ func JavaServerState(jEnv interface{}, state ipc.ServerState) (C.jobject, error)
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func JavaMountStatus(jEnv interface{}, status ipc.MountStatus) (C.jobject, error) {
-	jStatus, err := jutil.NewObject(jEnv, jMountStatusClass, []jutil.Sign{jutil.StringSign, jutil.StringSign, jutil.DateTimeSign, jutil.VeyronExceptionSign, jutil.DurationSign, jutil.DateTimeSign, jutil.VeyronExceptionSign}, status.Name, status.Server, status.LastMount, status.LastMountErr, status.TTL, status.LastUnmount, status.LastUnmountErr)
+	jStatus, err := jutil.NewObject(jEnv, jMountStatusClass, []jutil.Sign{jutil.StringSign, jutil.StringSign, jutil.DateTimeSign, jutil.VExceptionSign, jutil.DurationSign, jutil.DateTimeSign, jutil.VExceptionSign}, status.Name, status.Server, status.LastMount, status.LastMountErr, status.TTL, status.LastUnmount, status.LastUnmountErr)
 	if err != nil {
 		return nil, err
 	}
@@ -202,7 +202,7 @@ func JavaMountStatus(jEnv interface{}, status ipc.MountStatus) (C.jobject, error
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func JavaProxyStatus(jEnv interface{}, status ipc.ProxyStatus) (C.jobject, error) {
-	jStatus, err := jutil.NewObject(jEnv, jProxyStatusClass, []jutil.Sign{jutil.StringSign, jutil.StringSign, jutil.VeyronExceptionSign}, status.Proxy, status.Endpoint.String(), status.Error)
+	jStatus, err := jutil.NewObject(jEnv, jProxyStatusClass, []jutil.Sign{jutil.StringSign, jutil.StringSign, jutil.VExceptionSign}, status.Proxy, status.Endpoint.String(), status.Error)
 	if err != nil {
 		return nil, err
 	}

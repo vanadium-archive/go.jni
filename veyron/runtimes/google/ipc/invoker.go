@@ -5,11 +5,9 @@ package ipc
 import (
 	"fmt"
 	"runtime"
-	"v.io/core/veyron2/context"
 	"v.io/core/veyron2/ipc"
 	"v.io/core/veyron2/vdl"
 	"v.io/core/veyron2/vdl/vdlroot/src/signature"
-	"v.io/core/veyron2/verror"
 	"v.io/core/veyron2/vom"
 	jutil "v.io/jni/util"
 	jsecurity "v.io/jni/veyron2/security"
@@ -102,7 +100,7 @@ func (i *invoker) Invoke(method string, call ipc.ServerCall, argptrs []interface
 		return nil, fmt.Errorf("error invoking Java method %q: %v", method, err)
 	}
 	// Decode and return results.
-	return decodeResults(call.Context(), env, C.jobject(jReply))
+	return decodeResults(env, C.jobject(jReply))
 }
 
 func (i *invoker) Globber() *ipc.GlobState {
@@ -136,28 +134,22 @@ func encodeArgs(env *C.JNIEnv, argptrs []interface{}) (C.jobjectArray, error) {
 
 // decodeResults VOM-decodes replies stored in the Java reply object into
 // an array *vdl.Value.
-func decodeResults(ctx context.T, env *C.JNIEnv, jReply C.jobject) ([]interface{}, error) {
+func decodeResults(env *C.JNIEnv, jReply C.jobject) ([]interface{}, error) {
 	// Unpack the replies.
 	results, err := jutil.JByteArrayArrayField(env, jReply, "results")
 	if err != nil {
 		return nil, err
 	}
-	hasAppErr, err := jutil.JBoolField(env, jReply, "hasApplicationError")
-	if err != nil {
-		return nil, err
-	}
-	errorID, err := jutil.JStringField(env, jReply, "errorID")
-	if err != nil {
-		return nil, err
-	}
-	errorMsg, err := jutil.JStringField(env, jReply, "errorMsg")
+	vomAppErr, err := jutil.JByteArrayField(env, jReply, "vomAppError")
 	if err != nil {
 		return nil, err
 	}
 	// Check for app error.
 	var appErr error
-	if hasAppErr {
-		appErr = verror.New(verror.IDAction{verror.ID(errorID), verror.NoRetry}, ctx, errorMsg)
+	if vomAppErr != nil {
+		if err := vom.Decode(vomAppErr, &appErr); err != nil {
+			return nil, err
+		}
 	}
 	// VOM-decode results into *vdl.Value instances and append the error (if any).
 	ret := make([]interface{}, len(results)+1)

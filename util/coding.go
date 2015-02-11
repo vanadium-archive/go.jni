@@ -1,3 +1,5 @@
+// +build android
+
 package util
 
 import (
@@ -6,6 +8,10 @@ import (
 	"v.io/core/veyron2/vdl"
 	"v.io/core/veyron2/vom"
 )
+
+// #cgo LDFLAGS: -ljniwrapper
+// #include "jni_wrapper.h"
+import "C"
 
 // VomDecodeToValue VOM-decodes the provided value into *vdl.Value using a new
 // instance of a VOM decoder.
@@ -21,10 +27,32 @@ func VomDecodeToValue(data []byte) (*vdl.Value, error) {
 	return value, nil
 }
 
+// VomCopy copies the provided Go value by encoding/decoding it from VOM.
 func VomCopy(src interface{}, dstptr interface{}) error {
 	data, err := vom.Encode(src)
 	if err != nil {
 		return err
 	}
 	return vom.Decode(data, dstptr)
+}
+
+// JVomDecode VOM-decodes the provided value into a Java object.
+func JVomDecode(jEnv interface{}, data []byte, jClass interface{}) (C.jobject, error) {
+	class := getClass(jClass)
+	return CallStaticObjectMethod(jEnv, jVomUtilClass, "decode", []Sign{ByteArraySign, TypeSign}, ObjectSign, data, class)
+}
+
+// JVomDecodeError VOM-decodes the provided value into a Java VException object.
+func JVomDecodeError(jEnv interface{}, data []byte) (C.jobject, error) {
+	return CallStaticObjectMethod(jEnv, jVomUtilClass, "decodeError", []Sign{ByteArraySign}, ObjectSign, data)
+}
+
+// JVomCopy copies the provided Go value into a corresponding Java object by
+// encoding/decoding it from VOM.
+func JVomCopy(jEnv interface{}, src interface{}, jClass interface{}) (C.jobject, error) {
+	data, err := vom.Encode(src)
+	if err != nil {
+		return nil, err
+	}
+	return JVomDecode(jEnv, data, jClass)
 }

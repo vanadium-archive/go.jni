@@ -33,6 +33,8 @@ var (
 	StringSign = ClassSign("java.lang.String")
 	// ObjectSign denotes a signature of a Java Object type.
 	ObjectSign = ClassSign("java.lang.Object")
+	// TypeSign denotes a signature of a Java Type type.
+	TypeSign = ClassSign("java.lang.reflect.Type")
 	// SetSign denotes a signature of a Java Set type.
 	SetSign = ClassSign("java.util.Set")
 	// MapSign denotes a signature of a Java Map type.
@@ -45,8 +47,8 @@ var (
 	DateTimeSign = ClassSign("org.joda.time.DateTime")
 	// DurationSign denotes a signature of a Java Duration type.
 	DurationSign = ClassSign("org.joda.time.Duration")
-	// VeyronExceptionSign denotes a signature of a Java VeyronException type.
-	VeyronExceptionSign = ClassSign("io.v.core.veyron2.VeyronException")
+	// VExceptionSign denotes a signature of a Java VException type.
+	VExceptionSign = ClassSign("io.v.core.veyron2.verror2.VException")
 )
 
 // ArraySign returns the array signature, given the underlying array type.

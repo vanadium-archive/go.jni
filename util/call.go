@@ -52,7 +52,7 @@ func jArg(env *C.JNIEnv, v interface{}, sign Sign) (unsafe.Pointer, bool) {
 		return unsafe.Pointer(&jv), true
 	}
 	if rv.Type().Implements(reflect.TypeOf((*error)(nil)).Elem()) {
-		if sign != VeyronExceptionSign {
+		if sign != VExceptionSign {
 			return unsafe.Pointer(nil), false
 		}
 		jv, err := JVException(env, rv.Interface().(error))

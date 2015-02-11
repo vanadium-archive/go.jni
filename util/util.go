@@ -13,7 +13,7 @@ import (
 	"unicode/utf8"
 	"unsafe"
 
-	"v.io/core/veyron2/verror"
+	"v.io/core/veyron2/vom"
 )
 
 // #cgo LDFLAGS: -ljniwrapper
@@ -25,8 +25,14 @@ import (
 import "C"
 
 var (
-	// Global reference for io.v.core.veyron2.VeyronException class.
-	jVeyronExceptionClass C.jclass
+	// Global reference for io.v.core.veyron2.verror2.VException class.
+	jVExceptionClass C.jclass
+	// Global reference for io.v.core.veyron2.util.VomUtil class.
+	jVomUtilClass C.jclass
+	// Global reference for io.v.core.veyron2.verror2.VException$ActionCode class.
+	jActionCodeClass C.jclass
+	// Global reference for io.v.core.veyron2.verror2.VException$IDAction class.
+	jIDActionClass C.jclass
 	// Global reference for org.joda.time.DateTime class.
 	jDateTimeClass C.jclass
 	// Global reference for org.joda.time.Duration class.
@@ -53,7 +59,10 @@ var (
 // and then cast into their package local types.
 func Init(jEnv interface{}) {
 	env := getEnv(jEnv)
-	jVeyronExceptionClass = JFindClassOrPrint(env, "io/v/core/veyron2/VeyronException")
+	jVExceptionClass = JFindClassOrPrint(env, "io/v/core/veyron2/verror2/VException")
+	jVomUtilClass = JFindClassOrPrint(env, "io/v/core/veyron2/util/VomUtil")
+	jActionCodeClass = JFindClassOrPrint(env, "io/v/core/veyron2/verror2/VException$ActionCode")
+	jIDActionClass = JFindClassOrPrint(env, "io/v/core/veyron2/verror2/VException$IDAction")
 	jDateTimeClass = JFindClassOrPrint(env, "org/joda/time/DateTime")
 	jDurationClass = JFindClassOrPrint(env, "org/joda/time/Duration")
 	jThrowableClass = JFindClassOrPrint(env, "java/lang/Throwable")
@@ -165,28 +174,30 @@ func JThrow(jEnv, jClass interface{}, msg string) {
 	C.ThrowNew(env, class, s)
 }
 
-// JThrowV throws a new Java VeyronException corresponding to the given error.
+// JThrowV throws a new Java VException corresponding to the given error.
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func JThrowV(jEnv interface{}, err error) {
 	jObj, errNew := JVException(jEnv, err)
 	if errNew != nil {
-		log.Printf("Couldn't throw exception %v: %v", err, errNew)
+		log.Printf("Couldn't throw exception %q: %v", err, errNew)
 		return
 	}
 	env := getEnv(jEnv)
 	C.Throw(env, C.jthrowable(jObj))
 }
 
-// JVException returns the Java VeyronException given the Go error.
+// JVException returns the Java VException given the Go error.
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func JVException(jEnv interface{}, err error) (C.jobject, error) {
-	env := getEnv(jEnv)
-	verr := verror.Convert(verror.Unknown.ID, nil, err)
-	return NewObject(env, jVeyronExceptionClass, []Sign{StringSign, StringSign}, verr.Error(), string(verror.ErrorID(verr)))
+	data, err := vom.Encode(err)
+	if err != nil {
+		return nil, err
+	}
+	return JVomDecodeError(jEnv, data)
 }
 
 // JExceptionMsg returns the exception message if an exception occurred, or
