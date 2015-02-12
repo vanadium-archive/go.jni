@@ -25,13 +25,13 @@ import (
 import "C"
 
 var (
-	// Global reference for io.v.core.veyron2.verror2.VException class.
+	// Global reference for io.v.core.veyron2.verror.VException class.
 	jVExceptionClass C.jclass
 	// Global reference for io.v.core.veyron2.util.VomUtil class.
 	jVomUtilClass C.jclass
-	// Global reference for io.v.core.veyron2.verror2.VException$ActionCode class.
+	// Global reference for io.v.core.veyron2.verror.VException$ActionCode class.
 	jActionCodeClass C.jclass
-	// Global reference for io.v.core.veyron2.verror2.VException$IDAction class.
+	// Global reference for io.v.core.veyron2.verror.VException$IDAction class.
 	jIDActionClass C.jclass
 	// Global reference for org.joda.time.DateTime class.
 	jDateTimeClass C.jclass
@@ -59,10 +59,10 @@ var (
 // and then cast into their package local types.
 func Init(jEnv interface{}) {
 	env := getEnv(jEnv)
-	jVExceptionClass = JFindClassOrPrint(env, "io/v/core/veyron2/verror2/VException")
+	jVExceptionClass = JFindClassOrPrint(env, "io/v/core/veyron2/verror/VException")
 	jVomUtilClass = JFindClassOrPrint(env, "io/v/core/veyron2/util/VomUtil")
-	jActionCodeClass = JFindClassOrPrint(env, "io/v/core/veyron2/verror2/VException$ActionCode")
-	jIDActionClass = JFindClassOrPrint(env, "io/v/core/veyron2/verror2/VException$IDAction")
+	jActionCodeClass = JFindClassOrPrint(env, "io/v/core/veyron2/verror/VException$ActionCode")
+	jIDActionClass = JFindClassOrPrint(env, "io/v/core/veyron2/verror/VException$IDAction")
 	jDateTimeClass = JFindClassOrPrint(env, "org/joda/time/DateTime")
 	jDurationClass = JFindClassOrPrint(env, "org/joda/time/Duration")
 	jThrowableClass = JFindClassOrPrint(env, "java/lang/Throwable")

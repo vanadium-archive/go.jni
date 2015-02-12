@@ -3,6 +3,7 @@
 package naming
 
 import (
+	"log"
 	"time"
 	"unsafe"
 
@@ -49,15 +50,22 @@ func Java_io_v_core_veyron_runtimes_google_naming_Namespace_nativeGlob(env *C.JN
 	retChan := make(chan interface{}, 100)
 	go func() {
 		for entry := range entryChan {
-			var vdlEntry naming.VDLMountEntry
-			vdlEntry.Name = entry.Name
-			for _, server := range entry.Servers {
-				var vdlServer naming.VDLMountedServer
-				vdlServer.Server = server.Server
-				vdlServer.TTL = uint32(server.Expires.Sub(time.Now()).Seconds())
-				vdlEntry.Servers = append(vdlEntry.Servers, vdlServer)
+			switch v := entry.(type) {
+			case *naming.MountEntry:
+				var vdlEntry naming.VDLMountEntry
+				vdlEntry.Name = v.Name
+				for _, server := range v.Servers {
+					var vdlServer naming.VDLMountedServer
+					vdlServer.Server = server.Server
+					vdlServer.TTL = uint32(server.Expires.Sub(time.Now()).Seconds())
+					vdlEntry.Servers = append(vdlEntry.Servers, vdlServer)
+				}
+				retChan <- vdlEntry
+			case *naming.GlobError:
+				// Silently drop.
+			default:
+				log.Printf("Encountered value %v of unexpected type %T", entry, entry)
 			}
-			retChan <- vdlEntry
 		}
 		close(retChan)
 	}()

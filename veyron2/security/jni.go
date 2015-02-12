@@ -494,7 +494,7 @@ func Java_io_v_core_veyron2_security_BlessingsImpl_nativeForContext(env *C.JNIEn
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	blessingStrs := (*(*security.Blessings)(jutil.Ptr(goPtr))).ForContext(context)
+	blessingStrs, _ := (*(*security.Blessings)(jutil.Ptr(goPtr))).ForContext(context)
 	return C.jobjectArray(jutil.JStringArray(env, blessingStrs))
 }
 
