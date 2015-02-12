@@ -3,12 +3,12 @@
 package naming
 
 import (
+	"fmt"
 	"log"
-	"time"
-	"unsafe"
 
 	"v.io/core/veyron2/naming"
 	jutil "v.io/jni/util"
+	jchannel "v.io/jni/veyron/runtimes/google/channel"
 	jcontext "v.io/jni/veyron2/context"
 )
 
@@ -27,50 +27,60 @@ var (
 // invoked from a different package, Java environment is passed in an empty
 // interface and then cast into the package-local environment type.
 func Init(jEnv interface{}) {
-	env := (*C.JNIEnv)(unsafe.Pointer(jutil.PtrValue(jEnv)))
-	jNamespaceImplClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron/runtimes/google/naming/Namespace"))
+	jNamespaceImplClass = C.jclass(jutil.JFindClassOrPrint(jEnv, "io/v/core/veyron/runtimes/google/naming/Namespace"))
 }
 
 //export Java_io_v_core_veyron_runtimes_google_naming_Namespace_nativeGlob
-func Java_io_v_core_veyron_runtimes_google_naming_Namespace_nativeGlob(env *C.JNIEnv, jNamespace C.jobject, goNamespacePtr C.jlong, jContext C.jobject, pattern C.jstring) C.jlong {
+func Java_io_v_core_veyron_runtimes_google_naming_Namespace_nativeGlob(env *C.JNIEnv, jNamespace C.jobject, goNamespacePtr C.jlong, jContext C.jobject, pattern C.jstring) C.jobject {
 	n := *(*naming.Namespace)(jutil.Ptr(goNamespacePtr))
 	context, err := jcontext.GoContext(env, jContext)
 	if err != nil {
 		jutil.JThrowV(env, err)
-		return C.jlong(0)
+		return nil
 	}
 	entryChan, err := n.Glob(context, jutil.GoString(env, pattern))
 	if err != nil {
 		jutil.JThrowV(env, err)
-		return C.jlong(0)
+		return nil
 	}
-	// We want to return chan interface{}, not chan naming.MountEntry, so we
-	// convert here.  We also convert naming.MountEntry into naming.VDLMountEntry
-	// which can be VOM-encoded.
-	retChan := make(chan interface{}, 100)
+
+	// We cannot cache Java environments as they are only valid in the current
+	// thread.  We can, however, cache the Java VM and obtain an environment
+	// from it in whatever thread happens to be running at the time.
+	var jVM *C.JavaVM
+	if status := C.GetJavaVM(env, &jVM); status != 0 {
+		jutil.JThrowV(env, fmt.Errorf("couldn't get Java VM from the (Java) environment"))
+		return nil
+	}
+
+	retChan := make(chan C.jobject, 100)
 	go func() {
 		for entry := range entryChan {
 			switch v := entry.(type) {
 			case *naming.MountEntry:
-				var vdlEntry naming.VDLMountEntry
-				vdlEntry.Name = v.Name
-				for _, server := range v.Servers {
-					var vdlServer naming.VDLMountedServer
-					vdlServer.Server = server.Server
-					vdlServer.TTL = uint32(server.Expires.Sub(time.Now()).Seconds())
-					vdlEntry.Servers = append(vdlEntry.Servers, vdlServer)
+				jEnv, freeFunc := jutil.GetEnv(jVM)
+				defer freeFunc()
+				jMountEntry, err := JavaMountEntry(jEnv, v)
+				if err != nil {
+					log.Println("Couldn't convert Go MountEntry %v to Java", v)
+					continue
 				}
-				retChan <- vdlEntry
+				retChan <- jMountEntry
 			case *naming.GlobError:
 				// Silently drop.
+				// TODO(spetrovic): convert to Java counter-part.
 			default:
 				log.Printf("Encountered value %v of unexpected type %T", entry, entry)
 			}
 		}
 		close(retChan)
 	}()
-	jutil.GoRef(&retChan) // Un-refed when the InputChannel is finalized.
-	return C.jlong(jutil.PtrValue(&retChan))
+	jInputChannel, err := jchannel.JavaInputChannel(env, retChan, entryChan)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	return C.jobject(jInputChannel)
 }
 
 //export Java_io_v_core_veyron_runtimes_google_naming_Namespace_nativeFinalize

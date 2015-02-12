@@ -3,7 +3,9 @@
 package ipc
 
 import (
+	"fmt"
 	"io"
+	"log"
 	"unsafe"
 
 	"v.io/core/veyron2/ipc"
@@ -11,6 +13,7 @@ import (
 	"v.io/core/veyron2/vom"
 
 	jutil "v.io/jni/util"
+	jchannel "v.io/jni/veyron/runtimes/google/channel"
 	jcontext "v.io/jni/veyron2/context"
 	jsecurity "v.io/jni/veyron2/security"
 )
@@ -21,9 +24,10 @@ import (
 import "C"
 
 var (
-	optionsSign    = jutil.ClassSign("io.v.core.veyron2.Options")
-	streamSign     = jutil.ClassSign("io.v.core.veyron.runtimes.google.ipc.Stream")
-	listenAddrSign = jutil.ClassSign("io.v.core.veyron2.ipc.ListenSpec$Address")
+	optionsSign     = jutil.ClassSign("io.v.core.veyron2.Options")
+	streamSign      = jutil.ClassSign("io.v.core.veyron.runtimes.google.ipc.Stream")
+	listenAddrSign  = jutil.ClassSign("io.v.core.veyron2.ipc.ListenSpec$Address")
+	serverStateSign = jutil.ClassSign("io.v.core.veyron2.ipc.ServerState")
 
 	// Global reference for io.v.core.veyron.runtimes.google.ipc.Server class.
 	jServerClass C.jclass
@@ -49,6 +53,8 @@ var (
 	jListenSpecClass C.jclass
 	// Global reference for io.v.core.veyron2.ipc.ListenSpec$Address class.
 	jListenSpecAddressClass C.jclass
+	// Global reference for io.v.core.veyron2.ipc.NetworkChange class.
+	jNetworkChangeClass C.jclass
 	// Global reference for io.v.core.veyron2.OptionDefs class.
 	jOptionDefsClass C.jclass
 	// Global reference for java.io.EOFException class.
@@ -63,25 +69,25 @@ var (
 // invoked from a different package, Java environment is passed in an empty
 // interface and then cast into the package-local environment type.
 func Init(jEnv interface{}) {
-	env := (*C.JNIEnv)(unsafe.Pointer(jutil.PtrValue(jEnv)))
 	// Cache global references to all Java classes used by the package.  This is
 	// necessary because JNI gets access to the class loader only in the system
 	// thread, so we aren't able to invoke FindClass in other threads.
-	jServerClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron/runtimes/google/ipc/Server"))
-	jClientClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron/runtimes/google/ipc/Client"))
-	jCallClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron/runtimes/google/ipc/Call"))
-	jServerCallClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron/runtimes/google/ipc/ServerCall"))
-	jStreamClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron/runtimes/google/ipc/Stream"))
-	jVDLInvokerClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron/runtimes/google/ipc/VDLInvoker"))
-	jServerStatusClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron2/ipc/ServerStatus"))
-	jServerStateClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron2/ipc/ServerState"))
-	jMountStatusClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron2/ipc/MountStatus"))
-	jProxyStatusClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron2/ipc/ProxyStatus"))
-	jListenSpecClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron2/ipc/ListenSpec"))
-	jListenSpecAddressClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron2/ipc/ListenSpec$Address"))
-	jOptionDefsClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron2/OptionDefs"))
-	jEOFExceptionClass = C.jclass(jutil.JFindClassOrPrint(env, "java/io/EOFException"))
-	jStringClass = C.jclass(jutil.JFindClassOrPrint(env, "java/lang/String"))
+	jServerClass = C.jclass(jutil.JFindClassOrPrint(jEnv, "io/v/core/veyron/runtimes/google/ipc/Server"))
+	jClientClass = C.jclass(jutil.JFindClassOrPrint(jEnv, "io/v/core/veyron/runtimes/google/ipc/Client"))
+	jCallClass = C.jclass(jutil.JFindClassOrPrint(jEnv, "io/v/core/veyron/runtimes/google/ipc/Call"))
+	jServerCallClass = C.jclass(jutil.JFindClassOrPrint(jEnv, "io/v/core/veyron/runtimes/google/ipc/ServerCall"))
+	jStreamClass = C.jclass(jutil.JFindClassOrPrint(jEnv, "io/v/core/veyron/runtimes/google/ipc/Stream"))
+	jVDLInvokerClass = C.jclass(jutil.JFindClassOrPrint(jEnv, "io/v/core/veyron/runtimes/google/ipc/VDLInvoker"))
+	jServerStatusClass = C.jclass(jutil.JFindClassOrPrint(jEnv, "io/v/core/veyron2/ipc/ServerStatus"))
+	jServerStateClass = C.jclass(jutil.JFindClassOrPrint(jEnv, "io/v/core/veyron2/ipc/ServerState"))
+	jMountStatusClass = C.jclass(jutil.JFindClassOrPrint(jEnv, "io/v/core/veyron2/ipc/MountStatus"))
+	jProxyStatusClass = C.jclass(jutil.JFindClassOrPrint(jEnv, "io/v/core/veyron2/ipc/ProxyStatus"))
+	jListenSpecClass = C.jclass(jutil.JFindClassOrPrint(jEnv, "io/v/core/veyron2/ipc/ListenSpec"))
+	jListenSpecAddressClass = C.jclass(jutil.JFindClassOrPrint(jEnv, "io/v/core/veyron2/ipc/ListenSpec$Address"))
+	jNetworkChangeClass = C.jclass(jutil.JFindClassOrPrint(jEnv, "io/v/core/veyron2/ipc/NetworkChange"))
+	jOptionDefsClass = C.jclass(jutil.JFindClassOrPrint(jEnv, "io/v/core/veyron2/OptionDefs"))
+	jEOFExceptionClass = C.jclass(jutil.JFindClassOrPrint(jEnv, "java/io/EOFException"))
+	jStringClass = C.jclass(jutil.JFindClassOrPrint(jEnv, "java/lang/String"))
 }
 
 //export Java_io_v_core_veyron_runtimes_google_ipc_Server_nativeListen
@@ -141,6 +147,52 @@ func Java_io_v_core_veyron_runtimes_google_ipc_Server_nativeGetStatus(env *C.JNI
 		return nil
 	}
 	return jStatus
+}
+
+//export Java_io_v_core_veyron_runtimes_google_ipc_Server_nativeWatchNetwork
+func Java_io_v_core_veyron_runtimes_google_ipc_Server_nativeWatchNetwork(env *C.JNIEnv, jServer C.jobject, goPtr C.jlong) C.jobject {
+	networkChan := make(chan ipc.NetworkChange, 100)
+	(*(*ipc.Server)(jutil.Ptr(goPtr))).WatchNetwork(networkChan)
+	// We cannot cache Java environments as they are only valid in the current
+	// thread.  We can, however, cache the Java VM and obtain an environment
+	// from it in whatever thread happens to be running at the time.
+	var jVM *C.JavaVM
+	if status := C.GetJavaVM(env, &jVM); status != 0 {
+		jutil.JThrowV(env, fmt.Errorf("couldn't get Java VM from the (Java) environment"))
+		return nil
+	}
+	retChan := make(chan C.jobject, 100)
+	go func() {
+		for change := range networkChan {
+			jEnv, freeFunc := jutil.GetEnv(jVM)
+			defer freeFunc()
+
+			jChange, err := JavaNetworkChange(jEnv, change)
+			if err != nil {
+				log.Println("Couldn't convert Go NetworkChange %v to Java", change)
+				continue
+			}
+			retChan <- jChange
+		}
+		close(retChan)
+	}()
+	jInputChannel, err := jchannel.JavaInputChannel(env, retChan, networkChan)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	return C.jobject(jInputChannel)
+}
+
+//export Java_io_v_core_veyron_runtimes_google_ipc_Server_nativeUnwatchNetwork
+func Java_io_v_core_veyron_runtimes_google_ipc_Server_nativeUnwatchNetwork(env *C.JNIEnv, jServer C.jobject, goPtr C.jlong, jInputChannel C.jobject) {
+	goNetworkChanPtr, err := jutil.CallLongMethod(env, jInputChannel, "getSourceNativePtr", nil)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return
+	}
+	networkChan := *(*chan ipc.NetworkChange)(unsafe.Pointer(uintptr(goNetworkChanPtr)))
+	(*(*ipc.Server)(jutil.Ptr(goPtr))).UnwatchNetwork(networkChan)
 }
 
 //export Java_io_v_core_veyron_runtimes_google_ipc_Server_nativeStop

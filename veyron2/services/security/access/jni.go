@@ -3,8 +3,6 @@
 package access
 
 import (
-	"unsafe"
-
 	"v.io/core/veyron2/services/security/access"
 	jutil "v.io/jni/util"
 	jsecurity "v.io/jni/veyron2/security"
@@ -24,9 +22,8 @@ var (
 )
 
 func Init(jEnv interface{}) {
-	env := (*C.JNIEnv)(unsafe.Pointer(jutil.PtrValue(jEnv)))
-	jACLWrapperClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron2/services/security/access/ACLWrapper"))
-	jUtilClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron2/services/security/access/Util"))
+	jACLWrapperClass = C.jclass(jutil.JFindClassOrPrint(jEnv, "io/v/core/veyron2/services/security/access/ACLWrapper"))
+	jUtilClass = C.jclass(jutil.JFindClassOrPrint(jEnv, "io/v/core/veyron2/services/security/access/Util"))
 }
 
 //export Java_io_v_core_veyron2_services_security_access_ACLWrapper_nativeWrap

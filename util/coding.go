@@ -39,6 +39,9 @@ func VomCopy(src interface{}, dstptr interface{}) error {
 // JVomDecode VOM-decodes the provided value into a Java object.
 func JVomDecode(jEnv interface{}, data []byte, jClass interface{}) (C.jobject, error) {
 	class := getClass(jClass)
+	if class == nil {
+		class = jObjectClass
+	}
 	return CallStaticObjectMethod(jEnv, jVomUtilClass, "decode", []Sign{ByteArraySign, TypeSign}, ObjectSign, data, class)
 }
 

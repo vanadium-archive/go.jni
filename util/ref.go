@@ -38,7 +38,19 @@ func GoUnref(valptr interface{}) {
 
 // IsPointer returns true iff the provided value is a pointer.
 func IsPointer(val interface{}) bool {
+	if _, ok := val.(unsafe.Pointer); ok {
+		return true
+	}
 	return reflect.ValueOf(val).Kind() == reflect.Ptr
+}
+
+// PtrValue returns the value of the pointer as a uintptr.
+func PtrValue(ptr interface{}) uintptr {
+	v := reflect.ValueOf(ptr)
+	if v.Kind() != reflect.Ptr && v.Kind() != reflect.UnsafePointer {
+		panic("must pass pointer value to PtrValue")
+	}
+	return v.Pointer()
 }
 
 // DerefOrDie dereferences the provided (pointer) value, or panic-s if the value
@@ -59,15 +71,6 @@ func DerefOrDie(i interface{}) interface{} {
 func Ptr(jPtr interface{}) unsafe.Pointer {
 	v := reflect.ValueOf(jPtr)
 	return unsafe.Pointer(uintptr(v.Int()))
-}
-
-// PtrValue returns the value of the pointer as a uintptr.
-func PtrValue(ptr interface{}) uintptr {
-	v := reflect.ValueOf(ptr)
-	if v.Kind() != reflect.Ptr && v.Kind() != reflect.UnsafePointer {
-		panic("must pass pointer value to PtrValue")
-	}
-	return v.Pointer()
 }
 
 // JConditionalRef creates a reference on the provided Java object that is valid
@@ -174,42 +177,44 @@ var goRefs = newSafeRefCounter()
 // newSafeRefCounter returns a new instance of a thread-safe reference counter.
 func newSafeRefCounter() *safeRefCounter {
 	return &safeRefCounter{
-		refs: make(map[interface{}]int),
+		refs: make(map[unsafe.Pointer]int),
 	}
 }
 
 // safeRefCounter is a thread-safe reference counter.
 type safeRefCounter struct {
 	lock sync.Mutex
-	refs map[interface{}]int
+	refs map[unsafe.Pointer]int
 }
 
 func (c *safeRefCounter) ref(valptr interface{}) {
+	key := unsafe.Pointer(PtrValue(valptr))
 	c.lock.Lock()
 	defer c.lock.Unlock()
-	count, ok := c.refs[valptr]
+	count, ok := c.refs[key]
 	if !ok {
-		c.refs[valptr] = 1
+		c.refs[key] = 1
 	} else {
-		c.refs[valptr] = count + 1
+		c.refs[key] = count + 1
 	}
 }
 
 func (c *safeRefCounter) unref(valptr interface{}) {
+	key := unsafe.Pointer(PtrValue(valptr))
 	c.lock.Lock()
 	defer c.lock.Unlock()
-	count, ok := c.refs[valptr]
+	count, ok := c.refs[key]
 	if !ok {
-		log.Printf("Unrefing pointer %d of type %T that hasn't been refed before, stack: %s", int64(PtrValue(valptr)), valptr, string(debug.Stack()))
+		log.Printf("Unrefing pointer %v of type %T that hasn't been refed before, stack: %s", key, valptr, string(debug.Stack()))
 		return
 	}
 	if count == 0 {
-		log.Printf("Ref count for pointer %d of type %T is zero: that shouldn't happen, stack: %s", int64(PtrValue(valptr)), valptr, string(debug.Stack()))
+		log.Printf("Ref count for pointer %v of type %T is zero: that shouldn't happen, stack: %s", key, valptr, string(debug.Stack()))
 		return
 	}
 	if count > 1 {
-		c.refs[valptr] = count - 1
+		c.refs[key] = count - 1
 		return
 	}
-	delete(c.refs, valptr)
+	delete(c.refs, key)
 }

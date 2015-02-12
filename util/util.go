@@ -184,6 +184,10 @@ func JThrowV(jEnv interface{}, err error) {
 		log.Printf("Couldn't throw exception %q: %v", err, errNew)
 		return
 	}
+	if jObj == nil {
+		log.Printf("Couldn't throw exception %q: got null Java exception", err)
+		return
+	}
 	env := getEnv(jEnv)
 	C.Throw(env, C.jthrowable(jObj))
 }
@@ -193,6 +197,9 @@ func JThrowV(jEnv interface{}, err error) {
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func JVException(jEnv interface{}, err error) (C.jobject, error) {
+	if err == nil {
+		return nil, nil
+	}
 	data, err := vom.Encode(err)
 	if err != nil {
 		return nil, err

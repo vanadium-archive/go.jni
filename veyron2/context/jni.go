@@ -3,8 +3,6 @@
 package context
 
 import (
-	"unsafe"
-
 	"v.io/core/veyron2/context"
 	jutil "v.io/jni/util"
 )
@@ -28,12 +26,11 @@ var (
 // invoked from a different package, Java environment is passed in an empty
 // interface and then cast into the package-local environment type.
 func Init(jEnv interface{}) {
-	env := (*C.JNIEnv)(unsafe.Pointer(jutil.PtrValue(jEnv)))
 	// Cache global references to all Java classes used by the package.  This is
 	// necessary because JNI gets access to the class loader only in the system
 	// thread, so we aren't able to invoke FindClass in other threads.
-	jVContextImplClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/core/veyron2/context/VContextImpl"))
-	jCountDownLatchClass = C.jclass(jutil.JFindClassOrPrint(env, "java/util/concurrent/CountDownLatch"))
+	jVContextImplClass = C.jclass(jutil.JFindClassOrPrint(jEnv, "io/v/core/veyron2/context/VContextImpl"))
+	jCountDownLatchClass = C.jclass(jutil.JFindClassOrPrint(jEnv, "java/util/concurrent/CountDownLatch"))
 }
 
 //export Java_io_v_core_veyron2_context_VContextImpl_nativeCreate

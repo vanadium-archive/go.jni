@@ -146,7 +146,6 @@ func JavaServerStatus(jEnv interface{}, status ipc.ServerStatus) (C.jobject, err
 	jProxies := jutil.JObjectArray(jEnv, proxarr, jProxyStatusClass)
 
 	// Create final server status.
-	serverStateSign := jutil.ClassSign("io.v.core.veyron2.ipc.ServerState")
 	mountStatusSign := jutil.ClassSign("io.v.core.veyron2.ipc.MountStatus")
 	proxyStatusSign := jutil.ClassSign("io.v.core.veyron2.ipc.ProxyStatus")
 	jServerStatus, err := jutil.NewObject(jEnv, jServerStatusClass, []jutil.Sign{serverStateSign, jutil.BoolSign, jutil.ArraySign(mountStatusSign), jutil.ArraySign(jutil.StringSign), jutil.ArraySign(proxyStatusSign)}, jState, status.ServesMountTable, jMounts, jEndpoints, jProxies)
@@ -175,7 +174,6 @@ func JavaServerState(jEnv interface{}, state ipc.ServerState) (C.jobject, error)
 	default:
 		return nil, fmt.Errorf("Unrecognized state: %d", state)
 	}
-	serverStateSign := jutil.ClassSign("io.v.core.veyron2.ipc.ServerState")
 	jState, err := jutil.CallStaticObjectMethod(jEnv, jServerStateClass, "valueOf", []jutil.Sign{jutil.StringSign}, serverStateSign, name)
 	if err != nil {
 		return nil, err
@@ -282,4 +280,29 @@ func JavaListenSpec(jEnv interface{}, spec ipc.ListenSpec) (C.jobject, error) {
 		return nil, err
 	}
 	return C.jobject(jSpec), nil
+}
+
+// JavaNetworkChange converts the Go NetworkChange value into a Java NetworkChange object.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func JavaNetworkChange(jEnv interface{}, change ipc.NetworkChange) (C.jobject, error) {
+	jTime, err := jutil.JTime(jEnv, change.Time)
+	if err != nil {
+		return nil, err
+	}
+	jState, err := JavaServerState(jEnv, change.State)
+	if err != nil {
+		return nil, err
+	}
+	setting := fmt.Sprintf("%v", change.Setting)
+	changedEndpointStrs := make([]string, len(change.Changed))
+	for i, ep := range change.Changed {
+		changedEndpointStrs[i] = fmt.Sprintf("%v", ep)
+	}
+	jNetworkChange, err := jutil.NewObject(jEnv, jNetworkChangeClass, []jutil.Sign{jutil.DateTimeSign, serverStateSign, jutil.ArraySign(jutil.StringSign), jutil.StringSign, jutil.VExceptionSign}, jTime, jState, changedEndpointStrs, setting, change.Error)
+	if err != nil {
+		return nil, err
+	}
+	return C.jobject(jNetworkChange), nil
 }
