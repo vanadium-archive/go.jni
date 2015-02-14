@@ -177,44 +177,42 @@ var goRefs = newSafeRefCounter()
 // newSafeRefCounter returns a new instance of a thread-safe reference counter.
 func newSafeRefCounter() *safeRefCounter {
 	return &safeRefCounter{
-		refs: make(map[unsafe.Pointer]int),
+		refs: make(map[interface{}]int),
 	}
 }
 
 // safeRefCounter is a thread-safe reference counter.
 type safeRefCounter struct {
 	lock sync.Mutex
-	refs map[unsafe.Pointer]int
+	refs map[interface{}]int
 }
 
 func (c *safeRefCounter) ref(valptr interface{}) {
-	key := unsafe.Pointer(PtrValue(valptr))
 	c.lock.Lock()
 	defer c.lock.Unlock()
-	count, ok := c.refs[key]
+	count, ok := c.refs[valptr]
 	if !ok {
-		c.refs[key] = 1
+		c.refs[valptr] = 1
 	} else {
-		c.refs[key] = count + 1
+		c.refs[valptr] = count + 1
 	}
 }
 
 func (c *safeRefCounter) unref(valptr interface{}) {
-	key := unsafe.Pointer(PtrValue(valptr))
 	c.lock.Lock()
 	defer c.lock.Unlock()
-	count, ok := c.refs[key]
+	count, ok := c.refs[valptr]
 	if !ok {
-		log.Printf("Unrefing pointer %v of type %T that hasn't been refed before, stack: %s", key, valptr, string(debug.Stack()))
+		log.Printf("Unrefing pointer %d of type %T that hasn't been refed before, stack: %s", int64(PtrValue(valptr)), valptr, string(debug.Stack()))
 		return
 	}
 	if count == 0 {
-		log.Printf("Ref count for pointer %v of type %T is zero: that shouldn't happen, stack: %s", key, valptr, string(debug.Stack()))
+		log.Printf("Ref count for pointer %d of type %T is zero: that shouldn't happen, stack: %s", int64(PtrValue(valptr)), valptr, string(debug.Stack()))
 		return
 	}
 	if count > 1 {
-		c.refs[key] = count - 1
+		c.refs[valptr] = count - 1
 		return
 	}
-	delete(c.refs, key)
+	delete(c.refs, valptr)
 }

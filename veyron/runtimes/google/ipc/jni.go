@@ -28,7 +28,6 @@ var (
 	streamSign      = jutil.ClassSign("io.v.core.veyron.runtimes.google.ipc.Stream")
 	listenAddrSign  = jutil.ClassSign("io.v.core.veyron2.ipc.ListenSpec$Address")
 	serverStateSign = jutil.ClassSign("io.v.core.veyron2.ipc.ServerState")
-
 	// Global reference for io.v.core.veyron.runtimes.google.ipc.Server class.
 	jServerClass C.jclass
 	// Global reference for io.v.core.veyron.runtimes.google.ipc.Client class.
@@ -165,18 +164,19 @@ func Java_io_v_core_veyron_runtimes_google_ipc_Server_nativeWatchNetwork(env *C.
 	go func() {
 		for change := range networkChan {
 			jEnv, freeFunc := jutil.GetEnv(jVM)
+			env := (*C.JNIEnv)(jEnv)
 			defer freeFunc()
-
-			jChange, err := JavaNetworkChange(jEnv, change)
+			jChange, err := JavaNetworkChange(env, change)
 			if err != nil {
 				log.Println("Couldn't convert Go NetworkChange %v to Java", change)
 				continue
 			}
+			jChange = C.NewGlobalRef(env, jChange)
 			retChan <- jChange
 		}
 		close(retChan)
 	}()
-	jInputChannel, err := jchannel.JavaInputChannel(env, retChan, networkChan)
+	jInputChannel, err := jchannel.JavaInputChannel(env, &retChan, &networkChan)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil

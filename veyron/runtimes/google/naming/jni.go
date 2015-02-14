@@ -59,12 +59,14 @@ func Java_io_v_core_veyron_runtimes_google_naming_Namespace_nativeGlob(env *C.JN
 			switch v := entry.(type) {
 			case *naming.MountEntry:
 				jEnv, freeFunc := jutil.GetEnv(jVM)
+				env := (*C.JNIEnv)(jEnv)
 				defer freeFunc()
-				jMountEntry, err := JavaMountEntry(jEnv, v)
+				jMountEntry, err := JavaMountEntry(env, v)
 				if err != nil {
 					log.Println("Couldn't convert Go MountEntry %v to Java", v)
 					continue
 				}
+				jMountEntry = C.NewGlobalRef(env, jMountEntry)
 				retChan <- jMountEntry
 			case *naming.GlobError:
 				// Silently drop.
@@ -75,7 +77,7 @@ func Java_io_v_core_veyron_runtimes_google_naming_Namespace_nativeGlob(env *C.JN
 		}
 		close(retChan)
 	}()
-	jInputChannel, err := jchannel.JavaInputChannel(env, retChan, entryChan)
+	jInputChannel, err := jchannel.JavaInputChannel(env, &retChan, &entryChan)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil

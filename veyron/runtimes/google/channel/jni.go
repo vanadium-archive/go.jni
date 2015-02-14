@@ -45,7 +45,9 @@ func Java_io_v_core_veyron_runtimes_google_InputChannel_nativeReadValue(env *C.J
 		jutil.JThrow(env, jEOFExceptionClass, "Channel closed.")
 		return nil
 	}
-	return jObj
+	jObjLocal := C.NewLocalRef(env, jObj)
+	C.DeleteGlobalRef(env, jObj)
+	return jObjLocal
 }
 
 //export Java_io_v_core_veyron_runtimes_google_InputChannel_nativeFinalize
