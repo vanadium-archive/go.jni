@@ -23,9 +23,6 @@ func JavaServer(jEnv interface{}, server ipc.Server, jListenSpec interface{}) (C
 	if server == nil {
 		return nil, fmt.Errorf("Go Server value cannot be nil")
 	}
-	if jListenSpec == nil {
-		return nil, fmt.Errorf("Can't pass in null Java listen spec.")
-	}
 	listenSpecSign := jutil.ClassSign("io.v.core.veyron2.ipc.ListenSpec")
 	jServer, err := jutil.NewObject(jEnv, jServerClass, []jutil.Sign{jutil.LongSign, listenSpecSign}, int64(jutil.PtrValue(&server)), jListenSpec)
 	if err != nil {
