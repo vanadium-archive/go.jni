@@ -101,9 +101,7 @@ func (c implFortuneClientStub) Add(ctx *context.T, i0 string, opts ...ipc.CallOp
 	if call, err = c.c(ctx).StartCall(ctx, c.name, "Add", []interface{}{i0}, opts...); err != nil {
 		return
 	}
-	if ierr := call.Finish(&err); ierr != nil {
-		err = ierr
-	}
+	err = call.Finish()
 	return
 }
 
@@ -112,9 +110,7 @@ func (c implFortuneClientStub) Get(ctx *context.T, opts ...ipc.CallOpt) (o0 stri
 	if call, err = c.c(ctx).StartCall(ctx, c.name, "Get", nil, opts...); err != nil {
 		return
 	}
-	if ierr := call.Finish(&o0, &err); ierr != nil {
-		err = ierr
-	}
+	err = call.Finish(&o0)
 	return
 }
 
@@ -132,9 +128,7 @@ func (c implFortuneClientStub) GetComplexError(ctx *context.T, opts ...ipc.CallO
 	if call, err = c.c(ctx).StartCall(ctx, c.name, "GetComplexError", nil, opts...); err != nil {
 		return
 	}
-	if ierr := call.Finish(&err); ierr != nil {
-		err = ierr
-	}
+	err = call.Finish()
 	return
 }
 
@@ -236,9 +230,7 @@ func (c implFortuneStreamingGetCallSend) Close() error {
 	return c.c.CloseSend()
 }
 func (c *implFortuneStreamingGetCall) Finish() (o0 int32, err error) {
-	if ierr := c.Call.Finish(&o0, &err); ierr != nil {
-		err = ierr
-	}
+	err = c.Call.Finish(&o0)
 	return
 }
 
@@ -340,9 +332,6 @@ var descFortune = ipc.InterfaceDesc{
 			InArgs: []ipc.ArgDesc{
 				{"Fortune", ``}, // string
 			},
-			OutArgs: []ipc.ArgDesc{
-				{"", ``}, // error
-			},
 			Tags: []vdl.AnyRep{access.Tag("Write")},
 		},
 		{
@@ -350,7 +339,6 @@ var descFortune = ipc.InterfaceDesc{
 			Doc:  "// Get returns a random fortune.",
 			OutArgs: []ipc.ArgDesc{
 				{"Fortune", ``}, // string
-				{"err", ``},     // error
 			},
 			Tags: []vdl.AnyRep{access.Tag("Read")},
 		},
@@ -359,16 +347,12 @@ var descFortune = ipc.InterfaceDesc{
 			Doc:  "// StreamingGet returns a stream that can be used to obtain fortunes.",
 			OutArgs: []ipc.ArgDesc{
 				{"total", ``}, // int32
-				{"err", ``},   // error
 			},
 			Tags: []vdl.AnyRep{access.Tag("Read")},
 		},
 		{
 			Name: "GetComplexError",
 			Doc:  "// GetComplexError returns (always!) ErrComplex.",
-			OutArgs: []ipc.ArgDesc{
-				{"", ``}, // error
-			},
 			Tags: []vdl.AnyRep{access.Tag("Read")},
 		},
 	},
