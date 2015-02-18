@@ -45,11 +45,6 @@ func JVomDecode(jEnv interface{}, data []byte, jClass interface{}) (C.jobject, e
 	return CallStaticObjectMethod(jEnv, jVomUtilClass, "decode", []Sign{ByteArraySign, TypeSign}, ObjectSign, data, class)
 }
 
-// JVomDecodeError VOM-decodes the provided value into a Java VException object.
-func JVomDecodeError(jEnv interface{}, data []byte) (C.jobject, error) {
-	return CallStaticObjectMethod(jEnv, jVomUtilClass, "decodeError", []Sign{ByteArraySign}, ObjectSign, data)
-}
-
 // JVomCopy copies the provided Go value into a corresponding Java object by
 // encoding/decoding it from VOM.
 func JVomCopy(jEnv interface{}, src interface{}, jClass interface{}) (C.jobject, error) {

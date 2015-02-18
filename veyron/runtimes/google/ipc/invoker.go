@@ -145,20 +145,20 @@ func decodeResults(env *C.JNIEnv, jReply C.jobject) ([]interface{}, error) {
 		return nil, err
 	}
 	// Check for app error.
-	var appErr error
 	if vomAppErr != nil {
+		var appErr error
 		if err := vom.Decode(vomAppErr, &appErr); err != nil {
 			return nil, err
 		}
+		return nil, appErr
 	}
-	// VOM-decode results into *vdl.Value instances and append the error (if any).
-	ret := make([]interface{}, len(results)+1)
+	// VOM-decode results into *vdl.Value instances.
+	ret := make([]interface{}, len(results))
 	for i, result := range results {
 		var err error
 		if ret[i], err = jutil.VomDecodeToValue(result); err != nil {
 			return nil, err
 		}
 	}
-	ret[len(results)] = appErr
 	return ret, nil
 }

@@ -308,16 +308,9 @@ func Java_io_v_core_veyron_runtimes_google_ipc_Call_nativeFinish(env *C.JNIEnv, 
 		value := new(vdl.Value)
 		resultPtrs[i] = &value
 	}
-	// Append mandatory error result and call Finish.
-	var appErr error
-	if err := (*(*ipc.Call)(jutil.Ptr(goPtr))).Finish(append(resultPtrs, &appErr)...); err != nil {
+	if err := (*(*ipc.Call)(jutil.Ptr(goPtr))).Finish(resultPtrs...); err != nil {
 		// Invocation error.
 		jutil.JThrowV(env, err)
-		return nil
-	}
-	if appErr != nil {
-		// Application error
-		jutil.JThrowV(env, appErr)
 		return nil
 	}
 

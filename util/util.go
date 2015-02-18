@@ -204,7 +204,7 @@ func JVException(jEnv interface{}, err error) (C.jobject, error) {
 	if err != nil {
 		return nil, err
 	}
-	return JVomDecodeError(jEnv, data)
+	return JVomDecode(jEnv, data, jVExceptionClass)
 }
 
 // JExceptionMsg returns the exception message if an exception occurred, or
