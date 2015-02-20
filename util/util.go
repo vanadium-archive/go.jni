@@ -460,9 +460,11 @@ func GoByteArray(jEnv, jArr interface{}) (ret []byte) {
 	length := int(C.GetArrayLength(env, C.jarray(arr)))
 	ret = make([]byte, length)
 	bytes := C.GetByteArrayElements(env, arr, nil)
+	defer C.ReleaseByteArrayElements(env, arr, bytes, C.JNI_ABORT)
+	ptr := bytes
 	for i := 0; i < length; i++ {
-		ret[i] = byte(*bytes)
-		bytes = (*C.jbyte)(unsafe.Pointer(uintptr(unsafe.Pointer(bytes)) + unsafe.Sizeof(*bytes)))
+		ret[i] = byte(*ptr)
+		ptr = (*C.jbyte)(unsafe.Pointer(uintptr(unsafe.Pointer(ptr)) + unsafe.Sizeof(*ptr)))
 	}
 	return
 }
