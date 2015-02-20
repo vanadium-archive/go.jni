@@ -332,7 +332,7 @@ var descFortune = ipc.InterfaceDesc{
 			InArgs: []ipc.ArgDesc{
 				{"Fortune", ``}, // string
 			},
-			Tags: []vdl.AnyRep{access.Tag("Write")},
+			Tags: []*vdl.Value{vdl.ValueOf(access.Tag("Write"))},
 		},
 		{
 			Name: "Get",
@@ -340,7 +340,7 @@ var descFortune = ipc.InterfaceDesc{
 			OutArgs: []ipc.ArgDesc{
 				{"Fortune", ``}, // string
 			},
-			Tags: []vdl.AnyRep{access.Tag("Read")},
+			Tags: []*vdl.Value{vdl.ValueOf(access.Tag("Read"))},
 		},
 		{
 			Name: "StreamingGet",
@@ -348,12 +348,12 @@ var descFortune = ipc.InterfaceDesc{
 			OutArgs: []ipc.ArgDesc{
 				{"total", ``}, // int32
 			},
-			Tags: []vdl.AnyRep{access.Tag("Read")},
+			Tags: []*vdl.Value{vdl.ValueOf(access.Tag("Read"))},
 		},
 		{
 			Name: "GetComplexError",
 			Doc:  "// GetComplexError returns (always!) ErrComplex.",
-			Tags: []vdl.AnyRep{access.Tag("Read")},
+			Tags: []*vdl.Value{vdl.ValueOf(access.Tag("Read"))},
 		},
 	},
 }
