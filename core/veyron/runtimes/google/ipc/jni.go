@@ -12,10 +12,10 @@ import (
 	"v.io/v23/vdl"
 	"v.io/v23/vom"
 
+	jchannel "v.io/jni/core/veyron/runtimes/google/channel"
 	jutil "v.io/jni/util"
-	jchannel "v.io/jni/veyron/runtimes/google/channel"
-	jcontext "v.io/jni/veyron2/context"
-	jsecurity "v.io/jni/veyron2/security"
+	jcontext "v.io/jni/v23/context"
+	jsecurity "v.io/jni/v23/security"
 )
 
 // #cgo LDFLAGS: -ljniwrapper
@@ -24,10 +24,10 @@ import (
 import "C"
 
 var (
-	optionsSign     = jutil.ClassSign("io.v.core.v23.Options")
+	optionsSign     = jutil.ClassSign("io.v.v23.Options")
 	streamSign      = jutil.ClassSign("io.v.core.veyron.runtimes.google.ipc.Stream")
-	listenAddrSign  = jutil.ClassSign("io.v.core.v23.ipc.ListenSpec$Address")
-	serverStateSign = jutil.ClassSign("io.v.core.v23.ipc.ServerState")
+	listenAddrSign  = jutil.ClassSign("io.v.v23.ipc.ListenSpec$Address")
+	serverStateSign = jutil.ClassSign("io.v.v23.ipc.ServerState")
 	// Global reference for io.v.core.veyron.runtimes.google.ipc.Server class.
 	jServerClass C.jclass
 	// Global reference for io.v.core.veyron.runtimes.google.ipc.Client class.
@@ -40,21 +40,21 @@ var (
 	jStreamClass C.jclass
 	// Global reference for io.v.core.veyron.runtimes.google.ipc.VDLInvoker class.
 	jVDLInvokerClass C.jclass
-	// Global reference for io.v.core.v23.ipc.ServerStatus class.
+	// Global reference for io.v.v23.ipc.ServerStatus class.
 	jServerStatusClass C.jclass
-	// Global reference for io.v.core.v23.ipc.ServerState class.
+	// Global reference for io.v.v23.ipc.ServerState class.
 	jServerStateClass C.jclass
-	// Global reference for io.v.core.v23.ipc.MountStatus class.
+	// Global reference for io.v.v23.ipc.MountStatus class.
 	jMountStatusClass C.jclass
-	// Global reference for io.v.core.v23.ipc.ProxyStatus class.
+	// Global reference for io.v.v23.ipc.ProxyStatus class.
 	jProxyStatusClass C.jclass
-	// Global reference for io.v.core.v23.ipc.ListenSpec class.
+	// Global reference for io.v.v23.ipc.ListenSpec class.
 	jListenSpecClass C.jclass
-	// Global reference for io.v.core.v23.ipc.ListenSpec$Address class.
+	// Global reference for io.v.v23.ipc.ListenSpec$Address class.
 	jListenSpecAddressClass C.jclass
-	// Global reference for io.v.core.v23.ipc.NetworkChange class.
+	// Global reference for io.v.v23.ipc.NetworkChange class.
 	jNetworkChangeClass C.jclass
-	// Global reference for io.v.core.v23.OptionDefs class.
+	// Global reference for io.v.v23.OptionDefs class.
 	jOptionDefsClass C.jclass
 	// Global reference for java.io.EOFException class.
 	jEOFExceptionClass C.jclass
@@ -77,14 +77,14 @@ func Init(jEnv interface{}) {
 	jServerCallClass = C.jclass(jutil.JFindClassOrPrint(jEnv, "io/v/core/veyron/runtimes/google/ipc/ServerCall"))
 	jStreamClass = C.jclass(jutil.JFindClassOrPrint(jEnv, "io/v/core/veyron/runtimes/google/ipc/Stream"))
 	jVDLInvokerClass = C.jclass(jutil.JFindClassOrPrint(jEnv, "io/v/core/veyron/runtimes/google/ipc/VDLInvoker"))
-	jServerStatusClass = C.jclass(jutil.JFindClassOrPrint(jEnv, "io/v/core/veyron2/ipc/ServerStatus"))
-	jServerStateClass = C.jclass(jutil.JFindClassOrPrint(jEnv, "io/v/core/veyron2/ipc/ServerState"))
-	jMountStatusClass = C.jclass(jutil.JFindClassOrPrint(jEnv, "io/v/core/veyron2/ipc/MountStatus"))
-	jProxyStatusClass = C.jclass(jutil.JFindClassOrPrint(jEnv, "io/v/core/veyron2/ipc/ProxyStatus"))
-	jListenSpecClass = C.jclass(jutil.JFindClassOrPrint(jEnv, "io/v/core/veyron2/ipc/ListenSpec"))
-	jListenSpecAddressClass = C.jclass(jutil.JFindClassOrPrint(jEnv, "io/v/core/veyron2/ipc/ListenSpec$Address"))
-	jNetworkChangeClass = C.jclass(jutil.JFindClassOrPrint(jEnv, "io/v/core/veyron2/ipc/NetworkChange"))
-	jOptionDefsClass = C.jclass(jutil.JFindClassOrPrint(jEnv, "io/v/core/veyron2/OptionDefs"))
+	jServerStatusClass = C.jclass(jutil.JFindClassOrPrint(jEnv, "io/v/v23/ipc/ServerStatus"))
+	jServerStateClass = C.jclass(jutil.JFindClassOrPrint(jEnv, "io/v/v23/ipc/ServerState"))
+	jMountStatusClass = C.jclass(jutil.JFindClassOrPrint(jEnv, "io/v/v23/ipc/MountStatus"))
+	jProxyStatusClass = C.jclass(jutil.JFindClassOrPrint(jEnv, "io/v/v23/ipc/ProxyStatus"))
+	jListenSpecClass = C.jclass(jutil.JFindClassOrPrint(jEnv, "io/v/v23/ipc/ListenSpec"))
+	jListenSpecAddressClass = C.jclass(jutil.JFindClassOrPrint(jEnv, "io/v/v23/ipc/ListenSpec$Address"))
+	jNetworkChangeClass = C.jclass(jutil.JFindClassOrPrint(jEnv, "io/v/v23/ipc/NetworkChange"))
+	jOptionDefsClass = C.jclass(jutil.JFindClassOrPrint(jEnv, "io/v/v23/OptionDefs"))
 	jEOFExceptionClass = C.jclass(jutil.JFindClassOrPrint(jEnv, "java/io/EOFException"))
 	jStringClass = C.jclass(jutil.JFindClassOrPrint(jEnv, "java/lang/String"))
 }

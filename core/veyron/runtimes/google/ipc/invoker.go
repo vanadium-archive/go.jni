@@ -92,7 +92,7 @@ func (i *invoker) Invoke(method string, call ipc.ServerCall, argptrs []interface
 		return nil, err
 	}
 	// Invoke the method.
-	callSign := jutil.ClassSign("io.v.core.v23.ipc.ServerCall")
+	callSign := jutil.ClassSign("io.v.v23.ipc.ServerCall")
 	replySign := jutil.ClassSign("io.v.core.veyron.runtimes.google.ipc.VDLInvoker$InvokeReply")
 	jReply, err := jutil.CallObjectMethod(env, i.jInvoker, "invoke", []jutil.Sign{jutil.StringSign, callSign, jutil.ArraySign(jutil.ArraySign(jutil.ByteSign))}, replySign, jutil.CamelCase(method), jServerCall, jVomArgs)
 	if err != nil {

@@ -63,6 +63,6 @@ func (a *authorizer) Authorize(context security.Context) error {
 		return err
 	}
 	// Run Java Authorizer.
-	contextSign := jutil.ClassSign("io.v.core.v23.security.VContext")
+	contextSign := jutil.ClassSign("io.v.v23.security.VContext")
 	return jutil.CallVoidMethod(env, a.jAuth, "authorize", []jutil.Sign{contextSign}, jContext)
 }

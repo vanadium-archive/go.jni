@@ -55,7 +55,7 @@ type signer struct {
 func (s *signer) Sign(purpose, message []byte) (security.Signature, error) {
 	env, freeFunc := jutil.GetEnv(s.jVM)
 	defer freeFunc()
-	signatureSign := jutil.ClassSign("io.v.core.v23.security.Signature")
+	signatureSign := jutil.ClassSign("io.v.v23.security.Signature")
 	jSig, err := jutil.CallObjectMethod(env, s.jSigner, "sign", []jutil.Sign{jutil.ArraySign(jutil.ByteSign), jutil.ArraySign(jutil.ByteSign)}, signatureSign, purpose, message)
 	if err != nil {
 		return security.Signature{}, err

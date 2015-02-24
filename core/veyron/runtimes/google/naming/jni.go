@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"log"
 
+	jchannel "v.io/jni/core/veyron/runtimes/google/channel"
 	jutil "v.io/jni/util"
-	jchannel "v.io/jni/veyron/runtimes/google/channel"
-	jcontext "v.io/jni/veyron2/context"
+	jcontext "v.io/jni/v23/context"
 	"v.io/v23/naming"
 )
 

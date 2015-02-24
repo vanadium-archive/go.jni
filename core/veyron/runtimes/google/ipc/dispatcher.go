@@ -7,7 +7,7 @@ import (
 	"runtime"
 
 	jutil "v.io/jni/util"
-	jsecurity "v.io/jni/veyron2/security"
+	jsecurity "v.io/jni/v23/security"
 	"v.io/v23/security"
 )
 
@@ -52,7 +52,7 @@ func (d *dispatcher) Lookup(suffix string) (interface{}, security.Authorizer, er
 	defer freeFunc()
 
 	// Call Java dispatcher's lookup() method.
-	serviceObjectWithAuthorizerSign := jutil.ClassSign("io.v.core.v23.ipc.ServiceObjectWithAuthorizer")
+	serviceObjectWithAuthorizerSign := jutil.ClassSign("io.v.v23.ipc.ServiceObjectWithAuthorizer")
 	tempJObj, err := jutil.CallObjectMethod(env, d.jDispatcher, "lookup", []jutil.Sign{jutil.StringSign}, serviceObjectWithAuthorizerSign, suffix)
 	jObj := C.jobject(tempJObj)
 	if err != nil {
@@ -72,7 +72,7 @@ func (d *dispatcher) Lookup(suffix string) (interface{}, security.Authorizer, er
 	if jServiceObj == nil {
 		return nil, nil, fmt.Errorf("null service object returned by Java's ServiceObjectWithAuthorizer")
 	}
-	authSign := jutil.ClassSign("io.v.core.v23.security.Authorizer")
+	authSign := jutil.ClassSign("io.v.v23.security.Authorizer")
 	jAuth, err := jutil.CallObjectMethod(env, jObj, "getAuthorizer", nil, authSign)
 	if err != nil {
 		return nil, nil, err

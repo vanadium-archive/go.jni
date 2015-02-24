@@ -7,9 +7,9 @@ import (
 
 	"golang.org/x/mobile/app"
 
+	jgoogle "v.io/jni/core/veyron/runtimes/google"
 	jutil "v.io/jni/util"
-	jgoogle "v.io/jni/veyron/runtimes/google"
-	jveyron2 "v.io/jni/veyron2"
+	jveyron2 "v.io/jni/v23"
 )
 
 // #cgo LDFLAGS: -ljniwrapper
@@ -21,8 +21,8 @@ import "C"
 // from the main Java thread (e.g., On_Load()).
 func Init(env *C.JNIEnv) {}
 
-//export Java_io_v_core_veyron2_V_nativeInit
-func Java_io_v_core_veyron2_V_nativeInit(env *C.JNIEnv, jVRuntimeClass C.jclass) {
+//export Java_io_v_v23_V_nativeInit
+func Java_io_v_v23_V_nativeInit(env *C.JNIEnv, jVRuntimeClass C.jclass) {
 	Init(env)
 	jutil.Init(env)
 	jveyron2.Init(env)

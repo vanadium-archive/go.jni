@@ -19,8 +19,8 @@ import "C"
 // interface and then cast into the package-local environment type.
 func Init(jEnv interface{}) {}
 
-//export Java_io_v_core_veyron2_i18n_Catalog_nativeFormatParams
-func Java_io_v_core_veyron2_i18n_Catalog_nativeFormatParams(env *C.JNIEnv, jCatalog C.jclass, jFormat C.jstring, jParams C.jobjectArray) C.jobject {
+//export Java_io_v_v23_i18n_Catalog_nativeFormatParams
+func Java_io_v_v23_i18n_Catalog_nativeFormatParams(env *C.JNIEnv, jCatalog C.jclass, jFormat C.jstring, jParams C.jobjectArray) C.jobject {
 	format := jutil.GoString(env, jFormat)
 	strParams := jutil.GoStringArray(env, jParams)
 	params := make([]interface{}, len(strParams))

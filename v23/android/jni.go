@@ -1,17 +1,12 @@
 // +build android
 
-package veyron2
+package android
 
-import (
-	jandroid "v.io/jni/veyron2/android"
-	jcontext "v.io/jni/veyron2/context"
-	ji18n "v.io/jni/veyron2/i18n"
-	jsecurity "v.io/jni/veyron2/security"
-	jaccess "v.io/jni/veyron2/services/security/access"
-)
+import "syscall"
 
 // #cgo LDFLAGS: -ljniwrapper
 // #include "jni_wrapper.h"
+// #include <stdlib.h>
 import "C"
 
 // Init initializes the JNI code with the given Java environment.  This method
@@ -20,10 +15,9 @@ import "C"
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java environment is passed in an empty
 // interface and then cast into the package-local environment type.
-func Init(jEnv interface{}) {
-	jcontext.Init(jEnv)
-	ji18n.Init(jEnv)
-	jsecurity.Init(jEnv)
-	jandroid.Init(jEnv)
-	jaccess.Init(jEnv)
+func Init(jEnv interface{}) {}
+
+//export Java_io_v_v23_android_RedirectStderr_nativeStart
+func Java_io_v_v23_android_RedirectStderr_nativeStart(env *C.JNIEnv, jRuntime C.jclass, fileno C.jint) {
+	syscall.Dup2(int(fileno), syscall.Stderr)
 }

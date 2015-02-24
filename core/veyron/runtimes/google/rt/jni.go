@@ -3,11 +3,11 @@
 package rt
 
 import (
+	jipc "v.io/jni/core/veyron/runtimes/google/ipc"
+	jnaming "v.io/jni/core/veyron/runtimes/google/naming"
 	jutil "v.io/jni/util"
-	jipc "v.io/jni/veyron/runtimes/google/ipc"
-	jnaming "v.io/jni/veyron/runtimes/google/naming"
-	jcontext "v.io/jni/veyron2/context"
-	jsecurity "v.io/jni/veyron2/security"
+	jcontext "v.io/jni/v23/context"
+	jsecurity "v.io/jni/v23/security"
 
 	_ "v.io/core/veyron/profiles/roaming"
 	"v.io/v23"

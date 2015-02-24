@@ -3,10 +3,10 @@
 package google
 
 import (
-	jchannel "v.io/jni/veyron/runtimes/google/channel"
-	jipc "v.io/jni/veyron/runtimes/google/ipc"
-	jnaming "v.io/jni/veyron/runtimes/google/naming"
-	jrt "v.io/jni/veyron/runtimes/google/rt"
+	jchannel "v.io/jni/core/veyron/runtimes/google/channel"
+	jipc "v.io/jni/core/veyron/runtimes/google/ipc"
+	jnaming "v.io/jni/core/veyron/runtimes/google/naming"
+	jrt "v.io/jni/core/veyron/runtimes/google/rt"
 )
 
 // #cgo LDFLAGS: -ljniwrapper
