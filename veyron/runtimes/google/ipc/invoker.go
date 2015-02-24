@@ -5,12 +5,12 @@ package ipc
 import (
 	"fmt"
 	"runtime"
-	"v.io/core/veyron2/ipc"
-	"v.io/core/veyron2/vdl"
-	"v.io/core/veyron2/vdl/vdlroot/src/signature"
-	"v.io/core/veyron2/vom"
 	jutil "v.io/jni/util"
 	jsecurity "v.io/jni/veyron2/security"
+	"v.io/v23/ipc"
+	"v.io/v23/vdl"
+	"v.io/v23/vdl/vdlroot/src/signature"
+	"v.io/v23/vom"
 )
 
 // #cgo LDFLAGS: -llog -ljniwrapper
@@ -93,7 +93,7 @@ func (i *invoker) Invoke(method string, call ipc.ServerCall, argptrs []interface
 		return nil, err
 	}
 	// Invoke the method.
-	callSign := jutil.ClassSign("io.v.core.veyron2.ipc.ServerCall")
+	callSign := jutil.ClassSign("io.v.core.v23.ipc.ServerCall")
 	replySign := jutil.ClassSign("io.v.core.veyron.runtimes.google.ipc.VDLInvoker$InvokeReply")
 	jReply, err := jutil.CallObjectMethod(env, i.jInvoker, "invoke", []jutil.Sign{jutil.StringSign, callSign, jutil.ArraySign(jutil.ArraySign(jutil.ByteSign))}, replySign, jutil.CamelCase(method), jServerCall, jVomArgs)
 	if err != nil {

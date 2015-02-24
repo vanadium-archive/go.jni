@@ -10,7 +10,7 @@ import (
 	jsecurity "v.io/jni/veyron2/security"
 
 	_ "v.io/core/veyron/profiles/roaming"
-	"v.io/core/veyron2"
+	"v.io/v23"
 )
 
 // #cgo LDFLAGS: -ljniwrapper
@@ -27,10 +27,10 @@ func Init(jEnv interface{}) {}
 
 //export Java_io_v_core_veyron_runtimes_google_VRuntime_nativeInit
 func Java_io_v_core_veyron_runtimes_google_VRuntime_nativeInit(env *C.JNIEnv, jRuntime C.jclass) C.jobject {
-	ctx, _ := veyron2.Init()
+	ctx, _ := v23.Init()
 	// Get the original spec, which is guaranteed to be a roaming spec (as we
 	// import the roaming profile).
-	roamingSpec := veyron2.GetListenSpec(ctx)
+	roamingSpec := v23.GetListenSpec(ctx)
 	jipc.SetRoamingSpec(roamingSpec)
 	jCtx, err := jcontext.JavaContext(env, ctx, nil)
 	if err != nil {
@@ -49,7 +49,7 @@ func Java_io_v_core_veyron_runtimes_google_VRuntime_nativeSetNewClient(env *C.JN
 		return nil
 	}
 	// No options supported yet.
-	newCtx, _, err := veyron2.SetNewClient(ctx)
+	newCtx, _, err := v23.SetNewClient(ctx)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -70,7 +70,7 @@ func Java_io_v_core_veyron_runtimes_google_VRuntime_nativeGetClient(env *C.JNIEn
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	client := veyron2.GetClient(ctx)
+	client := v23.GetClient(ctx)
 	jClient, err := jipc.JavaClient(env, client)
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -87,7 +87,7 @@ func Java_io_v_core_veyron_runtimes_google_VRuntime_nativeNewServer(env *C.JNIEn
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	server, err := veyron2.NewServer(ctx)
+	server, err := v23.NewServer(ctx)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -113,7 +113,7 @@ func Java_io_v_core_veyron_runtimes_google_VRuntime_nativeSetPrincipal(env *C.JN
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	newCtx, err := veyron2.SetPrincipal(ctx, principal)
+	newCtx, err := v23.SetPrincipal(ctx, principal)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -134,7 +134,7 @@ func Java_io_v_core_veyron_runtimes_google_VRuntime_nativeGetPrincipal(env *C.JN
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	principal := veyron2.GetPrincipal(ctx)
+	principal := v23.GetPrincipal(ctx)
 	jPrincipal, err := jsecurity.JavaPrincipal(env, principal)
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -152,7 +152,7 @@ func Java_io_v_core_veyron_runtimes_google_VRuntime_nativeSetNamespace(env *C.JN
 		return nil
 	}
 	roots := jutil.GoStringArray(env, jRoots)
-	newCtx, _, err := veyron2.SetNewNamespace(ctx, roots...)
+	newCtx, _, err := v23.SetNewNamespace(ctx, roots...)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -173,7 +173,7 @@ func Java_io_v_core_veyron_runtimes_google_VRuntime_nativeGetNamespace(env *C.JN
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	namespace := veyron2.GetNamespace(ctx)
+	namespace := v23.GetNamespace(ctx)
 	jNamespace, err := jnaming.JavaNamespace(env, namespace)
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -189,7 +189,7 @@ func Java_io_v_core_veyron_runtimes_google_VRuntime_nativeGetListenSpec(env *C.J
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	spec := veyron2.GetListenSpec(ctx)
+	spec := v23.GetListenSpec(ctx)
 	jSpec, err := jipc.JavaListenSpec(env, spec)
 	if err != nil {
 		jutil.JThrowV(env, err)

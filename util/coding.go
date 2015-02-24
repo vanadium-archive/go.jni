@@ -5,8 +5,8 @@ package util
 import (
 	"bytes"
 
-	"v.io/core/veyron2/vdl"
-	"v.io/core/veyron2/vom"
+	"v.io/v23/vdl"
+	"v.io/v23/vom"
 )
 
 // #cgo LDFLAGS: -ljniwrapper

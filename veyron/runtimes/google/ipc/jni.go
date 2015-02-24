@@ -8,9 +8,9 @@ import (
 	"log"
 	"unsafe"
 
-	"v.io/core/veyron2/ipc"
-	"v.io/core/veyron2/vdl"
-	"v.io/core/veyron2/vom"
+	"v.io/v23/ipc"
+	"v.io/v23/vdl"
+	"v.io/v23/vom"
 
 	jutil "v.io/jni/util"
 	jchannel "v.io/jni/veyron/runtimes/google/channel"
@@ -24,10 +24,10 @@ import (
 import "C"
 
 var (
-	optionsSign     = jutil.ClassSign("io.v.core.veyron2.Options")
+	optionsSign     = jutil.ClassSign("io.v.core.v23.Options")
 	streamSign      = jutil.ClassSign("io.v.core.veyron.runtimes.google.ipc.Stream")
-	listenAddrSign  = jutil.ClassSign("io.v.core.veyron2.ipc.ListenSpec$Address")
-	serverStateSign = jutil.ClassSign("io.v.core.veyron2.ipc.ServerState")
+	listenAddrSign  = jutil.ClassSign("io.v.core.v23.ipc.ListenSpec$Address")
+	serverStateSign = jutil.ClassSign("io.v.core.v23.ipc.ServerState")
 	// Global reference for io.v.core.veyron.runtimes.google.ipc.Server class.
 	jServerClass C.jclass
 	// Global reference for io.v.core.veyron.runtimes.google.ipc.Client class.
@@ -40,21 +40,21 @@ var (
 	jStreamClass C.jclass
 	// Global reference for io.v.core.veyron.runtimes.google.ipc.VDLInvoker class.
 	jVDLInvokerClass C.jclass
-	// Global reference for io.v.core.veyron2.ipc.ServerStatus class.
+	// Global reference for io.v.core.v23.ipc.ServerStatus class.
 	jServerStatusClass C.jclass
-	// Global reference for io.v.core.veyron2.ipc.ServerState class.
+	// Global reference for io.v.core.v23.ipc.ServerState class.
 	jServerStateClass C.jclass
-	// Global reference for io.v.core.veyron2.ipc.MountStatus class.
+	// Global reference for io.v.core.v23.ipc.MountStatus class.
 	jMountStatusClass C.jclass
-	// Global reference for io.v.core.veyron2.ipc.ProxyStatus class.
+	// Global reference for io.v.core.v23.ipc.ProxyStatus class.
 	jProxyStatusClass C.jclass
-	// Global reference for io.v.core.veyron2.ipc.ListenSpec class.
+	// Global reference for io.v.core.v23.ipc.ListenSpec class.
 	jListenSpecClass C.jclass
-	// Global reference for io.v.core.veyron2.ipc.ListenSpec$Address class.
+	// Global reference for io.v.core.v23.ipc.ListenSpec$Address class.
 	jListenSpecAddressClass C.jclass
-	// Global reference for io.v.core.veyron2.ipc.NetworkChange class.
+	// Global reference for io.v.core.v23.ipc.NetworkChange class.
 	jNetworkChangeClass C.jclass
-	// Global reference for io.v.core.veyron2.OptionDefs class.
+	// Global reference for io.v.core.v23.OptionDefs class.
 	jOptionDefsClass C.jclass
 	// Global reference for java.io.EOFException class.
 	jEOFExceptionClass C.jclass

@@ -7,8 +7,8 @@ import (
 	"runtime"
 	"unsafe"
 
-	"v.io/core/veyron2/security"
 	jutil "v.io/jni/util"
+	"v.io/v23/security"
 )
 
 // #cgo LDFLAGS: -ljniwrapper
@@ -63,6 +63,6 @@ func (a *authorizer) Authorize(context security.Context) error {
 		return err
 	}
 	// Run Java Authorizer.
-	contextSign := jutil.ClassSign("io.v.core.veyron2.security.VContext")
+	contextSign := jutil.ClassSign("io.v.core.v23.security.VContext")
 	return jutil.CallVoidMethod(env, a.jAuth, "authorize", []jutil.Sign{contextSign}, jContext)
 }

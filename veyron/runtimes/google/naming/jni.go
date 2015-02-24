@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"log"
 
-	"v.io/core/veyron2/naming"
 	jutil "v.io/jni/util"
 	jchannel "v.io/jni/veyron/runtimes/google/channel"
 	jcontext "v.io/jni/veyron2/context"
+	"v.io/v23/naming"
 )
 
 // #cgo LDFLAGS: -ljniwrapper

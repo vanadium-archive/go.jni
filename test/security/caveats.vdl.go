@@ -5,11 +5,11 @@ package security
 
 import (
 	// VDL system imports
-	"v.io/core/veyron2/vdl"
+	"v.io/v23/vdl"
 
 	// VDL user imports
-	"v.io/core/veyron2/security"
-	"v.io/core/veyron2/uniqueid"
+	"v.io/v23/security"
+	"v.io/v23/uniqueid"
 )
 
 // TestCaveat is a caveat that's used in various security tests.

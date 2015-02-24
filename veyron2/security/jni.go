@@ -7,8 +7,8 @@ import (
 	"unsafe"
 
 	vsecurity "v.io/core/veyron/security"
-	"v.io/core/veyron2/security"
 	jutil "v.io/jni/util"
+	"v.io/v23/security"
 )
 
 // #cgo LDFLAGS: -ljniwrapper
@@ -16,37 +16,37 @@ import (
 import "C"
 
 var (
-	principalSign       = jutil.ClassSign("io.v.core.veyron2.security.Principal")
-	blessingsSign       = jutil.ClassSign("io.v.core.veyron2.security.Blessings")
-	wireBlessingsSign   = jutil.ClassSign("io.v.core.veyron2.security.WireBlessings")
-	blessingStoreSign   = jutil.ClassSign("io.v.core.veyron2.security.BlessingStore")
-	blessingRootsSign   = jutil.ClassSign("io.v.core.veyron2.security.BlessingRoots")
-	blessingPatternSign = jutil.ClassSign("io.v.core.veyron2.security.BlessingPattern")
-	signerSign          = jutil.ClassSign("io.v.core.veyron2.security.Signer")
-	caveatSign          = jutil.ClassSign("io.v.core.veyron2.security.Caveat")
-	contextSign         = jutil.ClassSign("io.v.core.veyron2.security.VContext")
-	signatureSign       = jutil.ClassSign("io.v.core.veyron2.security.Signature")
+	principalSign       = jutil.ClassSign("io.v.core.v23.security.Principal")
+	blessingsSign       = jutil.ClassSign("io.v.core.v23.security.Blessings")
+	wireBlessingsSign   = jutil.ClassSign("io.v.core.v23.security.WireBlessings")
+	blessingStoreSign   = jutil.ClassSign("io.v.core.v23.security.BlessingStore")
+	blessingRootsSign   = jutil.ClassSign("io.v.core.v23.security.BlessingRoots")
+	blessingPatternSign = jutil.ClassSign("io.v.core.v23.security.BlessingPattern")
+	signerSign          = jutil.ClassSign("io.v.core.v23.security.Signer")
+	caveatSign          = jutil.ClassSign("io.v.core.v23.security.Caveat")
+	contextSign         = jutil.ClassSign("io.v.core.v23.security.VContext")
+	signatureSign       = jutil.ClassSign("io.v.core.v23.security.Signature")
 	publicKeySign       = jutil.ClassSign("java.security.interfaces.ECPublicKey")
 
-	// Global reference for io.v.core.veyron2.security.Blessings class.
+	// Global reference for io.v.core.v23.security.Blessings class.
 	jBlessingsClass C.jclass
-	// Global reference for io.v.core.veyron2.security.Caveat class.
+	// Global reference for io.v.core.v23.security.Caveat class.
 	jCaveatClass C.jclass
-	// Global reference for io.v.core.veyron2.security.PrincipalImpl class.
+	// Global reference for io.v.core.v23.security.PrincipalImpl class.
 	jPrincipalImplClass C.jclass
-	// Global reference for io.v.core.veyron2.security.BlessingsImpl class.
+	// Global reference for io.v.core.v23.security.BlessingsImpl class.
 	jBlessingsImplClass C.jclass
-	// Global reference for io.v.core.veyron2.security.BlessingStoreImpl class.
+	// Global reference for io.v.core.v23.security.BlessingStoreImpl class.
 	jBlessingStoreImplClass C.jclass
-	// Global reference for io.v.core.veyron2.security.BlessingRootsImpl class.
+	// Global reference for io.v.core.v23.security.BlessingRootsImpl class.
 	jBlessingRootsImplClass C.jclass
-	// Global reference for io.v.core.veyron2.security.VContextImpl class.
+	// Global reference for io.v.core.v23.security.VContextImpl class.
 	jContextImplClass C.jclass
-	// Global reference for io.v.core.veyron2.security.BlessingPatternWrapper class.
+	// Global reference for io.v.core.v23.security.BlessingPatternWrapper class.
 	jBlessingPatternWrapperClass C.jclass
-	// Global reference for io.v.core.veyron2.security.CaveatRegistry class.
+	// Global reference for io.v.core.v23.security.CaveatRegistry class.
 	jCaveatRegistryClass C.jclass
-	// Global reference for io.v.core.veyron2.security.Util class.
+	// Global reference for io.v.core.v23.security.Util class.
 	jUtilClass C.jclass
 	// Global reference for java.lang.Object class.
 	jObjectClass C.jclass

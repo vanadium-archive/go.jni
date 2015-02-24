@@ -3,8 +3,8 @@
 package context
 
 import (
-	"v.io/core/veyron2/context"
 	jutil "v.io/jni/util"
+	"v.io/v23/context"
 )
 
 // #cgo LDFLAGS: -ljniwrapper
@@ -14,7 +14,7 @@ import "C"
 
 var (
 	classSign = jutil.ClassSign("java.lang.Class")
-	// Global reference for io.v.core.veyron2.context.VContextImpl class.
+	// Global reference for io.v.core.v23.context.VContextImpl class.
 	jVContextImplClass C.jclass
 	// Global reference for java.jutil.concurrent.CountDownLatch class.
 	jCountDownLatchClass C.jclass

@@ -13,7 +13,7 @@ import (
 	"unicode/utf8"
 	"unsafe"
 
-	"v.io/core/veyron2/vom"
+	"v.io/v23/vom"
 )
 
 // #cgo LDFLAGS: -ljniwrapper
@@ -25,13 +25,13 @@ import (
 import "C"
 
 var (
-	// Global reference for io.v.core.veyron2.verror.VException class.
+	// Global reference for io.v.core.v23.verror.VException class.
 	jVExceptionClass C.jclass
-	// Global reference for io.v.core.veyron2.util.VomUtil class.
+	// Global reference for io.v.core.v23.util.VomUtil class.
 	jVomUtilClass C.jclass
-	// Global reference for io.v.core.veyron2.verror.VException$ActionCode class.
+	// Global reference for io.v.core.v23.verror.VException$ActionCode class.
 	jActionCodeClass C.jclass
-	// Global reference for io.v.core.veyron2.verror.VException$IDAction class.
+	// Global reference for io.v.core.v23.verror.VException$IDAction class.
 	jIDActionClass C.jclass
 	// Global reference for org.joda.time.DateTime class.
 	jDateTimeClass C.jclass

@@ -1,6 +1,6 @@
 package fortune
 
-import "v.io/core/veyron2/services/security/access"
+import "v.io/v23/services/security/access"
 
 type ComplexErrorParam struct {
 	Str string

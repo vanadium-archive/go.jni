@@ -5,10 +5,10 @@ package ipc
 import (
 	"fmt"
 
-	"v.io/core/veyron2/ipc"
 	jutil "v.io/jni/util"
 	jcontext "v.io/jni/veyron2/context"
 	jsecurity "v.io/jni/veyron2/security"
+	"v.io/v23/ipc"
 )
 
 // #cgo LDFLAGS: -ljniwrapper
@@ -23,7 +23,7 @@ func JavaServer(jEnv interface{}, server ipc.Server, jListenSpec interface{}) (C
 	if server == nil {
 		return nil, fmt.Errorf("Go Server value cannot be nil")
 	}
-	listenSpecSign := jutil.ClassSign("io.v.core.veyron2.ipc.ListenSpec")
+	listenSpecSign := jutil.ClassSign("io.v.core.v23.ipc.ListenSpec")
 	jServer, err := jutil.NewObject(jEnv, jServerClass, []jutil.Sign{jutil.LongSign, listenSpecSign}, int64(jutil.PtrValue(&server)), jListenSpec)
 	if err != nil {
 		return nil, err
@@ -66,8 +66,8 @@ func javaServerCall(env *C.JNIEnv, call ipc.ServerCall) (C.jobject, error) {
 	if err != nil {
 		return nil, err
 	}
-	contextSign := jutil.ClassSign("io.v.core.veyron2.context.VContext")
-	securityContextSign := jutil.ClassSign("io.v.core.veyron2.security.VContext")
+	contextSign := jutil.ClassSign("io.v.core.v23.context.VContext")
+	securityContextSign := jutil.ClassSign("io.v.core.v23.security.VContext")
 	jServerCall, err := jutil.NewObject(env, jServerCallClass, []jutil.Sign{jutil.LongSign, streamSign, contextSign, securityContextSign}, int64(jutil.PtrValue(&call)), jStream, jContext, jSecurityContext)
 	if err != nil {
 		return nil, err
@@ -143,8 +143,8 @@ func JavaServerStatus(jEnv interface{}, status ipc.ServerStatus) (C.jobject, err
 	jProxies := jutil.JObjectArray(jEnv, proxarr, jProxyStatusClass)
 
 	// Create final server status.
-	mountStatusSign := jutil.ClassSign("io.v.core.veyron2.ipc.MountStatus")
-	proxyStatusSign := jutil.ClassSign("io.v.core.veyron2.ipc.ProxyStatus")
+	mountStatusSign := jutil.ClassSign("io.v.core.v23.ipc.MountStatus")
+	proxyStatusSign := jutil.ClassSign("io.v.core.v23.ipc.ProxyStatus")
 	jServerStatus, err := jutil.NewObject(jEnv, jServerStatusClass, []jutil.Sign{serverStateSign, jutil.BoolSign, jutil.ArraySign(mountStatusSign), jutil.ArraySign(jutil.StringSign), jutil.ArraySign(proxyStatusSign)}, jState, status.ServesMountTable, jMounts, jEndpoints, jProxies)
 	if err != nil {
 		return nil, err
@@ -271,7 +271,7 @@ func JavaListenSpec(jEnv interface{}, spec ipc.ListenSpec) (C.jobject, error) {
 		// Our best guess that this is a roaming spec.
 		isRoaming = true
 	}
-	addressSign := jutil.ClassSign("io.v.core.veyron2.ipc.ListenSpec$Address")
+	addressSign := jutil.ClassSign("io.v.core.v23.ipc.ListenSpec$Address")
 	jSpec, err := jutil.NewObject(jEnv, jListenSpecClass, []jutil.Sign{jutil.ArraySign(addressSign), jutil.StringSign, jutil.BoolSign}, jAddrs, spec.Proxy, isRoaming)
 	if err != nil {
 		return nil, err

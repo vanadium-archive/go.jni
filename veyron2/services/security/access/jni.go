@@ -3,9 +3,9 @@
 package access
 
 import (
-	"v.io/core/veyron2/services/security/access"
 	jutil "v.io/jni/util"
 	jsecurity "v.io/jni/veyron2/security"
+	"v.io/v23/services/security/access"
 )
 
 // #cgo LDFLAGS: -ljniwrapper
@@ -13,11 +13,11 @@ import (
 import "C"
 
 var (
-	aclSign = jutil.ClassSign("io.v.core.veyron2.services.security.access.ACL")
+	aclSign = jutil.ClassSign("io.v.core.v23.services.security.access.ACL")
 
-	// Global reference for io.v.core.veyron2.services.security.access.ACLWrapper class.
+	// Global reference for io.v.core.v23.services.security.access.ACLWrapper class.
 	jACLWrapperClass C.jclass
-	// Global reference for io.v.core.veyron2.services.security.access.Util class.
+	// Global reference for io.v.core.v23.services.security.access.Util class.
 	jUtilClass C.jclass
 )
 

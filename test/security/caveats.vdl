@@ -1,7 +1,7 @@
 package security
 
-import "v.io/core/veyron2/security"
-import "v.io/core/veyron2/uniqueid"
+import "v.io/v23/security"
+import "v.io/v23/uniqueid"
 
 const (
 	// TestCaveat is a caveat that's used in various security tests.

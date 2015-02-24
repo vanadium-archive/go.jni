@@ -5,8 +5,8 @@ package naming
 import (
 	"time"
 
-	"v.io/core/veyron2/naming"
 	jutil "v.io/jni/util"
+	"v.io/v23/naming"
 )
 
 // #cgo LDFLAGS: -ljniwrapper
