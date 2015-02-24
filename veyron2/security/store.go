@@ -37,6 +37,9 @@ func JavaBlessingStore(jEnv interface{}, store security.BlessingStore) (C.jobjec
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func GoBlessingStore(jEnv interface{}, jBlessingStore C.jobject) (security.BlessingStore, error) {
+	if jBlessingStore == nil {
+		return nil, nil
+	}
 	env := (*C.JNIEnv)(unsafe.Pointer(jutil.PtrValue(jEnv)))
 	// We cannot cache Java environments as they are only valid in the current
 	// thread.  We can, however, cache the Java VM and obtain an environment

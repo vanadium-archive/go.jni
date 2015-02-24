@@ -3,8 +3,6 @@
 package security
 
 import (
-	"fmt"
-	"runtime"
 	"unsafe"
 
 	jutil "v.io/jni/util"
@@ -276,77 +274,6 @@ func JavaBlessingPatternWrapper(jEnv interface{}, pattern security.BlessingPatte
 	}
 	jutil.GoRef(&pattern) // Un-refed when the Java BlessingPatternWrapper object is finalized.
 	return C.jobject(jWrapper), nil
-}
-
-// javaTag is a placeholder for a tag that was obtained from Java.
-type javaTag struct {
-	jTag C.jobject
-	jVM  *C.JavaVM
-}
-
-// GoTags converts the provided Java tags into Go tags.  These tags will be mostly
-// useless except for later conversion back to Java tags.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func GoTags(jEnv, jTags interface{}) ([]interface{}, error) {
-	env := (*C.JNIEnv)(unsafe.Pointer(jutil.PtrValue(jEnv)))
-
-	// We cannot cache Java environments as they are only valid in the current
-	// thread.  We can, however, cache the Java VM and obtain an environment
-	// from it in whatever thread happens to be running at the time.
-	var jVM *C.JavaVM
-	if status := C.GetJavaVM(env, &jVM); status != 0 {
-		return nil, fmt.Errorf("couldn't get Java VM from the (Java) environment")
-	}
-
-	tagsJava := jutil.GoObjectArray(env, jTags)
-	if tagsJava == nil {
-		return nil, nil
-	}
-	tags := make([]interface{}, len(tagsJava))
-	for i, tag := range tagsJava {
-		jniTag := &javaTag{
-			// Reference the Java tag; it will be de-referenced when this Go tag
-			// is garbage-collected (through the finalizer callback we setup
-			// just below).
-			jTag: C.NewGlobalRef(env, C.jobject(tag)),
-			jVM:  jVM,
-		}
-		runtime.SetFinalizer(jniTag, func(t *javaTag) {
-			jEnv, freeFunc := jutil.GetEnv(t.jVM)
-			env := (*C.JNIEnv)(jEnv)
-			defer freeFunc()
-			C.DeleteGlobalRef(env, t.jTag)
-		})
-		tags[i] = jniTag
-	}
-	return tags, nil
-}
-
-// JavaTags converts the provided Go tags into Java tags.  It assumes that the
-// tags were produced by a call to GoTags above.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func JavaTags(jEnv interface{}, tags []interface{}) (C.jobjectArray, error) {
-	if tags == nil {
-		return nil, nil
-	}
-	tagsJava := make([]interface{}, len(tags))
-	for i, tag := range tags {
-		// Make sure that that the tag is a Java tag.  (That must be the case
-		// because the tags are injected into the Veyron runtime by the
-		// invoker's Prepare() method, which in out runtime implementation
-		// obtains the tags from Java.)
-		jniTag, ok := tag.(*javaTag)
-		if !ok {
-			return nil, fmt.Errorf("Encountered method tag of unsupported type %T: %v", tag, tag)
-		}
-		tagsJava[i] = jniTag.jTag
-	}
-	jTags := jutil.JObjectArray(jEnv, tagsJava, jObjectClass)
-	return C.jobjectArray(jTags), nil
 }
 
 func getObject(jObj interface{}) C.jobject {

@@ -65,6 +65,8 @@ type FortuneClientMethods interface {
 	StreamingGet(*context.T, ...ipc.CallOpt) (FortuneStreamingGetCall, error)
 	// GetComplexError returns (always!) ErrComplex.
 	GetComplexError(*context.T, ...ipc.CallOpt) error
+	// NoTags is a method without tags.
+	NoTags(*context.T, ...ipc.CallOpt) error
 }
 
 // FortuneClientStub adds universal methods to FortuneClientMethods.
@@ -126,6 +128,15 @@ func (c implFortuneClientStub) StreamingGet(ctx *context.T, opts ...ipc.CallOpt)
 func (c implFortuneClientStub) GetComplexError(ctx *context.T, opts ...ipc.CallOpt) (err error) {
 	var call ipc.Call
 	if call, err = c.c(ctx).StartCall(ctx, c.name, "GetComplexError", nil, opts...); err != nil {
+		return
+	}
+	err = call.Finish()
+	return
+}
+
+func (c implFortuneClientStub) NoTags(ctx *context.T, opts ...ipc.CallOpt) (err error) {
+	var call ipc.Call
+	if call, err = c.c(ctx).StartCall(ctx, c.name, "NoTags", nil, opts...); err != nil {
 		return
 	}
 	err = call.Finish()
@@ -247,6 +258,8 @@ type FortuneServerMethods interface {
 	StreamingGet(FortuneStreamingGetContext) (total int32, err error)
 	// GetComplexError returns (always!) ErrComplex.
 	GetComplexError(ipc.ServerContext) error
+	// NoTags is a method without tags.
+	NoTags(ipc.ServerContext) error
 }
 
 // FortuneServerStubMethods is the server interface containing
@@ -262,6 +275,8 @@ type FortuneServerStubMethods interface {
 	StreamingGet(*FortuneStreamingGetContextStub) (total int32, err error)
 	// GetComplexError returns (always!) ErrComplex.
 	GetComplexError(ipc.ServerContext) error
+	// NoTags is a method without tags.
+	NoTags(ipc.ServerContext) error
 }
 
 // FortuneServerStub adds universal methods to FortuneServerStubMethods.
@@ -309,6 +324,10 @@ func (s implFortuneServerStub) GetComplexError(ctx ipc.ServerContext) error {
 	return s.impl.GetComplexError(ctx)
 }
 
+func (s implFortuneServerStub) NoTags(ctx ipc.ServerContext) error {
+	return s.impl.NoTags(ctx)
+}
+
 func (s implFortuneServerStub) Globber() *ipc.GlobState {
 	return s.gs
 }
@@ -354,6 +373,10 @@ var descFortune = ipc.InterfaceDesc{
 			Name: "GetComplexError",
 			Doc:  "// GetComplexError returns (always!) ErrComplex.",
 			Tags: []*vdl.Value{vdl.ValueOf(access.Tag("Read"))},
+		},
+		{
+			Name: "NoTags",
+			Doc:  "// NoTags is a method without tags.",
 		},
 	},
 }

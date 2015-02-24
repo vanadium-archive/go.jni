@@ -105,12 +105,12 @@ func Java_io_v_core_veyron2_security_VContextImpl_nativeMethod(env *C.JNIEnv, jC
 //export Java_io_v_core_veyron2_security_VContextImpl_nativeMethodTags
 func Java_io_v_core_veyron2_security_VContextImpl_nativeMethodTags(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) C.jobjectArray {
 	tags := (*(*security.Context)(jutil.Ptr(goContextPtr))).MethodTags()
-	jTags, err := JavaTags(env, tags)
+	jTags, err := jutil.JVDLValueArray(env, tags)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return jTags
+	return C.jobjectArray(jTags)
 }
 
 //export Java_io_v_core_veyron2_security_VContextImpl_nativeSuffix

@@ -30,4 +30,7 @@ type Fortune interface {
 
 	// GetComplexError returns (always!) ErrComplex.
 	GetComplexError() error {access.Read}
+
+	// NoTags is a method without tags.
+	NoTags() error
 }

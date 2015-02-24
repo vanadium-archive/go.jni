@@ -11,8 +11,11 @@ import (
 
 	inaming "v.io/core/veyron/runtimes/google/naming"
 	jutil "v.io/jni/util"
+
+	vcontext "v.io/v23/context"
 	"v.io/v23/naming"
 	"v.io/v23/security"
+	"v.io/v23/vdl"
 )
 
 // #cgo LDFLAGS: -ljniwrapper
@@ -91,19 +94,21 @@ func (c *context) Method() string {
 	return c.callStringMethod("method")
 }
 
-func (c *context) MethodTags() []interface{} {
+func (c *context) MethodTags() []*vdl.Value {
 	env, freeFunc := jutil.GetEnv(c.jVM)
 	defer freeFunc()
-	jTags, err := jutil.CallObjectArrayMethod(env, c.jContext, "methodTags", nil, jutil.ObjectSign)
+	jTags, err := jutil.CallObjectArrayMethod(env, c.jContext, "methodTags", nil, jutil.VdlValueSign)
 	if err != nil {
 		log.Println("Couldn't call Java methodTags method: ", err)
 		return nil
 	}
-	tags, err := GoTags(env, jTags)
+	log.Println("JNI goContext: converting method tags")
+	tags, err := jutil.GoVDLValueArray(env, jTags)
 	if err != nil {
 		log.Println("Couldn't convert Java tags to Go: ", err)
 		return nil
 	}
+	log.Println("JNI goContext: success converting method tags")
 	return tags
 }
 
@@ -182,6 +187,11 @@ func (c *context) RemoteEndpoint() naming.Endpoint {
 		return nil
 	}
 	return ep
+}
+
+func (c *context) VanadiumContext() *vcontext.T {
+	// TODO(spetrovic): implement this!!!
+	return nil
 }
 
 func (c *context) callStringMethod(methodName string) string {

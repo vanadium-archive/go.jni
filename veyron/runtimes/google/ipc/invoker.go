@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"runtime"
 	jutil "v.io/jni/util"
-	jsecurity "v.io/jni/veyron2/security"
 	"v.io/v23/ipc"
 	"v.io/v23/vdl"
 	"v.io/v23/vdl/vdlroot/src/signature"
@@ -55,7 +54,7 @@ type invoker struct {
 	jInvoker C.jobject
 }
 
-func (i *invoker) Prepare(method string, numArgs int) (argptrs, tags []interface{}, err error) {
+func (i *invoker) Prepare(method string, numArgs int) (argptrs []interface{}, tags []*vdl.Value, err error) {
 	env, freeFunc := jutil.GetEnv(i.jVM)
 	defer freeFunc()
 
@@ -66,11 +65,11 @@ func (i *invoker) Prepare(method string, numArgs int) (argptrs, tags []interface
 		argptrs[i] = &value
 	}
 	// Get the method tags.
-	jTags, err := jutil.CallObjectMethod(env, i.jInvoker, "getMethodTags", []jutil.Sign{jutil.StringSign}, jutil.ArraySign(jutil.ObjectSign), jutil.CamelCase(method))
+	jTags, err := jutil.CallObjectMethod(env, i.jInvoker, "getMethodTags", []jutil.Sign{jutil.StringSign}, jutil.ArraySign(jutil.VdlValueSign), jutil.CamelCase(method))
 	if err != nil {
 		return nil, nil, err
 	}
-	tags, err = jsecurity.GoTags(env, jTags)
+	tags, err = jutil.GoVDLValueArray(env, jTags)
 	if err != nil {
 		return nil, nil, err
 	}

@@ -48,7 +48,9 @@ var (
 	// DurationSign denotes a signature of a Java Duration type.
 	DurationSign = ClassSign("org.joda.time.Duration")
 	// VExceptionSign denotes a signature of a Java VException type.
-	VExceptionSign = ClassSign("io.v.core.v23.verror.VException")
+	VExceptionSign = ClassSign("io.v.core.veyron2.verror.VException")
+	// VDLValueSign denotes a signature of a Java VdlValue type.
+	VdlValueSign = ClassSign("io.v.core.veyron2.vdl.VdlValue")
 )
 
 // ArraySign returns the array signature, given the underlying array type.

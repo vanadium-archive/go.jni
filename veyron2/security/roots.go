@@ -37,6 +37,9 @@ func JavaBlessingRoots(jEnv interface{}, roots security.BlessingRoots) (C.jobjec
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func GoBlessingRoots(jEnv, jBlessingRootsObj interface{}) (security.BlessingRoots, error) {
+	if jBlessingRootsObj == nil {
+		return nil, nil
+	}
 	env := (*C.JNIEnv)(unsafe.Pointer(jutil.PtrValue(jEnv)))
 	jBlessingRoots := C.jobject(unsafe.Pointer(jutil.PtrValue(jBlessingRootsObj)))
 
