@@ -33,4 +33,8 @@ type Fortune interface {
 
 	// NoTags is a method without tags.
 	NoTags() error
+
+	// TestContext is a method used for testing that the server receives a
+	// correct context.
+	TestContext() error {access.Read}
 }

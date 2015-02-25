@@ -8,6 +8,7 @@ import (
 
 	vsecurity "v.io/core/veyron/security"
 	jutil "v.io/jni/util"
+	jcontext "v.io/jni/v23/context"
 	"v.io/v23/security"
 )
 
@@ -99,7 +100,8 @@ func Java_io_v_v23_security_VContextImpl_nativeTimestamp(env *C.JNIEnv, jContext
 
 //export Java_io_v_v23_security_VContextImpl_nativeMethod
 func Java_io_v_v23_security_VContextImpl_nativeMethod(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) C.jstring {
-	return C.jstring(jutil.JString(env, (*(*security.Context)(jutil.Ptr(goContextPtr))).Method()))
+	method := (*(*security.Context)(jutil.Ptr(goContextPtr))).Method()
+	return C.jstring(jutil.JString(env, jutil.CamelCase(method)))
 }
 
 //export Java_io_v_v23_security_VContextImpl_nativeMethodTags
@@ -159,6 +161,17 @@ func Java_io_v_v23_security_VContextImpl_nativeRemoteBlessings(env *C.JNIEnv, jC
 		return nil
 	}
 	return C.jobject(jBlessings)
+}
+
+//export Java_io_v_v23_security_VContextImpl_nativeContext
+func Java_io_v_v23_security_VContextImpl_nativeContext(env *C.JNIEnv, jContext C.jobject, goContextPtr C.jlong) C.jobject {
+	ctx := (*(*security.Context)(jutil.Ptr(goContextPtr))).Context()
+	jCtx, err := jcontext.JavaContext(env, ctx, nil)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	return C.jobject(jCtx)
 }
 
 //export Java_io_v_v23_security_VContextImpl_nativeFinalize

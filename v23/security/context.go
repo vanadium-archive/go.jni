@@ -11,8 +11,9 @@ import (
 
 	inaming "v.io/core/veyron/runtimes/google/naming"
 	jutil "v.io/jni/util"
+	jcontext "v.io/jni/v23/context"
 
-	vcontext "v.io/v23/context"
+	"v.io/v23/context"
 	"v.io/v23/naming"
 	"v.io/v23/security"
 	"v.io/v23/vdl"
@@ -26,12 +27,12 @@ import "C"
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JavaContext(jEnv interface{}, context security.Context) (C.jobject, error) {
-	jContext, err := jutil.NewObject(jEnv, jContextImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&context)))
+func JavaContext(jEnv interface{}, ctx security.Context) (C.jobject, error) {
+	jContext, err := jutil.NewObject(jEnv, jContextImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&ctx)))
 	if err != nil {
 		return nil, err
 	}
-	jutil.GoRef(&context) // Un-refed when the Java ContextImpl object is finalized.
+	jutil.GoRef(&ctx) // Un-refed when the Java ContextImpl object is finalized.
 	return C.jobject(jContext), nil
 }
 
@@ -55,26 +56,26 @@ func GoContext(jEnv, jContextObj interface{}) (security.Context, error) {
 	// created below is garbage-collected (through the finalizer callback we
 	// setup just below).
 	jContext = C.NewGlobalRef(env, jContext)
-	c := &context{
+	ctx := &contextImpl{
 		jVM:      jVM,
 		jContext: jContext,
 	}
-	runtime.SetFinalizer(c, func(c *context) {
+	runtime.SetFinalizer(ctx, func(c *contextImpl) {
 		javaEnv, freeFunc := jutil.GetEnv(c.jVM)
 		jenv := (*C.JNIEnv)(javaEnv)
 		defer freeFunc()
 		C.DeleteGlobalRef(jenv, c.jContext)
 	})
-	return c, nil
+	return ctx, nil
 }
 
-// context is the go interface to the java implementation of security.Context
-type context struct {
+// contextImpl is the go interface to the java implementation of security.Context
+type contextImpl struct {
 	jVM      *C.JavaVM
 	jContext C.jobject
 }
 
-func (c *context) Timestamp() time.Time {
+func (c *contextImpl) Timestamp() time.Time {
 	env, freeFunc := jutil.GetEnv(c.jVM)
 	defer freeFunc()
 	jTime, err := jutil.CallObjectMethod(env, c.jContext, "timestamp", nil, jutil.DateTimeSign)
@@ -90,11 +91,11 @@ func (c *context) Timestamp() time.Time {
 	return t
 }
 
-func (c *context) Method() string {
+func (c *contextImpl) Method() string {
 	return c.callStringMethod("method")
 }
 
-func (c *context) MethodTags() []*vdl.Value {
+func (c *contextImpl) MethodTags() []*vdl.Value {
 	env, freeFunc := jutil.GetEnv(c.jVM)
 	defer freeFunc()
 	jTags, err := jutil.CallObjectArrayMethod(env, c.jContext, "methodTags", nil, jutil.VdlValueSign)
@@ -112,16 +113,16 @@ func (c *context) MethodTags() []*vdl.Value {
 	return tags
 }
 
-func (c *context) Suffix() string {
-	return c.callStringMethod("suffix")
+func (c *contextImpl) Suffix() string {
+	return jutil.UpperCamelCase(c.callStringMethod("suffix"))
 }
 
-func (c *context) RemoteDischarges() map[string]security.Discharge {
+func (c *contextImpl) RemoteDischarges() map[string]security.Discharge {
 	// TODO(spetrovic): implement this method.
 	return nil
 }
 
-func (c *context) LocalEndpoint() naming.Endpoint {
+func (c *contextImpl) LocalEndpoint() naming.Endpoint {
 	epStr := c.callStringMethod("localEndpoint")
 	ep, err := inaming.NewEndpoint(epStr)
 	if err != nil {
@@ -131,7 +132,7 @@ func (c *context) LocalEndpoint() naming.Endpoint {
 	return ep
 }
 
-func (c *context) LocalPrincipal() security.Principal {
+func (c *contextImpl) LocalPrincipal() security.Principal {
 	env, freeFunc := jutil.GetEnv(c.jVM)
 	defer freeFunc()
 	jPrincipal, err := jutil.CallObjectMethod(env, c.jContext, "localPrincipal", nil, principalSign)
@@ -147,7 +148,7 @@ func (c *context) LocalPrincipal() security.Principal {
 	return principal
 }
 
-func (c *context) LocalBlessings() security.Blessings {
+func (c *contextImpl) LocalBlessings() security.Blessings {
 	env, freeFunc := jutil.GetEnv(c.jVM)
 	defer freeFunc()
 	jBlessings, err := jutil.CallObjectMethod(env, c.jContext, "localBlessings", nil, blessingsSign)
@@ -163,7 +164,7 @@ func (c *context) LocalBlessings() security.Blessings {
 	return blessings
 }
 
-func (c *context) RemoteBlessings() security.Blessings {
+func (c *contextImpl) RemoteBlessings() security.Blessings {
 	env, freeFunc := jutil.GetEnv(c.jVM)
 	defer freeFunc()
 	jBlessings, err := jutil.CallObjectMethod(env, c.jContext, "remoteBlessings", nil, blessingsSign)
@@ -179,7 +180,7 @@ func (c *context) RemoteBlessings() security.Blessings {
 	return blessings
 }
 
-func (c *context) RemoteEndpoint() naming.Endpoint {
+func (c *contextImpl) RemoteEndpoint() naming.Endpoint {
 	epStr := c.callStringMethod("remoteEndpoint")
 	ep, err := inaming.NewEndpoint(epStr)
 	if err != nil {
@@ -189,12 +190,22 @@ func (c *context) RemoteEndpoint() naming.Endpoint {
 	return ep
 }
 
-func (c *context) VanadiumContext() *vcontext.T {
-	// TODO(spetrovic): implement this!!!
-	return nil
+func (c *contextImpl) Context() *context.T {
+	env, freeFunc := jutil.GetEnv(c.jVM)
+	defer freeFunc()
+	contextSign := jutil.Sign("io.v.v23.context.VContext")
+	jCtx, err := jutil.CallObjectMethod(env, c.jContext, "context", nil, contextSign)
+	if err != nil {
+		log.Printf("Couldn't get Java Vanadium context: %v", err)
+	}
+	ctx, err := jcontext.GoContext(env, jCtx)
+	if err != nil {
+		log.Printf("Couldn't convert Java Vanadium context to Go: %v", err)
+	}
+	return ctx
 }
 
-func (c *context) callStringMethod(methodName string) string {
+func (c *contextImpl) callStringMethod(methodName string) string {
 	env, freeFunc := jutil.GetEnv(c.jVM)
 	defer freeFunc()
 	ret, err := jutil.CallStringMethod(env, c.jContext, methodName, nil)

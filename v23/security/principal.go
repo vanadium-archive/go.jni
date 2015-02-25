@@ -127,7 +127,7 @@ func (p *principal) Sign(message []byte) (security.Signature, error) {
 }
 
 func (p *principal) MintDischarge(forThirdPartyCaveat, caveatOnDischarge security.Caveat, additionalCaveatsOnDischarge ...security.Caveat) (security.Discharge, error) {
-	return nil, fmt.Errorf("MintDischarge not yet implemented")
+	return security.Discharge{}, fmt.Errorf("MintDischarge not yet implemented")
 }
 
 func (p *principal) PublicKey() security.PublicKey {

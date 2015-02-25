@@ -86,6 +86,15 @@ func CamelCase(s string) string {
 	return string(unicode.ToLower(r)) + s[n:]
 }
 
+// UpperCamelCase converts thisString to ThisString.
+func UpperCamelCase(s string) string {
+	if s == "" {
+		return ""
+	}
+	r, n := utf8.DecodeRuneInString(s)
+	return string(unicode.ToUpper(r)) + s[n:]
+}
+
 // GoString returns a Go string given the Java string.
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
