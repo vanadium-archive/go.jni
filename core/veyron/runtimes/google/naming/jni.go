@@ -10,6 +10,7 @@ import (
 	jutil "v.io/jni/util"
 	jcontext "v.io/jni/v23/context"
 	"v.io/v23/naming"
+	"v.io/v23/naming/ns"
 )
 
 // #cgo LDFLAGS: -ljniwrapper
@@ -17,7 +18,7 @@ import (
 import "C"
 
 var (
-	// Global reference for io.v.core.veyron.runtimes.google.naming.Namespace class.
+	// Global reference for io.v.core.veyron.runtimes.google.naming.ns.Namespace class.
 	jNamespaceImplClass C.jclass
 )
 
@@ -27,12 +28,12 @@ var (
 // invoked from a different package, Java environment is passed in an empty
 // interface and then cast into the package-local environment type.
 func Init(jEnv interface{}) {
-	jNamespaceImplClass = C.jclass(jutil.JFindClassOrPrint(jEnv, "io/v/core/veyron/runtimes/google/naming/Namespace"))
+	jNamespaceImplClass = C.jclass(jutil.JFindClassOrPrint(jEnv, "io/v/core/veyron/runtimes/google/naming/ns/Namespace"))
 }
 
-//export Java_io_v_core_veyron_runtimes_google_naming_Namespace_nativeGlob
-func Java_io_v_core_veyron_runtimes_google_naming_Namespace_nativeGlob(env *C.JNIEnv, jNamespace C.jobject, goNamespacePtr C.jlong, jContext C.jobject, pattern C.jstring) C.jobject {
-	n := *(*naming.Namespace)(jutil.Ptr(goNamespacePtr))
+//export Java_io_v_core_veyron_runtimes_google_naming_ns_Namespace_nativeGlob
+func Java_io_v_core_veyron_runtimes_google_naming_ns_Namespace_nativeGlob(env *C.JNIEnv, jNamespace C.jobject, goNamespacePtr C.jlong, jContext C.jobject, pattern C.jstring) C.jobject {
+	n := *(*ns.Namespace)(jutil.Ptr(goNamespacePtr))
 	context, err := jcontext.GoContext(env, jContext)
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -85,7 +86,7 @@ func Java_io_v_core_veyron_runtimes_google_naming_Namespace_nativeGlob(env *C.JN
 	return C.jobject(jInputChannel)
 }
 
-//export Java_io_v_core_veyron_runtimes_google_naming_Namespace_nativeFinalize
-func Java_io_v_core_veyron_runtimes_google_naming_Namespace_nativeFinalize(env *C.JNIEnv, jNamespace C.jobject, goNamespacePtr C.jlong) {
-	jutil.GoUnref((*naming.Namespace)(jutil.Ptr(goNamespacePtr)))
+//export Java_io_v_core_veyron_runtimes_google_naming_ns_Namespace_nativeFinalize
+func Java_io_v_core_veyron_runtimes_google_naming_ns_Namespace_nativeFinalize(env *C.JNIEnv, jNamespace C.jobject, goNamespacePtr C.jlong) {
+	jutil.GoUnref((*ns.Namespace)(jutil.Ptr(goNamespacePtr)))
 }
