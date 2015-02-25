@@ -67,6 +67,9 @@ type FortuneClientMethods interface {
 	GetComplexError(*context.T, ...ipc.CallOpt) error
 	// NoTags is a method without tags.
 	NoTags(*context.T, ...ipc.CallOpt) error
+	// TestContext is a method used for testing that the server receives a
+	// correct context.
+	TestContext(*context.T, ...ipc.CallOpt) error
 }
 
 // FortuneClientStub adds universal methods to FortuneClientMethods.
@@ -137,6 +140,15 @@ func (c implFortuneClientStub) GetComplexError(ctx *context.T, opts ...ipc.CallO
 func (c implFortuneClientStub) NoTags(ctx *context.T, opts ...ipc.CallOpt) (err error) {
 	var call ipc.Call
 	if call, err = c.c(ctx).StartCall(ctx, c.name, "NoTags", nil, opts...); err != nil {
+		return
+	}
+	err = call.Finish()
+	return
+}
+
+func (c implFortuneClientStub) TestContext(ctx *context.T, opts ...ipc.CallOpt) (err error) {
+	var call ipc.Call
+	if call, err = c.c(ctx).StartCall(ctx, c.name, "TestContext", nil, opts...); err != nil {
 		return
 	}
 	err = call.Finish()
@@ -260,6 +272,9 @@ type FortuneServerMethods interface {
 	GetComplexError(ipc.ServerContext) error
 	// NoTags is a method without tags.
 	NoTags(ipc.ServerContext) error
+	// TestContext is a method used for testing that the server receives a
+	// correct context.
+	TestContext(ipc.ServerContext) error
 }
 
 // FortuneServerStubMethods is the server interface containing
@@ -277,6 +292,9 @@ type FortuneServerStubMethods interface {
 	GetComplexError(ipc.ServerContext) error
 	// NoTags is a method without tags.
 	NoTags(ipc.ServerContext) error
+	// TestContext is a method used for testing that the server receives a
+	// correct context.
+	TestContext(ipc.ServerContext) error
 }
 
 // FortuneServerStub adds universal methods to FortuneServerStubMethods.
@@ -328,6 +346,10 @@ func (s implFortuneServerStub) NoTags(ctx ipc.ServerContext) error {
 	return s.impl.NoTags(ctx)
 }
 
+func (s implFortuneServerStub) TestContext(ctx ipc.ServerContext) error {
+	return s.impl.TestContext(ctx)
+}
+
 func (s implFortuneServerStub) Globber() *ipc.GlobState {
 	return s.gs
 }
@@ -377,6 +399,11 @@ var descFortune = ipc.InterfaceDesc{
 		{
 			Name: "NoTags",
 			Doc:  "// NoTags is a method without tags.",
+		},
+		{
+			Name: "TestContext",
+			Doc:  "// TestContext is a method used for testing that the server receives a\n// correct context.",
+			Tags: []*vdl.Value{vdl.ValueOf(access.Tag("Read"))},
 		},
 	},
 }
