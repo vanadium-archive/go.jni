@@ -17,7 +17,9 @@ import "C"
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java environment is passed in an empty
 // interface and then cast into the package-local environment type.
-func Init(jEnv interface{}) {}
+func Init(jEnv interface{}) error {
+	return nil
+}
 
 //export Java_io_v_v23_i18n_Catalog_nativeFormatParams
 func Java_io_v_v23_i18n_Catalog_nativeFormatParams(env *C.JNIEnv, jCatalog C.jclass, jFormat C.jstring, jParams C.jobjectArray) C.jobject {

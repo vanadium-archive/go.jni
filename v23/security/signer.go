@@ -3,7 +3,6 @@
 package security
 
 import (
-	"fmt"
 	"log"
 	"runtime"
 	"unsafe"
@@ -23,23 +22,15 @@ import "C"
 // and then cast into their package local types.
 func GoSigner(jEnv interface{}, jSigner C.jobject) (security.Signer, error) {
 	env := (*C.JNIEnv)(unsafe.Pointer(jutil.PtrValue(jEnv)))
-	// We cannot cache Java environments as they are only valid in the current
-	// thread.  We can, however, cache the Java VM and obtain an environment
-	// from it in whatever thread happens to be running at the time.
-	var jVM *C.JavaVM
-	if status := C.GetJavaVM(env, &jVM); status != 0 {
-		return nil, fmt.Errorf("couldn't get Java VM from the (Java) environment")
-	}
 	// Reference Java Signer; it will be de-referenced when the Go Signer
 	// created below is garbage-collected (through the finalizer callback we
 	// setup just below).
 	jSigner = C.NewGlobalRef(env, jSigner)
 	s := &signer{
-		jVM:     jVM,
 		jSigner: jSigner,
 	}
 	runtime.SetFinalizer(s, func(s *signer) {
-		jEnv, freeFunc := jutil.GetEnv(s.jVM)
+		jEnv, freeFunc := jutil.GetEnv()
 		env := (*C.JNIEnv)(jEnv)
 		defer freeFunc()
 		C.DeleteGlobalRef(env, s.jSigner)
@@ -48,12 +39,11 @@ func GoSigner(jEnv interface{}, jSigner C.jobject) (security.Signer, error) {
 }
 
 type signer struct {
-	jVM     *C.JavaVM
 	jSigner C.jobject
 }
 
 func (s *signer) Sign(purpose, message []byte) (security.Signature, error) {
-	env, freeFunc := jutil.GetEnv(s.jVM)
+	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
 	signatureSign := jutil.ClassSign("io.v.v23.security.Signature")
 	jSig, err := jutil.CallObjectMethod(env, s.jSigner, "sign", []jutil.Sign{jutil.ArraySign(jutil.ByteSign), jutil.ArraySign(jutil.ByteSign)}, signatureSign, purpose, message)
@@ -64,7 +54,7 @@ func (s *signer) Sign(purpose, message []byte) (security.Signature, error) {
 }
 
 func (s *signer) PublicKey() security.PublicKey {
-	env, freeFunc := jutil.GetEnv(s.jVM)
+	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
 	publicKeySign := jutil.ClassSign("java.security.interfaces.ECPublicKey")
 	jPublicKey, err := jutil.CallObjectMethod(env, s.jSigner, "publicKey", nil, publicKeySign)

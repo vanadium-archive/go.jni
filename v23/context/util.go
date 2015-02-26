@@ -74,18 +74,11 @@ func JavaCountDownLatch(jEnv interface{}, c <-chan struct{}) (C.jobject, error) 
 		return nil, err
 	}
 	jLatch := C.jobject(jLatchObj)
-	// We cannot cache Java environments as they are only valid in the current
-	// thread.  We can, however, cache the Java VM and obtain an environment
-	// from it in whatever thread happens to be running at the time.
-	var jVM *C.JavaVM
-	if status := C.GetJavaVM(env, &jVM); status != 0 {
-		return nil, fmt.Errorf("couldn't get Java VM from the (Java) environment")
-	}
 	// Reference Java CountDownLatch; it will be de-referenced when the goroutine below exits.
 	jLatch = C.NewGlobalRef(env, jLatch)
 	go func() {
 		<-c
-		javaEnv, freeFunc := jutil.GetEnv(jVM)
+		javaEnv, freeFunc := jutil.GetEnv()
 		jenv := (*C.JNIEnv)(javaEnv)
 		defer freeFunc()
 		if err := jutil.CallVoidMethod(jenv, jLatch, "countDown", nil); err != nil {
@@ -129,13 +122,6 @@ func GoContextKey(jEnv, jKeyObj interface{}) (interface{}, error) {
 func GoContextValue(jEnv, jValueObj interface{}) (interface{}, error) {
 	env := getEnv(jEnv)
 	jValue := getObject(jValueObj)
-	// We cannot cache Java environments as they are only valid in the current
-	// thread.  We can, however, cache the Java VM and obtain an environment
-	// from it in whatever thread happens to be running at the time.
-	var jVM *C.JavaVM
-	if status := C.GetJavaVM(env, &jVM); status != 0 {
-		return nil, fmt.Errorf("couldn't get Java VM from the (Java) environment")
-	}
 
 	// Reference Java object; it will be de-referenced when the Go wrapper
 	// object created below is garbage-collected (via the finalizer we setup
@@ -145,7 +131,7 @@ func GoContextValue(jEnv, jValueObj interface{}) (interface{}, error) {
 		jObj: jValue,
 	}
 	runtime.SetFinalizer(value, func(value *goContextValue) {
-		javaEnv, freeFunc := jutil.GetEnv(jVM)
+		javaEnv, freeFunc := jutil.GetEnv()
 		jenv := (*C.JNIEnv)(javaEnv)
 		defer freeFunc()
 		C.DeleteGlobalRef(jenv, value.jObj)

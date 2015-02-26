@@ -16,23 +16,15 @@ import (
 import "C"
 
 func goDispatcher(env *C.JNIEnv, jDispatcher C.jobject) (*dispatcher, error) {
-	// We cannot cache Java environments as they are only valid in the current
-	// thread.  We can, however, cache the Java VM and obtain an environment
-	// from it in whatever thread happens to be running at the time.
-	var jVM *C.JavaVM
-	if status := C.GetJavaVM(env, &jVM); status != 0 {
-		return nil, fmt.Errorf("couldn't get Java VM from the (Java) environment")
-	}
 	// Reference Java dispatcher; it will be de-referenced when the go
 	// dispatcher created below is garbage-collected (through the finalizer
 	// callback we setup below).
 	jDispatcher = C.NewGlobalRef(env, jDispatcher)
 	d := &dispatcher{
-		jVM:         jVM,
 		jDispatcher: jDispatcher,
 	}
 	runtime.SetFinalizer(d, func(d *dispatcher) {
-		jEnv, freeFunc := jutil.GetEnv(d.jVM)
+		jEnv, freeFunc := jutil.GetEnv()
 		env := (*C.JNIEnv)(jEnv)
 		defer freeFunc()
 		C.DeleteGlobalRef(env, d.jDispatcher)
@@ -42,13 +34,12 @@ func goDispatcher(env *C.JNIEnv, jDispatcher C.jobject) (*dispatcher, error) {
 }
 
 type dispatcher struct {
-	jVM         *C.JavaVM
 	jDispatcher C.jobject
 }
 
 func (d *dispatcher) Lookup(suffix string) (interface{}, security.Authorizer, error) {
 	// Get Java environment.
-	env, freeFunc := jutil.GetEnv(d.jVM)
+	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
 
 	// Call Java dispatcher's lookup() method.

@@ -3,7 +3,6 @@
 package security
 
 import (
-	"fmt"
 	"log"
 	"runtime"
 	"time"
@@ -45,23 +44,15 @@ func GoContext(jEnv, jContextObj interface{}) (security.Context, error) {
 	env := (*C.JNIEnv)(unsafe.Pointer(jutil.PtrValue(jEnv)))
 	jContext := C.jobject(unsafe.Pointer(jutil.PtrValue(jContextObj)))
 
-	// We cannot cache Java environments as they are only valid in the current
-	// thread.  We can, however, cache the Java VM and obtain an environment
-	// from it in whatever thread happens to be running at the time.
-	var jVM *C.JavaVM
-	if status := C.GetJavaVM(env, &jVM); status != 0 {
-		return nil, fmt.Errorf("couldn't get Java VM from the (Java) environment")
-	}
 	// Reference Java context; it will be de-referenced when the go context
 	// created below is garbage-collected (through the finalizer callback we
 	// setup just below).
 	jContext = C.NewGlobalRef(env, jContext)
 	ctx := &contextImpl{
-		jVM:      jVM,
 		jContext: jContext,
 	}
 	runtime.SetFinalizer(ctx, func(c *contextImpl) {
-		javaEnv, freeFunc := jutil.GetEnv(c.jVM)
+		javaEnv, freeFunc := jutil.GetEnv()
 		jenv := (*C.JNIEnv)(javaEnv)
 		defer freeFunc()
 		C.DeleteGlobalRef(jenv, c.jContext)
@@ -71,12 +62,11 @@ func GoContext(jEnv, jContextObj interface{}) (security.Context, error) {
 
 // contextImpl is the go interface to the java implementation of security.Context
 type contextImpl struct {
-	jVM      *C.JavaVM
 	jContext C.jobject
 }
 
 func (c *contextImpl) Timestamp() time.Time {
-	env, freeFunc := jutil.GetEnv(c.jVM)
+	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
 	jTime, err := jutil.CallObjectMethod(env, c.jContext, "timestamp", nil, jutil.DateTimeSign)
 	if err != nil {
@@ -96,7 +86,7 @@ func (c *contextImpl) Method() string {
 }
 
 func (c *contextImpl) MethodTags() []*vdl.Value {
-	env, freeFunc := jutil.GetEnv(c.jVM)
+	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
 	jTags, err := jutil.CallObjectArrayMethod(env, c.jContext, "methodTags", nil, jutil.VdlValueSign)
 	if err != nil {
@@ -133,7 +123,7 @@ func (c *contextImpl) LocalEndpoint() naming.Endpoint {
 }
 
 func (c *contextImpl) LocalPrincipal() security.Principal {
-	env, freeFunc := jutil.GetEnv(c.jVM)
+	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
 	jPrincipal, err := jutil.CallObjectMethod(env, c.jContext, "localPrincipal", nil, principalSign)
 	if err != nil {
@@ -149,7 +139,7 @@ func (c *contextImpl) LocalPrincipal() security.Principal {
 }
 
 func (c *contextImpl) LocalBlessings() security.Blessings {
-	env, freeFunc := jutil.GetEnv(c.jVM)
+	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
 	jBlessings, err := jutil.CallObjectMethod(env, c.jContext, "localBlessings", nil, blessingsSign)
 	if err != nil {
@@ -165,7 +155,7 @@ func (c *contextImpl) LocalBlessings() security.Blessings {
 }
 
 func (c *contextImpl) RemoteBlessings() security.Blessings {
-	env, freeFunc := jutil.GetEnv(c.jVM)
+	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
 	jBlessings, err := jutil.CallObjectMethod(env, c.jContext, "remoteBlessings", nil, blessingsSign)
 	if err != nil {
@@ -191,7 +181,7 @@ func (c *contextImpl) RemoteEndpoint() naming.Endpoint {
 }
 
 func (c *contextImpl) Context() *context.T {
-	env, freeFunc := jutil.GetEnv(c.jVM)
+	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
 	contextSign := jutil.Sign("io.v.v23.context.VContext")
 	jCtx, err := jutil.CallObjectMethod(env, c.jContext, "context", nil, contextSign)
@@ -206,7 +196,7 @@ func (c *contextImpl) Context() *context.T {
 }
 
 func (c *contextImpl) callStringMethod(methodName string) string {
-	env, freeFunc := jutil.GetEnv(c.jVM)
+	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
 	ret, err := jutil.CallStringMethod(env, c.jContext, methodName, nil)
 	if err != nil {

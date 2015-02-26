@@ -21,9 +21,18 @@ var (
 	jUtilClass C.jclass
 )
 
-func Init(jEnv interface{}) {
-	jACLWrapperClass = C.jclass(jutil.JFindClassOrPrint(jEnv, "io/v/v23/services/security/access/ACLWrapper"))
-	jUtilClass = C.jclass(jutil.JFindClassOrPrint(jEnv, "io/v/v23/services/security/access/Util"))
+func Init(jEnv interface{}) error {
+	class, err := jutil.JFindClass(jEnv, "io/v/v23/services/security/access/ACLWrapper")
+	if err != nil {
+		return err
+	}
+	jACLWrapperClass = C.jclass(class)
+	class, err = jutil.JFindClass(jEnv, "io/v/v23/services/security/access/Util")
+	if err != nil {
+		return err
+	}
+	jUtilClass = C.jclass(class)
+	return nil
 }
 
 //export Java_io_v_v23_services_security_access_ACLWrapper_nativeWrap

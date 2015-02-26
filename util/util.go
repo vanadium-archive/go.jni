@@ -52,6 +52,8 @@ var (
 	jHashMapClass C.jclass
 	// Global reference for []byte class.
 	jByteArrayClass C.jclass
+	// Cached Java VM.
+	jVM *C.JavaVM
 )
 
 // Init initializes the JNI code with the given Java environment.  This method
@@ -60,21 +62,52 @@ var (
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func Init(jEnv interface{}) {
+func Init(jEnv interface{}) error {
 	env := getEnv(jEnv)
-	jVomUtilClass = JFindClassOrPrint(env, "io/v/v23/vom/VomUtil")
-	jVExceptionClass = JFindClassOrPrint(env, "io/v/v23/verror/VException")
-	jActionCodeClass = JFindClassOrPrint(env, "io/v/v23/verror/VException$ActionCode")
-	jIDActionClass = JFindClassOrPrint(env, "io/v/v23/verror/VException$IDAction")
-	jVdlValueClass = JFindClassOrPrint(env, "io/v/v23/vdl/VdlValue")
-	jDateTimeClass = JFindClassOrPrint(env, "org/joda/time/DateTime")
-	jDurationClass = JFindClassOrPrint(env, "org/joda/time/Duration")
-	jThrowableClass = JFindClassOrPrint(env, "java/lang/Throwable")
-	jSystemClass = JFindClassOrPrint(env, "java/lang/System")
-	jObjectClass = JFindClassOrPrint(env, "java/lang/Object")
-	jStringClass = JFindClassOrPrint(env, "java/lang/String")
-	jHashMapClass = JFindClassOrPrint(env, "java/util/HashMap")
-	jByteArrayClass = JFindClassOrPrint(env, "[B")
+	var err error
+	if jVomUtilClass, err = JFindClass(env, "io/v/v23/vom/VomUtil"); err != nil {
+		return err
+	}
+	if jVExceptionClass, err = JFindClass(env, "io/v/v23/verror/VException"); err != nil {
+		return err
+	}
+	if jActionCodeClass, err = JFindClass(env, "io/v/v23/verror/VException$ActionCode"); err != nil {
+		return err
+	}
+	if jIDActionClass, err = JFindClass(env, "io/v/v23/verror/VException$IDAction"); err != nil {
+		return err
+	}
+	if jVdlValueClass, err = JFindClass(env, "io/v/v23/vdl/VdlValue"); err != nil {
+		return err
+	}
+	if jDateTimeClass, err = JFindClass(env, "org/joda/time/DateTime"); err != nil {
+		return err
+	}
+	if jDurationClass, err = JFindClass(env, "org/joda/time/Duration"); err != nil {
+		return err
+	}
+	if jThrowableClass, err = JFindClass(env, "java/lang/Throwable"); err != nil {
+		return err
+	}
+	if jSystemClass, err = JFindClass(env, "java/lang/System"); err != nil {
+		return err
+	}
+	if jObjectClass, err = JFindClass(env, "java/lang/Object"); err != nil {
+		return err
+	}
+	if jStringClass, err = JFindClass(env, "java/lang/String"); err != nil {
+		return err
+	}
+	if jHashMapClass, err = JFindClass(env, "java/util/HashMap"); err != nil {
+		return err
+	}
+	if jByteArrayClass, err = JFindClass(env, "[B"); err != nil {
+		return err
+	}
+	if status := C.GetJavaVM(env, &jVM); status != 0 {
+		return fmt.Errorf("couldn't get Java VM from the (Java) environment")
+	}
+	return nil
 }
 
 // CamelCase converts ThisString to thisString.
@@ -115,8 +148,7 @@ func GoString(jEnv, jStr interface{}) string {
 // must be invoked when the returned environment is no longer needed. The
 // returned environment can only be used by the thread that invoked this method,
 // and the function must be invoked by the same thread as well.
-func GetEnv(javaVM interface{}) (jEnv unsafe.Pointer, free func()) {
-	jVM := getJVM(javaVM)
+func GetEnv() (jEnv unsafe.Pointer, free func()) {
 	// Lock the goroutine to the current OS thread.  This is necessary as
 	// *C.JNIEnv must not be shared across threads.  The scenario that can break
 	// this requrement is:

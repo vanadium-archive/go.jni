@@ -14,7 +14,7 @@ import (
 import "C"
 
 func caveatValidator(context security.Context, caveat security.Caveat) error {
-	jEnv, freeFunc := jutil.GetEnv(javaVM)
+	jEnv, freeFunc := jutil.GetEnv()
 	defer freeFunc()
 	env := (*C.JNIEnv)(unsafe.Pointer(jutil.PtrValue(jEnv)))
 

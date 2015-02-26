@@ -23,7 +23,9 @@ import "C"
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java environment is passed in an empty
 // interface and then cast into the package-local environment type.
-func Init(jEnv interface{}) {}
+func Init(jEnv interface{}) error {
+	return nil
+}
 
 //export Java_io_v_core_veyron_runtimes_google_VRuntime_nativeInit
 func Java_io_v_core_veyron_runtimes_google_VRuntime_nativeInit(env *C.JNIEnv, jRuntime C.jclass) C.jobject {

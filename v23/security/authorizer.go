@@ -3,7 +3,6 @@
 package security
 
 import (
-	"fmt"
 	"runtime"
 	"unsafe"
 
@@ -25,23 +24,15 @@ func GoAuthorizer(jEnv, jAuthObj interface{}) (security.Authorizer, error) {
 	if jAuth == nil {
 		return nil, nil
 	}
-	// We cannot cache Java environments as they are only valid in the current
-	// thread.  We can, however, cache the Java VM and obtain an environment
-	// from it in whatever thread happens to be running at the time.
-	var jVM *C.JavaVM
-	if status := C.GetJavaVM(env, &jVM); status != 0 {
-		return nil, fmt.Errorf("couldn't get Java VM from the (Java) environment")
-	}
 	// Reference Java dispatcher; it will be de-referenced when the go
 	// dispatcher created below is garbage-collected (through the finalizer
 	// callback we setup below).
 	jAuth = C.NewGlobalRef(env, jAuth)
 	a := &authorizer{
-		jVM:   jVM,
 		jAuth: jAuth,
 	}
 	runtime.SetFinalizer(a, func(a *authorizer) {
-		jEnv, freeFunc := jutil.GetEnv(a.jVM)
+		jEnv, freeFunc := jutil.GetEnv()
 		env := (*C.JNIEnv)(jEnv)
 		defer freeFunc()
 		C.DeleteGlobalRef(env, a.jAuth)
@@ -50,12 +41,11 @@ func GoAuthorizer(jEnv, jAuthObj interface{}) (security.Authorizer, error) {
 }
 
 type authorizer struct {
-	jVM   *C.JavaVM
 	jAuth C.jobject
 }
 
 func (a *authorizer) Authorize(context security.Context) error {
-	env, freeFunc := jutil.GetEnv(a.jVM)
+	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
 	// Create a Java context.
 	jContext, err := JavaContext(env, context)

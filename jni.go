@@ -9,24 +9,27 @@ import (
 
 	jgoogle "v.io/jni/core/veyron/runtimes/google"
 	jutil "v.io/jni/util"
-	jveyron2 "v.io/jni/v23"
+	jv23 "v.io/jni/v23"
 )
 
 // #cgo LDFLAGS: -ljniwrapper
 // #include "jni_wrapper.h"
 import "C"
 
-// Init initializes the JNI code with the given Java environment.  This method
-// must be invoked before any other method in this package and must be called
-// from the main Java thread (e.g., On_Load()).
-func Init(env *C.JNIEnv) {}
-
 //export Java_io_v_v23_V_nativeInit
 func Java_io_v_v23_V_nativeInit(env *C.JNIEnv, jVRuntimeClass C.jclass) {
-	Init(env)
-	jutil.Init(env)
-	jveyron2.Init(env)
-	jgoogle.Init(env)
+	if err := jutil.Init(env); err != nil {
+		jutil.JThrowV(env, err)
+		return
+	}
+	if err := jv23.Init(env); err != nil {
+		jutil.JThrowV(env, err)
+		return
+	}
+	if err := jgoogle.Init(env); err != nil {
+		jutil.JThrowV(env, err)
+		return
+	}
 }
 
 func main() {

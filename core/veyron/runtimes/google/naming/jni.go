@@ -3,7 +3,6 @@
 package naming
 
 import (
-	"fmt"
 	"log"
 
 	jchannel "v.io/jni/core/veyron/runtimes/google/channel"
@@ -27,8 +26,13 @@ var (
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java environment is passed in an empty
 // interface and then cast into the package-local environment type.
-func Init(jEnv interface{}) {
-	jNamespaceImplClass = C.jclass(jutil.JFindClassOrPrint(jEnv, "io/v/core/veyron/runtimes/google/naming/ns/Namespace"))
+func Init(jEnv interface{}) error {
+	class, err := jutil.JFindClass(jEnv, "io/v/core/veyron/runtimes/google/naming/ns/Namespace")
+	if err != nil {
+		return err
+	}
+	jNamespaceImplClass = C.jclass(class)
+	return nil
 }
 
 //export Java_io_v_core_veyron_runtimes_google_naming_ns_Namespace_nativeGlob
@@ -45,21 +49,12 @@ func Java_io_v_core_veyron_runtimes_google_naming_ns_Namespace_nativeGlob(env *C
 		return nil
 	}
 
-	// We cannot cache Java environments as they are only valid in the current
-	// thread.  We can, however, cache the Java VM and obtain an environment
-	// from it in whatever thread happens to be running at the time.
-	var jVM *C.JavaVM
-	if status := C.GetJavaVM(env, &jVM); status != 0 {
-		jutil.JThrowV(env, fmt.Errorf("couldn't get Java VM from the (Java) environment"))
-		return nil
-	}
-
 	retChan := make(chan C.jobject, 100)
 	go func() {
 		for entry := range entryChan {
 			switch v := entry.(type) {
 			case *naming.MountEntry:
-				jEnv, freeFunc := jutil.GetEnv(jVM)
+				jEnv, freeFunc := jutil.GetEnv()
 				env := (*C.JNIEnv)(jEnv)
 				defer freeFunc()
 				jMountEntry, err := JavaMountEntry(env, v)

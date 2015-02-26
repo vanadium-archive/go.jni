@@ -51,8 +51,6 @@ var (
 	jUtilClass C.jclass
 	// Global reference for java.lang.Object class.
 	jObjectClass C.jclass
-
-	javaVM *C.JavaVM
 )
 
 // Init initializes the JNI code with the given Java evironment. This method
@@ -62,28 +60,66 @@ var (
 // interface and then cast into the package-local environment type.
 func Init(jEnv interface{}) error {
 	env := (*C.JNIEnv)(unsafe.Pointer(jutil.PtrValue(jEnv)))
-	// We cannot cache Java environments as they are only valid in the current
-	// thread.  We can, however, cache the Java VM and obtain an environment
-	// from it in whatever thread happens to be running at the time.
-	if status := C.GetJavaVM(env, &javaVM); status != 0 {
-		return fmt.Errorf("couldn't get Java VM from the (Java) environment")
-	}
 	security.SetCaveatValidator(caveatValidator)
 
 	// Cache global references to all Java classes used by the package.  This is
 	// necessary because JNI gets access to the class loader only in the system
 	// thread, so we aren't able to invoke FindClass in other threads.
-	jBlessingsClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/v23/security/Blessings"))
-	jCaveatClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/v23/security/Caveat"))
-	jPrincipalImplClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/v23/security/PrincipalImpl"))
-	jBlessingsImplClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/v23/security/BlessingsImpl"))
-	jBlessingStoreImplClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/v23/security/BlessingStoreImpl"))
-	jBlessingRootsImplClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/v23/security/BlessingRootsImpl"))
-	jContextImplClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/v23/security/VContextImpl"))
-	jBlessingPatternWrapperClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/v23/security/BlessingPatternWrapper"))
-	jCaveatRegistryClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/v23/security/CaveatRegistry"))
-	jUtilClass = C.jclass(jutil.JFindClassOrPrint(env, "io/v/v23/security/Util"))
-	jObjectClass = C.jclass(jutil.JFindClassOrPrint(env, "java/lang/Object"))
+	class, err := jutil.JFindClass(env, "io/v/v23/security/Blessings")
+	if err != nil {
+		return err
+	}
+	jBlessingsClass = C.jclass(class)
+	class, err = jutil.JFindClass(env, "io/v/v23/security/Caveat")
+	if err != nil {
+		return err
+	}
+	jCaveatClass = C.jclass(class)
+	class, err = jutil.JFindClass(env, "io/v/v23/security/PrincipalImpl")
+	if err != nil {
+		return err
+	}
+	jPrincipalImplClass = C.jclass(class)
+	class, err = jutil.JFindClass(env, "io/v/v23/security/BlessingsImpl")
+	if err != nil {
+		return err
+	}
+	jBlessingsImplClass = C.jclass(class)
+	class, err = jutil.JFindClass(env, "io/v/v23/security/BlessingStoreImpl")
+	if err != nil {
+		return err
+	}
+	jBlessingStoreImplClass = C.jclass(class)
+	class, err = jutil.JFindClass(env, "io/v/v23/security/BlessingRootsImpl")
+	if err != nil {
+		return err
+	}
+	jBlessingRootsImplClass = C.jclass(class)
+	class, err = jutil.JFindClass(env, "io/v/v23/security/VContextImpl")
+	if err != nil {
+		return err
+	}
+	jContextImplClass = C.jclass(class)
+	class, err = jutil.JFindClass(env, "io/v/v23/security/BlessingPatternWrapper")
+	if err != nil {
+		return err
+	}
+	jBlessingPatternWrapperClass = C.jclass(class)
+	class, err = jutil.JFindClass(env, "io/v/v23/security/CaveatRegistry")
+	if err != nil {
+		return err
+	}
+	jCaveatRegistryClass = C.jclass(class)
+	class, err = jutil.JFindClass(env, "io/v/v23/security/Util")
+	if err != nil {
+		return err
+	}
+	jUtilClass = C.jclass(class)
+	class, err = jutil.JFindClass(env, "java/lang/Object")
+	if err != nil {
+		return err
+	}
+	jObjectClass = C.jclass(class)
 	return nil
 }
 

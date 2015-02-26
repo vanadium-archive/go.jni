@@ -25,12 +25,21 @@ var (
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java environment is passed in an empty
 // interface and then cast into the package-local environment type.
-func Init(jEnv interface{}) {
+func Init(jEnv interface{}) error {
 	// Cache global references to all Java classes used by the package.  This is
 	// necessary because JNI gets access to the class loader only in the system
 	// thread, so we aren't able to invoke FindClass in other threads.
-	jVContextImplClass = C.jclass(jutil.JFindClassOrPrint(jEnv, "io/v/v23/context/VContextImpl"))
-	jCountDownLatchClass = C.jclass(jutil.JFindClassOrPrint(jEnv, "java/util/concurrent/CountDownLatch"))
+	class, err := jutil.JFindClass(jEnv, "io/v/v23/context/VContextImpl")
+	if err != nil {
+		return err
+	}
+	jVContextImplClass = C.jclass(class)
+	class, err = jutil.JFindClass(jEnv, "java/util/concurrent/CountDownLatch")
+	if err != nil {
+		return err
+	}
+	jCountDownLatchClass = C.jclass(class)
+	return nil
 }
 
 //export Java_io_v_v23_context_VContextImpl_nativeCreate

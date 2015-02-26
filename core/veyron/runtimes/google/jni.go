@@ -19,9 +19,18 @@ import "C"
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java environment is passed in an empty
 // interface and then cast into the package-local environment type.
-func Init(jEnv interface{}) {
-	jipc.Init(jEnv)
-	jrt.Init(jEnv)
-	jchannel.Init(jEnv)
-	jnaming.Init(jEnv)
+func Init(jEnv interface{}) error {
+	if err := jipc.Init(jEnv); err != nil {
+		return err
+	}
+	if err := jrt.Init(jEnv); err != nil {
+		return err
+	}
+	if err := jchannel.Init(jEnv); err != nil {
+		return err
+	}
+	if err := jnaming.Init(jEnv); err != nil {
+		return err
+	}
+	return nil
 }

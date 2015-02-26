@@ -23,9 +23,18 @@ var (
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java environment is passed in an empty
 // interface and then cast into the package-local environment type.
-func Init(jEnv interface{}) {
-	jInputChannelImplClass = C.jclass(jutil.JFindClassOrPrint(jEnv, "io/v/core/veyron/runtimes/google/InputChannel"))
-	jEOFExceptionClass = C.jclass(jutil.JFindClassOrPrint(jEnv, "java/io/EOFException"))
+func Init(jEnv interface{}) error {
+	class, err := jutil.JFindClass(jEnv, "io/v/core/veyron/runtimes/google/InputChannel")
+	if err != nil {
+		return err
+	}
+	jInputChannelImplClass = C.jclass(class)
+	class, err = jutil.JFindClass(jEnv, "java/io/EOFException")
+	if err != nil {
+		return err
+	}
+	jEOFExceptionClass = C.jclass(class)
+	return nil
 }
 
 //export Java_io_v_core_veyron_runtimes_google_InputChannel_nativeAvailable

@@ -15,7 +15,9 @@ import "C"
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java environment is passed in an empty
 // interface and then cast into the package-local environment type.
-func Init(jEnv interface{}) {}
+func Init(jEnv interface{}) error {
+	return nil
+}
 
 //export Java_io_v_v23_android_RedirectStderr_nativeStart
 func Java_io_v_v23_android_RedirectStderr_nativeStart(env *C.JNIEnv, jRuntime C.jclass, fileno C.jint) {

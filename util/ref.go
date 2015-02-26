@@ -102,14 +102,6 @@ func JConditionalRef(jEnv, jObj interface{}, valptr interface{}) (unsafe.Pointer
 		return unsafe.Pointer(uintptr(goPtr)), nil
 	}
 
-	// We cannot cache Java environments as they are only valid in the current
-	// thread.  We can, however, cache the Java VM and obtain an environment
-	// from it in whatever thread happens to be running at the time.
-	var jVM *C.JavaVM
-	if status := C.GetJavaVM(env, &jVM); status != 0 {
-		return nil, fmt.Errorf("couldn't get Java VM from the (Java) environment")
-	}
-
 	// Reference Java object: it will be de-referenced when the Go pointer is
 	// garbage-collected (through the finalizer callback we setup just below.
 	obj = C.NewGlobalRef(env, obj)
@@ -124,14 +116,14 @@ func JConditionalRef(jEnv, jObj interface{}, valptr interface{}) (unsafe.Pointer
 	javaToGoRefs[identityHash] = int64(goPtr)
 
 	// Setup the finalizer.
-	setupRefFinalizer(jVM, valptr)
+	setupRefFinalizer(valptr)
 
 	return unsafe.Pointer(goPtr), nil
 }
 
-func setupRefFinalizer(jVM *C.JavaVM, valptr interface{}) {
+func setupRefFinalizer(valptr interface{}) {
 	runtime.SetFinalizer(valptr, func(valptr interface{}) {
-		jEnv, freeFunc := GetEnv(jVM)
+		jEnv, freeFunc := GetEnv()
 		env := (*C.JNIEnv)(jEnv)
 		defer freeFunc()
 

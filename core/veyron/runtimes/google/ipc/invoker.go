@@ -25,24 +25,15 @@ func goInvoker(env *C.JNIEnv, jObj C.jobject) (ipc.Invoker, error) {
 	}
 	jInvoker := C.jobject(jInvokerObj)
 
-	// We cannot cache Java environments as they are only valid in the current
-	// thread.  We can, however, cache the Java VM and obtain an environment
-	// from it in whatever thread happens to be running at the time.
-	var jVM *C.JavaVM
-	if status := C.GetJavaVM(env, &jVM); status != 0 {
-		return nil, fmt.Errorf("couldn't get Java VM from the (Java) environment")
-	}
-
 	// Reference Java invoker; it will be de-referenced when the go invoker
 	// created below is garbage-collected (through the finalizer callback we
 	// setup just below).
 	jInvoker = C.NewGlobalRef(env, jInvoker)
 	i := &invoker{
-		jVM:      jVM,
 		jInvoker: jInvoker,
 	}
 	runtime.SetFinalizer(i, func(i *invoker) {
-		jEnv, freeFunc := jutil.GetEnv(i.jVM)
+		jEnv, freeFunc := jutil.GetEnv()
 		env := (*C.JNIEnv)(jEnv)
 		defer freeFunc()
 		C.DeleteGlobalRef(env, i.jInvoker)
@@ -51,12 +42,11 @@ func goInvoker(env *C.JNIEnv, jObj C.jobject) (ipc.Invoker, error) {
 }
 
 type invoker struct {
-	jVM      *C.JavaVM
 	jInvoker C.jobject
 }
 
 func (i *invoker) Prepare(method string, numArgs int) (argptrs []interface{}, tags []*vdl.Value, err error) {
-	env, freeFunc := jutil.GetEnv(i.jVM)
+	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
 
 	// Have all input arguments be decoded into *vdl.Value.
@@ -78,7 +68,7 @@ func (i *invoker) Prepare(method string, numArgs int) (argptrs []interface{}, ta
 }
 
 func (i *invoker) Invoke(method string, call ipc.ServerCall, argptrs []interface{}) (results []interface{}, err error) {
-	jEnv, freeFunc := jutil.GetEnv(i.jVM)
+	jEnv, freeFunc := jutil.GetEnv()
 	env := (*C.JNIEnv)(jEnv)
 	defer freeFunc()
 
