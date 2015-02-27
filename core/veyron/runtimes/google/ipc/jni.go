@@ -33,8 +33,8 @@ var (
 	jClientClass C.jclass
 	// Global reference for io.v.core.veyron.runtimes.google.ipc.Call class.
 	jCallClass C.jclass
-	// Global reference for io.v.core.veyron.runtimes.google.ipc.ServerCall class.
-	jServerCallClass C.jclass
+	// Global reference for io.v.core.veyron.runtimes.google.ipc.StreamServerCall class.
+	jStreamServerCallClass C.jclass
 	// Global reference for io.v.core.veyron.runtimes.google.ipc.Stream class.
 	jStreamClass C.jclass
 	// Global reference for io.v.core.veyron.runtimes.google.ipc.VDLInvoker class.
@@ -85,11 +85,11 @@ func Init(jEnv interface{}) error {
 		return err
 	}
 	jCallClass = C.jclass(class)
-	class, err = jutil.JFindClass(jEnv, "io/v/core/veyron/runtimes/google/ipc/ServerCall")
+	class, err = jutil.JFindClass(jEnv, "io/v/core/veyron/runtimes/google/ipc/StreamServerCall")
 	if err != nil {
 		return err
 	}
-	jServerCallClass = C.jclass(class)
+	jStreamServerCallClass = C.jclass(class)
 	class, err = jutil.JFindClass(jEnv, "io/v/core/veyron/runtimes/google/ipc/Stream")
 	if err != nil {
 		return err
@@ -391,9 +391,9 @@ func Java_io_v_core_veyron_runtimes_google_ipc_Call_nativeFinalize(env *C.JNIEnv
 	jutil.GoUnref((*ipc.Call)(jutil.Ptr(goPtr)))
 }
 
-//export Java_io_v_core_veyron_runtimes_google_ipc_ServerCall_nativeBlessings
-func Java_io_v_core_veyron_runtimes_google_ipc_ServerCall_nativeBlessings(env *C.JNIEnv, jServerCall C.jobject, goPtr C.jlong) C.jobject {
-	blessings := (*(*ipc.ServerCall)(jutil.Ptr(goPtr))).Blessings()
+//export Java_io_v_core_veyron_runtimes_google_ipc_StreamServerCall_nativeBlessings
+func Java_io_v_core_veyron_runtimes_google_ipc_StreamServerCall_nativeBlessings(env *C.JNIEnv, jStreamServerCall C.jobject, goPtr C.jlong) C.jobject {
+	blessings := (*(*ipc.StreamServerCall)(jutil.Ptr(goPtr))).Blessings()
 	jBlessings, err := jsecurity.JavaBlessings(env, blessings)
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -402,7 +402,7 @@ func Java_io_v_core_veyron_runtimes_google_ipc_ServerCall_nativeBlessings(env *C
 	return C.jobject(jBlessings)
 }
 
-//export Java_io_v_core_veyron_runtimes_google_ipc_ServerCall_nativeFinalize
-func Java_io_v_core_veyron_runtimes_google_ipc_ServerCall_nativeFinalize(env *C.JNIEnv, jServerCall C.jobject, goPtr C.jlong) {
-	jutil.GoUnref((*ipc.ServerCall)(jutil.Ptr(goPtr)))
+//export Java_io_v_core_veyron_runtimes_google_ipc_StreamServerCall_nativeFinalize
+func Java_io_v_core_veyron_runtimes_google_ipc_StreamServerCall_nativeFinalize(env *C.JNIEnv, jStreamServerCall C.jobject, goPtr C.jlong) {
+	jutil.GoUnref((*ipc.StreamServerCall)(jutil.Ptr(goPtr)))
 }

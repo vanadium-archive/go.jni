@@ -67,12 +67,12 @@ func (i *invoker) Prepare(method string, numArgs int) (argptrs []interface{}, ta
 	return
 }
 
-func (i *invoker) Invoke(method string, call ipc.ServerCall, argptrs []interface{}) (results []interface{}, err error) {
+func (i *invoker) Invoke(method string, call ipc.StreamServerCall, argptrs []interface{}) (results []interface{}, err error) {
 	jEnv, freeFunc := jutil.GetEnv()
 	env := (*C.JNIEnv)(jEnv)
 	defer freeFunc()
 
-	jServerCall, err := javaServerCall(env, call)
+	jStreamServerCall, err := javaServerCall(env, call)
 	if err != nil {
 		return nil, err
 	}
@@ -83,9 +83,9 @@ func (i *invoker) Invoke(method string, call ipc.ServerCall, argptrs []interface
 		return nil, err
 	}
 	// Invoke the method.
-	callSign := jutil.ClassSign("io.v.v23.ipc.ServerCall")
+	callSign := jutil.ClassSign("io.v.v23.ipc.StreamServerCall")
 	replySign := jutil.ClassSign("io.v.core.veyron.runtimes.google.ipc.VDLInvoker$InvokeReply")
-	jReply, err := jutil.CallObjectMethod(env, i.jInvoker, "invoke", []jutil.Sign{jutil.StringSign, callSign, jutil.ArraySign(jutil.ArraySign(jutil.ByteSign))}, replySign, jutil.CamelCase(method), jServerCall, jVomArgs)
+	jReply, err := jutil.CallObjectMethod(env, i.jInvoker, "invoke", []jutil.Sign{jutil.StringSign, callSign, jutil.ArraySign(jutil.ArraySign(jutil.ByteSign))}, replySign, jutil.CamelCase(method), jStreamServerCall, jVomArgs)
 	if err != nil {
 		return nil, fmt.Errorf("error invoking Java method %q: %v", method, err)
 	}

@@ -437,17 +437,17 @@ type FortuneStreamingGetContext interface {
 	FortuneStreamingGetServerStream
 }
 
-// FortuneStreamingGetContextStub is a wrapper that converts ipc.ServerCall into
+// FortuneStreamingGetContextStub is a wrapper that converts ipc.StreamServerCall into
 // a typesafe stub that implements FortuneStreamingGetContext.
 type FortuneStreamingGetContextStub struct {
-	ipc.ServerCall
+	ipc.StreamServerCall
 	valRecv bool
 	errRecv error
 }
 
-// Init initializes FortuneStreamingGetContextStub from ipc.ServerCall.
-func (s *FortuneStreamingGetContextStub) Init(call ipc.ServerCall) {
-	s.ServerCall = call
+// Init initializes FortuneStreamingGetContextStub from ipc.StreamServerCall.
+func (s *FortuneStreamingGetContextStub) Init(call ipc.StreamServerCall) {
+	s.StreamServerCall = call
 }
 
 // RecvStream returns the receiver side of the Fortune.StreamingGet server stream.

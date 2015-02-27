@@ -49,11 +49,11 @@ func JavaClient(jEnv interface{}, client ipc.Client) (unsafe.Pointer, error) {
 	return jClient, nil
 }
 
-// javaServerCall converts the provided Go serverCall into a Java ServerCall
+// javaStreamServerCall converts the provided Go serverCall into a Java StreamServerCall
 // object.
-func javaServerCall(env *C.JNIEnv, call ipc.ServerCall) (C.jobject, error) {
+func javaStreamServerCall(env *C.JNIEnv, call ipc.StreamServerCall) (C.jobject, error) {
 	if call == nil {
-		return nil, fmt.Errorf("Go ServerCall value cannot be nil")
+		return nil, fmt.Errorf("Go StreamServerCall value cannot be nil")
 	}
 	jStream, err := javaStream(env, call)
 	if err != nil {
@@ -69,12 +69,12 @@ func javaServerCall(env *C.JNIEnv, call ipc.ServerCall) (C.jobject, error) {
 	}
 	contextSign := jutil.ClassSign("io.v.v23.context.VContext")
 	securityContextSign := jutil.ClassSign("io.v.v23.security.VContext")
-	jServerCall, err := jutil.NewObject(env, jServerCallClass, []jutil.Sign{jutil.LongSign, streamSign, contextSign, securityContextSign}, int64(jutil.PtrValue(&call)), jStream, jContext, jSecurityContext)
+	jStreamServerCall, err := jutil.NewObject(env, jStreamServerCallClass, []jutil.Sign{jutil.LongSign, streamSign, contextSign, securityContextSign}, int64(jutil.PtrValue(&call)), jStream, jContext, jSecurityContext)
 	if err != nil {
 		return nil, err
 	}
-	jutil.GoRef(&call) // Un-refed when the Java ServerCall object is finalized.
-	return C.jobject(jServerCall), nil
+	jutil.GoRef(&call) // Un-refed when the Java StreamServerCall object is finalized.
+	return C.jobject(jStreamServerCall), nil
 }
 
 // javaCall converts the provided Go Call value into a Java Call object.
