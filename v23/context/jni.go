@@ -50,7 +50,7 @@ func Java_io_v_v23_context_VContextImpl_nativeCreate(env *C.JNIEnv, jVContextImp
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return jContext
+	return C.jobject(jContext)
 }
 
 //export Java_io_v_v23_context_VContextImpl_nativeDeadline
@@ -75,7 +75,7 @@ func Java_io_v_v23_context_VContextImpl_nativeDone(env *C.JNIEnv, jVContextImpl 
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return jCounter
+	return C.jobject(jCounter)
 }
 
 //export Java_io_v_v23_context_VContextImpl_nativeValue
@@ -87,7 +87,7 @@ func Java_io_v_v23_context_VContextImpl_nativeValue(env *C.JNIEnv, jVContextImpl
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return jValue
+	return C.jobject(jValue)
 }
 
 //export Java_io_v_v23_context_VContextImpl_nativeWithCancel
@@ -98,7 +98,7 @@ func Java_io_v_v23_context_VContextImpl_nativeWithCancel(env *C.JNIEnv, jVContex
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return jCtx
+	return C.jobject(jCtx)
 }
 
 //export Java_io_v_v23_context_VContextImpl_nativeWithDeadline
@@ -114,7 +114,7 @@ func Java_io_v_v23_context_VContextImpl_nativeWithDeadline(env *C.JNIEnv, jVCont
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return jCtx
+	return C.jobject(jCtx)
 }
 
 //export Java_io_v_v23_context_VContextImpl_nativeWithTimeout
@@ -130,7 +130,7 @@ func Java_io_v_v23_context_VContextImpl_nativeWithTimeout(env *C.JNIEnv, jVConte
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return jCtx
+	return C.jobject(jCtx)
 }
 
 //export Java_io_v_v23_context_VContextImpl_nativeWithValue
@@ -151,7 +151,7 @@ func Java_io_v_v23_context_VContextImpl_nativeWithValue(env *C.JNIEnv, jVContext
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return jCtx
+	return C.jobject(jCtx)
 }
 
 //export Java_io_v_v23_context_VContextImpl_nativeCancel

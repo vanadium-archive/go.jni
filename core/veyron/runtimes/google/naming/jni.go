@@ -57,11 +57,12 @@ func Java_io_v_core_veyron_runtimes_google_naming_ns_Namespace_nativeGlob(env *C
 				jEnv, freeFunc := jutil.GetEnv()
 				env := (*C.JNIEnv)(jEnv)
 				defer freeFunc()
-				jMountEntry, err := JavaMountEntry(env, v)
+				jMountEntryObj, err := JavaMountEntry(env, v)
 				if err != nil {
 					log.Println("Couldn't convert Go MountEntry %v to Java", v)
 					continue
 				}
+				jMountEntry := C.jobject(jMountEntryObj)
 				jMountEntry = C.NewGlobalRef(env, jMountEntry)
 				retChan <- jMountEntry
 			case *naming.GlobError:

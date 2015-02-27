@@ -47,7 +47,7 @@ func Java_io_v_v23_services_security_access_ACLWrapper_nativeWrap(env *C.JNIEnv,
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return jWrapper
+	return C.jobject(jWrapper)
 }
 
 //export Java_io_v_v23_services_security_access_ACLWrapper_nativeIncludes

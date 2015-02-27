@@ -26,7 +26,7 @@ type goContextValue struct {
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JavaContext(jEnv interface{}, ctx *context.T, cancel context.CancelFunc) (C.jobject, error) {
+func JavaContext(jEnv interface{}, ctx *context.T, cancel context.CancelFunc) (unsafe.Pointer, error) {
 	cancelPtr := int64(0)
 	if cancel != nil {
 		cancelPtr = int64(jutil.PtrValue(&cancel))
@@ -39,7 +39,7 @@ func JavaContext(jEnv interface{}, ctx *context.T, cancel context.CancelFunc) (C
 	if cancel != nil {
 		jutil.GoRef(&cancel) // Un-refed when the Java context object is finalized.
 	}
-	return C.jobject(jCtx), err
+	return jCtx, err
 }
 
 // GoContext converts the provided Java Context into a Go context.
@@ -64,7 +64,7 @@ func GoContext(jEnv, jContextObj interface{}) (*context.T, error) {
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JavaCountDownLatch(jEnv interface{}, c <-chan struct{}) (C.jobject, error) {
+func JavaCountDownLatch(jEnv interface{}, c <-chan struct{}) (unsafe.Pointer, error) {
 	env := getEnv(jEnv)
 	if c == nil {
 		return nil, nil
@@ -86,7 +86,7 @@ func JavaCountDownLatch(jEnv interface{}, c <-chan struct{}) (C.jobject, error) 
 		}
 		C.DeleteGlobalRef(jenv, jLatch)
 	}()
-	return jLatch, nil
+	return unsafe.Pointer(jLatch), nil
 }
 
 // GoContextKey creates a Go Context key given the Java Context key.  The
@@ -143,7 +143,7 @@ func GoContextValue(jEnv, jValueObj interface{}) (interface{}, error) {
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JavaContextValue(jEnv interface{}, value interface{}) (C.jobject, error) {
+func JavaContextValue(jEnv interface{}, value interface{}) (unsafe.Pointer, error) {
 	if value == nil {
 		return nil, nil
 	}
@@ -151,7 +151,7 @@ func JavaContextValue(jEnv interface{}, value interface{}) (C.jobject, error) {
 	if !ok {
 		return nil, fmt.Errorf("Invalid type %T for value %v, wanted goContextValue", value, value)
 	}
-	return val.jObj, nil
+	return unsafe.Pointer(val.jObj), nil
 }
 
 func getEnv(jEnv interface{}) *C.JNIEnv {

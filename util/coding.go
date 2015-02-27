@@ -3,6 +3,8 @@
 package util
 
 import (
+	"unsafe"
+
 	"v.io/v23/vdl"
 	"v.io/v23/vom"
 )
@@ -56,7 +58,7 @@ func JVomEncodeValue(jEnv, jVdlValue interface{}) ([]byte, error) {
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JVomDecode(jEnv interface{}, data []byte, jClass interface{}) (C.jobject, error) {
+func JVomDecode(jEnv interface{}, data []byte, jClass interface{}) (unsafe.Pointer, error) {
 	class := getClass(jClass)
 	if class == nil {
 		class = jObjectClass
@@ -69,7 +71,7 @@ func JVomDecode(jEnv interface{}, data []byte, jClass interface{}) (C.jobject, e
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JVomCopy(jEnv interface{}, src interface{}, jClass interface{}) (C.jobject, error) {
+func JVomCopy(jEnv interface{}, src interface{}, jClass interface{}) (unsafe.Pointer, error) {
 	data, err := vom.Encode(src)
 	if err != nil {
 		return nil, err

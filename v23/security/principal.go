@@ -21,7 +21,7 @@ import "C"
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JavaPrincipal(jEnv interface{}, principal security.Principal) (C.jobject, error) {
+func JavaPrincipal(jEnv interface{}, principal security.Principal) (unsafe.Pointer, error) {
 	if principal == nil {
 		return nil, nil
 	}
@@ -30,7 +30,7 @@ func JavaPrincipal(jEnv interface{}, principal security.Principal) (C.jobject, e
 		return nil, err
 	}
 	jutil.GoRef(&principal) // Un-refed when the Java PrincipalImpl is finalized.
-	return C.jobject(jPrincipal), nil
+	return jPrincipal, nil
 }
 
 // GoPrincipal converts the provided Java Principal object into a Go Principal.

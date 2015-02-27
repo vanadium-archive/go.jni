@@ -3,6 +3,8 @@
 package access
 
 import (
+	"unsafe"
+
 	jutil "v.io/jni/util"
 	"v.io/v23/services/security/access"
 	"v.io/v23/vom"
@@ -16,7 +18,7 @@ import "C"
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JavaACL(jEnv interface{}, acl access.ACL) (C.jobject, error) {
+func JavaACL(jEnv interface{}, acl access.ACL) (unsafe.Pointer, error) {
 	encoded, err := vom.Encode(acl)
 	if err != nil {
 		return nil, err
@@ -25,7 +27,7 @@ func JavaACL(jEnv interface{}, acl access.ACL) (C.jobject, error) {
 	if err != nil {
 		return nil, err
 	}
-	return C.jobject(jACL), nil
+	return jACL, nil
 }
 
 // GoACL converts the provided Java ACL into a Go ACL.
@@ -48,7 +50,7 @@ func GoACL(jEnv, jACL interface{}) (access.ACL, error) {
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JavaACLWrapper(jEnv interface{}, acl access.ACL) (C.jobject, error) {
+func JavaACLWrapper(jEnv interface{}, acl access.ACL) (unsafe.Pointer, error) {
 	jACL, err := JavaACL(jEnv, acl)
 	if err != nil {
 		return nil, err
@@ -58,5 +60,5 @@ func JavaACLWrapper(jEnv interface{}, acl access.ACL) (C.jobject, error) {
 		return nil, err
 	}
 	jutil.GoRef(&acl) // Un-refed when the Java ACLWrapper object is finalized.
-	return C.jobject(jWrapper), nil
+	return jWrapper, nil
 }

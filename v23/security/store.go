@@ -20,14 +20,14 @@ import "C"
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JavaBlessingStore(jEnv interface{}, store security.BlessingStore) (C.jobject, error) {
+func JavaBlessingStore(jEnv interface{}, store security.BlessingStore) (unsafe.Pointer, error) {
 	env := (*C.JNIEnv)(unsafe.Pointer(jutil.PtrValue(jEnv)))
 	jObj, err := jutil.NewObject(env, jBlessingStoreImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&store)))
 	if err != nil {
 		return nil, err
 	}
 	jutil.GoRef(&store) // Un-refed when the Java BlessingStoreImpl is finalized.
-	return C.jobject(jObj), nil
+	return jObj, nil
 }
 
 // GoBlessingStore creates an instance of security.BlessingStore that uses the

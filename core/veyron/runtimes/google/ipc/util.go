@@ -4,6 +4,7 @@ package ipc
 
 import (
 	"fmt"
+	"unsafe"
 
 	jutil "v.io/jni/util"
 	jcontext "v.io/jni/v23/context"
@@ -19,7 +20,7 @@ import "C"
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JavaServer(jEnv interface{}, server ipc.Server, jListenSpec interface{}) (C.jobject, error) {
+func JavaServer(jEnv interface{}, server ipc.Server, jListenSpec interface{}) (unsafe.Pointer, error) {
 	if server == nil {
 		return nil, fmt.Errorf("Go Server value cannot be nil")
 	}
@@ -29,14 +30,14 @@ func JavaServer(jEnv interface{}, server ipc.Server, jListenSpec interface{}) (C
 		return nil, err
 	}
 	jutil.GoRef(&server) // Un-refed when the Java Server object is finalized.
-	return C.jobject(jServer), nil
+	return jServer, nil
 }
 
 // JavaClient converts the provided Go client into a Java Client object.
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JavaClient(jEnv interface{}, client ipc.Client) (C.jobject, error) {
+func JavaClient(jEnv interface{}, client ipc.Client) (unsafe.Pointer, error) {
 	if client == nil {
 		return nil, fmt.Errorf("Go Client value cannot be nil")
 	}
@@ -45,7 +46,7 @@ func JavaClient(jEnv interface{}, client ipc.Client) (C.jobject, error) {
 		return nil, err
 	}
 	jutil.GoRef(&client) // Un-refed when the Java Client object is finalized.
-	return C.jobject(jClient), nil
+	return jClient, nil
 }
 
 // javaServerCall converts the provided Go serverCall into a Java ServerCall
@@ -108,7 +109,7 @@ func javaStream(env *C.JNIEnv, stream ipc.Stream) (C.jobject, error) {
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JavaServerStatus(jEnv interface{}, status ipc.ServerStatus) (C.jobject, error) {
+func JavaServerStatus(jEnv interface{}, status ipc.ServerStatus) (unsafe.Pointer, error) {
 	// Create Java state enum value.
 	jState, err := JavaServerState(jEnv, status.State)
 	if err != nil {
@@ -149,7 +150,7 @@ func JavaServerStatus(jEnv interface{}, status ipc.ServerStatus) (C.jobject, err
 	if err != nil {
 		return nil, err
 	}
-	return C.jobject(jServerStatus), nil
+	return jServerStatus, nil
 }
 
 // JavaServerState converts the provided ipc.ServerState value into a Java
@@ -157,7 +158,7 @@ func JavaServerStatus(jEnv interface{}, status ipc.ServerStatus) (C.jobject, err
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JavaServerState(jEnv interface{}, state ipc.ServerState) (C.jobject, error) {
+func JavaServerState(jEnv interface{}, state ipc.ServerState) (unsafe.Pointer, error) {
 	var name string
 	switch state {
 	case ipc.ServerInit:
@@ -175,7 +176,7 @@ func JavaServerState(jEnv interface{}, state ipc.ServerState) (C.jobject, error)
 	if err != nil {
 		return nil, err
 	}
-	return C.jobject(jState), nil
+	return jState, nil
 }
 
 // JavaMountStatus converts the provided ipc.MountStatus value into a Java
@@ -183,12 +184,12 @@ func JavaServerState(jEnv interface{}, state ipc.ServerState) (C.jobject, error)
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JavaMountStatus(jEnv interface{}, status ipc.MountStatus) (C.jobject, error) {
+func JavaMountStatus(jEnv interface{}, status ipc.MountStatus) (unsafe.Pointer, error) {
 	jStatus, err := jutil.NewObject(jEnv, jMountStatusClass, []jutil.Sign{jutil.StringSign, jutil.StringSign, jutil.DateTimeSign, jutil.VExceptionSign, jutil.DurationSign, jutil.DateTimeSign, jutil.VExceptionSign}, status.Name, status.Server, status.LastMount, status.LastMountErr, status.TTL, status.LastUnmount, status.LastUnmountErr)
 	if err != nil {
 		return nil, err
 	}
-	return C.jobject(jStatus), nil
+	return jStatus, nil
 }
 
 // JavaProxyStatus converts the provided ipc.ProxyStatus value into a Java
@@ -196,12 +197,12 @@ func JavaMountStatus(jEnv interface{}, status ipc.MountStatus) (C.jobject, error
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JavaProxyStatus(jEnv interface{}, status ipc.ProxyStatus) (C.jobject, error) {
+func JavaProxyStatus(jEnv interface{}, status ipc.ProxyStatus) (unsafe.Pointer, error) {
 	jStatus, err := jutil.NewObject(jEnv, jProxyStatusClass, []jutil.Sign{jutil.StringSign, jutil.StringSign, jutil.VExceptionSign}, status.Proxy, status.Endpoint.String(), status.Error)
 	if err != nil {
 		return nil, err
 	}
-	return C.jobject(jStatus), nil
+	return jStatus, nil
 }
 
 var (
@@ -257,7 +258,7 @@ func GoListenSpec(jEnv, jSpec interface{}) (ipc.ListenSpec, error) {
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JavaListenSpec(jEnv interface{}, spec ipc.ListenSpec) (C.jobject, error) {
+func JavaListenSpec(jEnv interface{}, spec ipc.ListenSpec) (unsafe.Pointer, error) {
 	addrarr := make([]interface{}, len(spec.Addrs))
 	for i, addr := range spec.Addrs {
 		var err error
@@ -276,14 +277,14 @@ func JavaListenSpec(jEnv interface{}, spec ipc.ListenSpec) (C.jobject, error) {
 	if err != nil {
 		return nil, err
 	}
-	return C.jobject(jSpec), nil
+	return jSpec, nil
 }
 
 // JavaNetworkChange converts the Go NetworkChange value into a Java NetworkChange object.
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JavaNetworkChange(jEnv interface{}, change ipc.NetworkChange) (C.jobject, error) {
+func JavaNetworkChange(jEnv interface{}, change ipc.NetworkChange) (unsafe.Pointer, error) {
 	jTime, err := jutil.JTime(jEnv, change.Time)
 	if err != nil {
 		return nil, err
@@ -301,5 +302,5 @@ func JavaNetworkChange(jEnv interface{}, change ipc.NetworkChange) (C.jobject, e
 	if err != nil {
 		return nil, err
 	}
-	return C.jobject(jNetworkChange), nil
+	return jNetworkChange, nil
 }

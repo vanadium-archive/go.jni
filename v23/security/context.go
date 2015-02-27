@@ -26,13 +26,13 @@ import "C"
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JavaContext(jEnv interface{}, ctx security.Context) (C.jobject, error) {
+func JavaContext(jEnv interface{}, ctx security.Context) (unsafe.Pointer, error) {
 	jContext, err := jutil.NewObject(jEnv, jContextImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&ctx)))
 	if err != nil {
 		return nil, err
 	}
 	jutil.GoRef(&ctx) // Un-refed when the Java ContextImpl object is finalized.
-	return C.jobject(jContext), nil
+	return jContext, nil
 }
 
 // GoContext creates instance of security.Context that uses the provided Java

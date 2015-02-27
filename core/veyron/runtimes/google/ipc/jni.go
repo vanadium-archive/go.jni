@@ -209,7 +209,7 @@ func Java_io_v_core_veyron_runtimes_google_ipc_Server_nativeGetStatus(env *C.JNI
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return jStatus
+	return C.jobject(jStatus)
 }
 
 //export Java_io_v_core_veyron_runtimes_google_ipc_Server_nativeWatchNetwork
@@ -222,11 +222,12 @@ func Java_io_v_core_veyron_runtimes_google_ipc_Server_nativeWatchNetwork(env *C.
 			jEnv, freeFunc := jutil.GetEnv()
 			env := (*C.JNIEnv)(jEnv)
 			defer freeFunc()
-			jChange, err := JavaNetworkChange(env, change)
+			jChangeObj, err := JavaNetworkChange(env, change)
 			if err != nil {
 				log.Println("Couldn't convert Go NetworkChange %v to Java", change)
 				continue
 			}
+			jChange := C.jobject(jChangeObj)
 			jChange = C.NewGlobalRef(env, jChange)
 			retChan <- jChange
 		}

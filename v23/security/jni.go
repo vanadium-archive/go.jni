@@ -227,7 +227,7 @@ func Java_io_v_v23_security_PrincipalImpl_nativeCreate(env *C.JNIEnv, jPrincipal
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return jPrincipal
+	return C.jobject(jPrincipal)
 }
 
 //export Java_io_v_v23_security_PrincipalImpl_nativeCreateForSigner
@@ -361,7 +361,7 @@ func Java_io_v_v23_security_PrincipalImpl_nativeBless(env *C.JNIEnv, jPrincipalI
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return jBlessings
+	return C.jobject(jBlessings)
 }
 
 //export Java_io_v_v23_security_PrincipalImpl_nativeBlessSelf
@@ -382,7 +382,7 @@ func Java_io_v_v23_security_PrincipalImpl_nativeBlessSelf(env *C.JNIEnv, jPrinci
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return jBlessings
+	return C.jobject(jBlessings)
 }
 
 //export Java_io_v_v23_security_PrincipalImpl_nativeSign
@@ -398,7 +398,7 @@ func Java_io_v_v23_security_PrincipalImpl_nativeSign(env *C.JNIEnv, jPrincipalIm
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return jSig
+	return C.jobject(jSig)
 }
 
 //export Java_io_v_v23_security_PrincipalImpl_nativePublicKey
@@ -409,7 +409,7 @@ func Java_io_v_v23_security_PrincipalImpl_nativePublicKey(env *C.JNIEnv, jPrinci
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return jKey
+	return C.jobject(jKey)
 }
 
 //export Java_io_v_v23_security_PrincipalImpl_nativeBlessingsByName
@@ -465,7 +465,7 @@ func Java_io_v_v23_security_PrincipalImpl_nativeBlessingStore(env *C.JNIEnv, jPr
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return jStore
+	return C.jobject(jStore)
 }
 
 //export Java_io_v_v23_security_PrincipalImpl_nativeRoots
@@ -476,7 +476,7 @@ func Java_io_v_v23_security_PrincipalImpl_nativeRoots(env *C.JNIEnv, jPrincipalI
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return jRoots
+	return C.jobject(jRoots)
 }
 
 //export Java_io_v_v23_security_PrincipalImpl_nativeAddToRoots
@@ -513,7 +513,7 @@ func Java_io_v_v23_security_BlessingsImpl_nativeCreate(env *C.JNIEnv, jBlessings
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return jBlessings
+	return C.jobject(jBlessings)
 }
 
 //export Java_io_v_v23_security_BlessingsImpl_nativeCreateUnion
@@ -533,7 +533,7 @@ func Java_io_v_v23_security_BlessingsImpl_nativeCreateUnion(env *C.JNIEnv, jBles
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return jBlessings
+	return C.jobject(jBlessings)
 }
 
 //export Java_io_v_v23_security_BlessingsImpl_nativeForContext
@@ -555,7 +555,7 @@ func Java_io_v_v23_security_BlessingsImpl_nativePublicKey(env *C.JNIEnv, jBlessi
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return jPublicKey
+	return C.jobject(jPublicKey)
 }
 
 //export Java_io_v_v23_security_BlessingsImpl_nativeFinalize
@@ -634,7 +634,7 @@ func Java_io_v_v23_security_BlessingStoreImpl_nativeSet(env *C.JNIEnv, jBlessing
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return jOldBlessings
+	return C.jobject(jOldBlessings)
 }
 
 //export Java_io_v_v23_security_BlessingStoreImpl_nativeForPeer
@@ -646,7 +646,7 @@ func Java_io_v_v23_security_BlessingStoreImpl_nativeForPeer(env *C.JNIEnv, jBles
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return jBlessings
+	return C.jobject(jBlessings)
 }
 
 //export Java_io_v_v23_security_BlessingStoreImpl_nativeSetDefaultBlessings
@@ -669,7 +669,7 @@ func Java_io_v_v23_security_BlessingStoreImpl_nativeDefaultBlessings(env *C.JNIE
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return jBlessings
+	return C.jobject(jBlessings)
 }
 
 //export Java_io_v_v23_security_BlessingStoreImpl_nativePublicKey
@@ -680,7 +680,7 @@ func Java_io_v_v23_security_BlessingStoreImpl_nativePublicKey(env *C.JNIEnv, jBl
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return jKey
+	return C.jobject(jKey)
 }
 
 //export Java_io_v_v23_security_BlessingStoreImpl_nativePeerBlessings
@@ -737,7 +737,7 @@ func Java_io_v_v23_security_BlessingPatternWrapper_nativeWrap(env *C.JNIEnv, jBl
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return jWrapper
+	return C.jobject(jWrapper)
 }
 
 //export Java_io_v_v23_security_BlessingPatternWrapper_nativeIsMatchedBy
@@ -767,7 +767,7 @@ func Java_io_v_v23_security_BlessingPatternWrapper_nativeMakeNonExtendable(env *
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return jWrapper
+	return C.jobject(jWrapper)
 }
 
 //export Java_io_v_v23_security_BlessingPatternWrapper_nativeFinalize

@@ -155,7 +155,7 @@ func jArgArray(env *C.JNIEnv, args []interface{}, argSigns []Sign) (jArr *C.jval
 }
 
 // NewObject calls a java constructor through JNI, passing the specified args.
-func NewObject(env interface{}, class interface{}, argSigns []Sign, args ...interface{}) (C.jobject, error) {
+func NewObject(env interface{}, class interface{}, argSigns []Sign, args ...interface{}) (unsafe.Pointer, error) {
 	if class == nil {
 		panic("cannot call constructor of nil class")
 	}
@@ -173,9 +173,9 @@ func NewObject(env interface{}, class interface{}, argSigns []Sign, args ...inte
 	}
 	defer freeFunc()
 
-	ret := C.NewObjectA(jenv, jclass, jcid, valArray)
+	ret := C.NewObjectA(jenv, jclass, C.jmethodID(jcid), valArray)
 	err = JExceptionMsg(env)
-	return ret, err
+	return unsafe.Pointer(ret), err
 }
 
 // setupMethodCall performs the shared preparation operations between various
@@ -185,10 +185,12 @@ func setupMethodCall(env interface{}, object interface{}, name string, argSigns 
 	jobject = getObject(object)
 	jclass := C.GetObjectClass(jenv, jobject)
 
-	jmid, err = JMethodID(jenv, jclass, name, FuncSign(argSigns, retSign))
+	var id unsafe.Pointer
+	id, err = JMethodID(jenv, jclass, name, FuncSign(argSigns, retSign))
 	if err != nil {
 		return
 	}
+	jmid = C.jmethodID(id)
 	jvalArray, freeFunc, err = jArgArray(jenv, args, argSigns)
 	return
 }
@@ -199,16 +201,18 @@ func setupStaticMethodCall(env interface{}, class interface{}, name string, argS
 	jenv = getEnv(env)
 	jclass = getClass(class)
 
-	jmid, err = JStaticMethodID(jenv, jclass, name, FuncSign(argSigns, retSign))
+	var id unsafe.Pointer
+	id, err = JStaticMethodID(jenv, jclass, name, FuncSign(argSigns, retSign))
 	if err != nil {
 		return
 	}
+	jmid = C.jmethodID(id)
 	jvalArray, freeFunc, err = jArgArray(jenv, args, argSigns)
 	return
 }
 
 // CallObjectMethod calls a Java method that returns a java object.
-func CallObjectMethod(env interface{}, object interface{}, name string, argSigns []Sign, retSign Sign, args ...interface{}) (C.jobject, error) {
+func CallObjectMethod(env interface{}, object interface{}, name string, argSigns []Sign, retSign Sign, args ...interface{}) (unsafe.Pointer, error) {
 	switch retSign {
 	case ByteSign, CharSign, ShortSign, LongSign, FloatSign, DoubleSign, BoolSign, IntSign, VoidSign:
 		panic(fmt.Sprintf("Illegal call to CallObjectMethod on method with return sign %s", retSign))
@@ -219,7 +223,7 @@ func CallObjectMethod(env interface{}, object interface{}, name string, argSigns
 	}
 	defer freeFunc()
 	ret := C.CallObjectMethodA(jenv, jobject, jmid, valArray)
-	return ret, JExceptionMsg(env)
+	return unsafe.Pointer(ret), JExceptionMsg(env)
 }
 
 // CallStringMethod calls a Java method that returns a string.
@@ -238,7 +242,7 @@ func CallByteArrayMethod(env interface{}, object interface{}, name string, argSi
 }
 
 // CallObjectArrayMethod calls a Java method that returns an object array.
-func CallObjectArrayMethod(env interface{}, object interface{}, name string, argSigns []Sign, retElemSign Sign, args ...interface{}) ([]C.jobject, error) {
+func CallObjectArrayMethod(env interface{}, object interface{}, name string, argSigns []Sign, retElemSign Sign, args ...interface{}) ([]unsafe.Pointer, error) {
 	jenv := getEnv(env)
 	jArr, err := CallObjectMethod(env, object, name, argSigns, ArraySign(retElemSign), args...)
 	if err != nil {
@@ -247,9 +251,9 @@ func CallObjectArrayMethod(env interface{}, object interface{}, name string, arg
 	if jArr == nil {
 		return nil, nil
 	}
-	ret := make([]C.jobject, int(C.GetArrayLength(jenv, C.jarray(jArr))))
+	ret := make([]unsafe.Pointer, int(C.GetArrayLength(jenv, C.jarray(jArr))))
 	for i, _ := range ret {
-		ret[i] = C.jobject(C.GetObjectArrayElement(jenv, C.jobjectArray(jArr), C.jsize(i)))
+		ret[i] = unsafe.Pointer(C.GetObjectArrayElement(jenv, C.jobjectArray(jArr), C.jsize(i)))
 	}
 	return ret, nil
 }
@@ -268,7 +272,7 @@ func CallStringArrayMethod(env interface{}, object interface{}, name string, arg
 }
 
 // CallMapMethod calls a Java method that returns a Map.
-func CallMapMethod(env interface{}, object interface{}, name string, argSigns []Sign, args ...interface{}) (map[C.jobject]C.jobject, error) {
+func CallMapMethod(env interface{}, object interface{}, name string, argSigns []Sign, args ...interface{}) (map[unsafe.Pointer]unsafe.Pointer, error) {
 	jMap, err := CallObjectMethod(env, object, name, argSigns, MapSign, args...)
 	if err != nil {
 		return nil, err
@@ -284,7 +288,7 @@ func CallMapMethod(env interface{}, object interface{}, name string, argSigns []
 	if err != nil {
 		return nil, err
 	}
-	ret := make(map[C.jobject]C.jobject)
+	ret := make(map[unsafe.Pointer]unsafe.Pointer)
 	for {
 		if hasNext, err := CallBooleanMethod(env, jIter, "hasNext", nil); err != nil {
 			return nil, err
@@ -353,7 +357,7 @@ func CallVoidMethod(env interface{}, object interface{}, name string, argSigns [
 }
 
 // CallStaticObjectMethod calls a static Java method that returns a Java object.
-func CallStaticObjectMethod(env interface{}, class interface{}, name string, argSigns []Sign, retSign Sign, args ...interface{}) (C.jobject, error) {
+func CallStaticObjectMethod(env interface{}, class interface{}, name string, argSigns []Sign, retSign Sign, args ...interface{}) (unsafe.Pointer, error) {
 	switch retSign {
 	case ByteSign, CharSign, ShortSign, LongSign, FloatSign, DoubleSign, BoolSign, IntSign, VoidSign:
 		panic(fmt.Sprintf("Illegal call to CallStaticObjectMethod on method with return sign %s", retSign))
@@ -364,7 +368,7 @@ func CallStaticObjectMethod(env interface{}, class interface{}, name string, arg
 	}
 	defer freeFunc()
 	ret := C.CallStaticObjectMethodA(jenv, jclass, jmid, jvalArray)
-	return ret, JExceptionMsg(env)
+	return unsafe.Pointer(ret), JExceptionMsg(env)
 }
 
 // CallStaticStringMethod calls a static Java method that returns a string.

@@ -4,6 +4,7 @@ package naming
 
 import (
 	"time"
+	"unsafe"
 
 	jutil "v.io/jni/util"
 	"v.io/v23/naming"
@@ -19,20 +20,20 @@ import "C"
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JavaNamespace(jEnv interface{}, namespace ns.Namespace) (C.jobject, error) {
+func JavaNamespace(jEnv interface{}, namespace ns.Namespace) (unsafe.Pointer, error) {
 	jNamespace, err := jutil.NewObject(jEnv, jNamespaceImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&namespace)))
 	if err != nil {
 		return nil, err
 	}
 	jutil.GoRef(&namespace) // Un-refed when the Java PrincipalImpl is finalized.
-	return C.jobject(jNamespace), nil
+	return jNamespace, nil
 }
 
 // JavaMountEntry converts the Go MountEntry into a Java VDLMountEntry.
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JavaMountEntry(jEnv interface{}, entry *naming.MountEntry) (C.jobject, error) {
+func JavaMountEntry(jEnv interface{}, entry *naming.MountEntry) (unsafe.Pointer, error) {
 	var vdlEntry naming.VDLMountEntry
 	vdlEntry.Name = entry.Name
 	for _, server := range entry.Servers {
@@ -45,5 +46,5 @@ func JavaMountEntry(jEnv interface{}, entry *naming.MountEntry) (C.jobject, erro
 	if err != nil {
 		return nil, err
 	}
-	return C.jobject(jEntry), nil
+	return jEntry, nil
 }

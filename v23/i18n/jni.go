@@ -22,7 +22,7 @@ func Init(jEnv interface{}) error {
 }
 
 //export Java_io_v_v23_i18n_Catalog_nativeFormatParams
-func Java_io_v_v23_i18n_Catalog_nativeFormatParams(env *C.JNIEnv, jCatalog C.jclass, jFormat C.jstring, jParams C.jobjectArray) C.jobject {
+func Java_io_v_v23_i18n_Catalog_nativeFormatParams(env *C.JNIEnv, jCatalog C.jclass, jFormat C.jstring, jParams C.jobjectArray) C.jstring {
 	format := jutil.GoString(env, jFormat)
 	strParams := jutil.GoStringArray(env, jParams)
 	params := make([]interface{}, len(strParams))
@@ -30,5 +30,6 @@ func Java_io_v_v23_i18n_Catalog_nativeFormatParams(env *C.JNIEnv, jCatalog C.jcl
 		params[i] = strParam
 	}
 	result := i18n.FormatParams(format, params...)
-	return C.jobject(jutil.JString(env, result))
+	ret := jutil.JString(env, result)
+	return C.jstring(ret)
 }

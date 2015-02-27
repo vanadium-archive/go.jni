@@ -64,46 +64,71 @@ var (
 // and then cast into their package local types.
 func Init(jEnv interface{}) error {
 	env := getEnv(jEnv)
-	var err error
-	if jVomUtilClass, err = JFindClass(env, "io/v/v23/vom/VomUtil"); err != nil {
+	class, err := JFindClass(env, "io/v/v23/vom/VomUtil")
+	if err != nil {
 		return err
 	}
-	if jVExceptionClass, err = JFindClass(env, "io/v/v23/verror/VException"); err != nil {
+	jVomUtilClass = C.jclass(class)
+	class, err = JFindClass(env, "io/v/v23/verror/VException")
+	if err != nil {
 		return err
 	}
-	if jActionCodeClass, err = JFindClass(env, "io/v/v23/verror/VException$ActionCode"); err != nil {
+	jVExceptionClass = C.jclass(class)
+	class, err = JFindClass(env, "io/v/v23/verror/VException$ActionCode")
+	if err != nil {
 		return err
 	}
-	if jIDActionClass, err = JFindClass(env, "io/v/v23/verror/VException$IDAction"); err != nil {
+	jActionCodeClass = C.jclass(class)
+	class, err = JFindClass(env, "io/v/v23/verror/VException$IDAction")
+	if err != nil {
 		return err
 	}
-	if jVdlValueClass, err = JFindClass(env, "io/v/v23/vdl/VdlValue"); err != nil {
+	jIDActionClass = C.jclass(class)
+	class, err = JFindClass(env, "io/v/v23/vdl/VdlValue")
+	if err != nil {
 		return err
 	}
-	if jDateTimeClass, err = JFindClass(env, "org/joda/time/DateTime"); err != nil {
+	jVdlValueClass = C.jclass(class)
+	class, err = JFindClass(env, "org/joda/time/DateTime")
+	if err != nil {
 		return err
 	}
-	if jDurationClass, err = JFindClass(env, "org/joda/time/Duration"); err != nil {
+	jDateTimeClass = C.jclass(class)
+	class, err = JFindClass(env, "org/joda/time/Duration")
+	if err != nil {
 		return err
 	}
-	if jThrowableClass, err = JFindClass(env, "java/lang/Throwable"); err != nil {
+	jDurationClass = C.jclass(class)
+	class, err = JFindClass(env, "java/lang/Throwable")
+	if err != nil {
 		return err
 	}
-	if jSystemClass, err = JFindClass(env, "java/lang/System"); err != nil {
+	jThrowableClass = C.jclass(class)
+	class, err = JFindClass(env, "java/lang/System")
+	if err != nil {
 		return err
 	}
-	if jObjectClass, err = JFindClass(env, "java/lang/Object"); err != nil {
+	jSystemClass = C.jclass(class)
+	class, err = JFindClass(env, "java/lang/Object")
+	if err != nil {
 		return err
 	}
-	if jStringClass, err = JFindClass(env, "java/lang/String"); err != nil {
+	jObjectClass = C.jclass(class)
+	class, err = JFindClass(env, "java/lang/String")
+	if err != nil {
 		return err
 	}
-	if jHashMapClass, err = JFindClass(env, "java/util/HashMap"); err != nil {
+	jStringClass = C.jclass(class)
+	class, err = JFindClass(env, "java/util/HashMap")
+	if err != nil {
 		return err
 	}
-	if jByteArrayClass, err = JFindClass(env, "[B"); err != nil {
+	jHashMapClass = C.jclass(class)
+	class, err = JFindClass(env, "[B")
+	if err != nil {
 		return err
 	}
+	jByteArrayClass = C.jclass(class)
 	if status := C.GetJavaVM(env, &jVM); status != 0 {
 		return fmt.Errorf("couldn't get Java VM from the (Java) environment")
 	}
@@ -200,11 +225,11 @@ func IsJavaObject(value interface{}) bool {
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JString(jEnv interface{}, str string) C.jstring {
+func JString(jEnv interface{}, str string) unsafe.Pointer {
 	env := getEnv(jEnv)
 	cString := C.CString(str)
 	defer C.free(unsafe.Pointer(cString))
-	return C.NewStringUTF(env, cString)
+	return unsafe.Pointer(C.NewStringUTF(env, cString))
 }
 
 // JThrow throws a new Java exception of the provided type with the given message.
@@ -241,7 +266,7 @@ func JThrowV(jEnv interface{}, err error) {
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JVException(jEnv interface{}, err error) (C.jobject, error) {
+func JVException(jEnv interface{}, err error) (unsafe.Pointer, error) {
 	if err == nil {
 		return nil, nil
 	}
@@ -268,7 +293,7 @@ func JExceptionMsg(jEnv interface{}) error {
 	if err != nil {
 		panic(err.Error())
 	}
-	jMsg := C.CallGetExceptionMessage(env, C.jobject(e), id)
+	jMsg := C.CallGetExceptionMessage(env, C.jobject(e), C.jmethodID(id))
 	return errors.New(GoString(env, jMsg))
 }
 
@@ -277,14 +302,14 @@ func JExceptionMsg(jEnv interface{}) error {
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JObjectField(jEnv, jObj interface{}, field string) (C.jobject, error) {
+func JObjectField(jEnv, jObj interface{}, field string) (unsafe.Pointer, error) {
 	env := getEnv(jEnv)
 	obj := getObject(jObj)
 	fid, err := JFieldIDPtr(env, C.GetObjectClass(env, obj), field, ObjectSign)
 	if err != nil {
 		return nil, err
 	}
-	return C.GetObjectField(env, obj, C.jfieldID(fid)), nil
+	return unsafe.Pointer(C.GetObjectField(env, obj, C.jfieldID(fid))), nil
 }
 
 // JBoolField returns the value of the provided Java object's boolean field, or
@@ -408,7 +433,7 @@ func JStaticStringField(jEnv, jClass interface{}, field string) (string, error) 
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JObjectArray(jEnv interface{}, arr []interface{}, jElemClass interface{}) C.jobjectArray {
+func JObjectArray(jEnv interface{}, arr []interface{}, jElemClass interface{}) unsafe.Pointer {
 	if arr == nil {
 		return nil
 	}
@@ -419,7 +444,7 @@ func JObjectArray(jEnv interface{}, arr []interface{}, jElemClass interface{}) C
 		jElem := getObject(elem)
 		C.SetObjectArrayElement(env, ret, C.jsize(i), jElem)
 	}
-	return ret
+	return unsafe.Pointer(ret)
 }
 
 // GoObjectArray converts a Java Object array to a Go slice of C.jobject
@@ -427,16 +452,16 @@ func JObjectArray(jEnv interface{}, arr []interface{}, jElemClass interface{}) C
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func GoObjectArray(jEnv, jObjArray interface{}) []C.jobject {
+func GoObjectArray(jEnv, jObjArray interface{}) []unsafe.Pointer {
 	env := getEnv(jEnv)
 	jArr := getObjectArray(jObjArray)
 	if jArr == nil {
 		return nil
 	}
 	length := C.GetArrayLength(env, C.jarray(jArr))
-	ret := make([]C.jobject, int(length))
+	ret := make([]unsafe.Pointer, int(length))
 	for i := 0; i < int(length); i++ {
-		ret[i] = C.GetObjectArrayElement(env, jArr, C.jsize(i))
+		ret[i] = unsafe.Pointer(C.GetObjectArrayElement(env, jArr, C.jsize(i)))
 	}
 	return ret
 }
@@ -446,7 +471,7 @@ func GoObjectArray(jEnv, jObjArray interface{}) []C.jobject {
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JStringArray(jEnv interface{}, strs []string) C.jobjectArray {
+func JStringArray(jEnv interface{}, strs []string) unsafe.Pointer {
 	if strs == nil {
 		return nil
 	}
@@ -455,7 +480,7 @@ func JStringArray(jEnv interface{}, strs []string) C.jobjectArray {
 	for i, str := range strs {
 		C.SetObjectArrayElement(env, ret, C.jsize(i), C.jobject(JString(env, str)))
 	}
-	return ret
+	return unsafe.Pointer(ret)
 }
 
 // GoStringArray converts a Java string array to a Go string array.
@@ -480,16 +505,16 @@ func GoStringArray(jEnv, jStrArray interface{}) []string {
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JByteArray(jEnv interface{}, bytes []byte) C.jbyteArray {
+func JByteArray(jEnv interface{}, bytes []byte) unsafe.Pointer {
 	if bytes == nil {
-		return C.jbyteArray(nil)
+		return nil
 	}
 	env := getEnv(jEnv)
 	ret := C.NewByteArray(env, C.jsize(len(bytes)))
 	if len(bytes) > 0 {
 		C.SetByteArrayRegion(env, ret, 0, C.jsize(len(bytes)), (*C.jbyte)(unsafe.Pointer(&bytes[0])))
 	}
-	return ret
+	return unsafe.Pointer(ret)
 }
 
 // GoByteArray converts the provided Java byte array into a Go byte slice.
@@ -519,7 +544,7 @@ func GoByteArray(jEnv, jArr interface{}) (ret []byte) {
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JByteArrayArray(jEnv interface{}, arr [][]byte) C.jobjectArray {
+func JByteArrayArray(jEnv interface{}, arr [][]byte) unsafe.Pointer {
 	if arr == nil {
 		return nil
 	}
@@ -529,7 +554,7 @@ func JByteArrayArray(jEnv interface{}, arr [][]byte) C.jobjectArray {
 		jElem := JByteArray(env, elem)
 		C.SetObjectArrayElement(env, ret, C.jsize(i), C.jobject(jElem))
 	}
-	return ret
+	return unsafe.Pointer(ret)
 }
 
 // GoByteArrayArray converts the provided Java array of byte arrays into a Go
@@ -556,7 +581,7 @@ func GoByteArrayArray(jEnv, jArr interface{}) (ret [][]byte) {
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JVDLValueArray(jEnv interface{}, arr []*vdl.Value) (C.jobjectArray, error) {
+func JVDLValueArray(jEnv interface{}, arr []*vdl.Value) (unsafe.Pointer, error) {
 	valarr := make([]interface{}, len(arr))
 	for i, val := range arr {
 		var err error
@@ -590,7 +615,7 @@ func GoVDLValueArray(jEnv, jArr interface{}) ([]*vdl.Value, error) {
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JObjectMap(jEnv interface{}, goMap map[interface{}]interface{}) (C.jobject, error) {
+func JObjectMap(jEnv interface{}, goMap map[interface{}]interface{}) (unsafe.Pointer, error) {
 	env := getEnv(jEnv)
 	jMap, err := NewObject(env, jHashMapClass, nil)
 	if err != nil {
@@ -601,7 +626,7 @@ func JObjectMap(jEnv interface{}, goMap map[interface{}]interface{}) (C.jobject,
 			return nil, err
 		}
 	}
-	return jMap, nil
+	return unsafe.Pointer(jMap), nil
 }
 
 // GoObjectMap converts the provided Java object map into a Go map of Java
@@ -609,7 +634,7 @@ func JObjectMap(jEnv interface{}, goMap map[interface{}]interface{}) (C.jobject,
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func GoObjectMap(jEnv, jObjMap interface{}) (map[C.jobject]C.jobject, error) {
+func GoObjectMap(jEnv, jObjMap interface{}) (map[unsafe.Pointer]unsafe.Pointer, error) {
 	env := getEnv(jEnv)
 	jMap := getObject(jObjMap)
 	jKeySet, err := CallObjectMethod(env, jMap, "keySet", nil, SetSign)
@@ -620,7 +645,7 @@ func GoObjectMap(jEnv, jObjMap interface{}) (map[C.jobject]C.jobject, error) {
 	if err != nil {
 		return nil, err
 	}
-	ret := make(map[C.jobject]C.jobject)
+	ret := make(map[unsafe.Pointer]unsafe.Pointer)
 	for _, jKey := range keysArr {
 		jVal, err := CallObjectMethod(env, jMap, "get", []Sign{ObjectSign}, ObjectSign, jKey)
 		if err != nil {
@@ -674,7 +699,7 @@ func JStaticFieldIDPtr(jEnv, jClass interface{}, name string, sign Sign) (unsafe
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JMethodID(jEnv, jClass interface{}, name string, signature Sign) (C.jmethodID, error) {
+func JMethodID(jEnv, jClass interface{}, name string, signature Sign) (unsafe.Pointer, error) {
 	env := getEnv(jEnv)
 	class := getClass(jClass)
 	cName := C.CString(name)
@@ -683,9 +708,9 @@ func JMethodID(jEnv, jClass interface{}, name string, signature Sign) (C.jmethod
 	defer C.free(unsafe.Pointer(cSignature))
 	mid := C.GetMethodID(env, class, cName, cSignature)
 	if err := JExceptionMsg(env); err != nil || mid == C.jmethodID(nil) {
-		return C.jmethodID(nil), fmt.Errorf("couldn't find method %q with signature %v.", name, signature)
+		return nil, fmt.Errorf("couldn't find method %q with signature %v.", name, signature)
 	}
-	return mid, nil
+	return unsafe.Pointer(mid), nil
 }
 
 // JStaticMethodID returns the Java method ID for the given static method, or an
@@ -693,7 +718,7 @@ func JMethodID(jEnv, jClass interface{}, name string, signature Sign) (C.jmethod
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JStaticMethodID(jEnv, jClass interface{}, name string, signature Sign) (C.jmethodID, error) {
+func JStaticMethodID(jEnv, jClass interface{}, name string, signature Sign) (unsafe.Pointer, error) {
 	env := getEnv(jEnv)
 	class := getClass(jClass)
 	cName := C.CString(name)
@@ -702,9 +727,9 @@ func JStaticMethodID(jEnv, jClass interface{}, name string, signature Sign) (C.j
 	defer C.free(unsafe.Pointer(cSignature))
 	mid := C.GetStaticMethodID(env, class, cName, cSignature)
 	if err := JExceptionMsg(env); err != nil || mid == C.jmethodID(nil) {
-		return C.jmethodID(nil), fmt.Errorf("couldn't find method %s with a given signature.", name)
+		return nil, fmt.Errorf("couldn't find method %s with a given signature.", name)
 	}
-	return mid, nil
+	return unsafe.Pointer(mid), nil
 }
 
 // JFindClass returns the global reference to the Java class with the
@@ -712,7 +737,7 @@ func JStaticMethodID(jEnv, jClass interface{}, name string, signature Sign) (C.j
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JFindClass(jEnv interface{}, name string) (C.jclass, error) {
+func JFindClass(jEnv interface{}, name string) (unsafe.Pointer, error) {
 	env := getEnv(jEnv)
 	cName := C.CString(name)
 	defer C.free(unsafe.Pointer(cName))
@@ -720,22 +745,7 @@ func JFindClass(jEnv interface{}, name string) (C.jclass, error) {
 	if err := JExceptionMsg(env); err != nil || class == nil {
 		return nil, fmt.Errorf("couldn't find class %s: %v", name, err)
 	}
-	return C.jclass(C.NewGlobalRef(env, C.jobject(class))), nil
-}
-
-// JFindClassOrPrint returns the global reference to the Java class with the
-// given pathname.  If the class cannot be found, it prints an error message and
-// return nil.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func JFindClassOrPrint(jEnv interface{}, name string) C.jclass {
-	ret, err := JFindClass(jEnv, name)
-	if err != nil {
-		log.Printf("Couldn't find class %q: %v", name, err)
-		return nil
-	}
-	return ret
+	return unsafe.Pointer(C.NewGlobalRef(env, C.jobject(class))), nil
 }
 
 // GoTime converts the provided Java DateTime object into a Go time.Time value.
@@ -761,10 +771,9 @@ func GoTime(jEnv, jTimeObj interface{}) (time.Time, error) {
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JTime(jEnv interface{}, t time.Time) (C.jobject, error) {
+func JTime(jEnv interface{}, t time.Time) (unsafe.Pointer, error) {
 	millis := t.UnixNano() / 1000000
-	jTime, err := NewObject(jEnv, jDateTimeClass, []Sign{LongSign}, millis)
-	return C.jobject(jTime), err
+	return NewObject(jEnv, jDateTimeClass, []Sign{LongSign}, millis)
 }
 
 // GoDuration converts the provided Java Duration object into a Go time.Duration
@@ -785,10 +794,9 @@ func GoDuration(jEnv interface{}, jDuration interface{}) (time.Duration, error) 
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JDuration(jEnv interface{}, d time.Duration) (C.jobject, error) {
+func JDuration(jEnv interface{}, d time.Duration) (unsafe.Pointer, error) {
 	millis := d.Nanoseconds() / 1000000
-	jDuration, err := NewObject(jEnv, jDurationClass, []Sign{LongSign}, int64(millis))
-	return C.jobject(jDuration), err
+	return NewObject(jEnv, jDurationClass, []Sign{LongSign}, int64(millis))
 }
 
 // Various functions that cast CGO types from various other packages into this

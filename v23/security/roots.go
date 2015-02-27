@@ -20,14 +20,14 @@ import "C"
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JavaBlessingRoots(jEnv interface{}, roots security.BlessingRoots) (C.jobject, error) {
+func JavaBlessingRoots(jEnv interface{}, roots security.BlessingRoots) (unsafe.Pointer, error) {
 	env := (*C.JNIEnv)(unsafe.Pointer(jutil.PtrValue(jEnv)))
 	jObj, err := jutil.NewObject(env, jBlessingRootsImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&roots)))
 	if err != nil {
 		return nil, err
 	}
 	jutil.GoRef(&roots) // Un-refed when the Java BlessingRootsImpl is finalized.
-	return C.jobject(jObj), nil
+	return jObj, nil
 }
 
 // GoBlessingRoots creates an instance of security.BlessingRoots that uses the
