@@ -9,8 +9,8 @@ import (
 	jcontext "v.io/jni/v23/context"
 	jsecurity "v.io/jni/v23/security"
 
-	_ "v.io/core/veyron/profiles/roaming"
 	"v.io/v23"
+	_ "v.io/x/ref/profiles/roaming"
 )
 
 // #cgo LDFLAGS: -ljniwrapper

@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"unsafe"
 
-	vsecurity "v.io/core/veyron/security"
 	jutil "v.io/jni/util"
 	jcontext "v.io/jni/v23/context"
 	"v.io/v23/security"
+	vsecurity "v.io/x/ref/security"
 )
 
 // #cgo LDFLAGS: -ljniwrapper
