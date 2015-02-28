@@ -8,10 +8,10 @@ import (
 	"time"
 	"unsafe"
 
-	inaming "v.io/core/veyron/runtimes/google/naming"
 	jutil "v.io/jni/util"
 	jcontext "v.io/jni/v23/context"
 
+	"v.io/v23"
 	"v.io/v23/context"
 	"v.io/v23/naming"
 	"v.io/v23/security"
@@ -114,7 +114,7 @@ func (c *contextImpl) RemoteDischarges() map[string]security.Discharge {
 
 func (c *contextImpl) LocalEndpoint() naming.Endpoint {
 	epStr := c.callStringMethod("localEndpoint")
-	ep, err := inaming.NewEndpoint(epStr)
+	ep, err := v23.NewEndpoint(epStr)
 	if err != nil {
 		log.Printf("Couldn't parse endpoint string %q: %v", epStr, err)
 		return nil
@@ -172,7 +172,7 @@ func (c *contextImpl) RemoteBlessings() security.Blessings {
 
 func (c *contextImpl) RemoteEndpoint() naming.Endpoint {
 	epStr := c.callStringMethod("remoteEndpoint")
-	ep, err := inaming.NewEndpoint(epStr)
+	ep, err := v23.NewEndpoint(epStr)
 	if err != nil {
 		log.Printf("Couldn't parse endpoint string %q: %v", epStr, err)
 		return nil
