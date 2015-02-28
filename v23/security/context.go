@@ -82,7 +82,7 @@ func (c *contextImpl) Timestamp() time.Time {
 }
 
 func (c *contextImpl) Method() string {
-	return c.callStringMethod("method")
+	return jutil.UpperCamelCase(c.callStringMethod("method"))
 }
 
 func (c *contextImpl) MethodTags() []*vdl.Value {
@@ -104,7 +104,7 @@ func (c *contextImpl) MethodTags() []*vdl.Value {
 }
 
 func (c *contextImpl) Suffix() string {
-	return jutil.UpperCamelCase(c.callStringMethod("suffix"))
+	return c.callStringMethod("suffix")
 }
 
 func (c *contextImpl) RemoteDischarges() map[string]security.Discharge {
@@ -144,12 +144,12 @@ func (c *contextImpl) LocalBlessings() security.Blessings {
 	jBlessings, err := jutil.CallObjectMethod(env, c.jContext, "localBlessings", nil, blessingsSign)
 	if err != nil {
 		log.Printf("Couldn't call Java localBlessings method: %v", err)
-		return nil
+		return security.Blessings{}
 	}
 	blessings, err := GoBlessings(env, jBlessings)
 	if err != nil {
 		log.Printf("Couldn't convert Java Blessings into Go: %v", err)
-		return nil
+		return security.Blessings{}
 	}
 	return blessings
 }
@@ -160,12 +160,12 @@ func (c *contextImpl) RemoteBlessings() security.Blessings {
 	jBlessings, err := jutil.CallObjectMethod(env, c.jContext, "remoteBlessings", nil, blessingsSign)
 	if err != nil {
 		log.Printf("Couldn't call Java remoteBlessings method: %v", err)
-		return nil
+		return security.Blessings{}
 	}
 	blessings, err := GoBlessings(env, jBlessings)
 	if err != nil {
 		log.Printf("Couldn't convert Java Blessings into Go: %v", err)
-		return nil
+		return security.Blessings{}
 	}
 	return blessings
 }
@@ -183,7 +183,7 @@ func (c *contextImpl) RemoteEndpoint() naming.Endpoint {
 func (c *contextImpl) Context() *context.T {
 	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
-	contextSign := jutil.Sign("io.v.v23.context.VContext")
+	contextSign := jutil.ClassSign("io.v.v23.context.VContext")
 	jCtx, err := jutil.CallObjectMethod(env, c.jContext, "context", nil, contextSign)
 	if err != nil {
 		log.Printf("Couldn't get Java Vanadium context: %v", err)

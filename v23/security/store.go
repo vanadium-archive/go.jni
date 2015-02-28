@@ -65,15 +65,15 @@ func (s *blessingStore) Set(blessings security.Blessings, forPeers security.Bles
 	defer freeFunc()
 	jBlessings, err := JavaBlessings(env, blessings)
 	if err != nil {
-		return nil, err
+		return security.Blessings{}, err
 	}
 	jForPeers, err := JavaBlessingPattern(env, forPeers)
 	if err != nil {
-		return nil, err
+		return security.Blessings{}, err
 	}
 	jOldBlessings, err := jutil.CallObjectMethod(env, s.jBlessingStore, "set", []jutil.Sign{blessingsSign, blessingPatternSign}, blessingsSign, jBlessings, jForPeers)
 	if err != nil {
-		return nil, err
+		return security.Blessings{}, err
 	}
 	return GoBlessings(env, jOldBlessings)
 }
@@ -84,12 +84,12 @@ func (s *blessingStore) ForPeer(peerBlessings ...string) security.Blessings {
 	jBlessings, err := jutil.CallObjectMethod(env, s.jBlessingStore, "forPeer", []jutil.Sign{jutil.ArraySign(jutil.StringSign)}, blessingsSign, peerBlessings)
 	if err != nil {
 		log.Printf("Couldn't call Java forPeer method: %v", err)
-		return nil
+		return security.Blessings{}
 	}
 	blessings, err := GoBlessings(env, jBlessings)
 	if err != nil {
 		log.Printf("Couldn't convert Java Blessings into Go: %v", err)
-		return nil
+		return security.Blessings{}
 	}
 	return blessings
 }
@@ -110,12 +110,12 @@ func (s *blessingStore) Default() security.Blessings {
 	jBlessings, err := jutil.CallObjectMethod(env, s.jBlessingStore, "defaultBlessings", nil, blessingsSign)
 	if err != nil {
 		log.Printf("Couldn't call Java defaultBlessings method: %v", err)
-		return nil
+		return security.Blessings{}
 	}
 	blessings, err := GoBlessings(env, jBlessings)
 	if err != nil {
 		log.Printf("Couldn't convert Java Blessings to Go Blessings: %v", err)
-		return nil
+		return security.Blessings{}
 	}
 	return blessings
 }

@@ -19,19 +19,16 @@ import "C"
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func JavaBlessings(jEnv interface{}, blessings security.Blessings) (unsafe.Pointer, error) {
-	if blessings == nil {
-		return nil, nil
-	}
 	wire := security.MarshalBlessings(blessings)
 	jWire, err := JavaWireBlessings(jEnv, wire)
 	if err != nil {
 		return nil, err
 	}
-	jBlessings, err := jutil.NewObject(jEnv, jBlessingsImplClass, []jutil.Sign{jutil.LongSign, wireBlessingsSign}, int64(jutil.PtrValue(&blessings)), jWire)
+	jBlessings, err := jutil.NewObject(jEnv, jBlessingsClass, []jutil.Sign{jutil.LongSign, wireBlessingsSign}, int64(jutil.PtrValue(&blessings)), jWire)
 	if err != nil {
 		return nil, err
 	}
-	jutil.GoRef(&blessings) // Un-refed when the Java BlessingsImpl object is finalized.
+	jutil.GoRef(&blessings) // Un-refed when the Java Blessings object is finalized.
 	return jBlessings, nil
 }
 
@@ -39,18 +36,14 @@ func JavaBlessings(jEnv interface{}, blessings security.Blessings) (unsafe.Point
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func GoBlessings(jEnv, jBlessingsObj interface{}) (security.Blessings, error) {
-	jBlessings := C.jobject(unsafe.Pointer(jutil.PtrValue(jBlessingsObj)))
-	if jBlessings == nil {
-		return nil, nil
-	}
+func GoBlessings(jEnv, jBlessings interface{}) (security.Blessings, error) {
 	jWire, err := jutil.CallObjectMethod(jEnv, jBlessings, "wireFormat", nil, wireBlessingsSign)
 	if err != nil {
-		return nil, err
+		return security.Blessings{}, err
 	}
 	wire, err := GoWireBlessings(jEnv, jWire)
 	if err != nil {
-		return nil, err
+		return security.Blessings{}, err
 	}
 	return security.NewBlessings(wire)
 }

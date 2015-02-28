@@ -71,23 +71,23 @@ func (p *principal) Bless(key security.PublicKey, with security.Blessings, exten
 
 	jKey, err := JavaPublicKey(env, key)
 	if err != nil {
-		return nil, err
+		return security.Blessings{}, err
 	}
 	jWith, err := JavaBlessings(env, with)
 	if err != nil {
-		return nil, err
+		return security.Blessings{}, err
 	}
 	jCaveat, err := JavaCaveat(env, caveat)
 	if err != nil {
-		return nil, err
+		return security.Blessings{}, err
 	}
 	jAdditionalCaveats, err := JavaCaveats(env, additionalCaveats)
 	if err != nil {
-		return nil, err
+		return security.Blessings{}, err
 	}
 	jBlessings, err := jutil.CallObjectMethod(env, p.jPrincipal, "bless", []jutil.Sign{publicKeySign, blessingsSign, jutil.StringSign, caveatSign, jutil.ArraySign(caveatSign)}, blessingsSign, jKey, jWith, extension, jCaveat, jAdditionalCaveats)
 	if err != nil {
-		return nil, err
+		return security.Blessings{}, err
 	}
 	return GoBlessings(env, jBlessings)
 }
@@ -97,11 +97,11 @@ func (p *principal) BlessSelf(name string, caveats ...security.Caveat) (security
 	defer freeFunc()
 	jCaveats, err := JavaCaveats(env, caveats)
 	if err != nil {
-		return nil, err
+		return security.Blessings{}, err
 	}
 	jBlessings, err := jutil.CallObjectMethod(env, p.jPrincipal, "blessSelf", []jutil.Sign{jutil.StringSign, jutil.ArraySign(caveatSign)}, blessingsSign, name, jCaveats)
 	if err != nil {
-		return nil, err
+		return security.Blessings{}, err
 	}
 	return GoBlessings(env, jBlessings)
 }

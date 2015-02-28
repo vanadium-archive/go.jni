@@ -35,8 +35,6 @@ var (
 	jCaveatClass C.jclass
 	// Global reference for io.v.v23.security.PrincipalImpl class.
 	jPrincipalImplClass C.jclass
-	// Global reference for io.v.v23.security.BlessingsImpl class.
-	jBlessingsImplClass C.jclass
 	// Global reference for io.v.v23.security.BlessingStoreImpl class.
 	jBlessingStoreImplClass C.jclass
 	// Global reference for io.v.v23.security.BlessingRootsImpl class.
@@ -80,11 +78,6 @@ func Init(jEnv interface{}) error {
 		return err
 	}
 	jPrincipalImplClass = C.jclass(class)
-	class, err = jutil.JFindClass(env, "io/v/v23/security/BlessingsImpl")
-	if err != nil {
-		return err
-	}
-	jBlessingsImplClass = C.jclass(class)
 	class, err = jutil.JFindClass(env, "io/v/v23/security/BlessingStoreImpl")
 	if err != nil {
 		return err
@@ -496,8 +489,8 @@ func Java_io_v_v23_security_PrincipalImpl_nativeFinalize(env *C.JNIEnv, jPrincip
 	jutil.GoUnref((*security.Principal)(jutil.Ptr(goPtr)))
 }
 
-//export Java_io_v_v23_security_BlessingsImpl_nativeCreate
-func Java_io_v_v23_security_BlessingsImpl_nativeCreate(env *C.JNIEnv, jBlessingsImplClass C.jclass, jWire C.jobject) C.jobject {
+//export Java_io_v_v23_security_Blessings_nativeCreate
+func Java_io_v_v23_security_Blessings_nativeCreate(env *C.JNIEnv, jBlessingsClass C.jclass, jWire C.jobject) C.jobject {
 	wire, err := GoWireBlessings(env, jWire)
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -516,8 +509,8 @@ func Java_io_v_v23_security_BlessingsImpl_nativeCreate(env *C.JNIEnv, jBlessings
 	return C.jobject(jBlessings)
 }
 
-//export Java_io_v_v23_security_BlessingsImpl_nativeCreateUnion
-func Java_io_v_v23_security_BlessingsImpl_nativeCreateUnion(env *C.JNIEnv, jBlessingsImplClass C.jclass, jBlessingsArr C.jobjectArray) C.jobject {
+//export Java_io_v_v23_security_Blessings_nativeCreateUnion
+func Java_io_v_v23_security_Blessings_nativeCreateUnion(env *C.JNIEnv, jBlessingsClass C.jclass, jBlessingsArr C.jobjectArray) C.jobject {
 	blessingsArr, err := GoBlessingsArray(env, jBlessingsArr)
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -536,8 +529,8 @@ func Java_io_v_v23_security_BlessingsImpl_nativeCreateUnion(env *C.JNIEnv, jBles
 	return C.jobject(jBlessings)
 }
 
-//export Java_io_v_v23_security_BlessingsImpl_nativeForContext
-func Java_io_v_v23_security_BlessingsImpl_nativeForContext(env *C.JNIEnv, jBlessingsImpl C.jobject, goPtr C.jlong, jContext C.jobject) C.jobjectArray {
+//export Java_io_v_v23_security_Blessings_nativeForContext
+func Java_io_v_v23_security_Blessings_nativeForContext(env *C.JNIEnv, jBlessings C.jobject, goPtr C.jlong, jContext C.jobject) C.jobjectArray {
 	context, err := GoContext(env, jContext)
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -547,8 +540,8 @@ func Java_io_v_v23_security_BlessingsImpl_nativeForContext(env *C.JNIEnv, jBless
 	return C.jobjectArray(jutil.JStringArray(env, blessingStrs))
 }
 
-//export Java_io_v_v23_security_BlessingsImpl_nativePublicKey
-func Java_io_v_v23_security_BlessingsImpl_nativePublicKey(env *C.JNIEnv, jBlessingsImpl C.jobject, goPtr C.jlong) C.jobject {
+//export Java_io_v_v23_security_Blessings_nativePublicKey
+func Java_io_v_v23_security_Blessings_nativePublicKey(env *C.JNIEnv, jBlessings C.jobject, goPtr C.jlong) C.jobject {
 	key := (*(*security.Blessings)(jutil.Ptr(goPtr))).PublicKey()
 	jPublicKey, err := JavaPublicKey(env, key)
 	if err != nil {
@@ -558,8 +551,8 @@ func Java_io_v_v23_security_BlessingsImpl_nativePublicKey(env *C.JNIEnv, jBlessi
 	return C.jobject(jPublicKey)
 }
 
-//export Java_io_v_v23_security_BlessingsImpl_nativeFinalize
-func Java_io_v_v23_security_BlessingsImpl_nativeFinalize(env *C.JNIEnv, jBlessingsImpl C.jobject, goPtr C.jlong) {
+//export Java_io_v_v23_security_Blessings_nativeFinalize
+func Java_io_v_v23_security_Blessings_nativeFinalize(env *C.JNIEnv, jBlessings C.jobject, goPtr C.jlong) {
 	jutil.GoUnref((*security.Blessings)(jutil.Ptr(goPtr)))
 }
 
