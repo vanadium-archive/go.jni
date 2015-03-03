@@ -11,7 +11,7 @@ import (
 import "C"
 
 var (
-	// Global reference for io.v.core.veyron.runtimes.google.InputChannel class.
+	// Global reference for io.v.impl.google.InputChannel class.
 	jInputChannelImplClass C.jclass
 	// Global reference for java.io.EOFException class.
 	jEOFExceptionClass C.jclass
@@ -24,7 +24,7 @@ var (
 // invoked from a different package, Java environment is passed in an empty
 // interface and then cast into the package-local environment type.
 func Init(jEnv interface{}) error {
-	class, err := jutil.JFindClass(jEnv, "io/v/core/veyron/runtimes/google/InputChannel")
+	class, err := jutil.JFindClass(jEnv, "io/v/impl/google/InputChannel")
 	if err != nil {
 		return err
 	}
@@ -37,8 +37,8 @@ func Init(jEnv interface{}) error {
 	return nil
 }
 
-//export Java_io_v_core_veyron_runtimes_google_InputChannel_nativeAvailable
-func Java_io_v_core_veyron_runtimes_google_InputChannel_nativeAvailable(env *C.JNIEnv, jInputChannel C.jobject, goChanPtr C.jlong) C.jboolean {
+//export Java_io_v_impl_google_InputChannel_nativeAvailable
+func Java_io_v_impl_google_InputChannel_nativeAvailable(env *C.JNIEnv, jInputChannel C.jobject, goChanPtr C.jlong) C.jboolean {
 	ch := *(*chan C.jobject)(jutil.Ptr(goChanPtr))
 	if len(ch) > 0 {
 		return C.JNI_TRUE
@@ -46,8 +46,8 @@ func Java_io_v_core_veyron_runtimes_google_InputChannel_nativeAvailable(env *C.J
 	return C.JNI_FALSE
 }
 
-//export Java_io_v_core_veyron_runtimes_google_InputChannel_nativeReadValue
-func Java_io_v_core_veyron_runtimes_google_InputChannel_nativeReadValue(env *C.JNIEnv, jInputChannel C.jobject, goChanPtr C.jlong) C.jobject {
+//export Java_io_v_impl_google_InputChannel_nativeReadValue
+func Java_io_v_impl_google_InputChannel_nativeReadValue(env *C.JNIEnv, jInputChannel C.jobject, goChanPtr C.jlong) C.jobject {
 	ch := *(*chan C.jobject)(jutil.Ptr(goChanPtr))
 	jObj, ok := <-ch
 	if !ok {
@@ -59,8 +59,8 @@ func Java_io_v_core_veyron_runtimes_google_InputChannel_nativeReadValue(env *C.J
 	return jObjLocal
 }
 
-//export Java_io_v_core_veyron_runtimes_google_InputChannel_nativeFinalize
-func Java_io_v_core_veyron_runtimes_google_InputChannel_nativeFinalize(env *C.JNIEnv, jInputChannel C.jobject, goChanPtr C.jlong, goSourceChanPtr C.jlong) {
+//export Java_io_v_impl_google_InputChannel_nativeFinalize
+func Java_io_v_impl_google_InputChannel_nativeFinalize(env *C.JNIEnv, jInputChannel C.jobject, goChanPtr C.jlong, goSourceChanPtr C.jlong) {
 	jutil.GoUnref(*(*chan C.jobject)(jutil.Ptr(goChanPtr)))
 	jutil.GoUnref(*(*chan C.jobject)(jutil.Ptr(goSourceChanPtr)))
 }

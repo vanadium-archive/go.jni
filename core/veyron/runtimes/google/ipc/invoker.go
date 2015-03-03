@@ -72,7 +72,7 @@ func (i *invoker) Invoke(method string, call ipc.StreamServerCall, argptrs []int
 	env := (*C.JNIEnv)(jEnv)
 	defer freeFunc()
 
-	jStreamServerCall, err := javaServerCall(env, call)
+	jStreamServerCall, err := javaStreamServerCall(env, call)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +84,7 @@ func (i *invoker) Invoke(method string, call ipc.StreamServerCall, argptrs []int
 	}
 	// Invoke the method.
 	callSign := jutil.ClassSign("io.v.v23.ipc.StreamServerCall")
-	replySign := jutil.ClassSign("io.v.core.veyron.runtimes.google.ipc.VDLInvoker$InvokeReply")
+	replySign := jutil.ClassSign("io.v.impl.google.ipc.VDLInvoker$InvokeReply")
 	jReply, err := jutil.CallObjectMethod(env, i.jInvoker, "invoke", []jutil.Sign{jutil.StringSign, callSign, jutil.ArraySign(jutil.ArraySign(jutil.ByteSign))}, replySign, jutil.CamelCase(method), jStreamServerCall, jVomArgs)
 	if err != nil {
 		return nil, fmt.Errorf("error invoking Java method %q: %v", method, err)
@@ -98,12 +98,12 @@ func (i *invoker) Globber() *ipc.GlobState {
 	return &ipc.GlobState{}
 }
 
-func (i *invoker) Signature(ctx ipc.ServerContext) ([]signature.Interface, error) {
+func (i *invoker) Signature(ctx ipc.ServerCall) ([]signature.Interface, error) {
 	// TODO(spetrovic): implement this method.
 	return nil, fmt.Errorf("Java runtime doesn't yet support signatures.")
 }
 
-func (i *invoker) MethodSignature(ctx ipc.ServerContext, method string) (signature.Method, error) {
+func (i *invoker) MethodSignature(ctx ipc.ServerCall, method string) (signature.Method, error) {
 	// TODO(spetrovic): implement this method.
 	return signature.Method{}, fmt.Errorf("Java runtime doesn't yet support signatures.")
 }

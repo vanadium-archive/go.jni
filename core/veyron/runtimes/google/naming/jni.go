@@ -17,7 +17,7 @@ import (
 import "C"
 
 var (
-	// Global reference for io.v.core.veyron.runtimes.google.naming.ns.Namespace class.
+	// Global reference for io.v.impl.google.naming.ns.Namespace class.
 	jNamespaceImplClass C.jclass
 )
 
@@ -27,7 +27,7 @@ var (
 // invoked from a different package, Java environment is passed in an empty
 // interface and then cast into the package-local environment type.
 func Init(jEnv interface{}) error {
-	class, err := jutil.JFindClass(jEnv, "io/v/core/veyron/runtimes/google/naming/ns/Namespace")
+	class, err := jutil.JFindClass(jEnv, "io/v/impl/google/naming/ns/Namespace")
 	if err != nil {
 		return err
 	}
@@ -35,8 +35,8 @@ func Init(jEnv interface{}) error {
 	return nil
 }
 
-//export Java_io_v_core_veyron_runtimes_google_naming_ns_Namespace_nativeGlob
-func Java_io_v_core_veyron_runtimes_google_naming_ns_Namespace_nativeGlob(env *C.JNIEnv, jNamespace C.jobject, goNamespacePtr C.jlong, jContext C.jobject, pattern C.jstring) C.jobject {
+//export Java_io_v_impl_google_naming_ns_Namespace_nativeGlob
+func Java_io_v_impl_google_naming_ns_Namespace_nativeGlob(env *C.JNIEnv, jNamespace C.jobject, goNamespacePtr C.jlong, jContext C.jobject, pattern C.jstring) C.jobject {
 	n := *(*ns.Namespace)(jutil.Ptr(goNamespacePtr))
 	context, err := jcontext.GoContext(env, jContext)
 	if err != nil {
@@ -82,7 +82,7 @@ func Java_io_v_core_veyron_runtimes_google_naming_ns_Namespace_nativeGlob(env *C
 	return C.jobject(jInputChannel)
 }
 
-//export Java_io_v_core_veyron_runtimes_google_naming_ns_Namespace_nativeFinalize
-func Java_io_v_core_veyron_runtimes_google_naming_ns_Namespace_nativeFinalize(env *C.JNIEnv, jNamespace C.jobject, goNamespacePtr C.jlong) {
+//export Java_io_v_impl_google_naming_ns_Namespace_nativeFinalize
+func Java_io_v_impl_google_naming_ns_Namespace_nativeFinalize(env *C.JNIEnv, jNamespace C.jobject, goNamespacePtr C.jlong) {
 	jutil.GoUnref((*ns.Namespace)(jutil.Ptr(goNamespacePtr)))
 }

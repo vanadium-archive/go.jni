@@ -19,8 +19,7 @@ import "C"
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func JavaBlessings(jEnv interface{}, blessings security.Blessings) (unsafe.Pointer, error) {
-	wire := security.MarshalBlessings(blessings)
-	jWire, err := JavaWireBlessings(jEnv, wire)
+	jWire, err := jutil.JVomCopy(jEnv, blessings, jWireBlessingsClass)
 	if err != nil {
 		return nil, err
 	}
@@ -41,11 +40,11 @@ func GoBlessings(jEnv, jBlessings interface{}) (security.Blessings, error) {
 	if err != nil {
 		return security.Blessings{}, err
 	}
-	wire, err := GoWireBlessings(jEnv, jWire)
-	if err != nil {
+	var blessings security.Blessings
+	if err := jutil.GoVomCopy(jEnv, jWire, jWireBlessingsClass, &blessings); err != nil {
 		return security.Blessings{}, err
 	}
-	return security.NewBlessings(wire)
+	return blessings, nil
 }
 
 // GoBlessingsArray converts the provided Java Blessings array into a Go
@@ -65,54 +64,12 @@ func GoBlessingsArray(jEnv, jBlessingsArr interface{}) ([]security.Blessings, er
 	return ret, nil
 }
 
-// JavaWireBlessings converts the provided Go WireBlessings into Java WireBlessings.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func JavaWireBlessings(jEnv interface{}, wire security.WireBlessings) (unsafe.Pointer, error) {
-	var err error
-	encoded, err := vom.Encode(wire)
-	if err != nil {
-		return nil, err
-	}
-	jWireBlessings, err := jutil.CallStaticObjectMethod(jEnv, jUtilClass, "decodeWireBlessings", []jutil.Sign{jutil.ByteArraySign}, wireBlessingsSign, encoded)
-	if err != nil {
-		return nil, err
-	}
-	return jWireBlessings, nil
-}
-
-// GoWireBlessings converts the provided Java WireBlessings into Go WireBlessings.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func GoWireBlessings(jEnv, jWireBless interface{}) (security.WireBlessings, error) {
-	jWireBlessings := getObject(jWireBless)
-	encoded, err := jutil.CallStaticByteArrayMethod(jEnv, jUtilClass, "encodeWireBlessings", []jutil.Sign{wireBlessingsSign}, jWireBlessings)
-	if err != nil {
-		return security.WireBlessings{}, err
-	}
-	var wire security.WireBlessings
-	if err := vom.Decode(encoded, &wire); err != nil {
-		return security.WireBlessings{}, err
-	}
-	return wire, nil
-}
-
 // JavaCaveat converts the provided Go Caveat into a Java Caveat.
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func JavaCaveat(jEnv interface{}, caveat security.Caveat) (unsafe.Pointer, error) {
-	encoded, err := vom.Encode(caveat)
-	if err != nil {
-		return nil, err
-	}
-	jCaveat, err := jutil.CallStaticObjectMethod(jEnv, jUtilClass, "decodeCaveat", []jutil.Sign{jutil.ByteArraySign}, caveatSign, encoded)
-	if err != nil {
-		return nil, err
-	}
-	return jCaveat, nil
+	return jutil.JVomCopy(jEnv, caveat, jCaveatClass)
 }
 
 // GoCaveat converts the provided Java Caveat into a Go Caveat.
@@ -120,13 +77,8 @@ func JavaCaveat(jEnv interface{}, caveat security.Caveat) (unsafe.Pointer, error
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func GoCaveat(jEnv, jCav interface{}) (security.Caveat, error) {
-	jCaveat := getObject(jCav)
-	encoded, err := jutil.CallStaticByteArrayMethod(jEnv, jUtilClass, "encodeCaveat", []jutil.Sign{caveatSign}, jCaveat)
-	if err != nil {
-		return security.Caveat{}, err
-	}
 	var caveat security.Caveat
-	if err := vom.Decode(encoded, &caveat); err != nil {
+	if err := jutil.GoVomCopy(jEnv, jCav, jCaveatClass, &caveat); err != nil {
 		return security.Caveat{}, err
 	}
 	return caveat, nil

@@ -13,12 +13,12 @@ import (
 // #include "jni_wrapper.h"
 import "C"
 
-func caveatValidator(context security.Context, caveat security.Caveat) error {
+func caveatValidator(call security.Call, caveat security.Caveat) error {
 	jEnv, freeFunc := jutil.GetEnv()
 	defer freeFunc()
 	env := (*C.JNIEnv)(unsafe.Pointer(jutil.PtrValue(jEnv)))
 
-	jContext, err := JavaContext(env, context)
+	jCall, err := JavaCall(env, call)
 	if err != nil {
 		return err
 	}
@@ -26,5 +26,5 @@ func caveatValidator(context security.Context, caveat security.Caveat) error {
 	if err != nil {
 		return err
 	}
-	return jutil.CallStaticVoidMethod(env, jCaveatRegistryClass, "validate", []jutil.Sign{contextSign, caveatSign}, jContext, jCaveat)
+	return jutil.CallStaticVoidMethod(env, jCaveatRegistryClass, "validate", []jutil.Sign{callSign, caveatSign}, jCall, jCaveat)
 }

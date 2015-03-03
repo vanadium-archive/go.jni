@@ -44,15 +44,15 @@ type authorizer struct {
 	jAuth C.jobject
 }
 
-func (a *authorizer) Authorize(context security.Context) error {
+func (a *authorizer) Authorize(call security.Call) error {
 	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
-	// Create a Java context.
-	jContext, err := JavaContext(env, context)
+	// Create a Java call.
+	jCall, err := JavaCall(env, call)
 	if err != nil {
 		return err
 	}
 	// Run Java Authorizer.
-	contextSign := jutil.ClassSign("io.v.v23.security.VContext")
-	return jutil.CallVoidMethod(env, a.jAuth, "authorize", []jutil.Sign{contextSign}, jContext)
+	callSign := jutil.ClassSign("io.v.v23.security.Call")
+	return jutil.CallVoidMethod(env, a.jAuth, "authorize", []jutil.Sign{callSign}, jCall)
 }

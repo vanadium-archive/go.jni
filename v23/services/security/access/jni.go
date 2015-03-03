@@ -61,13 +61,13 @@ func Java_io_v_v23_services_security_access_ACLWrapper_nativeIncludes(env *C.JNI
 }
 
 //export Java_io_v_v23_services_security_access_ACLWrapper_nativeAuthorize
-func Java_io_v_v23_services_security_access_ACLWrapper_nativeAuthorize(env *C.JNIEnv, jACLWrapper C.jobject, goPtr C.jlong, jContext C.jobject) {
-	ctx, err := jsecurity.GoContext(env, jContext)
+func Java_io_v_v23_services_security_access_ACLWrapper_nativeAuthorize(env *C.JNIEnv, jACLWrapper C.jobject, goPtr C.jlong, jCall C.jobject) {
+	call, err := jsecurity.GoCall(env, jCall)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return
 	}
-	if err := (*(*access.ACL)(jutil.Ptr(goPtr))).Authorize(ctx); err != nil {
+	if err := (*(*access.ACL)(jutil.Ptr(goPtr))).Authorize(call); err != nil {
 		jutil.JThrowV(env, err)
 		return
 	}

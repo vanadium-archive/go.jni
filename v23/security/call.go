@@ -22,53 +22,53 @@ import (
 // #include "jni_wrapper.h"
 import "C"
 
-// JavaContext converts the provided Go (security) Context into a Java Context object.
+// JavaCall converts the provided Go (security) Call into a Java Call object.
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JavaContext(jEnv interface{}, ctx security.Context) (unsafe.Pointer, error) {
-	jContext, err := jutil.NewObject(jEnv, jContextImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&ctx)))
+func JavaCall(jEnv interface{}, call security.Call) (unsafe.Pointer, error) {
+	jCall, err := jutil.NewObject(jEnv, jCallImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&call)))
 	if err != nil {
 		return nil, err
 	}
-	jutil.GoRef(&ctx) // Un-refed when the Java ContextImpl object is finalized.
-	return jContext, nil
+	jutil.GoRef(&call) // Un-refed when the Java CallImpl object is finalized.
+	return jCall, nil
 }
 
-// GoContext creates instance of security.Context that uses the provided Java
-// Context as its underlying implementation.
+// GoCall creates instance of security.Call that uses the provided Java
+// Call as its underlying implementation.
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func GoContext(jEnv, jContextObj interface{}) (security.Context, error) {
+func GoCall(jEnv, jCallObj interface{}) (security.Call, error) {
 	env := (*C.JNIEnv)(unsafe.Pointer(jutil.PtrValue(jEnv)))
-	jContext := C.jobject(unsafe.Pointer(jutil.PtrValue(jContextObj)))
+	jCall := C.jobject(unsafe.Pointer(jutil.PtrValue(jCallObj)))
 
-	// Reference Java context; it will be de-referenced when the go context
+	// Reference Java call; it will be de-referenced when the go call
 	// created below is garbage-collected (through the finalizer callback we
 	// setup just below).
-	jContext = C.NewGlobalRef(env, jContext)
-	ctx := &contextImpl{
-		jContext: jContext,
+	jCall = C.NewGlobalRef(env, jCall)
+	call := &callImpl{
+		jCall: jCall,
 	}
-	runtime.SetFinalizer(ctx, func(c *contextImpl) {
+	runtime.SetFinalizer(call, func(c *callImpl) {
 		javaEnv, freeFunc := jutil.GetEnv()
 		jenv := (*C.JNIEnv)(javaEnv)
 		defer freeFunc()
-		C.DeleteGlobalRef(jenv, c.jContext)
+		C.DeleteGlobalRef(jenv, c.jCall)
 	})
-	return ctx, nil
+	return call, nil
 }
 
-// contextImpl is the go interface to the java implementation of security.Context
-type contextImpl struct {
-	jContext C.jobject
+// callImpl is the go interface to the java implementation of security.Call
+type callImpl struct {
+	jCall C.jobject
 }
 
-func (c *contextImpl) Timestamp() time.Time {
+func (c *callImpl) Timestamp() time.Time {
 	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
-	jTime, err := jutil.CallObjectMethod(env, c.jContext, "timestamp", nil, jutil.DateTimeSign)
+	jTime, err := jutil.CallObjectMethod(env, c.jCall, "timestamp", nil, jutil.DateTimeSign)
 	if err != nil {
 		log.Println("Couldn't call Java timestamp method: ", err)
 		return time.Time{}
@@ -81,38 +81,36 @@ func (c *contextImpl) Timestamp() time.Time {
 	return t
 }
 
-func (c *contextImpl) Method() string {
+func (c *callImpl) Method() string {
 	return jutil.UpperCamelCase(c.callStringMethod("method"))
 }
 
-func (c *contextImpl) MethodTags() []*vdl.Value {
+func (c *callImpl) MethodTags() []*vdl.Value {
 	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
-	jTags, err := jutil.CallObjectArrayMethod(env, c.jContext, "methodTags", nil, jutil.VdlValueSign)
+	jTags, err := jutil.CallObjectArrayMethod(env, c.jCall, "methodTags", nil, jutil.VdlValueSign)
 	if err != nil {
 		log.Println("Couldn't call Java methodTags method: ", err)
 		return nil
 	}
-	log.Println("JNI goContext: converting method tags")
 	tags, err := jutil.GoVDLValueArray(env, jTags)
 	if err != nil {
 		log.Println("Couldn't convert Java tags to Go: ", err)
 		return nil
 	}
-	log.Println("JNI goContext: success converting method tags")
 	return tags
 }
 
-func (c *contextImpl) Suffix() string {
+func (c *callImpl) Suffix() string {
 	return c.callStringMethod("suffix")
 }
 
-func (c *contextImpl) RemoteDischarges() map[string]security.Discharge {
+func (c *callImpl) RemoteDischarges() map[string]security.Discharge {
 	// TODO(spetrovic): implement this method.
 	return nil
 }
 
-func (c *contextImpl) LocalEndpoint() naming.Endpoint {
+func (c *callImpl) LocalEndpoint() naming.Endpoint {
 	epStr := c.callStringMethod("localEndpoint")
 	ep, err := v23.NewEndpoint(epStr)
 	if err != nil {
@@ -122,10 +120,10 @@ func (c *contextImpl) LocalEndpoint() naming.Endpoint {
 	return ep
 }
 
-func (c *contextImpl) LocalPrincipal() security.Principal {
+func (c *callImpl) LocalPrincipal() security.Principal {
 	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
-	jPrincipal, err := jutil.CallObjectMethod(env, c.jContext, "localPrincipal", nil, principalSign)
+	jPrincipal, err := jutil.CallObjectMethod(env, c.jCall, "localPrincipal", nil, principalSign)
 	if err != nil {
 		log.Printf("Couldn't call Java localPrincipal method: %v", err)
 		return nil
@@ -138,10 +136,10 @@ func (c *contextImpl) LocalPrincipal() security.Principal {
 	return principal
 }
 
-func (c *contextImpl) LocalBlessings() security.Blessings {
+func (c *callImpl) LocalBlessings() security.Blessings {
 	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
-	jBlessings, err := jutil.CallObjectMethod(env, c.jContext, "localBlessings", nil, blessingsSign)
+	jBlessings, err := jutil.CallObjectMethod(env, c.jCall, "localBlessings", nil, blessingsSign)
 	if err != nil {
 		log.Printf("Couldn't call Java localBlessings method: %v", err)
 		return security.Blessings{}
@@ -154,10 +152,10 @@ func (c *contextImpl) LocalBlessings() security.Blessings {
 	return blessings
 }
 
-func (c *contextImpl) RemoteBlessings() security.Blessings {
+func (c *callImpl) RemoteBlessings() security.Blessings {
 	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
-	jBlessings, err := jutil.CallObjectMethod(env, c.jContext, "remoteBlessings", nil, blessingsSign)
+	jBlessings, err := jutil.CallObjectMethod(env, c.jCall, "remoteBlessings", nil, blessingsSign)
 	if err != nil {
 		log.Printf("Couldn't call Java remoteBlessings method: %v", err)
 		return security.Blessings{}
@@ -170,7 +168,7 @@ func (c *contextImpl) RemoteBlessings() security.Blessings {
 	return blessings
 }
 
-func (c *contextImpl) RemoteEndpoint() naming.Endpoint {
+func (c *callImpl) RemoteEndpoint() naming.Endpoint {
 	epStr := c.callStringMethod("remoteEndpoint")
 	ep, err := v23.NewEndpoint(epStr)
 	if err != nil {
@@ -180,11 +178,11 @@ func (c *contextImpl) RemoteEndpoint() naming.Endpoint {
 	return ep
 }
 
-func (c *contextImpl) Context() *context.T {
+func (c *callImpl) Context() *context.T {
 	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
 	contextSign := jutil.ClassSign("io.v.v23.context.VContext")
-	jCtx, err := jutil.CallObjectMethod(env, c.jContext, "context", nil, contextSign)
+	jCtx, err := jutil.CallObjectMethod(env, c.jCall, "context", nil, contextSign)
 	if err != nil {
 		log.Printf("Couldn't get Java Vanadium context: %v", err)
 	}
@@ -195,10 +193,10 @@ func (c *contextImpl) Context() *context.T {
 	return ctx
 }
 
-func (c *contextImpl) callStringMethod(methodName string) string {
+func (c *callImpl) callStringMethod(methodName string) string {
 	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
-	ret, err := jutil.CallStringMethod(env, c.jContext, methodName, nil)
+	ret, err := jutil.CallStringMethod(env, c.jCall, methodName, nil)
 	if err != nil {
 		log.Printf("Couldn't call Java %q method: %v", methodName, err)
 		return ""

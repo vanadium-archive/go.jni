@@ -59,17 +59,12 @@ func javaStreamServerCall(env *C.JNIEnv, call ipc.StreamServerCall) (C.jobject, 
 	if err != nil {
 		return nil, err
 	}
-	jContext, err := jcontext.JavaContext(env, call.Context(), nil)
+	jSecurityCall, err := jsecurity.JavaCall(env, call)
 	if err != nil {
 		return nil, err
 	}
-	jSecurityContext, err := jsecurity.JavaContext(env, call)
-	if err != nil {
-		return nil, err
-	}
-	contextSign := jutil.ClassSign("io.v.v23.context.VContext")
-	securityContextSign := jutil.ClassSign("io.v.v23.security.VContext")
-	jStreamServerCall, err := jutil.NewObject(env, jStreamServerCallClass, []jutil.Sign{jutil.LongSign, streamSign, contextSign, securityContextSign}, int64(jutil.PtrValue(&call)), jStream, jContext, jSecurityContext)
+	securityCallSign := jutil.ClassSign("io.v.v23.security.Call")
+	jStreamServerCall, err := jutil.NewObject(env, jStreamServerCallClass, []jutil.Sign{jutil.LongSign, streamSign, securityCallSign}, int64(jutil.PtrValue(&call)), jStream, jSecurityCall)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +73,7 @@ func javaStreamServerCall(env *C.JNIEnv, call ipc.StreamServerCall) (C.jobject, 
 }
 
 // javaCall converts the provided Go Call value into a Java Call object.
-func javaCall(env *C.JNIEnv, call ipc.Call) (C.jobject, error) {
+func javaCall(env *C.JNIEnv, call ipc.ClientCall) (C.jobject, error) {
 	if call == nil {
 		return nil, fmt.Errorf("Go Call value cannot be nil")
 	}
