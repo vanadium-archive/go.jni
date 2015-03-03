@@ -3,8 +3,8 @@
 package i18n
 
 import (
-	jutil "v.io/jni/util"
 	"v.io/v23/i18n"
+	jutil "v.io/x/jni/util"
 )
 
 // #cgo LDFLAGS: -ljniwrapper

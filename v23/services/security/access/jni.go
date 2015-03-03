@@ -3,9 +3,9 @@
 package access
 
 import (
-	jutil "v.io/jni/util"
-	jsecurity "v.io/jni/v23/security"
 	"v.io/v23/services/security/access"
+	jutil "v.io/x/jni/util"
+	jsecurity "v.io/x/jni/v23/security"
 )
 
 // #cgo LDFLAGS: -ljniwrapper

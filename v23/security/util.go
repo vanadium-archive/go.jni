@@ -5,9 +5,9 @@ package security
 import (
 	"unsafe"
 
-	jutil "v.io/jni/util"
 	"v.io/v23/security"
 	"v.io/v23/vom"
+	jutil "v.io/x/jni/util"
 )
 
 // #cgo LDFLAGS: -ljniwrapper

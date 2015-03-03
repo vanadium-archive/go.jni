@@ -5,7 +5,7 @@ package channel
 import (
 	"unsafe"
 
-	jutil "v.io/jni/util"
+	jutil "v.io/x/jni/util"
 )
 
 // #cgo LDFLAGS: -ljniwrapper

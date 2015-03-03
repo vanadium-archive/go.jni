@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"unsafe"
 
-	jutil "v.io/jni/util"
-	jcontext "v.io/jni/v23/context"
 	"v.io/v23/security"
+	jutil "v.io/x/jni/util"
+	jcontext "v.io/x/jni/v23/context"
 	vsecurity "v.io/x/ref/security"
 )
 

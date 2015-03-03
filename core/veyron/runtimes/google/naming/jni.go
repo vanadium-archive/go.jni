@@ -5,11 +5,11 @@ package naming
 import (
 	"log"
 
-	jchannel "v.io/jni/core/veyron/runtimes/google/channel"
-	jutil "v.io/jni/util"
-	jcontext "v.io/jni/v23/context"
 	"v.io/v23/naming"
 	"v.io/v23/naming/ns"
+	jchannel "v.io/x/jni/core/veyron/runtimes/google/channel"
+	jutil "v.io/x/jni/util"
+	jcontext "v.io/x/jni/v23/context"
 )
 
 // #cgo LDFLAGS: -ljniwrapper

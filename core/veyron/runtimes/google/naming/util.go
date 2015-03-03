@@ -6,9 +6,9 @@ import (
 	"time"
 	"unsafe"
 
-	jutil "v.io/jni/util"
 	"v.io/v23/naming"
 	"v.io/v23/naming/ns"
+	jutil "v.io/x/jni/util"
 )
 
 // #cgo LDFLAGS: -ljniwrapper

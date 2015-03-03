@@ -11,10 +11,10 @@ import (
 	"v.io/v23/vdl"
 	"v.io/v23/vom"
 
-	jchannel "v.io/jni/core/veyron/runtimes/google/channel"
-	jutil "v.io/jni/util"
-	jcontext "v.io/jni/v23/context"
-	jsecurity "v.io/jni/v23/security"
+	jchannel "v.io/x/jni/core/veyron/runtimes/google/channel"
+	jutil "v.io/x/jni/util"
+	jcontext "v.io/x/jni/v23/context"
+	jsecurity "v.io/x/jni/v23/security"
 )
 
 // #cgo LDFLAGS: -ljniwrapper

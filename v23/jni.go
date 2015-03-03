@@ -3,11 +3,11 @@
 package veyron2
 
 import (
-	jandroid "v.io/jni/v23/android"
-	jcontext "v.io/jni/v23/context"
-	ji18n "v.io/jni/v23/i18n"
-	jsecurity "v.io/jni/v23/security"
-	jaccess "v.io/jni/v23/services/security/access"
+	jandroid "v.io/x/jni/v23/android"
+	jcontext "v.io/x/jni/v23/context"
+	ji18n "v.io/x/jni/v23/i18n"
+	jsecurity "v.io/x/jni/v23/security"
+	jaccess "v.io/x/jni/v23/services/security/access"
 )
 
 // #cgo LDFLAGS: -ljniwrapper

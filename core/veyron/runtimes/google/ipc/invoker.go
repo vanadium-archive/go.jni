@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"runtime"
 
-	jutil "v.io/jni/util"
 	"v.io/v23/ipc"
 	"v.io/v23/vdl"
 	"v.io/v23/vdlroot/signature"
 	"v.io/v23/vom"
+	jutil "v.io/x/jni/util"
 )
 
 // #cgo LDFLAGS: -ljniwrapper

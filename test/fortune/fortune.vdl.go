@@ -24,7 +24,7 @@ type ComplexErrorParam struct {
 }
 
 func (ComplexErrorParam) __VDLReflect(struct {
-	Name string "v.io/jni/test/fortune.ComplexErrorParam"
+	Name string "v.io/x/jni/test/fortune.ComplexErrorParam"
 }) {
 }
 
@@ -33,8 +33,8 @@ func init() {
 }
 
 var (
-	ErrErrNoFortunes = verror.Register("v.io/jni/test/fortune.ErrNoFortunes", verror.NoRetry, "{1:}{2:} no fortunes added")
-	ErrErrComplex    = verror.Register("v.io/jni/test/fortune.ErrComplex", verror.NoRetry, "{1:}{2:} this is a complex error with params {3} {4} {5}")
+	ErrErrNoFortunes = verror.Register("v.io/x/jni/test/fortune.ErrNoFortunes", verror.NoRetry, "{1:}{2:} no fortunes added")
+	ErrErrComplex    = verror.Register("v.io/x/jni/test/fortune.ErrComplex", verror.NoRetry, "{1:}{2:} this is a complex error with params {3} {4} {5}")
 )
 
 func init() {
@@ -364,7 +364,7 @@ var FortuneDesc ipc.InterfaceDesc = descFortune
 // descFortune hides the desc to keep godoc clean.
 var descFortune = ipc.InterfaceDesc{
 	Name:    "Fortune",
-	PkgPath: "v.io/jni/test/fortune",
+	PkgPath: "v.io/x/jni/test/fortune",
 	Doc:     "// Fortune allows clients to Get and Add fortune strings.",
 	Methods: []ipc.MethodDesc{
 		{

@@ -7,9 +7,9 @@ import (
 
 	"golang.org/x/mobile/app"
 
-	jgoogle "v.io/jni/core/veyron/runtimes/google"
-	jutil "v.io/jni/util"
-	jv23 "v.io/jni/v23"
+	jgoogle "v.io/x/jni/core/veyron/runtimes/google"
+	jutil "v.io/x/jni/util"
+	jv23 "v.io/x/jni/v23"
 )
 
 // #cgo LDFLAGS: -ljniwrapper

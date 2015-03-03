@@ -8,8 +8,8 @@ import (
 	"time"
 	"unsafe"
 
-	jutil "v.io/jni/util"
-	jcontext "v.io/jni/v23/context"
+	jutil "v.io/x/jni/util"
+	jcontext "v.io/x/jni/v23/context"
 
 	"v.io/v23"
 	"v.io/v23/context"

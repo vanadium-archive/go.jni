@@ -6,8 +6,8 @@ import (
 	"runtime"
 	"unsafe"
 
-	jutil "v.io/jni/util"
 	"v.io/v23/security"
+	jutil "v.io/x/jni/util"
 )
 
 // #cgo LDFLAGS: -ljniwrapper
