@@ -3,10 +3,10 @@
 package google
 
 import (
-	jchannel "v.io/x/jni/core/veyron/runtimes/google/channel"
-	jipc "v.io/x/jni/core/veyron/runtimes/google/ipc"
-	jnaming "v.io/x/jni/core/veyron/runtimes/google/naming"
-	jrt "v.io/x/jni/core/veyron/runtimes/google/rt"
+	jchannel "v.io/x/jni/impl/google/channel"
+	jipc "v.io/x/jni/impl/google/ipc"
+	jns "v.io/x/jni/impl/google/naming/ns"
+	jrt "v.io/x/jni/impl/google/rt"
 )
 
 // #cgo LDFLAGS: -ljniwrapper
@@ -29,7 +29,7 @@ func Init(jEnv interface{}) error {
 	if err := jchannel.Init(jEnv); err != nil {
 		return err
 	}
-	if err := jnaming.Init(jEnv); err != nil {
+	if err := jns.Init(jEnv); err != nil {
 		return err
 	}
 	return nil

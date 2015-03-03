@@ -11,7 +11,7 @@ import (
 	"v.io/v23/vdl"
 	"v.io/v23/vom"
 
-	jchannel "v.io/x/jni/core/veyron/runtimes/google/channel"
+	jchannel "v.io/x/jni/impl/google/channel"
 	jutil "v.io/x/jni/util"
 	jcontext "v.io/x/jni/v23/context"
 	jsecurity "v.io/x/jni/v23/security"

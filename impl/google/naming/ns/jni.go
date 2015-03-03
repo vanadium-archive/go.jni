@@ -1,13 +1,13 @@
 // +build android
 
-package naming
+package ns
 
 import (
 	"log"
 
 	"v.io/v23/naming"
 	"v.io/v23/naming/ns"
-	jchannel "v.io/x/jni/core/veyron/runtimes/google/channel"
+	jchannel "v.io/x/jni/impl/google/channel"
 	jutil "v.io/x/jni/util"
 	jcontext "v.io/x/jni/v23/context"
 )

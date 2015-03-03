@@ -8,7 +8,6 @@ import (
 
 	"v.io/v23/ipc"
 	jutil "v.io/x/jni/util"
-	jcontext "v.io/x/jni/v23/context"
 	jsecurity "v.io/x/jni/v23/security"
 )
 

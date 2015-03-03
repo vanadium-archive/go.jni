@@ -7,7 +7,7 @@ import (
 
 	"golang.org/x/mobile/app"
 
-	jgoogle "v.io/x/jni/core/veyron/runtimes/google"
+	jgoogle "v.io/x/jni/impl/google"
 	jutil "v.io/x/jni/util"
 	jv23 "v.io/x/jni/v23"
 )
