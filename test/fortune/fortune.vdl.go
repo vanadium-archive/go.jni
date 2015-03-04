@@ -215,21 +215,21 @@ func (c *implFortuneStreamingGetClientCall) RecvStream() interface {
 	Value() string
 	Err() error
 } {
-	return implFortuneStreamingGetCallRecv{c}
+	return implFortuneStreamingGetClientCallRecv{c}
 }
 
-type implFortuneStreamingGetCallRecv struct {
+type implFortuneStreamingGetClientCallRecv struct {
 	c *implFortuneStreamingGetClientCall
 }
 
-func (c implFortuneStreamingGetCallRecv) Advance() bool {
+func (c implFortuneStreamingGetClientCallRecv) Advance() bool {
 	c.c.errRecv = c.c.Recv(&c.c.valRecv)
 	return c.c.errRecv == nil
 }
-func (c implFortuneStreamingGetCallRecv) Value() string {
+func (c implFortuneStreamingGetClientCallRecv) Value() string {
 	return c.c.valRecv
 }
-func (c implFortuneStreamingGetCallRecv) Err() error {
+func (c implFortuneStreamingGetClientCallRecv) Err() error {
 	if c.c.errRecv == io.EOF {
 		return nil
 	}
@@ -239,17 +239,17 @@ func (c *implFortuneStreamingGetClientCall) SendStream() interface {
 	Send(item bool) error
 	Close() error
 } {
-	return implFortuneStreamingGetCallSend{c}
+	return implFortuneStreamingGetClientCallSend{c}
 }
 
-type implFortuneStreamingGetCallSend struct {
+type implFortuneStreamingGetClientCallSend struct {
 	c *implFortuneStreamingGetClientCall
 }
 
-func (c implFortuneStreamingGetCallSend) Send(item bool) error {
+func (c implFortuneStreamingGetClientCallSend) Send(item bool) error {
 	return c.c.Send(item)
 }
-func (c implFortuneStreamingGetCallSend) Close() error {
+func (c implFortuneStreamingGetClientCallSend) Close() error {
 	return c.c.CloseSend()
 }
 func (c *implFortuneStreamingGetClientCall) Finish() (o0 int32, err error) {
@@ -263,11 +263,11 @@ func (c *implFortuneStreamingGetClientCall) Finish() (o0 int32, err error) {
 // Fortune allows clients to Get and Add fortune strings.
 type FortuneServerMethods interface {
 	// Add stores a fortune in the set used by Get.
-	Add(ctx ipc.ServerCall, Fortune string) error
+	Add(call ipc.ServerCall, Fortune string) error
 	// Get returns a random fortune.
 	Get(ipc.ServerCall) (Fortune string, err error)
 	// StreamingGet returns a stream that can be used to obtain fortunes.
-	StreamingGet(FortuneStreamingGetContext) (total int32, err error)
+	StreamingGet(FortuneStreamingGetServerCall) (total int32, err error)
 	// GetComplexError returns (always!) ErrComplex.
 	GetComplexError(ipc.ServerCall) error
 	// NoTags is a method without tags.
@@ -283,11 +283,11 @@ type FortuneServerMethods interface {
 // is the streaming methods.
 type FortuneServerStubMethods interface {
 	// Add stores a fortune in the set used by Get.
-	Add(ctx ipc.ServerCall, Fortune string) error
+	Add(call ipc.ServerCall, Fortune string) error
 	// Get returns a random fortune.
 	Get(ipc.ServerCall) (Fortune string, err error)
 	// StreamingGet returns a stream that can be used to obtain fortunes.
-	StreamingGet(*FortuneStreamingGetContextStub) (total int32, err error)
+	StreamingGet(*FortuneStreamingGetServerCallStub) (total int32, err error)
 	// GetComplexError returns (always!) ErrComplex.
 	GetComplexError(ipc.ServerCall) error
 	// NoTags is a method without tags.
@@ -326,28 +326,28 @@ type implFortuneServerStub struct {
 	gs   *ipc.GlobState
 }
 
-func (s implFortuneServerStub) Add(ctx ipc.ServerCall, i0 string) error {
-	return s.impl.Add(ctx, i0)
+func (s implFortuneServerStub) Add(call ipc.ServerCall, i0 string) error {
+	return s.impl.Add(call, i0)
 }
 
-func (s implFortuneServerStub) Get(ctx ipc.ServerCall) (string, error) {
-	return s.impl.Get(ctx)
+func (s implFortuneServerStub) Get(call ipc.ServerCall) (string, error) {
+	return s.impl.Get(call)
 }
 
-func (s implFortuneServerStub) StreamingGet(ctx *FortuneStreamingGetContextStub) (int32, error) {
-	return s.impl.StreamingGet(ctx)
+func (s implFortuneServerStub) StreamingGet(call *FortuneStreamingGetServerCallStub) (int32, error) {
+	return s.impl.StreamingGet(call)
 }
 
-func (s implFortuneServerStub) GetComplexError(ctx ipc.ServerCall) error {
-	return s.impl.GetComplexError(ctx)
+func (s implFortuneServerStub) GetComplexError(call ipc.ServerCall) error {
+	return s.impl.GetComplexError(call)
 }
 
-func (s implFortuneServerStub) NoTags(ctx ipc.ServerCall) error {
-	return s.impl.NoTags(ctx)
+func (s implFortuneServerStub) NoTags(call ipc.ServerCall) error {
+	return s.impl.NoTags(call)
 }
 
-func (s implFortuneServerStub) TestContext(ctx ipc.ServerCall) error {
-	return s.impl.TestContext(ctx)
+func (s implFortuneServerStub) TestContext(call ipc.ServerCall) error {
+	return s.impl.TestContext(call)
 }
 
 func (s implFortuneServerStub) Globber() *ipc.GlobState {
@@ -431,46 +431,46 @@ type FortuneStreamingGetServerStream interface {
 	}
 }
 
-// FortuneStreamingGetContext represents the context passed to Fortune.StreamingGet.
-type FortuneStreamingGetContext interface {
+// FortuneStreamingGetServerCall represents the context passed to Fortune.StreamingGet.
+type FortuneStreamingGetServerCall interface {
 	ipc.ServerCall
 	FortuneStreamingGetServerStream
 }
 
-// FortuneStreamingGetContextStub is a wrapper that converts ipc.StreamServerCall into
-// a typesafe stub that implements FortuneStreamingGetContext.
-type FortuneStreamingGetContextStub struct {
+// FortuneStreamingGetServerCallStub is a wrapper that converts ipc.StreamServerCall into
+// a typesafe stub that implements FortuneStreamingGetServerCall.
+type FortuneStreamingGetServerCallStub struct {
 	ipc.StreamServerCall
 	valRecv bool
 	errRecv error
 }
 
-// Init initializes FortuneStreamingGetContextStub from ipc.StreamServerCall.
-func (s *FortuneStreamingGetContextStub) Init(call ipc.StreamServerCall) {
+// Init initializes FortuneStreamingGetServerCallStub from ipc.StreamServerCall.
+func (s *FortuneStreamingGetServerCallStub) Init(call ipc.StreamServerCall) {
 	s.StreamServerCall = call
 }
 
 // RecvStream returns the receiver side of the Fortune.StreamingGet server stream.
-func (s *FortuneStreamingGetContextStub) RecvStream() interface {
+func (s *FortuneStreamingGetServerCallStub) RecvStream() interface {
 	Advance() bool
 	Value() bool
 	Err() error
 } {
-	return implFortuneStreamingGetContextRecv{s}
+	return implFortuneStreamingGetServerCallRecv{s}
 }
 
-type implFortuneStreamingGetContextRecv struct {
-	s *FortuneStreamingGetContextStub
+type implFortuneStreamingGetServerCallRecv struct {
+	s *FortuneStreamingGetServerCallStub
 }
 
-func (s implFortuneStreamingGetContextRecv) Advance() bool {
+func (s implFortuneStreamingGetServerCallRecv) Advance() bool {
 	s.s.errRecv = s.s.Recv(&s.s.valRecv)
 	return s.s.errRecv == nil
 }
-func (s implFortuneStreamingGetContextRecv) Value() bool {
+func (s implFortuneStreamingGetServerCallRecv) Value() bool {
 	return s.s.valRecv
 }
-func (s implFortuneStreamingGetContextRecv) Err() error {
+func (s implFortuneStreamingGetServerCallRecv) Err() error {
 	if s.s.errRecv == io.EOF {
 		return nil
 	}
@@ -478,16 +478,16 @@ func (s implFortuneStreamingGetContextRecv) Err() error {
 }
 
 // SendStream returns the send side of the Fortune.StreamingGet server stream.
-func (s *FortuneStreamingGetContextStub) SendStream() interface {
+func (s *FortuneStreamingGetServerCallStub) SendStream() interface {
 	Send(item string) error
 } {
-	return implFortuneStreamingGetContextSend{s}
+	return implFortuneStreamingGetServerCallSend{s}
 }
 
-type implFortuneStreamingGetContextSend struct {
-	s *FortuneStreamingGetContextStub
+type implFortuneStreamingGetServerCallSend struct {
+	s *FortuneStreamingGetServerCallStub
 }
 
-func (s implFortuneStreamingGetContextSend) Send(item string) error {
+func (s implFortuneStreamingGetServerCallSend) Send(item string) error {
 	return s.s.Send(item)
 }
