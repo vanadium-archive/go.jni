@@ -73,7 +73,7 @@ func (d *dispatcher) Lookup(suffix string) (interface{}, security.Authorizer, er
 	if err != nil {
 		return nil, nil, err
 	}
-	a, err = jsecurity.GoAuthorizer(env, jAuth)
+	a, err := jsecurity.GoAuthorizer(env, jAuth)
 	if err != nil {
 		return nil, nil, err
 	}
