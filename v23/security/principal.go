@@ -12,8 +12,7 @@ import (
 	jutil "v.io/x/jni/util"
 )
 
-// #cgo LDFLAGS: -ljniwrapper
-// #include "jni_wrapper.h"
+// #include "jni.h"
 import "C"
 
 // JavaPrincipal converts the provided Go Principal into a Java Principal
@@ -38,16 +37,13 @@ func JavaPrincipal(jEnv interface{}, principal security.Principal) (unsafe.Point
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func GoPrincipal(jEnv, jPrincipalObj interface{}) (security.Principal, error) {
-	env := (*C.JNIEnv)(unsafe.Pointer(jutil.PtrValue(jEnv)))
-	jPrincipal := C.jobject(unsafe.Pointer(jutil.PtrValue(jPrincipalObj)))
-
-	if jPrincipal == nil {
+	if jutil.IsNull(jPrincipalObj) {
 		return nil, nil
 	}
 	// Reference Java Principal; it will be de-referenced when the Go Principal
 	// created below is garbage-collected (through the finalizer callback we
 	// setup just below).
-	jPrincipal = C.NewGlobalRef(env, jPrincipal)
+	jPrincipal := C.jobject(jutil.NewGlobalRef(jEnv, jPrincipalObj))
 	// Create Go Principal.
 	p := &principal{
 		jPrincipal: jPrincipal,
@@ -56,7 +52,7 @@ func GoPrincipal(jEnv, jPrincipalObj interface{}) (security.Principal, error) {
 		jEnv, freeFunc := jutil.GetEnv()
 		env := (*C.JNIEnv)(jEnv)
 		defer freeFunc()
-		C.DeleteGlobalRef(env, p.jPrincipal)
+		jutil.DeleteGlobalRef(env, p.jPrincipal)
 	})
 	return p, nil
 }

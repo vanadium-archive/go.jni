@@ -13,8 +13,7 @@ import (
 	jutil "v.io/x/jni/util"
 )
 
-// #cgo LDFLAGS: -ljniwrapper
-// #include "jni_wrapper.h"
+// #include "jni.h"
 import "C"
 
 func goInvoker(env *C.JNIEnv, jObj C.jobject) (ipc.Invoker, error) {
@@ -23,12 +22,10 @@ func goInvoker(env *C.JNIEnv, jObj C.jobject) (ipc.Invoker, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error creating Java VDLInvoker object: %v", err)
 	}
-	jInvoker := C.jobject(jInvokerObj)
-
 	// Reference Java invoker; it will be de-referenced when the go invoker
 	// created below is garbage-collected (through the finalizer callback we
 	// setup just below).
-	jInvoker = C.NewGlobalRef(env, jInvoker)
+	jInvoker := C.jobject(jutil.NewGlobalRef(env, jInvokerObj))
 	i := &invoker{
 		jInvoker: jInvoker,
 	}
@@ -36,7 +33,7 @@ func goInvoker(env *C.JNIEnv, jObj C.jobject) (ipc.Invoker, error) {
 		jEnv, freeFunc := jutil.GetEnv()
 		env := (*C.JNIEnv)(jEnv)
 		defer freeFunc()
-		C.DeleteGlobalRef(env, i.jInvoker)
+		jutil.DeleteGlobalRef(env, i.jInvoker)
 	})
 	return i, nil
 }

@@ -12,8 +12,7 @@ import (
 	jcontext "v.io/x/jni/v23/context"
 )
 
-// #cgo LDFLAGS: -ljniwrapper
-// #include "jni_wrapper.h"
+// #include "jni.h"
 import "C"
 
 var (
@@ -62,8 +61,7 @@ func Java_io_v_impl_google_naming_ns_Namespace_nativeGlob(env *C.JNIEnv, jNamesp
 					log.Println("Couldn't convert Go MountEntry %v to Java", v)
 					continue
 				}
-				jMountEntry := C.jobject(jMountEntryObj)
-				jMountEntry = C.NewGlobalRef(env, jMountEntry)
+				jMountEntry := C.jobject(jutil.NewGlobalRef(env, jMountEntryObj))
 				retChan <- jMountEntry
 			case *naming.GlobError:
 				// Silently drop.

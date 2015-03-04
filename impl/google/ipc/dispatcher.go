@@ -11,15 +11,14 @@ import (
 	jsecurity "v.io/x/jni/v23/security"
 )
 
-// #cgo LDFLAGS: -ljniwrapper
-// #include "jni_wrapper.h"
+// #include "jni.h"
 import "C"
 
 func goDispatcher(env *C.JNIEnv, jDispatcher C.jobject) (*dispatcher, error) {
 	// Reference Java dispatcher; it will be de-referenced when the go
 	// dispatcher created below is garbage-collected (through the finalizer
 	// callback we setup below).
-	jDispatcher = C.NewGlobalRef(env, jDispatcher)
+	jDispatcher = C.jobject(jutil.NewGlobalRef(env, jDispatcher))
 	d := &dispatcher{
 		jDispatcher: jDispatcher,
 	}
@@ -27,7 +26,7 @@ func goDispatcher(env *C.JNIEnv, jDispatcher C.jobject) (*dispatcher, error) {
 		jEnv, freeFunc := jutil.GetEnv()
 		env := (*C.JNIEnv)(jEnv)
 		defer freeFunc()
-		C.DeleteGlobalRef(env, d.jDispatcher)
+		jutil.DeleteGlobalRef(env, d.jDispatcher)
 	})
 
 	return d, nil
@@ -74,7 +73,7 @@ func (d *dispatcher) Lookup(suffix string) (interface{}, security.Authorizer, er
 	if err != nil {
 		return nil, nil, err
 	}
-	a, err := jsecurity.GoAuthorizer(env, jAuth)
+	a, err = jsecurity.GoAuthorizer(env, jAuth)
 	if err != nil {
 		return nil, nil, err
 	}

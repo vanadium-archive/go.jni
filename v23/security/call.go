@@ -18,8 +18,7 @@ import (
 	"v.io/v23/vdl"
 )
 
-// #cgo LDFLAGS: -ljniwrapper
-// #include "jni_wrapper.h"
+// #include "jni.h"
 import "C"
 
 // JavaCall converts the provided Go (security) Call into a Java Call object.
@@ -41,13 +40,10 @@ func JavaCall(jEnv interface{}, call security.Call) (unsafe.Pointer, error) {
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func GoCall(jEnv, jCallObj interface{}) (security.Call, error) {
-	env := (*C.JNIEnv)(unsafe.Pointer(jutil.PtrValue(jEnv)))
-	jCall := C.jobject(unsafe.Pointer(jutil.PtrValue(jCallObj)))
-
 	// Reference Java call; it will be de-referenced when the go call
 	// created below is garbage-collected (through the finalizer callback we
 	// setup just below).
-	jCall = C.NewGlobalRef(env, jCall)
+	jCall := C.jobject(jutil.NewGlobalRef(jEnv, jCallObj))
 	call := &callImpl{
 		jCall: jCall,
 	}
@@ -55,7 +51,7 @@ func GoCall(jEnv, jCallObj interface{}) (security.Call, error) {
 		javaEnv, freeFunc := jutil.GetEnv()
 		jenv := (*C.JNIEnv)(javaEnv)
 		defer freeFunc()
-		C.DeleteGlobalRef(jenv, c.jCall)
+		jutil.DeleteGlobalRef(jenv, c.jCall)
 	})
 	return call, nil
 }

@@ -12,8 +12,7 @@ import (
 	jutil "v.io/x/jni/util"
 )
 
-// #cgo LDFLAGS: -ljniwrapper
-// #include "jni_wrapper.h"
+// #include "jni.h"
 import "C"
 
 type goContextKey string
@@ -46,9 +45,8 @@ func JavaContext(jEnv interface{}, ctx *context.T, cancel context.CancelFunc) (u
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func GoContext(jEnv, jContextObj interface{}) (*context.T, error) {
-	jContext := getObject(jContextObj)
-	if jContext == nil {
+func GoContext(jEnv, jContext interface{}) (*context.T, error) {
+	if jutil.IsNull(jContext) {
 		return nil, nil
 	}
 	goCtxPtr, err := jutil.CallLongMethod(jEnv, jContext, "nativePtr", nil)
@@ -65,17 +63,15 @@ func GoContext(jEnv, jContextObj interface{}) (*context.T, error) {
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func JavaCountDownLatch(jEnv interface{}, c <-chan struct{}) (unsafe.Pointer, error) {
-	env := getEnv(jEnv)
 	if c == nil {
 		return nil, nil
 	}
-	jLatchObj, err := jutil.NewObject(env, jCountDownLatchClass, []jutil.Sign{jutil.IntSign}, int(1))
+	jLatchObj, err := jutil.NewObject(jEnv, jCountDownLatchClass, []jutil.Sign{jutil.IntSign}, int(1))
 	if err != nil {
 		return nil, err
 	}
-	jLatch := C.jobject(jLatchObj)
 	// Reference Java CountDownLatch; it will be de-referenced when the goroutine below exits.
-	jLatch = C.NewGlobalRef(env, jLatch)
+	jLatch := C.jobject(jutil.NewGlobalRef(jEnv, jLatchObj))
 	go func() {
 		<-c
 		javaEnv, freeFunc := jutil.GetEnv()
@@ -84,7 +80,7 @@ func JavaCountDownLatch(jEnv interface{}, c <-chan struct{}) (unsafe.Pointer, er
 		if err := jutil.CallVoidMethod(jenv, jLatch, "countDown", nil); err != nil {
 			log.Printf("Error decrementing CountDownLatch: %v", err)
 		}
-		C.DeleteGlobalRef(jenv, jLatch)
+		jutil.DeleteGlobalRef(jenv, jLatch)
 	}()
 	return unsafe.Pointer(jLatch), nil
 }
@@ -95,20 +91,17 @@ func JavaCountDownLatch(jEnv interface{}, c <-chan struct{}) (unsafe.Pointer, er
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func GoContextKey(jEnv, jKeyObj interface{}) (interface{}, error) {
-	env := getEnv(jEnv)
-	jKey := getObject(jKeyObj)
-
+func GoContextKey(jEnv, jKey interface{}) (interface{}, error) {
 	// Create a lookup key we use to map Java context keys to Go context keys.
-	hashCode, err := jutil.CallIntMethod(env, jKey, "hashCode", nil)
+	hashCode, err := jutil.CallIntMethod(jEnv, jKey, "hashCode", nil)
 	if err != nil {
 		return nil, err
 	}
-	jClass, err := jutil.CallObjectMethod(env, jKey, "getClass", nil, classSign)
+	jClass, err := jutil.CallObjectMethod(jEnv, jKey, "getClass", nil, classSign)
 	if err != nil {
 		return nil, err
 	}
-	className, err := jutil.CallStringMethod(env, jClass, "getName", nil)
+	className, err := jutil.CallStringMethod(jEnv, jClass, "getName", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -120,13 +113,10 @@ func GoContextKey(jEnv, jKeyObj interface{}) (interface{}, error) {
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func GoContextValue(jEnv, jValueObj interface{}) (interface{}, error) {
-	env := getEnv(jEnv)
-	jValue := getObject(jValueObj)
-
 	// Reference Java object; it will be de-referenced when the Go wrapper
 	// object created below is garbage-collected (via the finalizer we setup
 	// just below.)
-	jValue = C.NewGlobalRef(env, jValue)
+	jValue := C.jobject(jutil.NewGlobalRef(jEnv, jValueObj))
 	value := &goContextValue{
 		jObj: jValue,
 	}
@@ -134,7 +124,7 @@ func GoContextValue(jEnv, jValueObj interface{}) (interface{}, error) {
 		javaEnv, freeFunc := jutil.GetEnv()
 		jenv := (*C.JNIEnv)(javaEnv)
 		defer freeFunc()
-		C.DeleteGlobalRef(jenv, value.jObj)
+		jutil.DeleteGlobalRef(jenv, value.jObj)
 	})
 	return value, nil
 }
@@ -152,11 +142,4 @@ func JavaContextValue(jEnv interface{}, value interface{}) (unsafe.Pointer, erro
 		return nil, fmt.Errorf("Invalid type %T for value %v, wanted goContextValue", value, value)
 	}
 	return unsafe.Pointer(val.jObj), nil
-}
-
-func getEnv(jEnv interface{}) *C.JNIEnv {
-	return (*C.JNIEnv)(unsafe.Pointer(jutil.PtrValue(jEnv)))
-}
-func getObject(jObj interface{}) C.jobject {
-	return C.jobject(unsafe.Pointer(jutil.PtrValue(jObj)))
 }

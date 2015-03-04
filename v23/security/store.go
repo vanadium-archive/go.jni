@@ -11,8 +11,7 @@ import (
 	jutil "v.io/x/jni/util"
 )
 
-// #cgo LDFLAGS: -ljniwrapper
-// #include "jni_wrapper.h"
+// #include "jni.h"
 import "C"
 
 // JavaBlessingStore creates an instance of Java BlessingStore that uses the provided Go
@@ -21,8 +20,7 @@ import "C"
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func JavaBlessingStore(jEnv interface{}, store security.BlessingStore) (unsafe.Pointer, error) {
-	env := (*C.JNIEnv)(unsafe.Pointer(jutil.PtrValue(jEnv)))
-	jObj, err := jutil.NewObject(env, jBlessingStoreImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&store)))
+	jObj, err := jutil.NewObject(jEnv, jBlessingStoreImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&store)))
 	if err != nil {
 		return nil, err
 	}
@@ -35,15 +33,14 @@ func JavaBlessingStore(jEnv interface{}, store security.BlessingStore) (unsafe.P
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func GoBlessingStore(jEnv interface{}, jBlessingStore C.jobject) (security.BlessingStore, error) {
-	if jBlessingStore == nil {
+func GoBlessingStore(jEnv, jBlessingStoreObj interface{}) (security.BlessingStore, error) {
+	if jBlessingStoreObj == nil {
 		return nil, nil
 	}
-	env := (*C.JNIEnv)(unsafe.Pointer(jutil.PtrValue(jEnv)))
 	// Reference Java BlessingStore; it will be de-referenced when the Go
 	// BlessingStore created below is garbage-collected (through the finalizer
 	// callback we setup just below).
-	jBlessingStore = C.NewGlobalRef(env, jBlessingStore)
+	jBlessingStore := C.jobject(jutil.NewGlobalRef(jEnv, jBlessingStoreObj))
 	s := &blessingStore{
 		jBlessingStore: jBlessingStore,
 	}
@@ -51,7 +48,7 @@ func GoBlessingStore(jEnv interface{}, jBlessingStore C.jobject) (security.Bless
 		envPtr, freeFunc := jutil.GetEnv()
 		env := (*C.JNIEnv)(envPtr)
 		defer freeFunc()
-		C.DeleteGlobalRef(env, s.jBlessingStore)
+		jutil.DeleteGlobalRef(env, s.jBlessingStore)
 	})
 	return s, nil
 }

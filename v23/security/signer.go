@@ -5,14 +5,12 @@ package security
 import (
 	"log"
 	"runtime"
-	"unsafe"
 
 	"v.io/v23/security"
 	jutil "v.io/x/jni/util"
 )
 
-// #cgo LDFLAGS: -ljniwrapper
-// #include "jni_wrapper.h"
+// #include "jni.h"
 import "C"
 
 // GoSigner creates an instance of security.Signer that uses the provided
@@ -20,12 +18,11 @@ import "C"
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func GoSigner(jEnv interface{}, jSigner C.jobject) (security.Signer, error) {
-	env := (*C.JNIEnv)(unsafe.Pointer(jutil.PtrValue(jEnv)))
+func GoSigner(jEnv, jSignerObj interface{}) (security.Signer, error) {
 	// Reference Java Signer; it will be de-referenced when the Go Signer
 	// created below is garbage-collected (through the finalizer callback we
 	// setup just below).
-	jSigner = C.NewGlobalRef(env, jSigner)
+	jSigner := C.jobject(jutil.NewGlobalRef(jEnv, jSignerObj))
 	s := &signer{
 		jSigner: jSigner,
 	}
@@ -33,7 +30,7 @@ func GoSigner(jEnv interface{}, jSigner C.jobject) (security.Signer, error) {
 		jEnv, freeFunc := jutil.GetEnv()
 		env := (*C.JNIEnv)(jEnv)
 		defer freeFunc()
-		C.DeleteGlobalRef(env, s.jSigner)
+		jutil.DeleteGlobalRef(env, s.jSigner)
 	})
 	return s, nil
 }

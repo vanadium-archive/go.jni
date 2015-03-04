@@ -11,8 +11,7 @@ import (
 	jutil "v.io/x/jni/util"
 )
 
-// #cgo LDFLAGS: -ljniwrapper
-// #include "jni_wrapper.h"
+// #include "jni.h"
 import "C"
 
 // JavaNamespace converts the provided Go Namespace into a Java Namespace

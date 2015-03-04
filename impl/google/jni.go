@@ -9,8 +9,7 @@ import (
 	jrt "v.io/x/jni/impl/google/rt"
 )
 
-// #cgo LDFLAGS: -ljniwrapper
-// #include "jni_wrapper.h"
+// #include "jni.h"
 import "C"
 
 // Init initializes the JNI code with the given Java environment.  This method

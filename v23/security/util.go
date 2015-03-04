@@ -10,8 +10,7 @@ import (
 	jutil "v.io/x/jni/util"
 )
 
-// #cgo LDFLAGS: -ljniwrapper
-// #include "jni_wrapper.h"
+// #include "jni.h"
 import "C"
 
 // JavaBlessings converts the provided Go Blessings into Java Blessings.
@@ -36,6 +35,9 @@ func JavaBlessings(jEnv interface{}, blessings security.Blessings) (unsafe.Point
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func GoBlessings(jEnv, jBlessings interface{}) (security.Blessings, error) {
+	if jutil.IsNull(jBlessings) {
+		return security.Blessings{}, nil
+	}
 	jWire, err := jutil.CallObjectMethod(jEnv, jBlessings, "wireFormat", nil, wireBlessingsSign)
 	if err != nil {
 		return security.Blessings{}, err
@@ -129,8 +131,7 @@ func JavaBlessingPattern(jEnv interface{}, pattern security.BlessingPattern) (un
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func GoBlessingPattern(jEnv, jPatt interface{}) (security.BlessingPattern, error) {
-	jPattern := getObject(jPatt)
+func GoBlessingPattern(jEnv, jPattern interface{}) (security.BlessingPattern, error) {
 	encoded, err := jutil.CallStaticStringMethod(jEnv, jUtilClass, "encodeBlessingPattern", []jutil.Sign{blessingPatternSign}, jPattern)
 	if err != nil {
 		return security.BlessingPattern(""), err
@@ -162,8 +163,7 @@ func JavaPublicKey(jEnv interface{}, key security.PublicKey) (unsafe.Pointer, er
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func GoPublicKey(jEnv, jKey interface{}) (security.PublicKey, error) {
-	jPublicKey := getObject(jKey)
-	encoded, err := jutil.CallStaticByteArrayMethod(jEnv, jUtilClass, "encodePublicKey", []jutil.Sign{publicKeySign}, jPublicKey)
+	encoded, err := jutil.CallStaticByteArrayMethod(jEnv, jUtilClass, "encodePublicKey", []jutil.Sign{publicKeySign}, jKey)
 	if err != nil {
 		return nil, err
 	}
@@ -190,8 +190,7 @@ func JavaSignature(jEnv interface{}, sig security.Signature) (unsafe.Pointer, er
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func GoSignature(jEnv, jSig interface{}) (security.Signature, error) {
-	jSignature := getObject(jSig)
+func GoSignature(jEnv, jSignature interface{}) (security.Signature, error) {
 	encoded, err := jutil.CallStaticByteArrayMethod(jEnv, jUtilClass, "encodeSignature", []jutil.Sign{signatureSign}, jSignature)
 	if err != nil {
 		return security.Signature{}, err
@@ -219,8 +218,4 @@ func JavaBlessingPatternWrapper(jEnv interface{}, pattern security.BlessingPatte
 	}
 	jutil.GoRef(&pattern) // Un-refed when the Java BlessingPatternWrapper object is finalized.
 	return jWrapper, nil
-}
-
-func getObject(jObj interface{}) C.jobject {
-	return C.jobject(unsafe.Pointer(jutil.PtrValue(jObj)))
 }

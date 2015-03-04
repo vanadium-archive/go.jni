@@ -4,14 +4,12 @@ package security
 
 import (
 	"runtime"
-	"unsafe"
 
 	"v.io/v23/security"
 	jutil "v.io/x/jni/util"
 )
 
-// #cgo LDFLAGS: -ljniwrapper
-// #include "jni_wrapper.h"
+// #include "jni.h"
 import "C"
 
 // GoAuthorizer converts the given Java authorizer into a Go authorizer.
@@ -19,15 +17,13 @@ import "C"
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func GoAuthorizer(jEnv, jAuthObj interface{}) (security.Authorizer, error) {
-	env := (*C.JNIEnv)(unsafe.Pointer(jutil.PtrValue(jEnv)))
-	jAuth := C.jobject(unsafe.Pointer(jutil.PtrValue(jAuthObj)))
-	if jAuth == nil {
+	if jutil.IsNull(jAuthObj) {
 		return nil, nil
 	}
 	// Reference Java dispatcher; it will be de-referenced when the go
 	// dispatcher created below is garbage-collected (through the finalizer
 	// callback we setup below).
-	jAuth = C.NewGlobalRef(env, jAuth)
+	jAuth := C.jobject(jutil.NewGlobalRef(jEnv, jAuthObj))
 	a := &authorizer{
 		jAuth: jAuth,
 	}
@@ -35,7 +31,7 @@ func GoAuthorizer(jEnv, jAuthObj interface{}) (security.Authorizer, error) {
 		jEnv, freeFunc := jutil.GetEnv()
 		env := (*C.JNIEnv)(jEnv)
 		defer freeFunc()
-		C.DeleteGlobalRef(env, a.jAuth)
+		jutil.DeleteGlobalRef(env, a.jAuth)
 	})
 	return a, nil
 }

@@ -6,8 +6,7 @@ import (
 	jutil "v.io/x/jni/util"
 )
 
-// #cgo LDFLAGS: -ljniwrapper
-// #include "jni_wrapper.h"
+// #include "jni.h"
 import "C"
 
 var (
@@ -54,8 +53,8 @@ func Java_io_v_impl_google_channel_InputChannel_nativeReadValue(env *C.JNIEnv, j
 		jutil.JThrow(env, jEOFExceptionClass, "Channel closed.")
 		return nil
 	}
-	jObjLocal := C.NewLocalRef(env, jObj)
-	C.DeleteGlobalRef(env, jObj)
+	jObjLocal := C.jobject(jutil.NewLocalRef(env, jObj))
+	jutil.DeleteGlobalRef(env, jObj)
 	return jObjLocal
 }
 

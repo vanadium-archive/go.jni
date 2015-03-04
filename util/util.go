@@ -17,7 +17,6 @@ import (
 	"v.io/v23/vom"
 )
 
-// #cgo LDFLAGS: -ljniwrapper
 // #include <stdlib.h>
 // #include "jni_wrapper.h"
 // static jstring CallGetExceptionMessage(JNIEnv* env, jobject obj, jmethodID id) {

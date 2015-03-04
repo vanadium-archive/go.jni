@@ -11,8 +11,7 @@ import (
 	jutil "v.io/x/jni/util"
 )
 
-// #cgo LDFLAGS: -ljniwrapper
-// #include "jni_wrapper.h"
+// #include "jni.h"
 import "C"
 
 // JavaBlessingRoots creates an instance of Java BlessingRoots that uses the provided Go
@@ -21,8 +20,7 @@ import "C"
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func JavaBlessingRoots(jEnv interface{}, roots security.BlessingRoots) (unsafe.Pointer, error) {
-	env := (*C.JNIEnv)(unsafe.Pointer(jutil.PtrValue(jEnv)))
-	jObj, err := jutil.NewObject(env, jBlessingRootsImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&roots)))
+	jObj, err := jutil.NewObject(jEnv, jBlessingRootsImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&roots)))
 	if err != nil {
 		return nil, err
 	}
@@ -39,13 +37,10 @@ func GoBlessingRoots(jEnv, jBlessingRootsObj interface{}) (security.BlessingRoot
 	if jBlessingRootsObj == nil {
 		return nil, nil
 	}
-	env := (*C.JNIEnv)(unsafe.Pointer(jutil.PtrValue(jEnv)))
-	jBlessingRoots := C.jobject(unsafe.Pointer(jutil.PtrValue(jBlessingRootsObj)))
-
 	// Reference Java BlessingRoots; it will be de-referenced when the Go
 	// BlessingRoots created below is garbage-collected (through the finalizer
 	// callback we setup just below).
-	jBlessingRoots = C.NewGlobalRef(env, jBlessingRoots)
+	jBlessingRoots := C.jobject(jutil.NewGlobalRef(jEnv, jBlessingRootsObj))
 	r := &blessingRoots{
 		jBlessingRoots: jBlessingRoots,
 	}
@@ -53,7 +48,7 @@ func GoBlessingRoots(jEnv, jBlessingRootsObj interface{}) (security.BlessingRoot
 		envPtr, freeFunc := jutil.GetEnv()
 		env := (*C.JNIEnv)(envPtr)
 		defer freeFunc()
-		C.DeleteGlobalRef(env, r.jBlessingRoots)
+		jutil.DeleteGlobalRef(env, r.jBlessingRoots)
 	})
 	return r, nil
 }

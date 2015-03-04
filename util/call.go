@@ -9,7 +9,6 @@ import (
 	"unsafe"
 )
 
-// #cgo LDFLAGS: -ljniwrapper
 // #include <stdlib.h>
 // #include "jni_wrapper.h"
 //

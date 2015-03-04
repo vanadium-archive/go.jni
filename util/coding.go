@@ -9,7 +9,6 @@ import (
 	"v.io/v23/vom"
 )
 
-// #cgo LDFLAGS: -ljniwrapper
 // #include "jni_wrapper.h"
 import "C"
 

@@ -8,8 +8,7 @@ import (
 	jsecurity "v.io/x/jni/v23/security"
 )
 
-// #cgo LDFLAGS: -ljniwrapper
-// #include "jni_wrapper.h"
+// #include "jni.h"
 import "C"
 
 var (

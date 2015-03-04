@@ -12,8 +12,7 @@ import (
 	jv23 "v.io/x/jni/v23"
 )
 
-// #cgo LDFLAGS: -ljniwrapper
-// #include "jni_wrapper.h"
+// #include "jni.h"
 import "C"
 
 //export Java_io_v_v23_V_nativeInit

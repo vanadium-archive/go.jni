@@ -17,8 +17,7 @@ import (
 	jsecurity "v.io/x/jni/v23/security"
 )
 
-// #cgo LDFLAGS: -ljniwrapper
-// #include "jni_wrapper.h"
+// #include "jni.h"
 // #include <stdlib.h>
 import "C"
 
@@ -227,8 +226,7 @@ func Java_io_v_impl_google_ipc_Server_nativeWatchNetwork(env *C.JNIEnv, jServer 
 				log.Println("Couldn't convert Go NetworkChange %v to Java", change)
 				continue
 			}
-			jChange := C.jobject(jChangeObj)
-			jChange = C.NewGlobalRef(env, jChange)
+			jChange := C.jobject(jutil.NewGlobalRef(env, jChangeObj))
 			retChan <- jChange
 		}
 		close(retChan)

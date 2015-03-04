@@ -11,9 +11,50 @@ import (
 	"unsafe"
 )
 
-// #cgo LDFLAGS: -ljniwrapper
 // #include "jni_wrapper.h"
 import "C"
+
+// NewGlobalRef creates a new global reference to the object referred to by the
+// obj argument.  The obj argument may be a global or local reference. Global
+// references must be explicitly disposed of by calling DeleteGlobalRef().
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func NewGlobalRef(env, obj interface{}) unsafe.Pointer {
+	jEnv := getEnv(env)
+	jObj := getObject(obj)
+	return unsafe.Pointer(C.NewGlobalRef(jEnv, jObj))
+}
+
+// DeleteGlobalRef deletes the global reference pointed to by obj.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func DeleteGlobalRef(env, obj interface{}) {
+	jEnv := getEnv(env)
+	jObj := getObject(obj)
+	C.DeleteGlobalRef(jEnv, jObj)
+}
+
+// Creates a new local reference that refers to the same object as obj. The
+// given obj may be a global or local reference. Returns null if ref refers
+// to null.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func NewLocalRef(env, obj interface{}) unsafe.Pointer {
+	jEnv := getEnv(env)
+	jObj := getObject(obj)
+	return unsafe.Pointer(C.NewLocalRef(jEnv, jObj))
+}
+
+// IsNull returns true iff the provided object is not null.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func IsNull(obj interface{}) bool {
+	return getObject(obj) == nil
+}
 
 // GoRef creates a new reference to the value addressed by the provided pointer.
 // The value will remain referenced until it is explicitly unreferenced using
