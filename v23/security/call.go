@@ -101,6 +101,11 @@ func (c *callImpl) Suffix() string {
 	return c.callStringMethod("suffix")
 }
 
+func (c *callImpl) LocalDischarges() map[string]security.Discharge {
+	// TODO(spetrovic): implement this method.
+	return nil
+}
+
 func (c *callImpl) RemoteDischarges() map[string]security.Discharge {
 	// TODO(spetrovic): implement this method.
 	return nil
