@@ -34,7 +34,7 @@ func JavaBlessingStore(jEnv interface{}, store security.BlessingStore) (unsafe.P
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func GoBlessingStore(jEnv, jBlessingStoreObj interface{}) (security.BlessingStore, error) {
-	if jBlessingStoreObj == nil {
+	if jutil.IsNull(jBlessingStoreObj) {
 		return nil, nil
 	}
 	// Reference Java BlessingStore; it will be de-referenced when the Go
