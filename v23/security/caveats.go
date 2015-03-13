@@ -10,7 +10,7 @@ import (
 // #include "jni.h"
 import "C"
 
-func caveatValidator(call security.Call, caveat security.Caveat) error {
+func caveatValidator(call security.Call, side security.CallSide, caveat security.Caveat) error {
 	jEnv, freeFunc := jutil.GetEnv()
 	defer freeFunc()
 
@@ -18,9 +18,13 @@ func caveatValidator(call security.Call, caveat security.Caveat) error {
 	if err != nil {
 		return err
 	}
+	jSide, err := JavaCallSide(jEnv, side)
+	if err != nil {
+		return err
+	}
 	jCaveat, err := JavaCaveat(jEnv, caveat)
 	if err != nil {
 		return err
 	}
-	return jutil.CallStaticVoidMethod(jEnv, jCaveatRegistryClass, "validate", []jutil.Sign{callSign, caveatSign}, jCall, jCaveat)
+	return jutil.CallStaticVoidMethod(jEnv, jCaveatRegistryClass, "validate", []jutil.Sign{callSign, callSideSign, caveatSign}, jCall, jSide, jCaveat)
 }
