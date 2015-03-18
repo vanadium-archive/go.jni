@@ -3,8 +3,8 @@
 package rt
 
 import (
-	jipc "v.io/x/jni/impl/google/ipc"
 	jns "v.io/x/jni/impl/google/naming/ns"
+	jrpc "v.io/x/jni/impl/google/rpc"
 	jutil "v.io/x/jni/util"
 	jcontext "v.io/x/jni/v23/context"
 	jsecurity "v.io/x/jni/v23/security"
@@ -32,7 +32,7 @@ func Java_io_v_impl_google_rt_VRuntime_nativeInit(env *C.JNIEnv, jRuntime C.jcla
 	// Get the original spec, which is guaranteed to be a roaming spec (as we
 	// import the roaming profile).
 	roamingSpec := v23.GetListenSpec(ctx)
-	jipc.SetRoamingSpec(roamingSpec)
+	jrpc.SetRoamingSpec(roamingSpec)
 	jCtx, err := jcontext.JavaContext(env, ctx, nil)
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -72,7 +72,7 @@ func Java_io_v_impl_google_rt_VRuntime_nativeGetClient(env *C.JNIEnv, jRuntime C
 		return nil
 	}
 	client := v23.GetClient(ctx)
-	jClient, err := jipc.JavaClient(env, client)
+	jClient, err := jrpc.JavaClient(env, client)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -93,7 +93,7 @@ func Java_io_v_impl_google_rt_VRuntime_nativeNewServer(env *C.JNIEnv, jRuntime C
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	jServer, err := jipc.JavaServer(env, server, jListenSpec)
+	jServer, err := jrpc.JavaServer(env, server, jListenSpec)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -191,7 +191,7 @@ func Java_io_v_impl_google_rt_VRuntime_nativeGetListenSpec(env *C.JNIEnv, jRunti
 		return nil
 	}
 	spec := v23.GetListenSpec(ctx)
-	jSpec, err := jipc.JavaListenSpec(env, spec)
+	jSpec, err := jrpc.JavaListenSpec(env, spec)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil

@@ -4,8 +4,8 @@ package google
 
 import (
 	jchannel "v.io/x/jni/impl/google/channel"
-	jipc "v.io/x/jni/impl/google/ipc"
 	jns "v.io/x/jni/impl/google/naming/ns"
+	jrpc "v.io/x/jni/impl/google/rpc"
 	jrt "v.io/x/jni/impl/google/rt"
 )
 
@@ -19,7 +19,7 @@ import "C"
 // invoked from a different package, Java environment is passed in an empty
 // interface and then cast into the package-local environment type.
 func Init(jEnv interface{}) error {
-	if err := jipc.Init(jEnv); err != nil {
+	if err := jrpc.Init(jEnv); err != nil {
 		return err
 	}
 	if err := jrt.Init(jEnv); err != nil {

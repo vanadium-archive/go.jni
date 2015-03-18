@@ -1,6 +1,6 @@
 // +build android
 
-package ipc
+package rpc
 
 import (
 	"fmt"
@@ -80,8 +80,8 @@ func (i *invoker) Invoke(method string, call rpc.StreamServerCall, argptrs []int
 		return nil, err
 	}
 	// Invoke the method.
-	callSign := jutil.ClassSign("io.v.v23.ipc.StreamServerCall")
-	replySign := jutil.ClassSign("io.v.impl.google.ipc.VDLInvoker$InvokeReply")
+	callSign := jutil.ClassSign("io.v.v23.rpc.StreamServerCall")
+	replySign := jutil.ClassSign("io.v.impl.google.rpc.VDLInvoker$InvokeReply")
 	jReply, err := jutil.CallObjectMethod(env, i.jInvoker, "invoke", []jutil.Sign{jutil.StringSign, callSign, jutil.ArraySign(jutil.ArraySign(jutil.ByteSign))}, replySign, jutil.CamelCase(method), jStreamServerCall, jVomArgs)
 	if err != nil {
 		return nil, fmt.Errorf("error invoking Java method %q: %v", method, err)

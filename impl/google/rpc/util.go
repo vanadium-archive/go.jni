@@ -1,6 +1,6 @@
 // +build android
 
-package ipc
+package rpc
 
 import (
 	"fmt"
@@ -22,7 +22,7 @@ func JavaServer(jEnv interface{}, server rpc.Server, jListenSpec interface{}) (u
 	if server == nil {
 		return nil, fmt.Errorf("Go Server value cannot be nil")
 	}
-	listenSpecSign := jutil.ClassSign("io.v.v23.ipc.ListenSpec")
+	listenSpecSign := jutil.ClassSign("io.v.v23.rpc.ListenSpec")
 	jServer, err := jutil.NewObject(jEnv, jServerClass, []jutil.Sign{jutil.LongSign, listenSpecSign}, int64(jutil.PtrValue(&server)), jListenSpec)
 	if err != nil {
 		return nil, err
@@ -137,8 +137,8 @@ func JavaServerStatus(jEnv interface{}, status rpc.ServerStatus) (unsafe.Pointer
 	jProxies := jutil.JObjectArray(jEnv, proxarr, jProxyStatusClass)
 
 	// Create final server status.
-	mountStatusSign := jutil.ClassSign("io.v.v23.ipc.MountStatus")
-	proxyStatusSign := jutil.ClassSign("io.v.v23.ipc.ProxyStatus")
+	mountStatusSign := jutil.ClassSign("io.v.v23.rpc.MountStatus")
+	proxyStatusSign := jutil.ClassSign("io.v.v23.rpc.ProxyStatus")
 	jServerStatus, err := jutil.NewObject(jEnv, jServerStatusClass, []jutil.Sign{serverStateSign, jutil.BoolSign, jutil.ArraySign(mountStatusSign), jutil.ArraySign(jutil.StringSign), jutil.ArraySign(proxyStatusSign)}, jState, status.ServesMountTable, jMounts, jEndpoints, jProxies)
 	if err != nil {
 		return nil, err
@@ -265,7 +265,7 @@ func JavaListenSpec(jEnv interface{}, spec rpc.ListenSpec) (unsafe.Pointer, erro
 		// Our best guess that this is a roaming spec.
 		isRoaming = true
 	}
-	addressSign := jutil.ClassSign("io.v.v23.ipc.ListenSpec$Address")
+	addressSign := jutil.ClassSign("io.v.v23.rpc.ListenSpec$Address")
 	jSpec, err := jutil.NewObject(jEnv, jListenSpecClass, []jutil.Sign{jutil.ArraySign(addressSign), jutil.StringSign, jutil.BoolSign}, jAddrs, spec.Proxy, isRoaming)
 	if err != nil {
 		return nil, err

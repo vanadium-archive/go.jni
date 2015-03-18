@@ -1,6 +1,6 @@
 // +build android
 
-package ipc
+package rpc
 
 import (
 	"fmt"
@@ -42,7 +42,7 @@ func (d *dispatcher) Lookup(suffix string) (interface{}, security.Authorizer, er
 	defer freeFunc()
 
 	// Call Java dispatcher's lookup() method.
-	serviceObjectWithAuthorizerSign := jutil.ClassSign("io.v.v23.ipc.ServiceObjectWithAuthorizer")
+	serviceObjectWithAuthorizerSign := jutil.ClassSign("io.v.v23.rpc.ServiceObjectWithAuthorizer")
 	tempJObj, err := jutil.CallObjectMethod(env, d.jDispatcher, "lookup", []jutil.Sign{jutil.StringSign}, serviceObjectWithAuthorizerSign, suffix)
 	jObj := C.jobject(tempJObj)
 	if err != nil {
