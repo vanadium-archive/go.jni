@@ -536,14 +536,14 @@ func Java_io_v_v23_security_Blessings_nativeCreateUnion(env *C.JNIEnv, jBlessing
 	return C.jobject(jBlessings)
 }
 
-//export Java_io_v_v23_security_Blessings_nativeForCall
-func Java_io_v_v23_security_Blessings_nativeForCall(env *C.JNIEnv, jBlessings C.jobject, goPtr C.jlong, jCall C.jobject) C.jobjectArray {
+//export Java_io_v_v23_security_Blessings_nativeBlessingNames
+func Java_io_v_v23_security_Blessings_nativeBlessingNames(env *C.JNIEnv, jBlessingsClass C.jclass, jCall C.jobject) C.jobjectArray {
 	call, err := GoCall(env, jCall)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	blessingStrs, _ := (*(*security.Blessings)(jutil.Ptr(goPtr))).ForCall(call)
+	blessingStrs, _ := security.BlessingNames(call.Context(), security.CallSideRemote)
 	return C.jobjectArray(jutil.JStringArray(env, blessingStrs))
 }
 

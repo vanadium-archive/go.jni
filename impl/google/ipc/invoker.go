@@ -102,7 +102,7 @@ func (i *invoker) Signature(ctx ipc.ServerCall) ([]signature.Interface, error) {
 
 	replySign := jutil.ClassSign("io.v.v23.vdlroot.signature.Interface")
 
-	interfaceArr, err := jutil.CallObjectArrayMethod(env, i.jInvoker, "getSignature", nil, replySign)
+	interfacesArr, err := jutil.CallObjectArrayMethod(env, i.jInvoker, "getSignature", nil, replySign)
 	if err != nil {
 		return nil, err
 	}
