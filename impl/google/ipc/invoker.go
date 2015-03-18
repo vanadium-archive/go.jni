@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"runtime"
 
-	"v.io/v23/ipc"
+	"v.io/v23/rpc"
 	"v.io/v23/vdl"
 	"v.io/v23/vdlroot/signature"
 	"v.io/v23/vom"
@@ -16,7 +16,7 @@ import (
 // #include "jni.h"
 import "C"
 
-func goInvoker(env *C.JNIEnv, jObj C.jobject) (ipc.Invoker, error) {
+func goInvoker(env *C.JNIEnv, jObj C.jobject) (rpc.Invoker, error) {
 	// Create a new Java VDLInvoker object.
 	jInvokerObj, err := jutil.NewObject(env, jVDLInvokerClass, []jutil.Sign{jutil.ObjectSign}, jObj)
 	if err != nil {
@@ -64,7 +64,7 @@ func (i *invoker) Prepare(method string, numArgs int) (argptrs []interface{}, ta
 	return
 }
 
-func (i *invoker) Invoke(method string, call ipc.StreamServerCall, argptrs []interface{}) (results []interface{}, err error) {
+func (i *invoker) Invoke(method string, call rpc.StreamServerCall, argptrs []interface{}) (results []interface{}, err error) {
 	jEnv, freeFunc := jutil.GetEnv()
 	env := (*C.JNIEnv)(jEnv)
 	defer freeFunc()
@@ -90,12 +90,12 @@ func (i *invoker) Invoke(method string, call ipc.StreamServerCall, argptrs []int
 	return decodeResults(env, C.jobject(jReply))
 }
 
-func (i *invoker) Globber() *ipc.GlobState {
+func (i *invoker) Globber() *rpc.GlobState {
 	// TODO(spetrovic): implement this method.
-	return &ipc.GlobState{}
+	return &rpc.GlobState{}
 }
 
-func (i *invoker) Signature(ctx ipc.ServerCall) ([]signature.Interface, error) {
+func (i *invoker) Signature(ctx rpc.ServerCall) ([]signature.Interface, error) {
 	jEnv, freeFunc := jutil.GetEnv()
 	env := (*C.JNIEnv)(jEnv)
 	defer freeFunc()
@@ -117,7 +117,7 @@ func (i *invoker) Signature(ctx ipc.ServerCall) ([]signature.Interface, error) {
 	return result, nil
 }
 
-func (i *invoker) MethodSignature(ctx ipc.ServerCall, method string) (signature.Method, error) {
+func (i *invoker) MethodSignature(ctx rpc.ServerCall, method string) (signature.Method, error) {
 	// TODO(spetrovic): implement this method.
 	return signature.Method{}, fmt.Errorf("Java runtime doesn't yet support signatures.")
 }

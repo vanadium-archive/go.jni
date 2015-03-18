@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"unsafe"
 
-	"v.io/v23/ipc"
+	"v.io/v23/rpc"
 	jutil "v.io/x/jni/util"
 	jsecurity "v.io/x/jni/v23/security"
 )
@@ -18,7 +18,7 @@ import "C"
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JavaServer(jEnv interface{}, server ipc.Server, jListenSpec interface{}) (unsafe.Pointer, error) {
+func JavaServer(jEnv interface{}, server rpc.Server, jListenSpec interface{}) (unsafe.Pointer, error) {
 	if server == nil {
 		return nil, fmt.Errorf("Go Server value cannot be nil")
 	}
@@ -35,7 +35,7 @@ func JavaServer(jEnv interface{}, server ipc.Server, jListenSpec interface{}) (u
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JavaClient(jEnv interface{}, client ipc.Client) (unsafe.Pointer, error) {
+func JavaClient(jEnv interface{}, client rpc.Client) (unsafe.Pointer, error) {
 	if client == nil {
 		return nil, fmt.Errorf("Go Client value cannot be nil")
 	}
@@ -49,7 +49,7 @@ func JavaClient(jEnv interface{}, client ipc.Client) (unsafe.Pointer, error) {
 
 // javaStreamServerCall converts the provided Go serverCall into a Java StreamServerCall
 // object.
-func javaStreamServerCall(env *C.JNIEnv, call ipc.StreamServerCall) (C.jobject, error) {
+func javaStreamServerCall(env *C.JNIEnv, call rpc.StreamServerCall) (C.jobject, error) {
 	if call == nil {
 		return nil, fmt.Errorf("Go StreamServerCall value cannot be nil")
 	}
@@ -71,7 +71,7 @@ func javaStreamServerCall(env *C.JNIEnv, call ipc.StreamServerCall) (C.jobject, 
 }
 
 // javaCall converts the provided Go Call value into a Java Call object.
-func javaCall(env *C.JNIEnv, call ipc.ClientCall) (C.jobject, error) {
+func javaCall(env *C.JNIEnv, call rpc.ClientCall) (C.jobject, error) {
 	if call == nil {
 		return nil, fmt.Errorf("Go Call value cannot be nil")
 	}
@@ -88,7 +88,7 @@ func javaCall(env *C.JNIEnv, call ipc.ClientCall) (C.jobject, error) {
 }
 
 // javaStream converts the provided Go stream into a Java Stream object.
-func javaStream(env *C.JNIEnv, stream ipc.Stream) (C.jobject, error) {
+func javaStream(env *C.JNIEnv, stream rpc.Stream) (C.jobject, error) {
 	jStream, err := jutil.NewObject(env, jStreamClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&stream)))
 	if err != nil {
 		return nil, err
@@ -97,12 +97,12 @@ func javaStream(env *C.JNIEnv, stream ipc.Stream) (C.jobject, error) {
 	return C.jobject(jStream), nil
 }
 
-// JavaServerStatus converts the provided ipc.ServerStatus value into a Java
+// JavaServerStatus converts the provided rpc.ServerStatus value into a Java
 // ServerStatus object.
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JavaServerStatus(jEnv interface{}, status ipc.ServerStatus) (unsafe.Pointer, error) {
+func JavaServerStatus(jEnv interface{}, status rpc.ServerStatus) (unsafe.Pointer, error) {
 	// Create Java state enum value.
 	jState, err := JavaServerState(jEnv, status.State)
 	if err != nil {
@@ -146,21 +146,21 @@ func JavaServerStatus(jEnv interface{}, status ipc.ServerStatus) (unsafe.Pointer
 	return jServerStatus, nil
 }
 
-// JavaServerState converts the provided ipc.ServerState value into a Java
+// JavaServerState converts the provided rpc.ServerState value into a Java
 // ServerState enum.
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JavaServerState(jEnv interface{}, state ipc.ServerState) (unsafe.Pointer, error) {
+func JavaServerState(jEnv interface{}, state rpc.ServerState) (unsafe.Pointer, error) {
 	var name string
 	switch state {
-	case ipc.ServerInit:
+	case rpc.ServerInit:
 		name = "SERVER_INIT"
-	case ipc.ServerActive:
+	case rpc.ServerActive:
 		name = "SERVER_ACTIVE"
-	case ipc.ServerStopping:
+	case rpc.ServerStopping:
 		name = "SERVER_STOPPING"
-	case ipc.ServerStopped:
+	case rpc.ServerStopped:
 		name = "SERVER_STOPPED"
 	default:
 		return nil, fmt.Errorf("Unrecognized state: %d", state)
@@ -172,12 +172,12 @@ func JavaServerState(jEnv interface{}, state ipc.ServerState) (unsafe.Pointer, e
 	return jState, nil
 }
 
-// JavaMountStatus converts the provided ipc.MountStatus value into a Java
+// JavaMountStatus converts the provided rpc.MountStatus value into a Java
 // MountStatus object.
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JavaMountStatus(jEnv interface{}, status ipc.MountStatus) (unsafe.Pointer, error) {
+func JavaMountStatus(jEnv interface{}, status rpc.MountStatus) (unsafe.Pointer, error) {
 	jStatus, err := jutil.NewObject(jEnv, jMountStatusClass, []jutil.Sign{jutil.StringSign, jutil.StringSign, jutil.DateTimeSign, jutil.VExceptionSign, jutil.DurationSign, jutil.DateTimeSign, jutil.VExceptionSign}, status.Name, status.Server, status.LastMount, status.LastMountErr, status.TTL, status.LastUnmount, status.LastUnmountErr)
 	if err != nil {
 		return nil, err
@@ -185,12 +185,12 @@ func JavaMountStatus(jEnv interface{}, status ipc.MountStatus) (unsafe.Pointer, 
 	return jStatus, nil
 }
 
-// JavaProxyStatus converts the provided ipc.ProxyStatus value into a Java
+// JavaProxyStatus converts the provided rpc.ProxyStatus value into a Java
 // ProxyStatus object.
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JavaProxyStatus(jEnv interface{}, status ipc.ProxyStatus) (unsafe.Pointer, error) {
+func JavaProxyStatus(jEnv interface{}, status rpc.ProxyStatus) (unsafe.Pointer, error) {
 	jStatus, err := jutil.NewObject(jEnv, jProxyStatusClass, []jutil.Sign{jutil.StringSign, jutil.StringSign, jutil.VExceptionSign}, status.Proxy, status.Endpoint.String(), status.Error)
 	if err != nil {
 		return nil, err
@@ -199,11 +199,11 @@ func JavaProxyStatus(jEnv interface{}, status ipc.ProxyStatus) (unsafe.Pointer, 
 }
 
 var (
-	roamingSpec ipc.ListenSpec
+	roamingSpec rpc.ListenSpec
 )
 
 // SetRoamingSpec saves the provided roaming spec for later use.
-func SetRoamingSpec(spec ipc.ListenSpec) {
+func SetRoamingSpec(spec rpc.ListenSpec) {
 	roamingSpec = spec
 }
 
@@ -211,34 +211,34 @@ func SetRoamingSpec(spec ipc.ListenSpec) {
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func GoListenSpec(jEnv, jSpec interface{}) (ipc.ListenSpec, error) {
+func GoListenSpec(jEnv, jSpec interface{}) (rpc.ListenSpec, error) {
 	addrArr, err := jutil.CallObjectArrayMethod(jEnv, jSpec, "getAddresses", nil, listenAddrSign)
 	if err != nil {
-		return ipc.ListenSpec{}, err
+		return rpc.ListenSpec{}, err
 	}
-	addrs := make(ipc.ListenAddrs, len(addrArr))
+	addrs := make(rpc.ListenAddrs, len(addrArr))
 	for i, jAddr := range addrArr {
 		var err error
 		addrs[i].Protocol, err = jutil.CallStringMethod(jEnv, jAddr, "getProtocol", nil)
 		if err != nil {
-			return ipc.ListenSpec{}, err
+			return rpc.ListenSpec{}, err
 		}
 		addrs[i].Address, err = jutil.CallStringMethod(jEnv, jAddr, "getAddress", nil)
 		if err != nil {
-			return ipc.ListenSpec{}, err
+			return rpc.ListenSpec{}, err
 		}
 	}
 	proxy, err := jutil.CallStringMethod(jEnv, jSpec, "getProxy", nil)
 	if err != nil {
-		return ipc.ListenSpec{}, err
+		return rpc.ListenSpec{}, err
 	}
 	isRoaming, err := jutil.CallBooleanMethod(jEnv, jSpec, "isRoaming", nil)
 	if err != nil {
-		return ipc.ListenSpec{}, err
+		return rpc.ListenSpec{}, err
 	}
 	// TODO(spetrovic): fix this roaming hack, probably by implementing
 	// Publisher and AddressChooser in Java as well (ugh!).
-	var spec ipc.ListenSpec
+	var spec rpc.ListenSpec
 	if isRoaming {
 		spec = roamingSpec
 	}
@@ -251,7 +251,7 @@ func GoListenSpec(jEnv, jSpec interface{}) (ipc.ListenSpec, error) {
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JavaListenSpec(jEnv interface{}, spec ipc.ListenSpec) (unsafe.Pointer, error) {
+func JavaListenSpec(jEnv interface{}, spec rpc.ListenSpec) (unsafe.Pointer, error) {
 	addrarr := make([]interface{}, len(spec.Addrs))
 	for i, addr := range spec.Addrs {
 		var err error
@@ -277,7 +277,7 @@ func JavaListenSpec(jEnv interface{}, spec ipc.ListenSpec) (unsafe.Pointer, erro
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JavaNetworkChange(jEnv interface{}, change ipc.NetworkChange) (unsafe.Pointer, error) {
+func JavaNetworkChange(jEnv interface{}, change rpc.NetworkChange) (unsafe.Pointer, error) {
 	jTime, err := jutil.JTime(jEnv, change.Time)
 	if err != nil {
 		return nil, err

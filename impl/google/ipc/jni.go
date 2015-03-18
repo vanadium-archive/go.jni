@@ -7,7 +7,7 @@ import (
 	"log"
 	"unsafe"
 
-	"v.io/v23/ipc"
+	"v.io/v23/rpc"
 	"v.io/v23/vdl"
 	"v.io/v23/vom"
 
@@ -166,7 +166,7 @@ func Java_io_v_impl_google_ipc_Server_nativeListen(env *C.JNIEnv, jServer C.jobj
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	eps, err := (*(*ipc.Server)(jutil.Ptr(goPtr))).Listen(spec)
+	eps, err := (*(*rpc.Server)(jutil.Ptr(goPtr))).Listen(spec)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -186,7 +186,7 @@ func Java_io_v_impl_google_ipc_Server_nativeServe(env *C.JNIEnv, jServer C.jobje
 		jutil.JThrowV(env, err)
 		return
 	}
-	if err := (*(*ipc.Server)(jutil.Ptr(goPtr))).ServeDispatcher(name, d); err != nil {
+	if err := (*(*rpc.Server)(jutil.Ptr(goPtr))).ServeDispatcher(name, d); err != nil {
 		jutil.JThrowV(env, err)
 		return
 	}
@@ -195,7 +195,7 @@ func Java_io_v_impl_google_ipc_Server_nativeServe(env *C.JNIEnv, jServer C.jobje
 //export Java_io_v_impl_google_ipc_Server_nativeAddName
 func Java_io_v_impl_google_ipc_Server_nativeAddName(env *C.JNIEnv, jServer C.jobject, goPtr C.jlong, jName C.jstring) {
 	name := jutil.GoString(env, jName)
-	if err := (*(*ipc.Server)(jutil.Ptr(goPtr))).AddName(name); err != nil {
+	if err := (*(*rpc.Server)(jutil.Ptr(goPtr))).AddName(name); err != nil {
 		jutil.JThrowV(env, err)
 		return
 	}
@@ -204,12 +204,12 @@ func Java_io_v_impl_google_ipc_Server_nativeAddName(env *C.JNIEnv, jServer C.job
 //export Java_io_v_impl_google_ipc_Server_nativeRemoveName
 func Java_io_v_impl_google_ipc_Server_nativeRemoveName(env *C.JNIEnv, jServer C.jobject, goPtr C.jlong, jName C.jstring) {
 	name := jutil.GoString(env, jName)
-	(*(*ipc.Server)(jutil.Ptr(goPtr))).RemoveName(name)
+	(*(*rpc.Server)(jutil.Ptr(goPtr))).RemoveName(name)
 }
 
 //export Java_io_v_impl_google_ipc_Server_nativeGetStatus
 func Java_io_v_impl_google_ipc_Server_nativeGetStatus(env *C.JNIEnv, jServer C.jobject, goPtr C.jlong) C.jobject {
-	status := (*(*ipc.Server)(jutil.Ptr(goPtr))).Status()
+	status := (*(*rpc.Server)(jutil.Ptr(goPtr))).Status()
 	jStatus, err := JavaServerStatus(env, status)
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -220,8 +220,8 @@ func Java_io_v_impl_google_ipc_Server_nativeGetStatus(env *C.JNIEnv, jServer C.j
 
 //export Java_io_v_impl_google_ipc_Server_nativeWatchNetwork
 func Java_io_v_impl_google_ipc_Server_nativeWatchNetwork(env *C.JNIEnv, jServer C.jobject, goPtr C.jlong) C.jobject {
-	networkChan := make(chan ipc.NetworkChange, 100)
-	(*(*ipc.Server)(jutil.Ptr(goPtr))).WatchNetwork(networkChan)
+	networkChan := make(chan rpc.NetworkChange, 100)
+	(*(*rpc.Server)(jutil.Ptr(goPtr))).WatchNetwork(networkChan)
 	retChan := make(chan C.jobject, 100)
 	go func() {
 		for change := range networkChan {
@@ -253,13 +253,13 @@ func Java_io_v_impl_google_ipc_Server_nativeUnwatchNetwork(env *C.JNIEnv, jServe
 		jutil.JThrowV(env, err)
 		return
 	}
-	networkChan := *(*chan ipc.NetworkChange)(unsafe.Pointer(uintptr(goNetworkChanPtr)))
-	(*(*ipc.Server)(jutil.Ptr(goPtr))).UnwatchNetwork(networkChan)
+	networkChan := *(*chan rpc.NetworkChange)(unsafe.Pointer(uintptr(goNetworkChanPtr)))
+	(*(*rpc.Server)(jutil.Ptr(goPtr))).UnwatchNetwork(networkChan)
 }
 
 //export Java_io_v_impl_google_ipc_Server_nativeStop
 func Java_io_v_impl_google_ipc_Server_nativeStop(env *C.JNIEnv, server C.jobject, goPtr C.jlong) {
-	s := (*ipc.Server)(jutil.Ptr(goPtr))
+	s := (*rpc.Server)(jutil.Ptr(goPtr))
 	if err := (*s).Stop(); err != nil {
 		jutil.JThrowV(env, err)
 		return
@@ -268,7 +268,7 @@ func Java_io_v_impl_google_ipc_Server_nativeStop(env *C.JNIEnv, server C.jobject
 
 //export Java_io_v_impl_google_ipc_Server_nativeFinalize
 func Java_io_v_impl_google_ipc_Server_nativeFinalize(env *C.JNIEnv, server C.jobject, goPtr C.jlong) {
-	jutil.GoUnref((*ipc.Server)(jutil.Ptr(goPtr)))
+	jutil.GoUnref((*rpc.Server)(jutil.Ptr(goPtr)))
 }
 
 //export Java_io_v_impl_google_ipc_Client_nativeStartCall
@@ -292,7 +292,7 @@ func Java_io_v_impl_google_ipc_Client_nativeStartCall(env *C.JNIEnv, jClient C.j
 	}
 
 	// Invoke StartCall
-	call, err := (*(*ipc.Client)(jutil.Ptr(goPtr))).StartCall(context, name, method, args)
+	call, err := (*(*rpc.Client)(jutil.Ptr(goPtr))).StartCall(context, name, method, args)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -307,12 +307,12 @@ func Java_io_v_impl_google_ipc_Client_nativeStartCall(env *C.JNIEnv, jClient C.j
 
 //export Java_io_v_impl_google_ipc_Client_nativeClose
 func Java_io_v_impl_google_ipc_Client_nativeClose(env *C.JNIEnv, jClient C.jobject, goPtr C.jlong) {
-	(*(*ipc.Client)(jutil.Ptr(goPtr))).Close()
+	(*(*rpc.Client)(jutil.Ptr(goPtr))).Close()
 }
 
 //export Java_io_v_impl_google_ipc_Client_nativeFinalize
 func Java_io_v_impl_google_ipc_Client_nativeFinalize(env *C.JNIEnv, jClient C.jobject, goPtr C.jlong) {
-	jutil.GoUnref((*ipc.Client)(jutil.Ptr(goPtr)))
+	jutil.GoUnref((*rpc.Client)(jutil.Ptr(goPtr)))
 }
 
 //export Java_io_v_impl_google_ipc_Stream_nativeSend
@@ -323,7 +323,7 @@ func Java_io_v_impl_google_ipc_Stream_nativeSend(env *C.JNIEnv, jStream C.jobjec
 		jutil.JThrowV(env, err)
 		return
 	}
-	if err := (*(*ipc.Stream)(jutil.Ptr(goPtr))).Send(item); err != nil {
+	if err := (*(*rpc.Stream)(jutil.Ptr(goPtr))).Send(item); err != nil {
 		jutil.JThrowV(env, err)
 		return
 	}
@@ -332,7 +332,7 @@ func Java_io_v_impl_google_ipc_Stream_nativeSend(env *C.JNIEnv, jStream C.jobjec
 //export Java_io_v_impl_google_ipc_Stream_nativeRecv
 func Java_io_v_impl_google_ipc_Stream_nativeRecv(env *C.JNIEnv, jStream C.jobject, goPtr C.jlong) C.jbyteArray {
 	result := new(vdl.Value)
-	if err := (*(*ipc.Stream)(jutil.Ptr(goPtr))).Recv(&result); err != nil {
+	if err := (*(*rpc.Stream)(jutil.Ptr(goPtr))).Recv(&result); err != nil {
 		if err == io.EOF {
 			jutil.JThrow(env, jEOFExceptionClass, err.Error())
 			return nil
@@ -350,12 +350,12 @@ func Java_io_v_impl_google_ipc_Stream_nativeRecv(env *C.JNIEnv, jStream C.jobjec
 
 //export Java_io_v_impl_google_ipc_Stream_nativeFinalize
 func Java_io_v_impl_google_ipc_Stream_nativeFinalize(env *C.JNIEnv, jStream C.jobject, goPtr C.jlong) {
-	jutil.GoUnref((*ipc.Stream)(jutil.Ptr(goPtr)))
+	jutil.GoUnref((*rpc.Stream)(jutil.Ptr(goPtr)))
 }
 
 //export Java_io_v_impl_google_ipc_Call_nativeCloseSend
 func Java_io_v_impl_google_ipc_Call_nativeCloseSend(env *C.JNIEnv, jCall C.jobject, goPtr C.jlong) {
-	if err := (*(*ipc.ClientCall)(jutil.Ptr(goPtr))).CloseSend(); err != nil {
+	if err := (*(*rpc.ClientCall)(jutil.Ptr(goPtr))).CloseSend(); err != nil {
 		jutil.JThrowV(env, err)
 		return
 	}
@@ -370,7 +370,7 @@ func Java_io_v_impl_google_ipc_Call_nativeFinish(env *C.JNIEnv, jCall C.jobject,
 		value := new(vdl.Value)
 		resultPtrs[i] = &value
 	}
-	if err := (*(*ipc.ClientCall)(jutil.Ptr(goPtr))).Finish(resultPtrs...); err != nil {
+	if err := (*(*rpc.ClientCall)(jutil.Ptr(goPtr))).Finish(resultPtrs...); err != nil {
 		// Invocation error.
 		jutil.JThrowV(env, err)
 		return nil
@@ -393,12 +393,12 @@ func Java_io_v_impl_google_ipc_Call_nativeFinish(env *C.JNIEnv, jCall C.jobject,
 
 //export Java_io_v_impl_google_ipc_Call_nativeFinalize
 func Java_io_v_impl_google_ipc_Call_nativeFinalize(env *C.JNIEnv, jCall C.jobject, goPtr C.jlong) {
-	jutil.GoUnref((*ipc.ClientCall)(jutil.Ptr(goPtr)))
+	jutil.GoUnref((*rpc.ClientCall)(jutil.Ptr(goPtr)))
 }
 
 //export Java_io_v_impl_google_ipc_StreamServerCall_nativeBlessings
 func Java_io_v_impl_google_ipc_StreamServerCall_nativeBlessings(env *C.JNIEnv, jStreamServerCall C.jobject, goPtr C.jlong) C.jobject {
-	blessings := (*(*ipc.StreamServerCall)(jutil.Ptr(goPtr))).GrantedBlessings()
+	blessings := (*(*rpc.StreamServerCall)(jutil.Ptr(goPtr))).GrantedBlessings()
 	jBlessings, err := jsecurity.JavaBlessings(env, blessings)
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -409,5 +409,5 @@ func Java_io_v_impl_google_ipc_StreamServerCall_nativeBlessings(env *C.JNIEnv, j
 
 //export Java_io_v_impl_google_ipc_StreamServerCall_nativeFinalize
 func Java_io_v_impl_google_ipc_StreamServerCall_nativeFinalize(env *C.JNIEnv, jStreamServerCall C.jobject, goPtr C.jlong) {
-	jutil.GoUnref((*ipc.StreamServerCall)(jutil.Ptr(goPtr)))
+	jutil.GoUnref((*rpc.StreamServerCall)(jutil.Ptr(goPtr)))
 }
