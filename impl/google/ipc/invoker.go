@@ -96,8 +96,25 @@ func (i *invoker) Globber() *ipc.GlobState {
 }
 
 func (i *invoker) Signature(ctx ipc.ServerCall) ([]signature.Interface, error) {
-	// TODO(spetrovic): implement this method.
-	return nil, fmt.Errorf("Java runtime doesn't yet support signatures.")
+	jEnv, freeFunc := jutil.GetEnv()
+	env := (*C.JNIEnv)(jEnv)
+	defer freeFunc()
+
+	replySign := jutil.ClassSign("io.v.v23.vdlroot.signature.Interface")
+
+	interfaceArr, err := jutil.CallObjectArrayMethod(env, i.jInvoker, "getSignature", nil, replySign)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]signature.Interface, len(interfacesArr))
+	for i, jInterface := range interfacesArr {
+		err = jutil.GoVomCopy(jEnv, jInterface, jInterfaceClass, &result[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
 }
 
 func (i *invoker) MethodSignature(ctx ipc.ServerCall, method string) (signature.Method, error) {

@@ -58,6 +58,8 @@ var (
 	jEOFExceptionClass C.jclass
 	// Global reference for java.lang.String class.
 	jStringClass C.jclass
+	// Global reference for io.v.v23.vdlroot.signature.Interface class.
+	jInterfaceClass C.jclass
 )
 
 // Init initializes the JNI code with the given Java environment. This method
@@ -149,6 +151,11 @@ func Init(jEnv interface{}) error {
 		return err
 	}
 	jStringClass = C.jclass(class)
+	class, err = jutil.JFindClass(jEnv, "io/v/v23/vdlroot/signature/Interface")
+	if err != nil {
+		return err
+	}
+	jVdlrootInterfaceClass = C.jclass(class)
 	return nil
 }
 
