@@ -155,7 +155,7 @@ func Init(jEnv interface{}) error {
 	if err != nil {
 		return err
 	}
-	jVdlrootInterfaceClass = C.jclass(class)
+	jInterfaceClass = C.jclass(class)
 	return nil
 }
 
