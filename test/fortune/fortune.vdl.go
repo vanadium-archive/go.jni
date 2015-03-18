@@ -9,7 +9,7 @@ import (
 	"v.io/v23"
 	"v.io/v23/context"
 	"v.io/v23/i18n"
-	"v.io/v23/ipc"
+	"v.io/v23/rpc"
 	"v.io/v23/vdl"
 	"v.io/v23/verror"
 
@@ -58,31 +58,31 @@ func NewErrErrComplex(ctx *context.T, first ComplexErrorParam, second string, th
 // Fortune allows clients to Get and Add fortune strings.
 type FortuneClientMethods interface {
 	// Add stores a fortune in the set used by Get.
-	Add(ctx *context.T, Fortune string, opts ...ipc.CallOpt) error
+	Add(ctx *context.T, Fortune string, opts ...rpc.CallOpt) error
 	// Get returns a random fortune.
-	Get(*context.T, ...ipc.CallOpt) (Fortune string, err error)
+	Get(*context.T, ...rpc.CallOpt) (Fortune string, err error)
 	// StreamingGet returns a stream that can be used to obtain fortunes.
-	StreamingGet(*context.T, ...ipc.CallOpt) (FortuneStreamingGetClientCall, error)
+	StreamingGet(*context.T, ...rpc.CallOpt) (FortuneStreamingGetClientCall, error)
 	// GetComplexError returns (always!) ErrComplex.
-	GetComplexError(*context.T, ...ipc.CallOpt) error
+	GetComplexError(*context.T, ...rpc.CallOpt) error
 	// NoTags is a method without tags.
-	NoTags(*context.T, ...ipc.CallOpt) error
+	NoTags(*context.T, ...rpc.CallOpt) error
 	// TestContext is a method used for testing that the server receives a
 	// correct context.
-	TestContext(*context.T, ...ipc.CallOpt) error
+	TestContext(*context.T, ...rpc.CallOpt) error
 }
 
 // FortuneClientStub adds universal methods to FortuneClientMethods.
 type FortuneClientStub interface {
 	FortuneClientMethods
-	ipc.UniversalServiceMethods
+	rpc.UniversalServiceMethods
 }
 
 // FortuneClient returns a client stub for Fortune.
-func FortuneClient(name string, opts ...ipc.BindOpt) FortuneClientStub {
-	var client ipc.Client
+func FortuneClient(name string, opts ...rpc.BindOpt) FortuneClientStub {
+	var client rpc.Client
 	for _, opt := range opts {
-		if clientOpt, ok := opt.(ipc.Client); ok {
+		if clientOpt, ok := opt.(rpc.Client); ok {
 			client = clientOpt
 		}
 	}
@@ -91,18 +91,18 @@ func FortuneClient(name string, opts ...ipc.BindOpt) FortuneClientStub {
 
 type implFortuneClientStub struct {
 	name   string
-	client ipc.Client
+	client rpc.Client
 }
 
-func (c implFortuneClientStub) c(ctx *context.T) ipc.Client {
+func (c implFortuneClientStub) c(ctx *context.T) rpc.Client {
 	if c.client != nil {
 		return c.client
 	}
 	return v23.GetClient(ctx)
 }
 
-func (c implFortuneClientStub) Add(ctx *context.T, i0 string, opts ...ipc.CallOpt) (err error) {
-	var call ipc.ClientCall
+func (c implFortuneClientStub) Add(ctx *context.T, i0 string, opts ...rpc.CallOpt) (err error) {
+	var call rpc.ClientCall
 	if call, err = c.c(ctx).StartCall(ctx, c.name, "Add", []interface{}{i0}, opts...); err != nil {
 		return
 	}
@@ -110,8 +110,8 @@ func (c implFortuneClientStub) Add(ctx *context.T, i0 string, opts ...ipc.CallOp
 	return
 }
 
-func (c implFortuneClientStub) Get(ctx *context.T, opts ...ipc.CallOpt) (o0 string, err error) {
-	var call ipc.ClientCall
+func (c implFortuneClientStub) Get(ctx *context.T, opts ...rpc.CallOpt) (o0 string, err error) {
+	var call rpc.ClientCall
 	if call, err = c.c(ctx).StartCall(ctx, c.name, "Get", nil, opts...); err != nil {
 		return
 	}
@@ -119,8 +119,8 @@ func (c implFortuneClientStub) Get(ctx *context.T, opts ...ipc.CallOpt) (o0 stri
 	return
 }
 
-func (c implFortuneClientStub) StreamingGet(ctx *context.T, opts ...ipc.CallOpt) (ocall FortuneStreamingGetClientCall, err error) {
-	var call ipc.ClientCall
+func (c implFortuneClientStub) StreamingGet(ctx *context.T, opts ...rpc.CallOpt) (ocall FortuneStreamingGetClientCall, err error) {
+	var call rpc.ClientCall
 	if call, err = c.c(ctx).StartCall(ctx, c.name, "StreamingGet", nil, opts...); err != nil {
 		return
 	}
@@ -128,8 +128,8 @@ func (c implFortuneClientStub) StreamingGet(ctx *context.T, opts ...ipc.CallOpt)
 	return
 }
 
-func (c implFortuneClientStub) GetComplexError(ctx *context.T, opts ...ipc.CallOpt) (err error) {
-	var call ipc.ClientCall
+func (c implFortuneClientStub) GetComplexError(ctx *context.T, opts ...rpc.CallOpt) (err error) {
+	var call rpc.ClientCall
 	if call, err = c.c(ctx).StartCall(ctx, c.name, "GetComplexError", nil, opts...); err != nil {
 		return
 	}
@@ -137,8 +137,8 @@ func (c implFortuneClientStub) GetComplexError(ctx *context.T, opts ...ipc.CallO
 	return
 }
 
-func (c implFortuneClientStub) NoTags(ctx *context.T, opts ...ipc.CallOpt) (err error) {
-	var call ipc.ClientCall
+func (c implFortuneClientStub) NoTags(ctx *context.T, opts ...rpc.CallOpt) (err error) {
+	var call rpc.ClientCall
 	if call, err = c.c(ctx).StartCall(ctx, c.name, "NoTags", nil, opts...); err != nil {
 		return
 	}
@@ -146,8 +146,8 @@ func (c implFortuneClientStub) NoTags(ctx *context.T, opts ...ipc.CallOpt) (err 
 	return
 }
 
-func (c implFortuneClientStub) TestContext(ctx *context.T, opts ...ipc.CallOpt) (err error) {
-	var call ipc.ClientCall
+func (c implFortuneClientStub) TestContext(ctx *context.T, opts ...rpc.CallOpt) (err error) {
+	var call rpc.ClientCall
 	if call, err = c.c(ctx).StartCall(ctx, c.name, "TestContext", nil, opts...); err != nil {
 		return
 	}
@@ -205,7 +205,7 @@ type FortuneStreamingGetClientCall interface {
 }
 
 type implFortuneStreamingGetClientCall struct {
-	ipc.ClientCall
+	rpc.ClientCall
 	valRecv string
 	errRecv error
 }
@@ -263,59 +263,59 @@ func (c *implFortuneStreamingGetClientCall) Finish() (o0 int32, err error) {
 // Fortune allows clients to Get and Add fortune strings.
 type FortuneServerMethods interface {
 	// Add stores a fortune in the set used by Get.
-	Add(call ipc.ServerCall, Fortune string) error
+	Add(call rpc.ServerCall, Fortune string) error
 	// Get returns a random fortune.
-	Get(ipc.ServerCall) (Fortune string, err error)
+	Get(rpc.ServerCall) (Fortune string, err error)
 	// StreamingGet returns a stream that can be used to obtain fortunes.
 	StreamingGet(FortuneStreamingGetServerCall) (total int32, err error)
 	// GetComplexError returns (always!) ErrComplex.
-	GetComplexError(ipc.ServerCall) error
+	GetComplexError(rpc.ServerCall) error
 	// NoTags is a method without tags.
-	NoTags(ipc.ServerCall) error
+	NoTags(rpc.ServerCall) error
 	// TestContext is a method used for testing that the server receives a
 	// correct context.
-	TestContext(ipc.ServerCall) error
+	TestContext(rpc.ServerCall) error
 }
 
 // FortuneServerStubMethods is the server interface containing
-// Fortune methods, as expected by ipc.Server.
+// Fortune methods, as expected by rpc.Server.
 // The only difference between this interface and FortuneServerMethods
 // is the streaming methods.
 type FortuneServerStubMethods interface {
 	// Add stores a fortune in the set used by Get.
-	Add(call ipc.ServerCall, Fortune string) error
+	Add(call rpc.ServerCall, Fortune string) error
 	// Get returns a random fortune.
-	Get(ipc.ServerCall) (Fortune string, err error)
+	Get(rpc.ServerCall) (Fortune string, err error)
 	// StreamingGet returns a stream that can be used to obtain fortunes.
 	StreamingGet(*FortuneStreamingGetServerCallStub) (total int32, err error)
 	// GetComplexError returns (always!) ErrComplex.
-	GetComplexError(ipc.ServerCall) error
+	GetComplexError(rpc.ServerCall) error
 	// NoTags is a method without tags.
-	NoTags(ipc.ServerCall) error
+	NoTags(rpc.ServerCall) error
 	// TestContext is a method used for testing that the server receives a
 	// correct context.
-	TestContext(ipc.ServerCall) error
+	TestContext(rpc.ServerCall) error
 }
 
 // FortuneServerStub adds universal methods to FortuneServerStubMethods.
 type FortuneServerStub interface {
 	FortuneServerStubMethods
 	// Describe the Fortune interfaces.
-	Describe__() []ipc.InterfaceDesc
+	Describe__() []rpc.InterfaceDesc
 }
 
 // FortuneServer returns a server stub for Fortune.
 // It converts an implementation of FortuneServerMethods into
-// an object that may be used by ipc.Server.
+// an object that may be used by rpc.Server.
 func FortuneServer(impl FortuneServerMethods) FortuneServerStub {
 	stub := implFortuneServerStub{
 		impl: impl,
 	}
 	// Initialize GlobState; always check the stub itself first, to handle the
 	// case where the user has the Glob method defined in their VDL source.
-	if gs := ipc.NewGlobState(stub); gs != nil {
+	if gs := rpc.NewGlobState(stub); gs != nil {
 		stub.gs = gs
-	} else if gs := ipc.NewGlobState(impl); gs != nil {
+	} else if gs := rpc.NewGlobState(impl); gs != nil {
 		stub.gs = gs
 	}
 	return stub
@@ -323,14 +323,14 @@ func FortuneServer(impl FortuneServerMethods) FortuneServerStub {
 
 type implFortuneServerStub struct {
 	impl FortuneServerMethods
-	gs   *ipc.GlobState
+	gs   *rpc.GlobState
 }
 
-func (s implFortuneServerStub) Add(call ipc.ServerCall, i0 string) error {
+func (s implFortuneServerStub) Add(call rpc.ServerCall, i0 string) error {
 	return s.impl.Add(call, i0)
 }
 
-func (s implFortuneServerStub) Get(call ipc.ServerCall) (string, error) {
+func (s implFortuneServerStub) Get(call rpc.ServerCall) (string, error) {
 	return s.impl.Get(call)
 }
 
@@ -338,39 +338,39 @@ func (s implFortuneServerStub) StreamingGet(call *FortuneStreamingGetServerCallS
 	return s.impl.StreamingGet(call)
 }
 
-func (s implFortuneServerStub) GetComplexError(call ipc.ServerCall) error {
+func (s implFortuneServerStub) GetComplexError(call rpc.ServerCall) error {
 	return s.impl.GetComplexError(call)
 }
 
-func (s implFortuneServerStub) NoTags(call ipc.ServerCall) error {
+func (s implFortuneServerStub) NoTags(call rpc.ServerCall) error {
 	return s.impl.NoTags(call)
 }
 
-func (s implFortuneServerStub) TestContext(call ipc.ServerCall) error {
+func (s implFortuneServerStub) TestContext(call rpc.ServerCall) error {
 	return s.impl.TestContext(call)
 }
 
-func (s implFortuneServerStub) Globber() *ipc.GlobState {
+func (s implFortuneServerStub) Globber() *rpc.GlobState {
 	return s.gs
 }
 
-func (s implFortuneServerStub) Describe__() []ipc.InterfaceDesc {
-	return []ipc.InterfaceDesc{FortuneDesc}
+func (s implFortuneServerStub) Describe__() []rpc.InterfaceDesc {
+	return []rpc.InterfaceDesc{FortuneDesc}
 }
 
 // FortuneDesc describes the Fortune interface.
-var FortuneDesc ipc.InterfaceDesc = descFortune
+var FortuneDesc rpc.InterfaceDesc = descFortune
 
 // descFortune hides the desc to keep godoc clean.
-var descFortune = ipc.InterfaceDesc{
+var descFortune = rpc.InterfaceDesc{
 	Name:    "Fortune",
 	PkgPath: "v.io/x/jni/test/fortune",
 	Doc:     "// Fortune allows clients to Get and Add fortune strings.",
-	Methods: []ipc.MethodDesc{
+	Methods: []rpc.MethodDesc{
 		{
 			Name: "Add",
 			Doc:  "// Add stores a fortune in the set used by Get.",
-			InArgs: []ipc.ArgDesc{
+			InArgs: []rpc.ArgDesc{
 				{"Fortune", ``}, // string
 			},
 			Tags: []*vdl.Value{vdl.ValueOf(access.Tag("Write"))},
@@ -378,7 +378,7 @@ var descFortune = ipc.InterfaceDesc{
 		{
 			Name: "Get",
 			Doc:  "// Get returns a random fortune.",
-			OutArgs: []ipc.ArgDesc{
+			OutArgs: []rpc.ArgDesc{
 				{"Fortune", ``}, // string
 			},
 			Tags: []*vdl.Value{vdl.ValueOf(access.Tag("Read"))},
@@ -386,7 +386,7 @@ var descFortune = ipc.InterfaceDesc{
 		{
 			Name: "StreamingGet",
 			Doc:  "// StreamingGet returns a stream that can be used to obtain fortunes.",
-			OutArgs: []ipc.ArgDesc{
+			OutArgs: []rpc.ArgDesc{
 				{"total", ``}, // int32
 			},
 			Tags: []*vdl.Value{vdl.ValueOf(access.Tag("Read"))},
@@ -433,20 +433,20 @@ type FortuneStreamingGetServerStream interface {
 
 // FortuneStreamingGetServerCall represents the context passed to Fortune.StreamingGet.
 type FortuneStreamingGetServerCall interface {
-	ipc.ServerCall
+	rpc.ServerCall
 	FortuneStreamingGetServerStream
 }
 
-// FortuneStreamingGetServerCallStub is a wrapper that converts ipc.StreamServerCall into
+// FortuneStreamingGetServerCallStub is a wrapper that converts rpc.StreamServerCall into
 // a typesafe stub that implements FortuneStreamingGetServerCall.
 type FortuneStreamingGetServerCallStub struct {
-	ipc.StreamServerCall
+	rpc.StreamServerCall
 	valRecv bool
 	errRecv error
 }
 
-// Init initializes FortuneStreamingGetServerCallStub from ipc.StreamServerCall.
-func (s *FortuneStreamingGetServerCallStub) Init(call ipc.StreamServerCall) {
+// Init initializes FortuneStreamingGetServerCallStub from rpc.StreamServerCall.
+func (s *FortuneStreamingGetServerCallStub) Init(call rpc.StreamServerCall) {
 	s.StreamServerCall = call
 }
 
