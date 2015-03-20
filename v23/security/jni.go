@@ -24,7 +24,6 @@ var (
 	signerSign          = jutil.ClassSign("io.v.v23.security.Signer")
 	caveatSign          = jutil.ClassSign("io.v.v23.security.Caveat")
 	callSign            = jutil.ClassSign("io.v.v23.security.Call")
-	callSideSign        = jutil.ClassSign("io.v.v23.security.CallSide")
 	signatureSign       = jutil.ClassSign("io.v.v23.security.Signature")
 	publicKeySign       = jutil.ClassSign("java.security.interfaces.ECPublicKey")
 
@@ -46,8 +45,6 @@ var (
 	jBlessingPatternWrapperClass C.jclass
 	// Global reference for io.v.v23.security.CaveatRegistry class.
 	jCaveatRegistryClass C.jclass
-	// Global reference for io.v.v23.security.CallSide class.
-	jCallSideClass C.jclass
 	// Global reference for io.v.v23.security.Util class.
 	jUtilClass C.jclass
 	// Global reference for java.lang.Object class.
@@ -105,11 +102,6 @@ func Init(jEnv interface{}) error {
 		return err
 	}
 	jBlessingPatternWrapperClass = C.jclass(class)
-	class, err = jutil.JFindClass(jEnv, "io/v/v23/security/CallSide")
-	if err != nil {
-		return err
-	}
-	jCallSideClass = C.jclass(class)
 	class, err = jutil.JFindClass(jEnv, "io/v/v23/security/CaveatRegistry")
 	if err != nil {
 		return err
@@ -543,7 +535,7 @@ func Java_io_v_v23_security_Blessings_nativeBlessingNames(env *C.JNIEnv, jBlessi
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	blessingStrs, _ := security.BlessingNames(call.Context(), security.CallSideRemote)
+	blessingStrs, _ := security.RemoteBlessingNames(call.Context())
 	return C.jobjectArray(jutil.JStringArray(env, blessingStrs))
 }
 

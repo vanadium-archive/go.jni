@@ -127,15 +127,6 @@ func JavaBlessingPattern(jEnv interface{}, pattern security.BlessingPattern) (un
 	return jBlessingPattern, err
 }
 
-// JavaCallSide converts the provided Go CallSide into Java CallSide.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func JavaCallSide(jEnv interface{}, side security.CallSide) (unsafe.Pointer, error) {
-	jCallSide, err := jutil.CallStaticObjectMethod(jEnv, jCallSideClass, "valueOf", []jutil.Sign{jutil.StringSign}, callSideSign, side.String())
-	return jCallSide, err
-}
-
 // GoBlessingPattern converts the provided Java BlessingPattern into Go BlessingPattern.
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
