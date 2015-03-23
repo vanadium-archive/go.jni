@@ -118,8 +118,23 @@ func (i *invoker) Signature(ctx rpc.ServerCall) ([]signature.Interface, error) {
 }
 
 func (i *invoker) MethodSignature(ctx rpc.ServerCall, method string) (signature.Method, error) {
-	// TODO(spetrovic): implement this method.
-	return signature.Method{}, fmt.Errorf("Java runtime doesn't yet support signatures.")
+	jEnv, freeFunc := jutil.GetEnv()
+	env := (*C.JNIEnv)(jEnv)
+	defer freeFunc()
+
+	replySign := jutil.ClassSign("io.v.v23.vdlroot.signature.Method")
+
+	jMethod, err := jutil.CallObjectMethod(env, i.jInvoker, "getMethodSignature", []jutil.Sign{jutil.StringSign}, replySign, method)
+	if err != nil {
+		return signature.Method{}, err
+	}
+
+	var result signature.Method
+	err = jutil.GoVomCopy(jEnv, jMethod, jMethodClass, &result)
+	if err != nil {
+		return signature.Method{}, err
+	}
+	return result, nil
 }
 
 // encodeArgs VOM-encodes the provided arguments pointers and returns them as a

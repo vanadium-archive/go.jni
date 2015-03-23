@@ -60,6 +60,8 @@ var (
 	jStringClass C.jclass
 	// Global reference for io.v.v23.vdlroot.signature.Interface class.
 	jInterfaceClass C.jclass
+	// Global reference for io.v.v23.vdlroot.signature.Method class.
+	jMethodClass C.jclass
 )
 
 // Init initializes the JNI code with the given Java environment. This method
@@ -156,6 +158,11 @@ func Init(jEnv interface{}) error {
 		return err
 	}
 	jInterfaceClass = C.jclass(class)
+	class, err = jutil.JFindClass(jEnv, "io/v/v23/vdlroot/signature/Method")
+	if err != nil {
+		return err
+	}
+	jMethodClass = C.jclass(class)
 	return nil
 }
 
