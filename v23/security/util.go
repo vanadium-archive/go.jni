@@ -5,9 +5,11 @@ package security
 import (
 	"unsafe"
 
+	"v.io/v23/context"
 	"v.io/v23/security"
 	"v.io/v23/vom"
 	jutil "v.io/x/jni/util"
+	jcontext "v.io/x/jni/v23/context"
 )
 
 // #include "jni.h"
@@ -218,4 +220,50 @@ func JavaBlessingPatternWrapper(jEnv interface{}, pattern security.BlessingPatte
 	}
 	jutil.GoRef(&pattern) // Un-refed when the Java BlessingPatternWrapper object is finalized.
 	return jWrapper, nil
+}
+
+func JavaContext(jEnv interface{}, ctx *context.T, cancel context.CancelFunc) (unsafe.Pointer, error) {
+	jCtx, err := jcontext.JavaContext(jEnv, ctx, cancel)
+	if err != nil {
+		return nil, err
+	}
+
+	call := security.GetCall(ctx)
+	jCall, err := JavaCall(jEnv, call)
+	if err != nil {
+		return nil, err
+	}
+
+	contextSign := jutil.ClassSign("io.v.v23.context.VContext")
+	jFinalCtx, err := jutil.CallStaticObjectMethod(jEnv, jSecurityClass, "setCall", []jutil.Sign{contextSign, callSign}, contextSign, jCtx, jCall)
+	if err != nil {
+		return nil, err
+	}
+	return jFinalCtx, nil
+}
+
+func GoContext(jEnv, jContext interface{}) (*context.T, error) {
+	if jutil.IsNull(jContext) {
+		return nil, nil
+	}
+	ctx, err := jcontext.GoContext(jEnv, jContext)
+	if err != nil {
+		return nil, err
+	}
+
+	// Associate the Java Call object with the Go context.
+	contextSign := jutil.ClassSign("io.v.v23.context.VContext")
+	jCall, err := jutil.CallStaticObjectMethod(jEnv, jSecurityClass, "getCall", []jutil.Sign{contextSign}, callSign, jContext)
+	if err != nil {
+		jutil.JThrowV(jEnv, err)
+		return nil, err
+	}
+
+	call, err := GoCall(jEnv, jCall)
+	if err != nil {
+		jutil.JThrowV(jEnv, err)
+		return nil, err
+	}
+
+	return security.SetCall(ctx, call), nil
 }

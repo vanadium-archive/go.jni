@@ -5,6 +5,7 @@ package security
 import (
 	"runtime"
 
+	"v.io/v23/context"
 	"v.io/v23/security"
 	jutil "v.io/x/jni/util"
 )
@@ -40,15 +41,16 @@ type authorizer struct {
 	jAuth C.jobject
 }
 
-func (a *authorizer) Authorize(call security.Call) error {
+func (a *authorizer) Authorize(ctx *context.T) error {
 	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
-	// Create a Java call.
-	jCall, err := JavaCall(env, call)
+
+	jCtx, err := JavaContext(env, ctx, nil)
 	if err != nil {
 		return err
 	}
+
 	// Run Java Authorizer.
-	callSign := jutil.ClassSign("io.v.v23.security.Call")
-	return jutil.CallVoidMethod(env, a.jAuth, "authorize", []jutil.Sign{callSign}, jCall)
+	contextSign := jutil.ClassSign("io.v.v23.context.VContext")
+	return jutil.CallVoidMethod(env, a.jAuth, "authorize", []jutil.Sign{contextSign}, jCtx)
 }

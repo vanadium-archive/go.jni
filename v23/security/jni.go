@@ -7,7 +7,6 @@ import (
 
 	"v.io/v23/security"
 	jutil "v.io/x/jni/util"
-	jcontext "v.io/x/jni/v23/context"
 	vsecurity "v.io/x/ref/security"
 )
 
@@ -49,6 +48,8 @@ var (
 	jUtilClass C.jclass
 	// Global reference for java.lang.Object class.
 	jObjectClass C.jclass
+	// Global reference for io.v.v23.security.Security class.
+	jSecurityClass C.jclass
 )
 
 // Init initializes the JNI code with the given Java evironment. This method
@@ -117,6 +118,12 @@ func Init(jEnv interface{}) error {
 		return err
 	}
 	jObjectClass = C.jclass(class)
+	class, err = jutil.JFindClass(jEnv, "io/v/v23/security/Security")
+	if err != nil {
+		return err
+	}
+	jSecurityClass = C.jclass(class)
+
 	return nil
 }
 
@@ -199,7 +206,7 @@ func Java_io_v_v23_security_CallImpl_nativeRemoteBlessings(env *C.JNIEnv, jCall 
 //export Java_io_v_v23_security_CallImpl_nativeContext
 func Java_io_v_v23_security_CallImpl_nativeContext(env *C.JNIEnv, jCall C.jobject, goPtr C.jlong) C.jobject {
 	ctx := (*(*security.Call)(jutil.Ptr(goPtr))).Context()
-	jCtx, err := jcontext.JavaContext(env, ctx, nil)
+	jCtx, err := JavaContext(env, ctx, nil)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -529,13 +536,13 @@ func Java_io_v_v23_security_Blessings_nativeCreateUnion(env *C.JNIEnv, jBlessing
 }
 
 //export Java_io_v_v23_security_Blessings_nativeBlessingNames
-func Java_io_v_v23_security_Blessings_nativeBlessingNames(env *C.JNIEnv, jBlessingsClass C.jclass, jCall C.jobject) C.jobjectArray {
-	call, err := GoCall(env, jCall)
+func Java_io_v_v23_security_Blessings_nativeBlessingNames(env *C.JNIEnv, jBlessingsClass C.jclass, jCtx C.jobject) C.jobjectArray {
+	ctx, err := GoContext(env, jCtx)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	blessingStrs, _ := security.RemoteBlessingNames(call.Context())
+	blessingStrs, _ := security.RemoteBlessingNames(ctx)
 	return C.jobjectArray(jutil.JStringArray(env, blessingStrs))
 }
 

@@ -5,7 +5,7 @@ package access
 import (
 	"v.io/v23/services/security/access"
 	jutil "v.io/x/jni/util"
-	jsecurity "v.io/x/jni/v23/security"
+	jcontext "v.io/x/jni/v23/context"
 )
 
 // #include "jni.h"
@@ -60,13 +60,13 @@ func Java_io_v_v23_services_security_access_ACLWrapper_nativeIncludes(env *C.JNI
 }
 
 //export Java_io_v_v23_services_security_access_ACLWrapper_nativeAuthorize
-func Java_io_v_v23_services_security_access_ACLWrapper_nativeAuthorize(env *C.JNIEnv, jACLWrapper C.jobject, goPtr C.jlong, jCall C.jobject) {
-	call, err := jsecurity.GoCall(env, jCall)
+func Java_io_v_v23_services_security_access_ACLWrapper_nativeAuthorize(env *C.JNIEnv, jACLWrapper C.jobject, goPtr C.jlong, jCtx C.jobject) {
+	ctx, err := jcontext.GoContext(env, jCtx)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return
 	}
-	if err := (*(*access.AccessList)(jutil.Ptr(goPtr))).Authorize(call); err != nil {
+	if err := (*(*access.AccessList)(jutil.Ptr(goPtr))).Authorize(ctx); err != nil {
 		jutil.JThrowV(env, err)
 		return
 	}
