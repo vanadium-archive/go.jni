@@ -26,6 +26,7 @@ var (
 	blessingPatternSign = jutil.ClassSign("io.v.v23.security.BlessingPattern")
 	signerSign          = jutil.ClassSign("io.v.v23.security.Signer")
 	caveatSign          = jutil.ClassSign("io.v.v23.security.Caveat")
+	contextSign         = jutil.ClassSign("io.v.v23.context.VContext")
 	callSign            = jutil.ClassSign("io.v.v23.security.Call")
 	signatureSign       = jutil.ClassSign("io.v.v23.security.Signature")
 	publicKeySign       = jutil.ClassSign("java.security.interfaces.ECPublicKey")

@@ -7,6 +7,7 @@
 package security
 
 import (
+	"v.io/v23/context"
 	"v.io/v23/security"
 	jutil "v.io/x/jni/util"
 )
@@ -14,11 +15,11 @@ import (
 // #include "jni.h"
 import "C"
 
-func caveatValidator(call security.Call, caveat security.Caveat) error {
+func caveatValidator(context *context.T, caveat security.Caveat) error {
 	jEnv, freeFunc := jutil.GetEnv()
 	defer freeFunc()
 
-	jCall, err := JavaCall(jEnv, call)
+	jContext, err := JavaContext(jEnv, context, nil)
 	if err != nil {
 		return err
 	}
@@ -26,5 +27,5 @@ func caveatValidator(call security.Call, caveat security.Caveat) error {
 	if err != nil {
 		return err
 	}
-	return jutil.CallStaticVoidMethod(jEnv, jCaveatRegistryClass, "validate", []jutil.Sign{callSign, caveatSign}, jCall, jCaveat)
+	return jutil.CallStaticVoidMethod(jEnv, jCaveatRegistryClass, "validate", []jutil.Sign{contextSign, caveatSign}, jContext, jCaveat)
 }
