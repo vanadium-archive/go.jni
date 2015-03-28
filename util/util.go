@@ -415,6 +415,16 @@ func JByteArrayArrayField(jEnv, jObj interface{}, field string) ([][]byte, error
 	return GoByteArrayArray(env, arr), nil
 }
 
+func JStaticObjectField(jEnv, jClass interface{}, field string, fieldTypeSign Sign) (C.jobject, error) {
+	env := getEnv(jEnv)
+	class := getClass(jClass)
+	fid, err := JStaticFieldIDPtr(env, class, field, fieldTypeSign)
+	if err != nil {
+		return nil, err
+	}
+	return C.jobject(C.GetStaticObjectField(env, class, C.jfieldID(fid))), nil
+}
+
 // JStaticStringField returns the value of the static String field of the
 // provided Java class, or error if the field value couldn't be retrieved.
 // NOTE: Because CGO creates package-local types and because this method may be
