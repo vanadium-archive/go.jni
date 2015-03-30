@@ -7,7 +7,7 @@
 package access
 
 import (
-	"v.io/v23/services/security/access"
+	"v.io/v23/security/access"
 	jutil "v.io/x/jni/util"
 	jcontext "v.io/x/jni/v23/context"
 )

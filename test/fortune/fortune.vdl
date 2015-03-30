@@ -4,7 +4,7 @@
 
 package fortune
 
-import "v.io/v23/services/security/access"
+import "v.io/v23/security/access"
 
 type ComplexErrorParam struct {
 	Str string

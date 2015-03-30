@@ -9,7 +9,7 @@ package access
 import (
 	"unsafe"
 
-	"v.io/v23/services/security/access"
+	"v.io/v23/security/access"
 	"v.io/v23/vom"
 	jutil "v.io/x/jni/util"
 )
