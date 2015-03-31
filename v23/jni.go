@@ -11,7 +11,7 @@ import (
 	jcontext "v.io/x/jni/v23/context"
 	ji18n "v.io/x/jni/v23/i18n"
 	jsecurity "v.io/x/jni/v23/security"
-	jaccess "v.io/x/jni/v23/services/security/access"
+	jaccess "v.io/x/jni/v23/security/access"
 )
 
 // #include "jni.h"
