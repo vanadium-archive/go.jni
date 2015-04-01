@@ -83,31 +83,17 @@ type FortuneClientStub interface {
 }
 
 // FortuneClient returns a client stub for Fortune.
-func FortuneClient(name string, opts ...rpc.BindOpt) FortuneClientStub {
-	var client rpc.Client
-	for _, opt := range opts {
-		if clientOpt, ok := opt.(rpc.Client); ok {
-			client = clientOpt
-		}
-	}
-	return implFortuneClientStub{name, client}
+func FortuneClient(name string) FortuneClientStub {
+	return implFortuneClientStub{name}
 }
 
 type implFortuneClientStub struct {
-	name   string
-	client rpc.Client
-}
-
-func (c implFortuneClientStub) c(ctx *context.T) rpc.Client {
-	if c.client != nil {
-		return c.client
-	}
-	return v23.GetClient(ctx)
+	name string
 }
 
 func (c implFortuneClientStub) Add(ctx *context.T, i0 string, opts ...rpc.CallOpt) (err error) {
 	var call rpc.ClientCall
-	if call, err = c.c(ctx).StartCall(ctx, c.name, "Add", []interface{}{i0}, opts...); err != nil {
+	if call, err = v23.GetClient(ctx).StartCall(ctx, c.name, "Add", []interface{}{i0}, opts...); err != nil {
 		return
 	}
 	err = call.Finish()
@@ -116,7 +102,7 @@ func (c implFortuneClientStub) Add(ctx *context.T, i0 string, opts ...rpc.CallOp
 
 func (c implFortuneClientStub) Get(ctx *context.T, opts ...rpc.CallOpt) (o0 string, err error) {
 	var call rpc.ClientCall
-	if call, err = c.c(ctx).StartCall(ctx, c.name, "Get", nil, opts...); err != nil {
+	if call, err = v23.GetClient(ctx).StartCall(ctx, c.name, "Get", nil, opts...); err != nil {
 		return
 	}
 	err = call.Finish(&o0)
@@ -125,7 +111,7 @@ func (c implFortuneClientStub) Get(ctx *context.T, opts ...rpc.CallOpt) (o0 stri
 
 func (c implFortuneClientStub) StreamingGet(ctx *context.T, opts ...rpc.CallOpt) (ocall FortuneStreamingGetClientCall, err error) {
 	var call rpc.ClientCall
-	if call, err = c.c(ctx).StartCall(ctx, c.name, "StreamingGet", nil, opts...); err != nil {
+	if call, err = v23.GetClient(ctx).StartCall(ctx, c.name, "StreamingGet", nil, opts...); err != nil {
 		return
 	}
 	ocall = &implFortuneStreamingGetClientCall{ClientCall: call}
@@ -134,7 +120,7 @@ func (c implFortuneClientStub) StreamingGet(ctx *context.T, opts ...rpc.CallOpt)
 
 func (c implFortuneClientStub) GetComplexError(ctx *context.T, opts ...rpc.CallOpt) (err error) {
 	var call rpc.ClientCall
-	if call, err = c.c(ctx).StartCall(ctx, c.name, "GetComplexError", nil, opts...); err != nil {
+	if call, err = v23.GetClient(ctx).StartCall(ctx, c.name, "GetComplexError", nil, opts...); err != nil {
 		return
 	}
 	err = call.Finish()
@@ -143,7 +129,7 @@ func (c implFortuneClientStub) GetComplexError(ctx *context.T, opts ...rpc.CallO
 
 func (c implFortuneClientStub) NoTags(ctx *context.T, opts ...rpc.CallOpt) (err error) {
 	var call rpc.ClientCall
-	if call, err = c.c(ctx).StartCall(ctx, c.name, "NoTags", nil, opts...); err != nil {
+	if call, err = v23.GetClient(ctx).StartCall(ctx, c.name, "NoTags", nil, opts...); err != nil {
 		return
 	}
 	err = call.Finish()
@@ -152,7 +138,7 @@ func (c implFortuneClientStub) NoTags(ctx *context.T, opts ...rpc.CallOpt) (err 
 
 func (c implFortuneClientStub) TestContext(ctx *context.T, opts ...rpc.CallOpt) (err error) {
 	var call rpc.ClientCall
-	if call, err = c.c(ctx).StartCall(ctx, c.name, "TestContext", nil, opts...); err != nil {
+	if call, err = v23.GetClient(ctx).StartCall(ctx, c.name, "TestContext", nil, opts...); err != nil {
 		return
 	}
 	err = call.Finish()
