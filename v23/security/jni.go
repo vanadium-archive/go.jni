@@ -208,17 +208,6 @@ func Java_io_v_v23_security_CallImpl_nativeRemoteBlessings(env *C.JNIEnv, jCall 
 	return C.jobject(jBlessings)
 }
 
-//export Java_io_v_v23_security_CallImpl_nativeContext
-func Java_io_v_v23_security_CallImpl_nativeContext(env *C.JNIEnv, jCall C.jobject, goPtr C.jlong) C.jobject {
-	ctx := (*(*security.Call)(jutil.Ptr(goPtr))).Context()
-	jCtx, err := JavaContext(env, ctx, nil)
-	if err != nil {
-		jutil.JThrowV(env, err)
-		return nil
-	}
-	return C.jobject(jCtx)
-}
-
 //export Java_io_v_v23_security_CallImpl_nativeFinalize
 func Java_io_v_v23_security_CallImpl_nativeFinalize(env *C.JNIEnv, jCall C.jobject, goPtr C.jlong) {
 	jutil.GoUnref((*security.Call)(jutil.Ptr(goPtr)))

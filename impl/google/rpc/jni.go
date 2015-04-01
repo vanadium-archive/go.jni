@@ -38,6 +38,8 @@ var (
 	jCallClass C.jclass
 	// Global reference for io.v.impl.google.rpc.StreamServerCall class.
 	jStreamServerCallClass C.jclass
+	// Global reference for io.v.impl.google.rpc.ServerCall class.
+	jServerCallClass C.jclass
 	// Global reference for io.v.impl.google.rpc.Stream class.
 	jStreamClass C.jclass
 	// Global reference for io.v.impl.google.rpc.VDLInvoker class.
@@ -97,6 +99,11 @@ func Init(jEnv interface{}) error {
 		return err
 	}
 	jStreamServerCallClass = C.jclass(class)
+	class, err = jutil.JFindClass(jEnv, "io/v/impl/google/rpc/ServerCall")
+	if err != nil {
+		return err
+	}
+	jServerCallClass = C.jclass(class)
 	class, err = jutil.JFindClass(jEnv, "io/v/impl/google/rpc/Stream")
 	if err != nil {
 		return err
@@ -407,15 +414,46 @@ func Java_io_v_impl_google_rpc_Call_nativeFinalize(env *C.JNIEnv, jCall C.jobjec
 	jutil.GoUnref((*rpc.ClientCall)(jutil.Ptr(goPtr)))
 }
 
-//export Java_io_v_impl_google_rpc_StreamServerCall_nativeBlessings
-func Java_io_v_impl_google_rpc_StreamServerCall_nativeBlessings(env *C.JNIEnv, jStreamServerCall C.jobject, goPtr C.jlong) C.jobject {
-	blessings := (*(*rpc.StreamServerCall)(jutil.Ptr(goPtr))).GrantedBlessings()
+//export Java_io_v_impl_google_rpc_ServerCall_nativeGrantedBlessings
+func Java_io_v_impl_google_rpc_ServerCall_nativeGrantedBlessings(env *C.JNIEnv, jStreamServerClass C.jclass, goPtr C.jlong) C.jobject {
+	blessings := (*(*rpc.ServerCall)(jutil.Ptr(goPtr))).GrantedBlessings()
 	jBlessings, err := jsecurity.JavaBlessings(env, blessings)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
 	}
 	return C.jobject(jBlessings)
+}
+
+//export Java_io_v_impl_google_rpc_ServerCall_nativeLocalEndpoint
+func Java_io_v_impl_google_rpc_ServerCall_nativeLocalEndpoint(env *C.JNIEnv, jStreamServerClass C.jclass, goPtr C.jlong) C.jstring {
+	return C.jstring(jutil.JString(env, (*(*rpc.ServerCall)(jutil.Ptr(goPtr))).LocalEndpoint().String()))
+}
+
+//export Java_io_v_impl_google_rpc_ServerCall_nativeRemoteEndpoint
+func Java_io_v_impl_google_rpc_ServerCall_nativeRemoteEndpoint(env *C.JNIEnv, jStreamServerClass C.jclass, goPtr C.jlong) C.jstring {
+	return C.jstring(jutil.JString(env, (*(*rpc.ServerCall)(jutil.Ptr(goPtr))).RemoteEndpoint().String()))
+}
+
+//export Java_io_v_impl_google_rpc_ServerCall_nativeSuffix
+func Java_io_v_impl_google_rpc_ServerCall_nativeSuffix(env *C.JNIEnv, jStreamServerClass C.jclass, goPtr C.jlong) C.jstring {
+	return C.jstring(jutil.JString(env, (*(*rpc.ServerCall)(jutil.Ptr(goPtr))).Suffix()))
+}
+
+//export Java_io_v_impl_google_rpc_ServerCall_nativeContext
+func Java_io_v_impl_google_rpc_ServerCall_nativeContext(env *C.JNIEnv, jCall C.jobject, goPtr C.jlong) C.jobject {
+	ctx := (*(*rpc.ServerCall)(jutil.Ptr(goPtr))).Context()
+	jCtx, err := jcontext.JavaContext(env, ctx, nil)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	return C.jobject(jCtx)
+}
+
+//export Java_io_v_impl_google_rpc_ServerCall_nativeFinalize
+func Java_io_v_impl_google_rpc_ServerCall_nativeFinalize(env *C.JNIEnv, jStreamServerCall C.jobject, goPtr C.jlong) {
+	jutil.GoUnref((*rpc.ServerCall)(jutil.Ptr(goPtr)))
 }
 
 //export Java_io_v_impl_google_rpc_StreamServerCall_nativeFinalize

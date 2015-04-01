@@ -12,7 +12,6 @@ import (
 
 	"v.io/v23/rpc"
 	jutil "v.io/x/jni/util"
-	jsecurity "v.io/x/jni/v23/security"
 )
 
 // #include "jni.h"
@@ -61,12 +60,12 @@ func javaStreamServerCall(env *C.JNIEnv, call rpc.StreamServerCall) (C.jobject, 
 	if err != nil {
 		return nil, err
 	}
-	jSecurityCall, err := jsecurity.JavaCall(env, call)
+	jServerCall, err := javaServerCall(env, call)
 	if err != nil {
 		return nil, err
 	}
-	securityCallSign := jutil.ClassSign("io.v.v23.security.Call")
-	jStreamServerCall, err := jutil.NewObject(env, jStreamServerCallClass, []jutil.Sign{jutil.LongSign, streamSign, securityCallSign}, int64(jutil.PtrValue(&call)), jStream, jSecurityCall)
+	serverCallSign := jutil.ClassSign("io.v.impl.google.rpc.ServerCall")
+	jStreamServerCall, err := jutil.NewObject(env, jStreamServerCallClass, []jutil.Sign{jutil.LongSign, streamSign, serverCallSign}, int64(jutil.PtrValue(&call)), jStream, jServerCall)
 	if err != nil {
 		return nil, err
 	}
@@ -300,4 +299,17 @@ func JavaNetworkChange(jEnv interface{}, change rpc.NetworkChange) (unsafe.Point
 		return nil, err
 	}
 	return jNetworkChange, nil
+}
+
+// javaServerCall converts a Go rpc.ServerCall into a Java ServerCall object.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func javaServerCall(jEnv interface{}, serverCall rpc.ServerCall) (C.jobject, error) {
+	jServerCall, err := jutil.NewObject(jEnv, jServerCallClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&serverCall)))
+	if err != nil {
+		return nil, err
+	}
+	jutil.GoRef(&serverCall) // Un-refed when the Java ServerCall object is finalized.
+	return C.jobject(jServerCall), nil
 }
