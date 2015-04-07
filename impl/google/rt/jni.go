@@ -7,7 +7,7 @@
 package rt
 
 import (
-	jns "v.io/x/jni/impl/google/naming/ns"
+	jns "v.io/x/jni/impl/google/namespace"
 	jrpc "v.io/x/jni/impl/google/rpc"
 	jutil "v.io/x/jni/util"
 	jcontext "v.io/x/jni/v23/context"

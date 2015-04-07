@@ -4,13 +4,13 @@
 
 // +build android
 
-package ns
+package namespace
 
 import (
 	"log"
 
+	"v.io/v23/namespace"
 	"v.io/v23/naming"
-	"v.io/v23/naming/ns"
 	jchannel "v.io/x/jni/impl/google/channel"
 	jutil "v.io/x/jni/util"
 	jcontext "v.io/x/jni/v23/context"
@@ -20,8 +20,10 @@ import (
 import "C"
 
 var (
-	// Global reference for io.v.impl.google.naming.ns.Namespace class.
+	// Global reference for io.v.impl.google.namespace.Namespace class.
 	jNamespaceImplClass C.jclass
+	// Global reference for io.v.v23.naming.MountEntry class.
+	jMountEntryClass C.jclass
 )
 
 // Init initializes the JNI code with the given Java environment. This method
@@ -30,17 +32,22 @@ var (
 // invoked from a different package, Java environment is passed in an empty
 // interface and then cast into the package-local environment type.
 func Init(jEnv interface{}) error {
-	class, err := jutil.JFindClass(jEnv, "io/v/impl/google/naming/ns/Namespace")
+	class, err := jutil.JFindClass(jEnv, "io/v/impl/google/namespace/Namespace")
 	if err != nil {
 		return err
 	}
 	jNamespaceImplClass = C.jclass(class)
+	class, err = jutil.JFindClass(jEnv, "io/v/v23/naming/MountEntry")
+	if err != nil {
+		return err
+	}
+	jMountEntryClass = C.jclass(class)
 	return nil
 }
 
-//export Java_io_v_impl_google_naming_ns_Namespace_nativeGlob
-func Java_io_v_impl_google_naming_ns_Namespace_nativeGlob(env *C.JNIEnv, jNamespace C.jobject, goNamespacePtr C.jlong, jContext C.jobject, pattern C.jstring) C.jobject {
-	n := *(*ns.Namespace)(jutil.Ptr(goNamespacePtr))
+//export Java_io_v_impl_google_namespace_Namespace_nativeGlob
+func Java_io_v_impl_google_namespace_Namespace_nativeGlob(env *C.JNIEnv, jNamespace C.jobject, goNamespacePtr C.jlong, jContext C.jobject, pattern C.jstring) C.jobject {
+	n := *(*namespace.T)(jutil.Ptr(goNamespacePtr))
 	context, err := jcontext.GoContext(env, jContext)
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -84,7 +91,7 @@ func Java_io_v_impl_google_naming_ns_Namespace_nativeGlob(env *C.JNIEnv, jNamesp
 	return C.jobject(jInputChannel)
 }
 
-//export Java_io_v_impl_google_naming_ns_Namespace_nativeFinalize
-func Java_io_v_impl_google_naming_ns_Namespace_nativeFinalize(env *C.JNIEnv, jNamespace C.jobject, goNamespacePtr C.jlong) {
-	jutil.GoUnref((*ns.Namespace)(jutil.Ptr(goNamespacePtr)))
+//export Java_io_v_impl_google_namespace_Namespace_nativeFinalize
+func Java_io_v_impl_google_namespace_Namespace_nativeFinalize(env *C.JNIEnv, jNamespace C.jobject, goNamespacePtr C.jlong) {
+	jutil.GoUnref((*namespace.T)(jutil.Ptr(goNamespacePtr)))
 }

@@ -8,7 +8,7 @@ package google
 
 import (
 	jchannel "v.io/x/jni/impl/google/channel"
-	jns "v.io/x/jni/impl/google/naming/ns"
+	jns "v.io/x/jni/impl/google/namespace"
 	jrpc "v.io/x/jni/impl/google/rpc"
 	jrt "v.io/x/jni/impl/google/rt"
 )
