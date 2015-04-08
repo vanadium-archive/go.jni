@@ -4,13 +4,13 @@
 
 // +build android
 
-package ns
+package namespace
 
 import (
 	"unsafe"
 
+	"v.io/v23/namespace"
 	"v.io/v23/naming"
-	"v.io/v23/naming/ns"
 	jutil "v.io/x/jni/util"
 )
 
@@ -22,7 +22,7 @@ import "C"
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JavaNamespace(jEnv interface{}, namespace ns.Namespace) (unsafe.Pointer, error) {
+func JavaNamespace(jEnv interface{}, namespace namespace.T) (unsafe.Pointer, error) {
 	jNamespace, err := jutil.NewObject(jEnv, jNamespaceImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&namespace)))
 	if err != nil {
 		return nil, err
@@ -44,7 +44,7 @@ func JavaMountEntry(jEnv interface{}, entry *naming.MountEntry) (unsafe.Pointer,
 		vdlServer.Deadline = server.Deadline
 		vdlEntry.Servers = append(vdlEntry.Servers, vdlServer)
 	}
-	jEntry, err := jutil.JVomCopy(jEnv, vdlEntry, nil)
+	jEntry, err := jutil.JVomCopy(jEnv, vdlEntry, jMountEntryClass)
 	if err != nil {
 		return nil, err
 	}
