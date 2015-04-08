@@ -71,9 +71,9 @@ type FortuneClientMethods interface {
 	GetComplexError(*context.T, ...rpc.CallOpt) error
 	// NoTags is a method without tags.
 	NoTags(*context.T, ...rpc.CallOpt) error
-	// TestContext is a method used for testing that the server receives a
-	// correct context.
-	TestContext(*context.T, ...rpc.CallOpt) error
+	// TestServerCall is a method used for testing that the server receives a
+	// correct ServerCall.
+	TestServerCall(*context.T, ...rpc.CallOpt) error
 }
 
 // FortuneClientStub adds universal methods to FortuneClientMethods.
@@ -136,9 +136,9 @@ func (c implFortuneClientStub) NoTags(ctx *context.T, opts ...rpc.CallOpt) (err 
 	return
 }
 
-func (c implFortuneClientStub) TestContext(ctx *context.T, opts ...rpc.CallOpt) (err error) {
+func (c implFortuneClientStub) TestServerCall(ctx *context.T, opts ...rpc.CallOpt) (err error) {
 	var call rpc.ClientCall
-	if call, err = v23.GetClient(ctx).StartCall(ctx, c.name, "TestContext", nil, opts...); err != nil {
+	if call, err = v23.GetClient(ctx).StartCall(ctx, c.name, "TestServerCall", nil, opts...); err != nil {
 		return
 	}
 	err = call.Finish()
@@ -262,9 +262,9 @@ type FortuneServerMethods interface {
 	GetComplexError(rpc.ServerCall) error
 	// NoTags is a method without tags.
 	NoTags(rpc.ServerCall) error
-	// TestContext is a method used for testing that the server receives a
-	// correct context.
-	TestContext(rpc.ServerCall) error
+	// TestServerCall is a method used for testing that the server receives a
+	// correct ServerCall.
+	TestServerCall(rpc.ServerCall) error
 }
 
 // FortuneServerStubMethods is the server interface containing
@@ -282,9 +282,9 @@ type FortuneServerStubMethods interface {
 	GetComplexError(rpc.ServerCall) error
 	// NoTags is a method without tags.
 	NoTags(rpc.ServerCall) error
-	// TestContext is a method used for testing that the server receives a
-	// correct context.
-	TestContext(rpc.ServerCall) error
+	// TestServerCall is a method used for testing that the server receives a
+	// correct ServerCall.
+	TestServerCall(rpc.ServerCall) error
 }
 
 // FortuneServerStub adds universal methods to FortuneServerStubMethods.
@@ -336,8 +336,8 @@ func (s implFortuneServerStub) NoTags(call rpc.ServerCall) error {
 	return s.impl.NoTags(call)
 }
 
-func (s implFortuneServerStub) TestContext(call rpc.ServerCall) error {
-	return s.impl.TestContext(call)
+func (s implFortuneServerStub) TestServerCall(call rpc.ServerCall) error {
+	return s.impl.TestServerCall(call)
 }
 
 func (s implFortuneServerStub) Globber() *rpc.GlobState {
@@ -391,8 +391,8 @@ var descFortune = rpc.InterfaceDesc{
 			Doc:  "// NoTags is a method without tags.",
 		},
 		{
-			Name: "TestContext",
-			Doc:  "// TestContext is a method used for testing that the server receives a\n// correct context.",
+			Name: "TestServerCall",
+			Doc:  "// TestServerCall is a method used for testing that the server receives a\n// correct ServerCall.",
 			Tags: []*vdl.Value{vdl.ValueOf(access.Tag("Read"))},
 		},
 	},
