@@ -64,6 +64,6 @@ func Java_io_v_impl_google_channel_InputChannel_nativeReadValue(env *C.JNIEnv, j
 
 //export Java_io_v_impl_google_channel_InputChannel_nativeFinalize
 func Java_io_v_impl_google_channel_InputChannel_nativeFinalize(env *C.JNIEnv, jInputChannel C.jobject, goChanPtr C.jlong, goSourceChanPtr C.jlong) {
-	jutil.GoUnref(*(*chan C.jobject)(jutil.Ptr(goChanPtr)))
-	jutil.GoUnref(*(*chan C.jobject)(jutil.Ptr(goSourceChanPtr)))
+	jutil.GoUnref(jutil.Ptr(goChanPtr))
+	jutil.GoUnref(jutil.Ptr(goSourceChanPtr))
 }

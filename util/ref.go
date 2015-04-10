@@ -122,45 +122,57 @@ func Ptr(jPtr interface{}) unsafe.Pointer {
 // is to prevent Go runtime from garbage collecting those instances.
 var goRefs = newSafeRefCounter()
 
+type refData struct {
+	instance interface{}
+	count    int
+}
+
 // newSafeRefCounter returns a new instance of a thread-safe reference counter.
 func newSafeRefCounter() *safeRefCounter {
 	return &safeRefCounter{
-		refs: make(map[interface{}]int),
+		refs: make(map[uintptr]refData),
 	}
 }
 
 // safeRefCounter is a thread-safe reference counter.
 type safeRefCounter struct {
 	lock sync.Mutex
-	refs map[interface{}]int
+	refs map[uintptr]refData
 }
 
+// ref increases the reference count to the given valptr by 1.
 func (c *safeRefCounter) ref(valptr interface{}) {
+	p := PtrValue(valptr)
 	c.lock.Lock()
 	defer c.lock.Unlock()
-	count, ok := c.refs[valptr]
+	ref, ok := c.refs[p]
 	if !ok {
-		c.refs[valptr] = 1
+		c.refs[p] = refData{
+			instance: valptr,
+			count:    1,
+		}
 	} else {
-		c.refs[valptr] = count + 1
+		ref.count++
 	}
 }
 
 func (c *safeRefCounter) unref(valptr interface{}) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
-	count, ok := c.refs[valptr]
+	p := PtrValue(valptr)
+	ref, ok := c.refs[p]
 	if !ok {
-		log.Printf("Unrefing pointer %d of type %T that hasn't been refed before, stack: %s", int64(PtrValue(valptr)), valptr, string(debug.Stack()))
+		log.Printf("Unrefing pointer %d of type %T that hasn't been refed before, stack: %s", int64(p), valptr, string(debug.Stack()))
 		return
 	}
+	count := ref.count
 	if count == 0 {
-		log.Printf("Ref count for pointer %d of type %T is zero: that shouldn't happen, stack: %s", int64(PtrValue(valptr)), valptr, string(debug.Stack()))
+		log.Printf("Ref count for pointer %d of type %T is zero: that shouldn't happen, stack: %s", int64(p), valptr, string(debug.Stack()))
 		return
 	}
 	if count > 1 {
-		c.refs[valptr] = count - 1
+		ref.count--
 		return
 	}
-	delete(c.refs, valptr)
+	delete(c.refs, p)
 }
