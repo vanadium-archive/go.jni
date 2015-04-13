@@ -11,7 +11,7 @@ import (
 
 	"v.io/v23/security"
 	jutil "v.io/x/jni/util"
-	vsecurity "v.io/x/ref/security"
+	vsecurity "v.io/x/ref/lib/security"
 )
 
 // #include "jni.h"

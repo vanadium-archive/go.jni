@@ -10,7 +10,6 @@ import (
 	"log"
 
 	"v.io/v23/namespace"
-	"v.io/v23/naming"
 	jchannel "v.io/x/jni/impl/google/channel"
 	jutil "v.io/x/jni/util"
 	jcontext "v.io/x/jni/v23/context"
@@ -22,8 +21,8 @@ import "C"
 var (
 	// Global reference for io.v.impl.google.namespace.Namespace class.
 	jNamespaceImplClass C.jclass
-	// Global reference for io.v.v23.naming.MountEntry class.
-	jMountEntryClass C.jclass
+	// Global reference for io.v.v23.naming.GlobReply class.
+	jGlobReplyClass C.jclass
 )
 
 // Init initializes the JNI code with the given Java environment. This method
@@ -37,11 +36,11 @@ func Init(jEnv interface{}) error {
 		return err
 	}
 	jNamespaceImplClass = C.jclass(class)
-	class, err = jutil.JFindClass(jEnv, "io/v/v23/naming/MountEntry")
+	class, err = jutil.JFindClass(jEnv, "io/v/v23/naming/GlobReply")
 	if err != nil {
 		return err
 	}
-	jMountEntryClass = C.jclass(class)
+	jGlobReplyClass = C.jclass(class)
 	return nil
 }
 
@@ -61,25 +60,20 @@ func Java_io_v_impl_google_namespace_Namespace_nativeGlob(env *C.JNIEnv, jNamesp
 
 	retChan := make(chan C.jobject, 100)
 	go func() {
-		for entry := range entryChan {
-			switch v := entry.(type) {
-			case *naming.MountEntry:
-				jEnv, freeFunc := jutil.GetEnv()
-				env := (*C.JNIEnv)(jEnv)
-				defer freeFunc()
-				jMountEntryObj, err := JavaMountEntry(env, v)
-				if err != nil {
-					log.Println("Couldn't convert Go MountEntry %v to Java", v)
-					continue
-				}
-				jMountEntry := C.jobject(jutil.NewGlobalRef(env, jMountEntryObj))
-				retChan <- jMountEntry
-			case *naming.GlobError:
-				// Silently drop.
-				// TODO(spetrovic): convert to Java counter-part.
-			default:
-				log.Printf("Encountered value %v of unexpected type %T", entry, entry)
+		jEnv, freeFunc := jutil.GetEnv()
+		env := (*C.JNIEnv)(jEnv)
+		defer freeFunc()
+
+		for globReply := range entryChan {
+			jGlobReply, err := jutil.JVomCopy(env, globReply, jGlobReplyClass)
+			if err != nil {
+				log.Println("Couldn't convert Go glob result %v to Java", globReply)
+				continue
 			}
+			// The other side of the channel is responsible
+			// for deleting this global reference.
+			jGlobalGlobReply := C.jobject(jutil.NewGlobalRef(env, jGlobReply))
+			retChan <- jGlobalGlobReply
 		}
 		close(retChan)
 	}()

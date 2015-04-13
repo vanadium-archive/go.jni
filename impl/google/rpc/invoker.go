@@ -10,10 +10,12 @@ import (
 	"fmt"
 	"runtime"
 
+	"v.io/v23/naming"
 	"v.io/v23/rpc"
 	"v.io/v23/vdl"
 	"v.io/v23/vdlroot/signature"
 	"v.io/v23/vom"
+	jchannel "v.io/x/jni/impl/google/channel"
 	jutil "v.io/x/jni/util"
 )
 
@@ -94,9 +96,62 @@ func (i *invoker) Invoke(method string, call rpc.StreamServerCall, argptrs []int
 	return decodeResults(env, C.jobject(jReply))
 }
 
+type javaGlobber struct {
+	i *invoker
+}
+
+func (j javaGlobber) Glob__(call rpc.ServerCall, pattern string) (<-chan naming.GlobReply, error) {
+	jEnv, freeFunc := jutil.GetEnv()
+	defer freeFunc()
+	env := (*C.JNIEnv)(jEnv)
+
+	jServerCall, err := JavaServerCall(env, call)
+	if err != nil {
+		return nil, err
+	}
+
+	actualChannel := make(chan naming.GlobReply)
+	readFunc := func(input interface{}) error {
+		jEnv, freeFunc := jutil.GetEnv()
+		defer freeFunc()
+		env := (*C.JNIEnv)(jEnv)
+
+		defer jutil.DeleteGlobalRef(env, input)
+		var reply naming.GlobReply
+		err := jutil.GoVomCopy(env, input, jGlobReplyClass, &reply)
+		if err != nil {
+			return err
+		}
+		actualChannel <- reply
+		return nil
+	}
+	closeFunc := func() error {
+		close(actualChannel)
+		return nil
+	}
+
+	jOutputChannel, err := jchannel.JavaOutputChannel(env, readFunc, closeFunc)
+	if err != nil {
+		return nil, err
+	}
+
+	callSign := jutil.ClassSign("io.v.v23.rpc.ServerCall")
+	channelSign := jutil.ClassSign("io.v.v23.OutputChannel")
+	// Invoke the VDLInvoker's glob method.
+	go func(jServerCallRef C.jobject, jOutputChannelRef C.jobject) {
+		jEnv, freeFunc := jutil.GetEnv()
+		defer freeFunc()
+		env := (*C.JNIEnv)(jEnv)
+		jutil.CallVoidMethod(env, j.i.jInvoker, "glob", []jutil.Sign{callSign, jutil.StringSign, channelSign}, jServerCallRef, pattern, jOutputChannelRef)
+		jutil.DeleteGlobalRef(env, jServerCallRef)
+		jutil.DeleteGlobalRef(env, jOutputChannelRef)
+	}(C.jobject(jutil.NewGlobalRef(env, jServerCall)), C.jobject(jutil.NewGlobalRef(env, jOutputChannel)))
+
+	return actualChannel, nil
+}
+
 func (i *invoker) Globber() *rpc.GlobState {
-	// TODO(spetrovic): implement this method.
-	return &rpc.GlobState{}
+	return &rpc.GlobState{AllGlobber: javaGlobber{i}}
 }
 
 func (i *invoker) Signature(ctx rpc.ServerCall) ([]signature.Interface, error) {

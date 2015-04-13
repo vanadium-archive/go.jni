@@ -60,7 +60,7 @@ func javaStreamServerCall(env *C.JNIEnv, call rpc.StreamServerCall) (C.jobject, 
 	if err != nil {
 		return nil, err
 	}
-	jServerCall, err := javaServerCall(env, call)
+	jServerCall, err := JavaServerCall(env, call)
 	if err != nil {
 		return nil, err
 	}
@@ -301,11 +301,11 @@ func JavaNetworkChange(jEnv interface{}, change rpc.NetworkChange) (unsafe.Point
 	return jNetworkChange, nil
 }
 
-// javaServerCall converts a Go rpc.ServerCall into a Java ServerCall object.
+// JavaServerCall converts a Go rpc.ServerCall into a Java ServerCall object.
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func javaServerCall(jEnv interface{}, serverCall rpc.ServerCall) (C.jobject, error) {
+func JavaServerCall(jEnv interface{}, serverCall rpc.ServerCall) (C.jobject, error) {
 	jServerCall, err := jutil.NewObject(jEnv, jServerCallClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&serverCall)))
 	if err != nil {
 		return nil, err
