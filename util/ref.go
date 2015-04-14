@@ -130,14 +130,14 @@ type refData struct {
 // newSafeRefCounter returns a new instance of a thread-safe reference counter.
 func newSafeRefCounter() *safeRefCounter {
 	return &safeRefCounter{
-		refs: make(map[uintptr]refData),
+		refs: make(map[uintptr]*refData),
 	}
 }
 
 // safeRefCounter is a thread-safe reference counter.
 type safeRefCounter struct {
 	lock sync.Mutex
-	refs map[uintptr]refData
+	refs map[uintptr]*refData
 }
 
 // ref increases the reference count to the given valptr by 1.
@@ -147,7 +147,7 @@ func (c *safeRefCounter) ref(valptr interface{}) {
 	defer c.lock.Unlock()
 	ref, ok := c.refs[p]
 	if !ok {
-		c.refs[p] = refData{
+		c.refs[p] = &refData{
 			instance: valptr,
 			count:    1,
 		}
