@@ -88,10 +88,10 @@ func (r *blessingRoots) Recognized(root security.PublicKey, blessing string) err
 func (r *blessingRoots) DebugString() string {
 	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
-	jString, err := jutil.CallStringMethod(env, r.jBlessingRoots, "debugString", nil)
+	ret, err := jutil.CallStringMethod(env, r.jBlessingRoots, "debugString", nil)
 	if err != nil {
-		log.Printf("Coudln't get Java DebugString: %v", err)
+		log.Printf("Couldn't get Java DebugString: %v", err)
 		return ""
 	}
-	return jutil.GoString(env, jString)
+	return ret
 }

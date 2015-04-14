@@ -92,7 +92,7 @@ func IsPointer(val interface{}) bool {
 func PtrValue(ptr interface{}) uintptr {
 	v := reflect.ValueOf(ptr)
 	if v.Kind() != reflect.Ptr && v.Kind() != reflect.UnsafePointer {
-		panic("must pass pointer value to PtrValue")
+		panic(fmt.Sprintf("must pass pointer value to PtrValue, was %v", v.Kind()))
 	}
 	return v.Pointer()
 }
