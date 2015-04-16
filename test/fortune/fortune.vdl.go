@@ -92,20 +92,12 @@ type implFortuneClientStub struct {
 }
 
 func (c implFortuneClientStub) Add(ctx *context.T, i0 string, opts ...rpc.CallOpt) (err error) {
-	var call rpc.ClientCall
-	if call, err = v23.GetClient(ctx).StartCall(ctx, c.name, "Add", []interface{}{i0}, opts...); err != nil {
-		return
-	}
-	err = call.Finish()
+	err = v23.GetClient(ctx).Call(ctx, c.name, "Add", []interface{}{i0}, nil, opts...)
 	return
 }
 
 func (c implFortuneClientStub) Get(ctx *context.T, opts ...rpc.CallOpt) (o0 string, err error) {
-	var call rpc.ClientCall
-	if call, err = v23.GetClient(ctx).StartCall(ctx, c.name, "Get", nil, opts...); err != nil {
-		return
-	}
-	err = call.Finish(&o0)
+	err = v23.GetClient(ctx).Call(ctx, c.name, "Get", nil, []interface{}{&o0}, opts...)
 	return
 }
 
@@ -119,29 +111,17 @@ func (c implFortuneClientStub) StreamingGet(ctx *context.T, opts ...rpc.CallOpt)
 }
 
 func (c implFortuneClientStub) GetComplexError(ctx *context.T, opts ...rpc.CallOpt) (err error) {
-	var call rpc.ClientCall
-	if call, err = v23.GetClient(ctx).StartCall(ctx, c.name, "GetComplexError", nil, opts...); err != nil {
-		return
-	}
-	err = call.Finish()
+	err = v23.GetClient(ctx).Call(ctx, c.name, "GetComplexError", nil, nil, opts...)
 	return
 }
 
 func (c implFortuneClientStub) NoTags(ctx *context.T, opts ...rpc.CallOpt) (err error) {
-	var call rpc.ClientCall
-	if call, err = v23.GetClient(ctx).StartCall(ctx, c.name, "NoTags", nil, opts...); err != nil {
-		return
-	}
-	err = call.Finish()
+	err = v23.GetClient(ctx).Call(ctx, c.name, "NoTags", nil, nil, opts...)
 	return
 }
 
 func (c implFortuneClientStub) TestServerCall(ctx *context.T, opts ...rpc.CallOpt) (err error) {
-	var call rpc.ClientCall
-	if call, err = v23.GetClient(ctx).StartCall(ctx, c.name, "TestServerCall", nil, opts...); err != nil {
-		return
-	}
-	err = call.Finish()
+	err = v23.GetClient(ctx).Call(ctx, c.name, "TestServerCall", nil, nil, opts...)
 	return
 }
 
@@ -253,18 +233,18 @@ func (c *implFortuneStreamingGetClientCall) Finish() (o0 int32, err error) {
 // Fortune allows clients to Get and Add fortune strings.
 type FortuneServerMethods interface {
 	// Add stores a fortune in the set used by Get.
-	Add(call rpc.ServerCall, Fortune string) error
+	Add(ctx *context.T, call rpc.ServerCall, Fortune string) error
 	// Get returns a random fortune.
-	Get(rpc.ServerCall) (Fortune string, err error)
+	Get(*context.T, rpc.ServerCall) (Fortune string, err error)
 	// StreamingGet returns a stream that can be used to obtain fortunes.
-	StreamingGet(FortuneStreamingGetServerCall) (total int32, err error)
+	StreamingGet(*context.T, FortuneStreamingGetServerCall) (total int32, err error)
 	// GetComplexError returns (always!) ErrComplex.
-	GetComplexError(rpc.ServerCall) error
+	GetComplexError(*context.T, rpc.ServerCall) error
 	// NoTags is a method without tags.
-	NoTags(rpc.ServerCall) error
+	NoTags(*context.T, rpc.ServerCall) error
 	// TestServerCall is a method used for testing that the server receives a
 	// correct ServerCall.
-	TestServerCall(rpc.ServerCall) error
+	TestServerCall(*context.T, rpc.ServerCall) error
 }
 
 // FortuneServerStubMethods is the server interface containing
@@ -273,18 +253,18 @@ type FortuneServerMethods interface {
 // is the streaming methods.
 type FortuneServerStubMethods interface {
 	// Add stores a fortune in the set used by Get.
-	Add(call rpc.ServerCall, Fortune string) error
+	Add(ctx *context.T, call rpc.ServerCall, Fortune string) error
 	// Get returns a random fortune.
-	Get(rpc.ServerCall) (Fortune string, err error)
+	Get(*context.T, rpc.ServerCall) (Fortune string, err error)
 	// StreamingGet returns a stream that can be used to obtain fortunes.
-	StreamingGet(*FortuneStreamingGetServerCallStub) (total int32, err error)
+	StreamingGet(*context.T, *FortuneStreamingGetServerCallStub) (total int32, err error)
 	// GetComplexError returns (always!) ErrComplex.
-	GetComplexError(rpc.ServerCall) error
+	GetComplexError(*context.T, rpc.ServerCall) error
 	// NoTags is a method without tags.
-	NoTags(rpc.ServerCall) error
+	NoTags(*context.T, rpc.ServerCall) error
 	// TestServerCall is a method used for testing that the server receives a
 	// correct ServerCall.
-	TestServerCall(rpc.ServerCall) error
+	TestServerCall(*context.T, rpc.ServerCall) error
 }
 
 // FortuneServerStub adds universal methods to FortuneServerStubMethods.
@@ -316,28 +296,28 @@ type implFortuneServerStub struct {
 	gs   *rpc.GlobState
 }
 
-func (s implFortuneServerStub) Add(call rpc.ServerCall, i0 string) error {
-	return s.impl.Add(call, i0)
+func (s implFortuneServerStub) Add(ctx *context.T, call rpc.ServerCall, i0 string) error {
+	return s.impl.Add(ctx, call, i0)
 }
 
-func (s implFortuneServerStub) Get(call rpc.ServerCall) (string, error) {
-	return s.impl.Get(call)
+func (s implFortuneServerStub) Get(ctx *context.T, call rpc.ServerCall) (string, error) {
+	return s.impl.Get(ctx, call)
 }
 
-func (s implFortuneServerStub) StreamingGet(call *FortuneStreamingGetServerCallStub) (int32, error) {
-	return s.impl.StreamingGet(call)
+func (s implFortuneServerStub) StreamingGet(ctx *context.T, call *FortuneStreamingGetServerCallStub) (int32, error) {
+	return s.impl.StreamingGet(ctx, call)
 }
 
-func (s implFortuneServerStub) GetComplexError(call rpc.ServerCall) error {
-	return s.impl.GetComplexError(call)
+func (s implFortuneServerStub) GetComplexError(ctx *context.T, call rpc.ServerCall) error {
+	return s.impl.GetComplexError(ctx, call)
 }
 
-func (s implFortuneServerStub) NoTags(call rpc.ServerCall) error {
-	return s.impl.NoTags(call)
+func (s implFortuneServerStub) NoTags(ctx *context.T, call rpc.ServerCall) error {
+	return s.impl.NoTags(ctx, call)
 }
 
-func (s implFortuneServerStub) TestServerCall(call rpc.ServerCall) error {
-	return s.impl.TestServerCall(call)
+func (s implFortuneServerStub) TestServerCall(ctx *context.T, call rpc.ServerCall) error {
+	return s.impl.TestServerCall(ctx, call)
 }
 
 func (s implFortuneServerStub) Globber() *rpc.GlobState {

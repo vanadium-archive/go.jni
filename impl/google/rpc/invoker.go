@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"runtime"
 
+	"v.io/v23/context"
 	"v.io/v23/naming"
 	"v.io/v23/rpc"
 	"v.io/v23/vdl"
@@ -17,6 +18,7 @@ import (
 	"v.io/v23/vom"
 	jchannel "v.io/x/jni/impl/google/channel"
 	jutil "v.io/x/jni/util"
+	jcontext "v.io/x/jni/v23/context"
 )
 
 // #include "jni.h"
@@ -70,10 +72,15 @@ func (i *invoker) Prepare(method string, numArgs int) (argptrs []interface{}, ta
 	return
 }
 
-func (i *invoker) Invoke(method string, call rpc.StreamServerCall, argptrs []interface{}) (results []interface{}, err error) {
+func (i *invoker) Invoke(ctx *context.T, call rpc.StreamServerCall, method string, argptrs []interface{}) (results []interface{}, err error) {
 	jEnv, freeFunc := jutil.GetEnv()
 	env := (*C.JNIEnv)(jEnv)
 	defer freeFunc()
+
+	jContext, err := jcontext.JavaContext(env, ctx, nil)
+	if err != nil {
+		return nil, err
+	}
 
 	jStreamServerCall, err := javaStreamServerCall(env, call)
 	if err != nil {
@@ -86,9 +93,10 @@ func (i *invoker) Invoke(method string, call rpc.StreamServerCall, argptrs []int
 		return nil, err
 	}
 	// Invoke the method.
+	contextSign := jutil.ClassSign("io.v.v23.context.VContext")
 	callSign := jutil.ClassSign("io.v.v23.rpc.StreamServerCall")
 	replySign := jutil.ClassSign("io.v.impl.google.rpc.VDLInvoker$InvokeReply")
-	jReply, err := jutil.CallObjectMethod(env, i.jInvoker, "invoke", []jutil.Sign{jutil.StringSign, callSign, jutil.ArraySign(jutil.ArraySign(jutil.ByteSign))}, replySign, jutil.CamelCase(method), jStreamServerCall, jVomArgs)
+	jReply, err := jutil.CallObjectMethod(env, i.jInvoker, "invoke", []jutil.Sign{contextSign, callSign, jutil.StringSign, jutil.ArraySign(jutil.ArraySign(jutil.ByteSign))}, replySign, jContext, jStreamServerCall, jutil.CamelCase(method), jVomArgs)
 	if err != nil {
 		return nil, fmt.Errorf("error invoking Java method %q: %v", method, err)
 	}
@@ -100,7 +108,7 @@ type javaGlobber struct {
 	i *invoker
 }
 
-func (j javaGlobber) Glob__(call rpc.ServerCall, pattern string) (<-chan naming.GlobReply, error) {
+func (j javaGlobber) Glob__(ctx *context.T, call rpc.ServerCall, pattern string) (<-chan naming.GlobReply, error) {
 	jEnv, freeFunc := jutil.GetEnv()
 	defer freeFunc()
 	env := (*C.JNIEnv)(jEnv)
@@ -154,7 +162,7 @@ func (i *invoker) Globber() *rpc.GlobState {
 	return &rpc.GlobState{AllGlobber: javaGlobber{i}}
 }
 
-func (i *invoker) Signature(ctx rpc.ServerCall) ([]signature.Interface, error) {
+func (i *invoker) Signature(ctx *context.T, call rpc.ServerCall) ([]signature.Interface, error) {
 	jEnv, freeFunc := jutil.GetEnv()
 	env := (*C.JNIEnv)(jEnv)
 	defer freeFunc()
@@ -176,7 +184,7 @@ func (i *invoker) Signature(ctx rpc.ServerCall) ([]signature.Interface, error) {
 	return result, nil
 }
 
-func (i *invoker) MethodSignature(ctx rpc.ServerCall, method string) (signature.Method, error) {
+func (i *invoker) MethodSignature(ctx *context.T, call rpc.ServerCall, method string) (signature.Method, error) {
 	jEnv, freeFunc := jutil.GetEnv()
 	env := (*C.JNIEnv)(jEnv)
 	defer freeFunc()

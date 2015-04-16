@@ -447,17 +447,6 @@ func Java_io_v_impl_google_rpc_ServerCall_nativeSuffix(env *C.JNIEnv, jStreamSer
 	return C.jstring(jutil.JString(env, (*(*rpc.ServerCall)(jutil.Ptr(goPtr))).Suffix()))
 }
 
-//export Java_io_v_impl_google_rpc_ServerCall_nativeContext
-func Java_io_v_impl_google_rpc_ServerCall_nativeContext(env *C.JNIEnv, jCall C.jobject, goPtr C.jlong) C.jobject {
-	ctx := (*(*rpc.ServerCall)(jutil.Ptr(goPtr))).Context()
-	jCtx, err := jcontext.JavaContext(env, ctx, nil)
-	if err != nil {
-		jutil.JThrowV(env, err)
-		return nil
-	}
-	return C.jobject(jCtx)
-}
-
 //export Java_io_v_impl_google_rpc_ServerCall_nativeFinalize
 func Java_io_v_impl_google_rpc_ServerCall_nativeFinalize(env *C.JNIEnv, jStreamServerCall C.jobject, goPtr C.jlong) {
 	jutil.GoUnref((*rpc.ServerCall)(jutil.Ptr(goPtr)))
