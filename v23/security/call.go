@@ -13,6 +13,7 @@ import (
 	"unsafe"
 
 	jutil "v.io/x/jni/util"
+	jcontext "v.io/x/jni/v23/context"
 
 	"v.io/v23"
 	"v.io/v23/context"
@@ -190,7 +191,7 @@ func (c *callImpl) Context() *context.T {
 	if err != nil {
 		log.Printf("Couldn't get Java Vanadium context: %v", err)
 	}
-	ctx, err := GoContext(env, jCtx)
+	ctx, err := jcontext.GoContext(env, jCtx)
 	if err != nil {
 		log.Printf("Couldn't convert Java Vanadium context to Go: %v", err)
 	}

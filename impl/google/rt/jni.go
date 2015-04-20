@@ -54,7 +54,7 @@ func Java_io_v_impl_google_rt_VRuntime_nativeSetNewClient(env *C.JNIEnv, jRuntim
 		return nil
 	}
 	// No options supported yet.
-	newCtx, _, err := v23.SetNewClient(ctx)
+	newCtx, _, err := v23.WithNewClient(ctx)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -118,7 +118,7 @@ func Java_io_v_impl_google_rt_VRuntime_nativeSetPrincipal(env *C.JNIEnv, jRuntim
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	newCtx, err := v23.SetPrincipal(ctx, principal)
+	newCtx, err := v23.WithPrincipal(ctx, principal)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -157,7 +157,7 @@ func Java_io_v_impl_google_rt_VRuntime_nativeSetNamespace(env *C.JNIEnv, jRuntim
 		return nil
 	}
 	roots := jutil.GoStringArray(env, jRoots)
-	newCtx, _, err := v23.SetNewNamespace(ctx, roots...)
+	newCtx, _, err := v23.WithNewNamespace(ctx, roots...)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil

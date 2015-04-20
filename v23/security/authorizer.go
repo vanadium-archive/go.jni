@@ -12,6 +12,7 @@ import (
 	"v.io/v23/context"
 	"v.io/v23/security"
 	jutil "v.io/x/jni/util"
+	jcontext "v.io/x/jni/v23/context"
 )
 
 // #include "jni.h"
@@ -45,16 +46,20 @@ type authorizer struct {
 	jAuth C.jobject
 }
 
-func (a *authorizer) Authorize(ctx *context.T) error {
+func (a *authorizer) Authorize(ctx *context.T, call security.Call) error {
 	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
 
-	jCtx, err := JavaContext(env, ctx, nil)
+	jCtx, err := jcontext.JavaContext(env, ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	jCall, err := JavaCall(env, call)
 	if err != nil {
 		return err
 	}
 
 	// Run Java Authorizer.
-	contextSign := jutil.ClassSign("io.v.v23.context.VContext")
-	return jutil.CallVoidMethod(env, a.jAuth, "authorize", []jutil.Sign{contextSign}, jCtx)
+	return jutil.CallVoidMethod(env, a.jAuth, "authorize", []jutil.Sign{contextSign, callSign}, jCtx, jCall)
 }

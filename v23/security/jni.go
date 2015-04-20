@@ -11,6 +11,7 @@ import (
 
 	"v.io/v23/security"
 	jutil "v.io/x/jni/util"
+	jcontext "v.io/x/jni/v23/context"
 	vsecurity "v.io/x/ref/lib/security"
 )
 
@@ -530,13 +531,18 @@ func Java_io_v_v23_security_Blessings_nativeCreateUnion(env *C.JNIEnv, jBlessing
 }
 
 //export Java_io_v_v23_security_Blessings_nativeBlessingNames
-func Java_io_v_v23_security_Blessings_nativeBlessingNames(env *C.JNIEnv, jBlessingsClass C.jclass, jCtx C.jobject) C.jobjectArray {
-	ctx, err := GoContext(env, jCtx)
+func Java_io_v_v23_security_Blessings_nativeBlessingNames(env *C.JNIEnv, jBlessingsClass C.jclass, jCtx C.jobject, jCall C.jobject) C.jobjectArray {
+	ctx, err := jcontext.GoContext(env, jCtx)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	blessingStrs, _ := security.RemoteBlessingNames(ctx)
+	call, err := GoCall(env, jCall)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	blessingStrs, _ := security.RemoteBlessingNames(ctx, call)
 	return C.jobjectArray(jutil.JStringArray(env, blessingStrs))
 }
 
