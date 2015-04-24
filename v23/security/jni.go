@@ -64,7 +64,7 @@ var (
 // invoked from a different package, Java environment is passed in an empty
 // interface and then cast into the package-local environment type.
 func Init(jEnv interface{}) error {
-	security.SetCaveatValidator(caveatValidator)
+	security.OverrideCaveatValidation(caveatValidator)
 
 	// Cache global references to all Java classes used by the package.  This is
 	// necessary because JNI gets access to the class loader only in the system
