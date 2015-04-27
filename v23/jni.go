@@ -2,12 +2,11 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// +build android
+// +build java android
 
-package veyron2
+package v23
 
 import (
-	jandroid "v.io/x/jni/v23/android"
 	jcontext "v.io/x/jni/v23/context"
 	ji18n "v.io/x/jni/v23/i18n"
 	jsecurity "v.io/x/jni/v23/security"
@@ -31,9 +30,6 @@ func Init(jEnv interface{}) error {
 		return err
 	}
 	if err := jsecurity.Init(jEnv); err != nil {
-		return err
-	}
-	if err := jandroid.Init(jEnv); err != nil {
 		return err
 	}
 	if err := jaccess.Init(jEnv); err != nil {

@@ -2,14 +2,14 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// +build android
+// +build java android
 
 package main
 
 import (
-	"flag"
+	"os"
 
-	"golang.org/x/mobile/app"
+	"v.io/x/lib/vlog"
 
 	jgoogle "v.io/x/jni/impl/google"
 	jutil "v.io/x/jni/util"
@@ -21,6 +21,17 @@ import "C"
 
 //export Java_io_v_v23_V_nativeInit
 func Java_io_v_v23_V_nativeInit(env *C.JNIEnv, jVRuntimeClass C.jclass) {
+	// Ignore all args except for the first one.
+	// NOTE(spetrovic): in the future, we could accept all arguments that are
+	// actually defined in Go.  We'd have to manually check.
+	if len(os.Args) > 1 {
+		os.Args = os.Args[:1]
+	}
+	// Send all logging to stderr, so that the output is visible in android.
+	// Note that if this flag is removed, the process will likely crash on
+	// android as android requires that all logs are written into the app's
+	// local directory.
+	vlog.Log.Configure(vlog.LogToStderr(true))
 	if err := jutil.Init(env); err != nil {
 		jutil.JThrowV(env, err)
 		return
@@ -36,9 +47,4 @@ func Java_io_v_v23_V_nativeInit(env *C.JNIEnv, jVRuntimeClass C.jclass) {
 }
 
 func main() {
-	// Send all logging to stderr, so that the output is visible in Android.  Note that if this
-	// flag is removed, the process will likely crash as android requires that all logs are written
-	// into a specific directory.
-	flag.Set("logtostderr", "true")
-	app.Run(app.Callbacks{})
 }

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// +build android
+// +build java android
 
 // Package util provides various JNI utilities shared across our JNI code.
 package util
@@ -758,7 +758,7 @@ func JFindClass(jEnv interface{}, name string) (unsafe.Pointer, error) {
 	if err := JExceptionMsg(env); err != nil || class == nil {
 		return nil, fmt.Errorf("couldn't find class %s: %v", name, err)
 	}
-	return unsafe.Pointer(C.NewGlobalRef(env, C.jobject(class))), nil
+	return NewGlobalRef(env, C.jobject(class)), nil
 }
 
 // GoTime converts the provided Java DateTime object into a Go time.Time value.

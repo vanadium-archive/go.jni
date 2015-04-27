@@ -1,4 +1,4 @@
-// +build android
+// +build java android
 
 #include "jni_wrapper.h"
 
@@ -159,7 +159,7 @@ void ExceptionClear(JNIEnv* env) {
 }
 
 jint AttachCurrentThread(JavaVM* jvm, JNIEnv** env, void* args) {
-  return (*jvm)->AttachCurrentThread(jvm, env, args);
+  return (*jvm)->AttachCurrentThread(jvm, (void**) env, args);
 }
 
 jint DetachCurrentThread(JavaVM* jvm) {

@@ -1,4 +1,4 @@
-// +build android
+// +build java android
 
 // Stubs for invoking JNI (Java Native Interface) methods, which all use
 // function pointers.  These stubs are meant for languages such as GO
