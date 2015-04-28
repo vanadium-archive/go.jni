@@ -8,6 +8,7 @@ package rpc
 
 import (
 	"fmt"
+	"net"
 	"unsafe"
 
 	"v.io/v23/rpc"
@@ -264,7 +265,7 @@ func JavaListenSpec(jEnv interface{}, spec rpc.ListenSpec) (unsafe.Pointer, erro
 	}
 	jAddrs := jutil.JObjectArray(jEnv, addrarr, jListenSpecAddressClass)
 	isRoaming := false
-	if spec.StreamPublisher != nil || spec.AddressChooser != nil {
+	if spec.AddressChooser != nil {
 		// Our best guess that this is a roaming spec.
 		isRoaming = true
 	}
@@ -289,12 +290,20 @@ func JavaNetworkChange(jEnv interface{}, change rpc.NetworkChange) (unsafe.Point
 	if err != nil {
 		return nil, err
 	}
-	setting := fmt.Sprintf("%v", change.Setting)
+	jAddedAddrs, err := JavaNetworkAddressArray(jEnv, change.AddedAddrs)
+	if err != nil {
+		return nil, err
+	}
+	jRemovedAddrs, err := JavaNetworkAddressArray(jEnv, change.RemovedAddrs)
+	if err != nil {
+		return nil, err
+	}
 	changedEndpointStrs := make([]string, len(change.Changed))
 	for i, ep := range change.Changed {
 		changedEndpointStrs[i] = fmt.Sprintf("%v", ep)
 	}
-	jNetworkChange, err := jutil.NewObject(jEnv, jNetworkChangeClass, []jutil.Sign{jutil.DateTimeSign, serverStateSign, jutil.ArraySign(jutil.StringSign), jutil.StringSign, jutil.VExceptionSign}, jTime, jState, changedEndpointStrs, setting, change.Error)
+	addrSign := jutil.ClassSign("io.v.v23.rpc.NetworkAddress")
+	jNetworkChange, err := jutil.NewObject(jEnv, jNetworkChangeClass, []jutil.Sign{jutil.DateTimeSign, serverStateSign, jutil.ArraySign(addrSign), jutil.ArraySign(addrSign), jutil.ArraySign(jutil.StringSign), jutil.VExceptionSign}, jTime, jState, jAddedAddrs, jRemovedAddrs, changedEndpointStrs, change.Error)
 	if err != nil {
 		return nil, err
 	}
@@ -312,4 +321,28 @@ func JavaServerCall(jEnv interface{}, serverCall rpc.ServerCall) (C.jobject, err
 	}
 	jutil.GoRef(&serverCall) // Un-refed when the Java ServerCall object is finalized.
 	return C.jobject(jServerCall), nil
+}
+
+// JavaNetworkAddress converts a Go net.Addr into a Java NetworkAddress object.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func JavaNetworkAddress(jEnv interface{}, addr net.Addr) (unsafe.Pointer, error) {
+	return jutil.NewObject(jEnv, jNetworkAddressClass, []jutil.Sign{jutil.StringSign, jutil.StringSign}, addr.Network(), addr.String())
+}
+
+// JavaNetworkAddressArray converts a slice of net.Addr values into a Java array
+// of NetworkAddress objects.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func JavaNetworkAddressArray(jEnv interface{}, addrs []net.Addr) (unsafe.Pointer, error) {
+	arr := make([]interface{}, len(addrs))
+	for i, addr := range addrs {
+		var err error
+		if arr[i], err = JavaNetworkAddress(jEnv, addr); err != nil {
+			return nil, err
+		}
+	}
+	return jutil.JObjectArray(jEnv, arr, jNetworkAddressClass), nil
 }

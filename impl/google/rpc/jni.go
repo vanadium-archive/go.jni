@@ -56,6 +56,8 @@ var (
 	jListenSpecClass C.jclass
 	// Global reference for io.v.v23.rpc.ListenSpec$Address class.
 	jListenSpecAddressClass C.jclass
+	// Global reference for io.v.v23.rpc.NetworkAddress class.
+	jNetworkAddressClass C.jclass
 	// Global reference for io.v.v23.rpc.NetworkChange class.
 	jNetworkChangeClass C.jclass
 	// Global reference for io.v.v23.OptionDefs class.
@@ -146,6 +148,11 @@ func Init(jEnv interface{}) error {
 		return err
 	}
 	jListenSpecAddressClass = C.jclass(class)
+	class, err = jutil.JFindClass(jEnv, "io/v/v23/rpc/NetworkAddress")
+	if err != nil {
+		return err
+	}
+	jNetworkAddressClass = C.jclass(class)
 	class, err = jutil.JFindClass(jEnv, "io/v/v23/rpc/NetworkChange")
 	if err != nil {
 		return err
