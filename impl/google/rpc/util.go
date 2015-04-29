@@ -9,6 +9,7 @@ package rpc
 import (
 	"fmt"
 	"net"
+	"runtime"
 	"unsafe"
 
 	"v.io/v23/rpc"
@@ -22,12 +23,11 @@ import "C"
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JavaServer(jEnv interface{}, server rpc.Server, jListenSpec interface{}) (unsafe.Pointer, error) {
+func JavaServer(jEnv interface{}, server rpc.Server) (unsafe.Pointer, error) {
 	if server == nil {
 		return nil, fmt.Errorf("Go Server value cannot be nil")
 	}
-	listenSpecSign := jutil.ClassSign("io.v.v23.rpc.ListenSpec")
-	jServer, err := jutil.NewObject(jEnv, jServerClass, []jutil.Sign{jutil.LongSign, listenSpecSign}, int64(jutil.PtrValue(&server)), jListenSpec)
+	jServer, err := jutil.NewObject(jEnv, jServerClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&server)))
 	if err != nil {
 		return nil, err
 	}
@@ -202,53 +202,33 @@ func JavaProxyStatus(jEnv interface{}, status rpc.ProxyStatus) (unsafe.Pointer, 
 	return jStatus, nil
 }
 
-var (
-	roamingSpec rpc.ListenSpec
-)
-
-// SetRoamingSpec saves the provided roaming spec for later use.
-func SetRoamingSpec(spec rpc.ListenSpec) {
-	roamingSpec = spec
-}
-
 // GoListenSpec converts the provided Java ListenSpec into a Go ListenSpec.
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func GoListenSpec(jEnv, jSpec interface{}) (rpc.ListenSpec, error) {
-	addrArr, err := jutil.CallObjectArrayMethod(jEnv, jSpec, "getAddresses", nil, listenAddrSign)
+	jAddrs, err := jutil.CallObjectMethod(jEnv, jSpec, "getAddresses", nil, jutil.ArraySign(listenAddrSign))
 	if err != nil {
 		return rpc.ListenSpec{}, err
 	}
-	addrs := make(rpc.ListenAddrs, len(addrArr))
-	for i, jAddr := range addrArr {
-		var err error
-		addrs[i].Protocol, err = jutil.CallStringMethod(jEnv, jAddr, "getProtocol", nil)
-		if err != nil {
-			return rpc.ListenSpec{}, err
-		}
-		addrs[i].Address, err = jutil.CallStringMethod(jEnv, jAddr, "getAddress", nil)
-		if err != nil {
-			return rpc.ListenSpec{}, err
-		}
+	addrs, err := GoListenAddrs(jEnv, jAddrs)
+	if err != nil {
+		return rpc.ListenSpec{}, err
 	}
 	proxy, err := jutil.CallStringMethod(jEnv, jSpec, "getProxy", nil)
 	if err != nil {
 		return rpc.ListenSpec{}, err
 	}
-	isRoaming, err := jutil.CallBooleanMethod(jEnv, jSpec, "isRoaming", nil)
+	jChooser, err := jutil.CallObjectMethod(jEnv, jSpec, "getChooser", nil, addressChooserSign)
 	if err != nil {
 		return rpc.ListenSpec{}, err
 	}
-	// TODO(spetrovic): fix this roaming hack, probably by implementing
-	// Publisher and AddressChooser in Java as well (ugh!).
-	var spec rpc.ListenSpec
-	if isRoaming {
-		spec = roamingSpec
-	}
-	spec.Addrs = addrs
-	spec.Proxy = proxy
-	return spec, nil
+	chooser := GoAddressChooser(jEnv, jChooser)
+	return rpc.ListenSpec{
+		Addrs:          addrs,
+		Proxy:          proxy,
+		AddressChooser: chooser,
+	}, nil
 }
 
 // GoListenSpec converts the provided Go ListenSpec into a Java ListenSpec.
@@ -256,25 +236,59 @@ func GoListenSpec(jEnv, jSpec interface{}) (rpc.ListenSpec, error) {
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func JavaListenSpec(jEnv interface{}, spec rpc.ListenSpec) (unsafe.Pointer, error) {
-	addrarr := make([]interface{}, len(spec.Addrs))
-	for i, addr := range spec.Addrs {
+	jAddrs, err := JavaListenAddrArray(jEnv, spec.Addrs)
+	if err != nil {
+		return nil, err
+	}
+	jProxy := jutil.JString(jEnv, spec.Proxy)
+	jChooser, err := JavaAddressChooser(jEnv, spec.AddressChooser)
+	if err != nil {
+		return nil, err
+	}
+	addressSign := jutil.ClassSign("io.v.v23.rpc.ListenSpec$Address")
+	jSpec, err := jutil.NewObject(jEnv, jListenSpecClass, []jutil.Sign{jutil.ArraySign(addressSign), jutil.StringSign, addressChooserSign}, jAddrs, jProxy, jChooser)
+	if err != nil {
+		return nil, err
+	}
+	return jSpec, nil
+}
+
+// JavaListenAddrArray converts Go rpc.ListenAddrs into a Java
+// ListenSpec$Address array.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func JavaListenAddrArray(jEnv interface{}, addrs rpc.ListenAddrs) (unsafe.Pointer, error) {
+	addrarr := make([]interface{}, len(addrs))
+	for i, addr := range addrs {
 		var err error
 		if addrarr[i], err = jutil.NewObject(jEnv, jListenSpecAddressClass, []jutil.Sign{jutil.StringSign, jutil.StringSign}, addr.Protocol, addr.Address); err != nil {
 			return nil, err
 		}
 	}
-	jAddrs := jutil.JObjectArray(jEnv, addrarr, jListenSpecAddressClass)
-	isRoaming := false
-	if spec.AddressChooser != nil {
-		// Our best guess that this is a roaming spec.
-		isRoaming = true
+	return jutil.JObjectArray(jEnv, addrarr, jListenSpecAddressClass), nil
+}
+
+// GoListenAddrs converts Java ListenSpec$Address array into a Go
+// rpc.ListenAddrs value.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func GoListenAddrs(jEnv, jAddrs interface{}) (rpc.ListenAddrs, error) {
+	addrarr := jutil.GoObjectArray(jEnv, jAddrs)
+	addrs := make(rpc.ListenAddrs, len(addrarr))
+	for i, jAddr := range addrarr {
+		var err error
+		addrs[i].Protocol, err = jutil.CallStringMethod(jEnv, jAddr, "getProtocol", nil)
+		if err != nil {
+			return nil, err
+		}
+		addrs[i].Address, err = jutil.CallStringMethod(jEnv, jAddr, "getAddress", nil)
+		if err != nil {
+			return nil, err
+		}
 	}
-	addressSign := jutil.ClassSign("io.v.v23.rpc.ListenSpec$Address")
-	jSpec, err := jutil.NewObject(jEnv, jListenSpecClass, []jutil.Sign{jutil.ArraySign(addressSign), jutil.StringSign, jutil.BoolSign}, jAddrs, spec.Proxy, isRoaming)
-	if err != nil {
-		return nil, err
-	}
-	return jSpec, nil
+	return addrs, nil
 }
 
 // JavaNetworkChange converts the Go NetworkChange value into a Java NetworkChange object.
@@ -314,13 +328,13 @@ func JavaNetworkChange(jEnv interface{}, change rpc.NetworkChange) (unsafe.Point
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JavaServerCall(jEnv interface{}, serverCall rpc.ServerCall) (C.jobject, error) {
+func JavaServerCall(jEnv interface{}, serverCall rpc.ServerCall) (unsafe.Pointer, error) {
 	jServerCall, err := jutil.NewObject(jEnv, jServerCallClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&serverCall)))
 	if err != nil {
 		return nil, err
 	}
 	jutil.GoRef(&serverCall) // Un-refed when the Java ServerCall object is finalized.
-	return C.jobject(jServerCall), nil
+	return jServerCall, nil
 }
 
 // JavaNetworkAddress converts a Go net.Addr into a Java NetworkAddress object.
@@ -331,8 +345,36 @@ func JavaNetworkAddress(jEnv interface{}, addr net.Addr) (unsafe.Pointer, error)
 	return jutil.NewObject(jEnv, jNetworkAddressClass, []jutil.Sign{jutil.StringSign, jutil.StringSign}, addr.Network(), addr.String())
 }
 
-// JavaNetworkAddressArray converts a slice of net.Addr values into a Java array
-// of NetworkAddress objects.
+type jniAddr struct {
+	network, addr string
+}
+
+func (a *jniAddr) Network() string {
+	return a.network
+}
+
+func (a *jniAddr) String() string {
+	return a.addr
+}
+
+// GoNetworkAddress converts a Java NetworkAddress object into Go net.Addr.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func GoNetworkAddress(jEnv, jAddr interface{}) (net.Addr, error) {
+	network, err := jutil.CallStringMethod(jEnv, jAddr, "network", nil)
+	if err != nil {
+		return nil, err
+	}
+	addr, err := jutil.CallStringMethod(jEnv, jAddr, "address", nil)
+	if err != nil {
+		return nil, err
+	}
+	return &jniAddr{network, addr}, nil
+}
+
+// JavaNetworkAddressArray converts a Go slice of net.Addr values into a Java
+// array of NetworkAddress objects.
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
@@ -345,4 +387,67 @@ func JavaNetworkAddressArray(jEnv interface{}, addrs []net.Addr) (unsafe.Pointer
 		}
 	}
 	return jutil.JObjectArray(jEnv, arr, jNetworkAddressClass), nil
+}
+
+// GoNetworkAddressArray converts a Java array of NetworkAddress objects into a
+// Go slice of net.Addr values.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func GoNetworkAddressArray(jEnv, jAddrs interface{}) ([]net.Addr, error) {
+	arr := jutil.GoObjectArray(jEnv, jAddrs)
+	ret := make([]net.Addr, len(arr))
+	for i, jAddr := range arr {
+		var err error
+		if ret[i], err = GoNetworkAddress(jEnv, jAddr); err != nil {
+			return nil, err
+		}
+	}
+	return ret, nil
+}
+
+// JavaAddressChooser converts a Go address chooser function into a Java
+// AddressChooser object.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func JavaAddressChooser(jEnv interface{}, chooser func(protocol string, candidates []net.Addr) ([]net.Addr, error)) (unsafe.Pointer, error) {
+	jAddressChooser, err := jutil.NewObject(jEnv, jAddressChooserClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&chooser)))
+	if err != nil {
+		return nil, err
+	}
+	jutil.GoRef(&chooser) // Un-refed when the Java AddressChooser object is finalized.
+	return jAddressChooser, nil
+}
+
+// GoAddressChooser converts a Java AddressChooser object into a Go address
+// chooser function.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func GoAddressChooser(jEnv, jChooserObj interface{}) func(protocol string, candidates []net.Addr) ([]net.Addr, error) {
+	// Reference Java chooser; it will be de-referenced when the go function
+	// created below is garbage-collected (through the finalizer callback we
+	// setup just below).
+	jChooser := jutil.NewGlobalRef(jEnv, jChooserObj)
+	f := func(protocol string, candidates []net.Addr) ([]net.Addr, error) {
+		javaEnv, freeFunc := jutil.GetEnv()
+		defer freeFunc()
+		jCandidates, err := JavaNetworkAddressArray(javaEnv, candidates)
+		if err != nil {
+			return nil, err
+		}
+		addrsSign := jutil.ArraySign(jutil.ClassSign("io.v.v23.rpc.NetworkAddress"))
+		jAddrs, err := jutil.CallObjectMethod(javaEnv, jChooser, "choose", []jutil.Sign{jutil.StringSign, addrsSign}, addrsSign, protocol, jCandidates)
+		if err != nil {
+			return nil, err
+		}
+		return GoNetworkAddressArray(javaEnv, jAddrs)
+	}
+	runtime.SetFinalizer(&f, func(f *func(protocol string, candidates []net.Addr) ([]net.Addr, error)) {
+		javaEnv, freeFunc := jutil.GetEnv()
+		defer freeFunc()
+		jutil.DeleteGlobalRef(javaEnv, jChooser)
+	})
+	return f
 }

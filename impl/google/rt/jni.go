@@ -33,10 +33,6 @@ func Init(jEnv interface{}) error {
 //export Java_io_v_impl_google_rt_VRuntime_nativeInit
 func Java_io_v_impl_google_rt_VRuntime_nativeInit(env *C.JNIEnv, jRuntime C.jclass) C.jobject {
 	ctx, _ := v23.Init()
-	// Get the original spec, which is guaranteed to be a roaming spec (as we
-	// import the roaming profile).
-	roamingSpec := v23.GetListenSpec(ctx)
-	jrpc.SetRoamingSpec(roamingSpec)
 	jCtx, err := jcontext.JavaContext(env, ctx, nil)
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -85,7 +81,7 @@ func Java_io_v_impl_google_rt_VRuntime_nativeGetClient(env *C.JNIEnv, jRuntime C
 }
 
 //export Java_io_v_impl_google_rt_VRuntime_nativeNewServer
-func Java_io_v_impl_google_rt_VRuntime_nativeNewServer(env *C.JNIEnv, jRuntime C.jclass, jContext C.jobject, jListenSpec C.jobject) C.jobject {
+func Java_io_v_impl_google_rt_VRuntime_nativeNewServer(env *C.JNIEnv, jRuntime C.jclass, jContext C.jobject) C.jobject {
 	// TODO(spetrovic): Have Java context support nativePtr()?
 	ctx, err := jcontext.GoContext(env, jContext)
 	if err != nil {
@@ -97,7 +93,7 @@ func Java_io_v_impl_google_rt_VRuntime_nativeNewServer(env *C.JNIEnv, jRuntime C
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	jServer, err := jrpc.JavaServer(env, server, jListenSpec)
+	jServer, err := jrpc.JavaServer(env, server)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
