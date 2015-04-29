@@ -211,7 +211,7 @@ func Java_io_v_v23_security_CallImpl_nativeRemoteBlessings(env *C.JNIEnv, jCall 
 
 //export Java_io_v_v23_security_CallImpl_nativeFinalize
 func Java_io_v_v23_security_CallImpl_nativeFinalize(env *C.JNIEnv, jCall C.jobject, goPtr C.jlong) {
-	jutil.GoUnref((*security.Call)(jutil.Ptr(goPtr)))
+	jutil.GoUnref(jutil.Ptr(goPtr))
 }
 
 //export Java_io_v_v23_security_PrincipalImpl_nativeCreate
@@ -492,7 +492,7 @@ func Java_io_v_v23_security_PrincipalImpl_nativeAddToRoots(env *C.JNIEnv, jPrinc
 
 //export Java_io_v_v23_security_PrincipalImpl_nativeFinalize
 func Java_io_v_v23_security_PrincipalImpl_nativeFinalize(env *C.JNIEnv, jPrincipalImpl C.jobject, goPtr C.jlong) {
-	jutil.GoUnref((*security.Principal)(jutil.Ptr(goPtr)))
+	jutil.GoUnref(jutil.Ptr(goPtr))
 }
 
 //export Java_io_v_v23_security_Blessings_nativeCreate
@@ -559,7 +559,7 @@ func Java_io_v_v23_security_Blessings_nativePublicKey(env *C.JNIEnv, jBlessings 
 
 //export Java_io_v_v23_security_Blessings_nativeFinalize
 func Java_io_v_v23_security_Blessings_nativeFinalize(env *C.JNIEnv, jBlessings C.jobject, goPtr C.jlong) {
-	jutil.GoUnref((*security.Blessings)(jutil.Ptr(goPtr)))
+	jutil.GoUnref(jutil.Ptr(goPtr))
 }
 
 //export Java_io_v_v23_security_BlessingRootsImpl_nativeAdd
@@ -607,7 +607,7 @@ func Java_io_v_v23_security_BlessingRootsImpl_nativeToString(env *C.JNIEnv, jBle
 
 //export Java_io_v_v23_security_BlessingRootsImpl_nativeFinalize
 func Java_io_v_v23_security_BlessingRootsImpl_nativeFinalize(env *C.JNIEnv, jBlessingRootsImpl C.jobject, goPtr C.jlong) {
-	jutil.GoUnref((*security.BlessingRoots)(jutil.Ptr(goPtr)))
+	jutil.GoUnref(jutil.Ptr(goPtr))
 }
 
 //export Java_io_v_v23_security_BlessingStoreImpl_nativeSet
@@ -721,7 +721,7 @@ func Java_io_v_v23_security_BlessingStoreImpl_nativeToString(env *C.JNIEnv, jBle
 
 //export Java_io_v_v23_security_BlessingStoreImpl_nativeFinalize
 func Java_io_v_v23_security_BlessingStoreImpl_nativeFinalize(env *C.JNIEnv, jBlessingStoreImpl C.jobject, goPtr C.jlong) {
-	jutil.GoUnref((*security.BlessingStore)(jutil.Ptr(goPtr)))
+	jutil.GoUnref(jutil.Ptr(goPtr))
 }
 
 //export Java_io_v_v23_security_BlessingPatternWrapper_nativeWrap
@@ -771,5 +771,5 @@ func Java_io_v_v23_security_BlessingPatternWrapper_nativeMakeNonExtendable(env *
 
 //export Java_io_v_v23_security_BlessingPatternWrapper_nativeFinalize
 func Java_io_v_v23_security_BlessingPatternWrapper_nativeFinalize(env *C.JNIEnv, jBlessingPatternWrapper C.jobject, goPtr C.jlong) {
-	jutil.GoUnref((*security.BlessingPattern)(jutil.Ptr(goPtr)))
+	jutil.GoUnref(jutil.Ptr(goPtr))
 }

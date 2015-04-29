@@ -87,5 +87,5 @@ func Java_io_v_impl_google_namespace_Namespace_nativeGlob(env *C.JNIEnv, jNamesp
 
 //export Java_io_v_impl_google_namespace_Namespace_nativeFinalize
 func Java_io_v_impl_google_namespace_Namespace_nativeFinalize(env *C.JNIEnv, jNamespace C.jobject, goNamespacePtr C.jlong) {
-	jutil.GoUnref((*namespace.T)(jutil.Ptr(goNamespacePtr)))
+	jutil.GoUnref(jutil.Ptr(goNamespacePtr))
 }

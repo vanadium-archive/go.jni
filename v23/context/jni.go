@@ -166,8 +166,8 @@ func Java_io_v_v23_context_VContextImpl_nativeCancel(env *C.JNIEnv, jVContextImp
 
 //export Java_io_v_v23_context_VContextImpl_nativeFinalize
 func Java_io_v_v23_context_VContextImpl_nativeFinalize(env *C.JNIEnv, jVContextImpl C.jobject, goPtr C.jlong, goCancelPtr C.jlong) {
-	jutil.GoUnref((*context.T)(jutil.Ptr(goPtr)))
+	jutil.GoUnref(jutil.Ptr(goPtr))
 	if goCancelPtr != 0 {
-		jutil.GoUnref((*context.CancelFunc)(jutil.Ptr(goCancelPtr)))
+		jutil.GoUnref(jutil.Ptr(goCancelPtr))
 	}
 }

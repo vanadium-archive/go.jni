@@ -308,7 +308,7 @@ func Java_io_v_impl_google_rpc_Server_nativeStop(env *C.JNIEnv, server C.jobject
 
 //export Java_io_v_impl_google_rpc_Server_nativeFinalize
 func Java_io_v_impl_google_rpc_Server_nativeFinalize(env *C.JNIEnv, server C.jobject, goPtr C.jlong) {
-	jutil.GoUnref((*rpc.Server)(jutil.Ptr(goPtr)))
+	jutil.GoUnref(jutil.Ptr(goPtr))
 }
 
 //export Java_io_v_impl_google_rpc_Client_nativeStartCall
@@ -352,7 +352,7 @@ func Java_io_v_impl_google_rpc_Client_nativeClose(env *C.JNIEnv, jClient C.jobje
 
 //export Java_io_v_impl_google_rpc_Client_nativeFinalize
 func Java_io_v_impl_google_rpc_Client_nativeFinalize(env *C.JNIEnv, jClient C.jobject, goPtr C.jlong) {
-	jutil.GoUnref((*rpc.Client)(jutil.Ptr(goPtr)))
+	jutil.GoUnref(jutil.Ptr(goPtr))
 }
 
 //export Java_io_v_impl_google_rpc_Stream_nativeSend
@@ -390,7 +390,7 @@ func Java_io_v_impl_google_rpc_Stream_nativeRecv(env *C.JNIEnv, jStream C.jobjec
 
 //export Java_io_v_impl_google_rpc_Stream_nativeFinalize
 func Java_io_v_impl_google_rpc_Stream_nativeFinalize(env *C.JNIEnv, jStream C.jobject, goPtr C.jlong) {
-	jutil.GoUnref((*rpc.Stream)(jutil.Ptr(goPtr)))
+	jutil.GoUnref(jutil.Ptr(goPtr))
 }
 
 //export Java_io_v_impl_google_rpc_Call_nativeCloseSend
@@ -433,7 +433,7 @@ func Java_io_v_impl_google_rpc_Call_nativeFinish(env *C.JNIEnv, jCall C.jobject,
 
 //export Java_io_v_impl_google_rpc_Call_nativeFinalize
 func Java_io_v_impl_google_rpc_Call_nativeFinalize(env *C.JNIEnv, jCall C.jobject, goPtr C.jlong) {
-	jutil.GoUnref((*rpc.ClientCall)(jutil.Ptr(goPtr)))
+	jutil.GoUnref(jutil.Ptr(goPtr))
 }
 
 //export Java_io_v_impl_google_rpc_ServerCall_nativeSuffix
@@ -475,12 +475,12 @@ func Java_io_v_impl_google_rpc_ServerCall_nativeServer(env *C.JNIEnv, jServerCal
 
 //export Java_io_v_impl_google_rpc_ServerCall_nativeFinalize
 func Java_io_v_impl_google_rpc_ServerCall_nativeFinalize(env *C.JNIEnv, jServerCall C.jobject, goPtr C.jlong) {
-	jutil.GoUnref((*rpc.ServerCall)(jutil.Ptr(goPtr)))
+	jutil.GoUnref(jutil.Ptr(goPtr))
 }
 
 //export Java_io_v_impl_google_rpc_StreamServerCall_nativeFinalize
 func Java_io_v_impl_google_rpc_StreamServerCall_nativeFinalize(env *C.JNIEnv, jStreamServerCall C.jobject, goPtr C.jlong) {
-	jutil.GoUnref((*rpc.StreamServerCall)(jutil.Ptr(goPtr)))
+	jutil.GoUnref(jutil.Ptr(goPtr))
 }
 
 //export Java_io_v_impl_google_rpc_AddressChooser_nativeChoose
@@ -506,5 +506,5 @@ func Java_io_v_impl_google_rpc_AddressChooser_nativeChoose(env *C.JNIEnv, jAddre
 
 //export Java_io_v_impl_google_rpc_AddressChooser_nativeFinalize
 func Java_io_v_impl_google_rpc_AddressChooser_nativeFinalize(env *C.JNIEnv, jAddressChooser C.jobject, goPtr C.jlong) {
-	jutil.GoUnref((*func(protocol string, candidates []net.Addr) ([]net.Addr, error))(jutil.Ptr(goPtr)))
+	jutil.GoUnref(jutil.Ptr(goPtr))
 }

@@ -83,5 +83,5 @@ func Java_io_v_v23_security_access_ACLWrapper_nativeAuthorize(env *C.JNIEnv, jAC
 
 //export Java_io_v_v23_security_access_ACLWrapper_nativeFinalize
 func Java_io_v_v23_security_access_ACLWrapper_nativeFinalize(env *C.JNIEnv, jACLWrapper C.jobject, goPtr C.jlong) {
-	jutil.GoUnref((*access.AccessList)(jutil.Ptr(goPtr)))
+	jutil.GoUnref(jutil.Ptr(goPtr))
 }
