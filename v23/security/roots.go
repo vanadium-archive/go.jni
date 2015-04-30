@@ -95,3 +95,32 @@ func (r *blessingRoots) DebugString() string {
 	}
 	return ret
 }
+
+func (r *blessingRoots) Dump() map[security.BlessingPattern][]security.PublicKey {
+	env, freeFunc := jutil.GetEnv()
+	defer freeFunc()
+	ret, err := jutil.CallMultimapMethod(env, r.jBlessingRoots, "dump", []jutil.Sign{})
+	if err != nil {
+		log.Printf("Couldn't get Java Dump: %v", err)
+		return nil
+	}
+	result := make(map[security.BlessingPattern][]security.PublicKey)
+	for jPattern, jKeys := range ret {
+		pattern, err := GoBlessingPattern(env, jPattern)
+		if err != nil {
+			log.Printf("Couldn't convert Java BlessingPattern: %v", err)
+			return nil
+		}
+		var entry []security.PublicKey
+		for _, jKey := range jKeys {
+			key, err := GoPublicKey(env, jKey)
+			if err != nil {
+				log.Printf("Couldn't convert Java PublicKey: %v", err)
+				return nil
+			}
+			entry = append(entry, key)
+		}
+		result[pattern] = entry
+	}
+	return result
+}

@@ -315,6 +315,47 @@ func CallMapMethod(env interface{}, object interface{}, name string, argSigns []
 	return ret, nil
 }
 
+// CallMultimapMethod calls a Java method that returns a Multimap.
+func CallMultimapMethod(env interface{}, object interface{}, name string, argSigns []Sign, args ...interface{}) (map[unsafe.Pointer][]unsafe.Pointer, error) {
+	jMultimap, err := CallObjectMethod(env, object, name, argSigns, MultimapSign, args...)
+	if err != nil {
+		return nil, err
+	}
+	if jMultimap == nil {
+		return nil, nil
+	}
+	jEntrySet, err := CallObjectMethod(env, jMultimap, "entrySet", nil, SetSign)
+	if err != nil {
+		return nil, err
+	}
+	jIter, err := CallObjectMethod(env, jEntrySet, "iterator", nil, IteratorSign)
+	if err != nil {
+		return nil, err
+	}
+	ret := make(map[unsafe.Pointer][]unsafe.Pointer)
+	for {
+		if hasNext, err := CallBooleanMethod(env, jIter, "hasNext", nil); err != nil {
+			return nil, err
+		} else if !hasNext {
+			break
+		}
+		jEntry, err := CallObjectMethod(env, jIter, "next", nil, ObjectSign)
+		if err != nil {
+			return nil, err
+		}
+		jKey, err := CallObjectMethod(env, jEntry, "getKey", nil, ObjectSign)
+		if err != nil {
+			return nil, err
+		}
+		jValue, err := CallObjectMethod(env, jEntry, "getValue", nil, ObjectSign)
+		if err != nil {
+			return nil, err
+		}
+		ret[jKey] = append(ret[jKey], jValue)
+	}
+	return ret, nil
+}
+
 // CallBooleanMethod calls a Java method that returns a boolean.
 func CallBooleanMethod(env interface{}, object interface{}, name string, argSigns []Sign, args ...interface{}) (bool, error) {
 	jenv, jobject, jmid, valArray, freeFunc, err := setupMethodCall(env, object, name, argSigns, BoolSign, args)

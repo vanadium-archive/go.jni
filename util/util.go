@@ -53,6 +53,8 @@ var (
 	jStringClass C.jclass
 	// Global reference for java.util.HashMap class.
 	jHashMapClass C.jclass
+	// Global reference for com.google.common.collect.HashMultimap class.
+	jHashMultimapClass C.jclass
 	// Global reference for []byte class.
 	jByteArrayClass C.jclass
 	// Cached Java VM.
@@ -127,6 +129,11 @@ func Init(jEnv interface{}) error {
 		return err
 	}
 	jHashMapClass = C.jclass(class)
+	class, err = JFindClass(env, "com/google/common/collect/HashMultimap")
+	if err != nil {
+		return err
+	}
+	jHashMultimapClass = C.jclass(class)
 	class, err = JFindClass(env, "[B")
 	if err != nil {
 		return err
@@ -637,6 +644,27 @@ func JObjectMap(jEnv interface{}, goMap map[interface{}]interface{}) (unsafe.Poi
 	for jKey, jVal := range goMap {
 		if _, err := CallObjectMethod(env, jMap, "put", []Sign{ObjectSign, ObjectSign}, ObjectSign, getObject(jKey), getObject(jVal)); err != nil {
 			return nil, err
+		}
+	}
+	return unsafe.Pointer(jMap), nil
+}
+
+// JObjectMultimap converts the provided Go map of Java objects into a Java
+// object multimap.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func JObjectMultimap(jEnv interface{}, goMap map[interface{}][]interface{}) (unsafe.Pointer, error) {
+	env := getEnv(jEnv)
+	jMap, err := NewObject(env, jHashMultimapClass, nil)
+	if err != nil {
+		return nil, err
+	}
+	for jKey, jVals := range goMap {
+		for _, jVal := range jVals {
+			if _, err := CallBooleanMethod(env, jMap, "put", []Sign{ObjectSign, ObjectSign}, getObject(jKey), getObject(jVal)); err != nil {
+				return nil, err
+			}
 		}
 	}
 	return unsafe.Pointer(jMap), nil

@@ -605,6 +605,34 @@ func Java_io_v_v23_security_BlessingRootsImpl_nativeToString(env *C.JNIEnv, jBle
 	return C.jstring(jutil.JString(env, str))
 }
 
+//export Java_io_v_v23_security_BlessingRootsImpl_nativeDump
+func Java_io_v_v23_security_BlessingRootsImpl_nativeDump(env *C.JNIEnv, jBlessingStoreImpl C.jobject, goPtr C.jlong) C.jobject {
+	dump := (*(*security.BlessingRoots)(jutil.Ptr(goPtr))).Dump()
+	result := make(map[interface{}][]interface{})
+	for pattern, keys := range dump {
+		jBlessingPattern, err := JavaBlessingPattern(env, pattern)
+		if err != nil {
+			jutil.JThrowV(env, err)
+			return nil
+		}
+		jPublicKeys := make([]interface{}, len(keys))
+		for i, key := range keys {
+			var err error
+			if jPublicKeys[i], err = JavaPublicKey(env, key); err != nil {
+				jutil.JThrowV(env, err)
+				return nil
+			}
+		}
+		result[jBlessingPattern] = jPublicKeys
+	}
+	jMap, err := jutil.JObjectMultimap(env, result)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	return C.jobject(jMap)
+}
+
 //export Java_io_v_v23_security_BlessingRootsImpl_nativeFinalize
 func Java_io_v_v23_security_BlessingRootsImpl_nativeFinalize(env *C.JNIEnv, jBlessingRootsImpl C.jobject, goPtr C.jlong) {
 	jutil.GoUnref(jutil.Ptr(goPtr))

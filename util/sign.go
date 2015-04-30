@@ -43,6 +43,8 @@ var (
 	SetSign = ClassSign("java.util.Set")
 	// MapSign denotes a signature of a Java Map type.
 	MapSign = ClassSign("java.util.Map")
+	// MultimapSign denotes a signature of a Guava Multimap type.
+	MultimapSign = ClassSign("com.google.common.collect.Multimap")
 	// IteratorSign denotes a signature of a Java Iterator type.
 	IteratorSign = ClassSign("java.util.Iterator")
 	// ByteArraySign denotes a signature of a Java byte array type.
