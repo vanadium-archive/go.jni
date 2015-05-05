@@ -47,8 +47,7 @@ func (d *dispatcher) Lookup(suffix string) (interface{}, security.Authorizer, er
 
 	// Call Java dispatcher's lookup() method.
 	serviceObjectWithAuthorizerSign := jutil.ClassSign("io.v.v23.rpc.ServiceObjectWithAuthorizer")
-	tempJObj, err := jutil.CallObjectMethod(env, d.jDispatcher, "lookup", []jutil.Sign{jutil.StringSign}, serviceObjectWithAuthorizerSign, suffix)
-	jObj := C.jobject(tempJObj)
+	jObj, err := jutil.CallObjectMethod(env, d.jDispatcher, "lookup", []jutil.Sign{jutil.StringSign}, serviceObjectWithAuthorizerSign, suffix)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error invoking Java dispatcher's lookup() method: %v", err)
 	}

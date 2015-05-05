@@ -7,14 +7,16 @@
 package rt
 
 import (
+	"runtime"
+
+	"v.io/v23"
+	_ "v.io/x/ref/profiles/roaming"
+
 	jns "v.io/x/jni/impl/google/namespace"
 	jrpc "v.io/x/jni/impl/google/rpc"
 	jutil "v.io/x/jni/util"
 	jcontext "v.io/x/jni/v23/context"
 	jsecurity "v.io/x/jni/v23/security"
-
-	"v.io/v23"
-	_ "v.io/x/ref/profiles/roaming"
 )
 
 // #include "jni.h"
@@ -31,7 +33,8 @@ func Init(jEnv interface{}) error {
 }
 
 //export Java_io_v_impl_google_rt_VRuntime_nativeInit
-func Java_io_v_impl_google_rt_VRuntime_nativeInit(env *C.JNIEnv, jRuntime C.jclass) C.jobject {
+func Java_io_v_impl_google_rt_VRuntime_nativeInit(env *C.JNIEnv, jRuntime C.jclass, jNumCpus C.jint) C.jobject {
+	runtime.GOMAXPROCS(int(jNumCpus))
 	ctx, _ := v23.Init()
 	jCtx, err := jcontext.JavaContext(env, ctx, nil)
 	if err != nil {
