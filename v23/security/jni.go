@@ -46,8 +46,8 @@ var (
 	jBlessingRootsImplClass C.jclass
 	// Global reference for io.v.v23.security.CallImpl class.
 	jCallImplClass C.jclass
-	// Global reference for io.v.v23.security.BlessingPatternWrapper class.
-	jBlessingPatternWrapperClass C.jclass
+	// Global reference for io.v.v23.security.BlessingPattern class.
+	jBlessingPatternClass C.jclass
 	// Global reference for io.v.v23.security.CaveatRegistry class.
 	jCaveatRegistryClass C.jclass
 	// Global reference for io.v.v23.security.Util class.
@@ -104,11 +104,11 @@ func Init(jEnv interface{}) error {
 		return err
 	}
 	jCallImplClass = C.jclass(class)
-	class, err = jutil.JFindClass(jEnv, "io/v/v23/security/BlessingPatternWrapper")
+	class, err = jutil.JFindClass(jEnv, "io/v/v23/security/BlessingPattern")
 	if err != nil {
 		return err
 	}
-	jBlessingPatternWrapperClass = C.jclass(class)
+	jBlessingPatternClass = C.jclass(class)
 	class, err = jutil.JFindClass(jEnv, "io/v/v23/security/CaveatRegistry")
 	if err != nil {
 		return err
@@ -752,23 +752,19 @@ func Java_io_v_v23_security_BlessingStoreImpl_nativeFinalize(env *C.JNIEnv, jBle
 	jutil.GoUnref(jutil.Ptr(goPtr))
 }
 
-//export Java_io_v_v23_security_BlessingPatternWrapper_nativeWrap
-func Java_io_v_v23_security_BlessingPatternWrapper_nativeWrap(env *C.JNIEnv, jBlessingPatternWrapperClass C.jclass, jPattern C.jobject) C.jobject {
-	pattern, err := GoBlessingPattern(env, jPattern)
+//export Java_io_v_v23_security_BlessingPattern_nativeCreate
+func Java_io_v_v23_security_BlessingPattern_nativeCreate(env *C.JNIEnv, jBlessingPattern C.jobject) C.jlong {
+	pattern, err := GoBlessingPattern(env, jBlessingPattern)
 	if err != nil {
 		jutil.JThrowV(env, err)
-		return nil
+		return C.jlong(0)
 	}
-	jWrapper, err := JavaBlessingPatternWrapper(env, pattern)
-	if err != nil {
-		jutil.JThrowV(env, err)
-		return nil
-	}
-	return C.jobject(jWrapper)
+	jutil.GoRef(&pattern) // Un-refed when the BlessingPattern object is finalized.
+	return C.jlong(jutil.PtrValue(&pattern))
 }
 
-//export Java_io_v_v23_security_BlessingPatternWrapper_nativeIsMatchedBy
-func Java_io_v_v23_security_BlessingPatternWrapper_nativeIsMatchedBy(env *C.JNIEnv, jBlessingPatternWrapper C.jobject, goPtr C.jlong, jBlessings C.jobjectArray) C.jboolean {
+//export Java_io_v_v23_security_BlessingPattern_nativeIsMatchedBy
+func Java_io_v_v23_security_BlessingPattern_nativeIsMatchedBy(env *C.JNIEnv, jBlessingPattern C.jobject, goPtr C.jlong, jBlessings C.jobjectArray) C.jboolean {
 	blessings := jutil.GoStringArray(env, jBlessings)
 	matched := (*(*security.BlessingPattern)(jutil.Ptr(goPtr))).MatchedBy(blessings...)
 	if matched {
@@ -777,8 +773,8 @@ func Java_io_v_v23_security_BlessingPatternWrapper_nativeIsMatchedBy(env *C.JNIE
 	return C.JNI_FALSE
 }
 
-//export Java_io_v_v23_security_BlessingPatternWrapper_nativeIsValid
-func Java_io_v_v23_security_BlessingPatternWrapper_nativeIsValid(env *C.JNIEnv, jBlessingPatternWrapper C.jobject, goPtr C.jlong) C.jboolean {
+//export Java_io_v_v23_security_BlessingPattern_nativeIsValid
+func Java_io_v_v23_security_BlessingPattern_nativeIsValid(env *C.JNIEnv, jBlessingPattern C.jobject, goPtr C.jlong) C.jboolean {
 	valid := (*(*security.BlessingPattern)(jutil.Ptr(goPtr))).IsValid()
 	if valid {
 		return C.JNI_TRUE
@@ -786,18 +782,18 @@ func Java_io_v_v23_security_BlessingPatternWrapper_nativeIsValid(env *C.JNIEnv, 
 	return C.JNI_FALSE
 }
 
-//export Java_io_v_v23_security_BlessingPatternWrapper_nativeMakeNonExtendable
-func Java_io_v_v23_security_BlessingPatternWrapper_nativeMakeNonExtendable(env *C.JNIEnv, jBlessingPatternWrapper C.jobject, goPtr C.jlong) C.jobject {
-	p := (*(*security.BlessingPattern)(jutil.Ptr(goPtr))).MakeNonExtendable()
-	jWrapper, err := JavaBlessingPatternWrapper(env, p)
+//export Java_io_v_v23_security_BlessingPattern_nativeMakeNonExtendable
+func Java_io_v_v23_security_BlessingPattern_nativeMakeNonExtendable(env *C.JNIEnv, jBlessingPattern C.jobject, goPtr C.jlong) C.jobject {
+	pattern := (*(*security.BlessingPattern)(jutil.Ptr(goPtr))).MakeNonExtendable()
+	jPattern, err := JavaBlessingPattern(env, pattern)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return C.jobject(jWrapper)
+	return C.jobject(jPattern)
 }
 
-//export Java_io_v_v23_security_BlessingPatternWrapper_nativeFinalize
-func Java_io_v_v23_security_BlessingPatternWrapper_nativeFinalize(env *C.JNIEnv, jBlessingPatternWrapper C.jobject, goPtr C.jlong) {
+//export Java_io_v_v23_security_BlessingPattern_nativeFinalize
+func Java_io_v_v23_security_BlessingPattern_nativeFinalize(env *C.JNIEnv, jBlessingPattern C.jobject, goPtr C.jlong) {
 	jutil.GoUnref(jutil.Ptr(goPtr))
 }

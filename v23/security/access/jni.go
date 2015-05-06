@@ -17,45 +17,32 @@ import (
 import "C"
 
 var (
-	aclSign = jutil.ClassSign("io.v.v23.security.access.AccessList")
-
-	// Global reference for io.v.v23.security.access.ACLWrapper class.
-	jACLWrapperClass C.jclass
-	// Global reference for io.v.v23.security.access.Util class.
-	jUtilClass C.jclass
+	// Global reference for io.v.v23.security.access.AccessList class.
+	jAccessListClass C.jclass
 )
 
 func Init(jEnv interface{}) error {
-	class, err := jutil.JFindClass(jEnv, "io/v/v23/security/access/ACLWrapper")
+	class, err := jutil.JFindClass(jEnv, "io/v/v23/security/access/AccessList")
 	if err != nil {
 		return err
 	}
-	jACLWrapperClass = C.jclass(class)
-	class, err = jutil.JFindClass(jEnv, "io/v/v23/security/access/Util")
-	if err != nil {
-		return err
-	}
-	jUtilClass = C.jclass(class)
+	jAccessListClass = C.jclass(class)
 	return nil
 }
 
-//export Java_io_v_v23_security_access_ACLWrapper_nativeWrap
-func Java_io_v_v23_security_access_ACLWrapper_nativeWrap(env *C.JNIEnv, jACLWrapperClass C.jclass, jACL C.jobject) C.jobject {
-	acl, err := GoACL(env, jACL)
+//export Java_io_v_v23_security_access_AccessList_nativeCreate
+func Java_io_v_v23_security_access_AccessList_nativeCreate(env *C.JNIEnv, jAccessList C.jobject) C.jlong {
+	acl, err := GoAccessList(env, jAccessList)
 	if err != nil {
 		jutil.JThrowV(env, err)
-		return nil
+		return C.jlong(0)
 	}
-	jWrapper, err := JavaACLWrapper(env, acl)
-	if err != nil {
-		jutil.JThrowV(env, err)
-		return nil
-	}
-	return C.jobject(jWrapper)
+	jutil.GoRef(&acl) // Un-refed when the AccessList object is finalized
+	return C.jlong(jutil.PtrValue(&acl))
 }
 
-//export Java_io_v_v23_security_access_ACLWrapper_nativeIncludes
-func Java_io_v_v23_security_access_ACLWrapper_nativeIncludes(env *C.JNIEnv, jACLWrapper C.jobject, goPtr C.jlong, jBlessings C.jobjectArray) C.jboolean {
+//export Java_io_v_v23_security_access_AccessList_nativeIncludes
+func Java_io_v_v23_security_access_AccessList_nativeIncludes(env *C.JNIEnv, jAccessList C.jobject, goPtr C.jlong, jBlessings C.jobjectArray) C.jboolean {
 	blessings := jutil.GoStringArray(env, jBlessings)
 	ok := (*(*access.AccessList)(jutil.Ptr(goPtr))).Includes(blessings...)
 	if ok {
@@ -64,8 +51,8 @@ func Java_io_v_v23_security_access_ACLWrapper_nativeIncludes(env *C.JNIEnv, jACL
 	return C.JNI_FALSE
 }
 
-//export Java_io_v_v23_security_access_ACLWrapper_nativeAuthorize
-func Java_io_v_v23_security_access_ACLWrapper_nativeAuthorize(env *C.JNIEnv, jACLWrapper C.jobject, goPtr C.jlong, jCtx C.jobject, jCall C.jobject) {
+//export Java_io_v_v23_security_access_AccessList_nativeAuthorize
+func Java_io_v_v23_security_access_AccessList_nativeAuthorize(env *C.JNIEnv, jAccessList C.jobject, goPtr C.jlong, jCtx C.jobject, jCall C.jobject) {
 	ctx, err := jcontext.GoContext(env, jCtx)
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -81,7 +68,7 @@ func Java_io_v_v23_security_access_ACLWrapper_nativeAuthorize(env *C.JNIEnv, jAC
 	}
 }
 
-//export Java_io_v_v23_security_access_ACLWrapper_nativeFinalize
-func Java_io_v_v23_security_access_ACLWrapper_nativeFinalize(env *C.JNIEnv, jACLWrapper C.jobject, goPtr C.jlong) {
+//export Java_io_v_v23_security_access_AccessList_nativeFinalize
+func Java_io_v_v23_security_access_AccessList_nativeFinalize(env *C.JNIEnv, jAccessList C.jobject, goPtr C.jlong) {
 	jutil.GoUnref(jutil.Ptr(goPtr))
 }

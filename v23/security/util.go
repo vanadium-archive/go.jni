@@ -122,25 +122,22 @@ func GoCaveats(jEnv, jCaveats interface{}) ([]security.Caveat, error) {
 	return caveats, nil
 }
 
-// JavaBlessingPattern converts the provided Go BlessingPattern into Java BlessingPattern.
+// JavaBlessingPattern converts the provided Go BlessingPattern into Java
+// BlessingPattern.
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func JavaBlessingPattern(jEnv interface{}, pattern security.BlessingPattern) (unsafe.Pointer, error) {
-	jBlessingPattern, err := jutil.CallStaticObjectMethod(jEnv, jUtilClass, "decodeBlessingPattern", []jutil.Sign{jutil.StringSign}, blessingPatternSign, string(pattern))
-	return jBlessingPattern, err
+	return jutil.JVomCopy(jEnv, pattern, jBlessingPatternClass)
 }
 
 // GoBlessingPattern converts the provided Java BlessingPattern into Go BlessingPattern.
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func GoBlessingPattern(jEnv, jPattern interface{}) (security.BlessingPattern, error) {
-	encoded, err := jutil.CallStaticStringMethod(jEnv, jUtilClass, "encodeBlessingPattern", []jutil.Sign{blessingPatternSign}, jPattern)
-	if err != nil {
-		return security.BlessingPattern(""), err
-	}
-	return security.BlessingPattern(encoded), nil
+func GoBlessingPattern(jEnv, jPattern interface{}) (pattern security.BlessingPattern, err error) {
+	err = jutil.GoVomCopy(jEnv, jPattern, jBlessingPatternClass, &pattern)
+	return
 }
 
 // JavaPublicKey converts the provided Go PublicKey into Java PublicKey.
@@ -204,22 +201,4 @@ func GoSignature(jEnv, jSignature interface{}) (security.Signature, error) {
 		return security.Signature{}, err
 	}
 	return sig, nil
-}
-
-// JavaBlessingPatternWrapper converts the provided Go BlessingPattern into a Java
-// BlessingPatternWrapper object.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func JavaBlessingPatternWrapper(jEnv interface{}, pattern security.BlessingPattern) (unsafe.Pointer, error) {
-	jPattern, err := JavaBlessingPattern(jEnv, pattern)
-	if err != nil {
-		return nil, err
-	}
-	jWrapper, err := jutil.NewObject(jEnv, jBlessingPatternWrapperClass, []jutil.Sign{jutil.LongSign, blessingPatternSign}, int64(jutil.PtrValue(&pattern)), jPattern)
-	if err != nil {
-		return nil, err
-	}
-	jutil.GoRef(&pattern) // Un-refed when the Java BlessingPatternWrapper object is finalized.
-	return jWrapper, nil
 }
