@@ -67,6 +67,8 @@ type FortuneClientMethods interface {
 	Get(*context.T, ...rpc.CallOpt) (Fortune string, err error)
 	// StreamingGet returns a stream that can be used to obtain fortunes.
 	StreamingGet(*context.T, ...rpc.CallOpt) (FortuneStreamingGetClientCall, error)
+	// MultipleGet returns the same fortune twice.
+	MultipleGet(*context.T, ...rpc.CallOpt) (Fortune string, Another string, err error)
 	// GetComplexError returns (always!) ErrComplex.
 	GetComplexError(*context.T, ...rpc.CallOpt) error
 	// NoTags is a method without tags.
@@ -107,6 +109,11 @@ func (c implFortuneClientStub) StreamingGet(ctx *context.T, opts ...rpc.CallOpt)
 		return
 	}
 	ocall = &implFortuneStreamingGetClientCall{ClientCall: call}
+	return
+}
+
+func (c implFortuneClientStub) MultipleGet(ctx *context.T, opts ...rpc.CallOpt) (o0 string, o1 string, err error) {
+	err = v23.GetClient(ctx).Call(ctx, c.name, "MultipleGet", nil, []interface{}{&o0, &o1}, opts...)
 	return
 }
 
@@ -238,6 +245,8 @@ type FortuneServerMethods interface {
 	Get(*context.T, rpc.ServerCall) (Fortune string, err error)
 	// StreamingGet returns a stream that can be used to obtain fortunes.
 	StreamingGet(*context.T, FortuneStreamingGetServerCall) (total int32, err error)
+	// MultipleGet returns the same fortune twice.
+	MultipleGet(*context.T, rpc.ServerCall) (Fortune string, Another string, err error)
 	// GetComplexError returns (always!) ErrComplex.
 	GetComplexError(*context.T, rpc.ServerCall) error
 	// NoTags is a method without tags.
@@ -258,6 +267,8 @@ type FortuneServerStubMethods interface {
 	Get(*context.T, rpc.ServerCall) (Fortune string, err error)
 	// StreamingGet returns a stream that can be used to obtain fortunes.
 	StreamingGet(*context.T, *FortuneStreamingGetServerCallStub) (total int32, err error)
+	// MultipleGet returns the same fortune twice.
+	MultipleGet(*context.T, rpc.ServerCall) (Fortune string, Another string, err error)
 	// GetComplexError returns (always!) ErrComplex.
 	GetComplexError(*context.T, rpc.ServerCall) error
 	// NoTags is a method without tags.
@@ -306,6 +317,10 @@ func (s implFortuneServerStub) Get(ctx *context.T, call rpc.ServerCall) (string,
 
 func (s implFortuneServerStub) StreamingGet(ctx *context.T, call *FortuneStreamingGetServerCallStub) (int32, error) {
 	return s.impl.StreamingGet(ctx, call)
+}
+
+func (s implFortuneServerStub) MultipleGet(ctx *context.T, call rpc.ServerCall) (string, string, error) {
+	return s.impl.MultipleGet(ctx, call)
 }
 
 func (s implFortuneServerStub) GetComplexError(ctx *context.T, call rpc.ServerCall) error {
@@ -358,6 +373,15 @@ var descFortune = rpc.InterfaceDesc{
 			Doc:  "// StreamingGet returns a stream that can be used to obtain fortunes.",
 			OutArgs: []rpc.ArgDesc{
 				{"total", ``}, // int32
+			},
+			Tags: []*vdl.Value{vdl.ValueOf(access.Tag("Read"))},
+		},
+		{
+			Name: "MultipleGet",
+			Doc:  "// MultipleGet returns the same fortune twice.",
+			OutArgs: []rpc.ArgDesc{
+				{"Fortune", ``}, // string
+				{"Another", ``}, // string
 			},
 			Tags: []*vdl.Value{vdl.ValueOf(access.Tag("Read"))},
 		},

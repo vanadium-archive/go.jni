@@ -183,7 +183,7 @@ func NewObject(env interface{}, class interface{}, argSigns []Sign, args ...inte
 
 // setupMethodCall performs the shared preparation operations between various
 // Java method invocation functions.
-func setupMethodCall(env interface{}, object interface{}, name string, argSigns []Sign, retSign Sign, args []interface{}) (jenv *C.JNIEnv, jobject C.jobject, jmid C.jmethodID, jvalArray *C.jvalue, freeFunc func(), err error) {
+func setupMethodCall(env interface{}, object interface{}, name string, argSigns []Sign, retSign Sign, args ...interface{}) (jenv *C.JNIEnv, jobject C.jobject, jmid C.jmethodID, jvalArray *C.jvalue, freeFunc func(), err error) {
 	jenv = getEnv(env)
 	jobject = getObject(object)
 	jclass := C.GetObjectClass(jenv, jobject)
@@ -200,7 +200,7 @@ func setupMethodCall(env interface{}, object interface{}, name string, argSigns 
 
 // setupStaticMethodCall performs the shared preparation operations between
 // various Java static method invocation functions.
-func setupStaticMethodCall(env interface{}, class interface{}, name string, argSigns []Sign, retSign Sign, args []interface{}) (jenv *C.JNIEnv, jclass C.jclass, jmid C.jmethodID, jvalArray *C.jvalue, freeFunc func(), err error) {
+func setupStaticMethodCall(env interface{}, class interface{}, name string, argSigns []Sign, retSign Sign, args ...interface{}) (jenv *C.JNIEnv, jclass C.jclass, jmid C.jmethodID, jvalArray *C.jvalue, freeFunc func(), err error) {
 	jenv = getEnv(env)
 	jclass = getClass(class)
 
@@ -220,7 +220,7 @@ func CallObjectMethod(env interface{}, object interface{}, name string, argSigns
 	case ByteSign, CharSign, ShortSign, LongSign, FloatSign, DoubleSign, BoolSign, IntSign, VoidSign:
 		panic(fmt.Sprintf("Illegal call to CallObjectMethod on method with return sign %s", retSign))
 	}
-	jenv, jobject, jmid, valArray, freeFunc, err := setupMethodCall(env, object, name, argSigns, retSign, args)
+	jenv, jobject, jmid, valArray, freeFunc, err := setupMethodCall(env, object, name, argSigns, retSign, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -358,7 +358,7 @@ func CallMultimapMethod(env interface{}, object interface{}, name string, argSig
 
 // CallBooleanMethod calls a Java method that returns a boolean.
 func CallBooleanMethod(env interface{}, object interface{}, name string, argSigns []Sign, args ...interface{}) (bool, error) {
-	jenv, jobject, jmid, valArray, freeFunc, err := setupMethodCall(env, object, name, argSigns, BoolSign, args)
+	jenv, jobject, jmid, valArray, freeFunc, err := setupMethodCall(env, object, name, argSigns, BoolSign, args...)
 	if err != nil {
 		return false, err
 	}
@@ -369,7 +369,7 @@ func CallBooleanMethod(env interface{}, object interface{}, name string, argSign
 
 // CallIntMethod calls a Java method that returns an int.
 func CallIntMethod(env interface{}, object interface{}, name string, argSigns []Sign, args ...interface{}) (int, error) {
-	jenv, jobject, jmid, valArray, freeFunc, err := setupMethodCall(env, object, name, argSigns, IntSign, args)
+	jenv, jobject, jmid, valArray, freeFunc, err := setupMethodCall(env, object, name, argSigns, IntSign, args...)
 	if err != nil {
 		return 0, err
 	}
@@ -380,7 +380,7 @@ func CallIntMethod(env interface{}, object interface{}, name string, argSigns []
 
 // CallLongMethod calls a Java method that returns an int64.
 func CallLongMethod(env interface{}, object interface{}, name string, argSigns []Sign, args ...interface{}) (int64, error) {
-	jenv, jobject, jmid, valArray, freeFunc, err := setupMethodCall(env, object, name, argSigns, LongSign, args)
+	jenv, jobject, jmid, valArray, freeFunc, err := setupMethodCall(env, object, name, argSigns, LongSign, args...)
 	if err != nil {
 		return 0, err
 	}
@@ -391,7 +391,7 @@ func CallLongMethod(env interface{}, object interface{}, name string, argSigns [
 
 // CallVoidMethod calls a Java method that doesn't return anything.
 func CallVoidMethod(env interface{}, object interface{}, name string, argSigns []Sign, args ...interface{}) error {
-	jenv, jobject, jmid, valArray, freeFunc, err := setupMethodCall(env, object, name, argSigns, VoidSign, args)
+	jenv, jobject, jmid, valArray, freeFunc, err := setupMethodCall(env, object, name, argSigns, VoidSign, args...)
 	if err != nil {
 		return err
 	}
@@ -406,7 +406,7 @@ func CallStaticObjectMethod(env interface{}, class interface{}, name string, arg
 	case ByteSign, CharSign, ShortSign, LongSign, FloatSign, DoubleSign, BoolSign, IntSign, VoidSign:
 		panic(fmt.Sprintf("Illegal call to CallStaticObjectMethod on method with return sign %s", retSign))
 	}
-	jenv, jclass, jmid, jvalArray, freeFunc, err := setupStaticMethodCall(env, class, name, argSigns, retSign, args)
+	jenv, jclass, jmid, jvalArray, freeFunc, err := setupStaticMethodCall(env, class, name, argSigns, retSign, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -432,7 +432,7 @@ func CallStaticByteArrayMethod(env interface{}, class interface{}, name string, 
 
 // CallStaticIntMethod calls a static Java method that returns an int.
 func CallStaticIntMethod(env interface{}, class interface{}, name string, argSigns []Sign, args ...interface{}) (int, error) {
-	jenv, jclass, jmid, jvalArray, freeFunc, err := setupStaticMethodCall(env, class, name, argSigns, IntSign, args)
+	jenv, jclass, jmid, jvalArray, freeFunc, err := setupStaticMethodCall(env, class, name, argSigns, IntSign, args...)
 	if err != nil {
 		return 0, err
 	}
@@ -443,7 +443,7 @@ func CallStaticIntMethod(env interface{}, class interface{}, name string, argSig
 
 // CallStaticVoidMethod calls a static Java method doesn't return anything.
 func CallStaticVoidMethod(env interface{}, class interface{}, name string, argSigns []Sign, args ...interface{}) error {
-	jenv, jclass, jmid, jvalArray, freeFunc, err := setupStaticMethodCall(env, class, name, argSigns, VoidSign, args)
+	jenv, jclass, jmid, jvalArray, freeFunc, err := setupStaticMethodCall(env, class, name, argSigns, VoidSign, args...)
 	if err != nil {
 		return err
 	}

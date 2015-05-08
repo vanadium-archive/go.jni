@@ -280,15 +280,11 @@ func JVException(jEnv interface{}, err error) (unsafe.Pointer, error) {
 	if err == nil {
 		return nil, nil
 	}
-	data, err := vom.Encode(err)
-	if err != nil {
-		return nil, err
-	}
-	return JVomDecode(jEnv, data, jVExceptionClass)
+	return JVomCopy(jEnv, err, jVExceptionClass)
 }
 
-// JExceptionMsg returns the exception message if an exception occurred, or
-// nil otherwise.
+// JExceptionMsg returns the exception message as a Go error, if an exception
+// occurred, or nil otherwise.
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
@@ -299,11 +295,40 @@ func JExceptionMsg(jEnv interface{}) error {
 		return nil
 	}
 	C.ExceptionClear(env)
-	id, err := JMethodID(env, jThrowableClass, "getMessage", FuncSign(nil, StringSign))
-	if err != nil {
-		panic(err.Error())
+	if IsInstanceOf(jEnv, C.jobject(e), jVExceptionClass) {
+		// VException: convert it into a verror.
+		// Note that we can't use CallStaticObjectMethod below as it may lead to
+		// an infinite loop.
+		jenv, jclass, jmid, jValArray, freeFunc, err := setupStaticMethodCall(env, jVomUtilClass, "encode", []Sign{ObjectSign, TypeSign}, ByteArraySign, C.jobject(e), jVExceptionClass)
+		if err != nil {
+			return fmt.Errorf("error converting VException: " + err.Error())
+		}
+		defer freeFunc()
+		jData := C.CallStaticObjectMethodA(jenv, jclass, jmid, jValArray)
+		if e := C.ExceptionOccurred(env); e != nil {
+			C.ExceptionClear(env)
+			return fmt.Errorf("error converting VException: exception during VomUtil.encode()")
+		}
+		data := GoByteArray(env, jData)
+		var verr error
+		if err := vom.Decode(data, &verr); err != nil {
+			return fmt.Errorf("error converting VException: " + err.Error())
+		}
+		return verr
 	}
-	jMsg := C.CallGetExceptionMessage(env, C.jobject(e), C.jmethodID(id))
+	// Not a VException: convert it into a Go error.
+	// Note that we can't use CallObjectMethod below, as it may lead to an
+	// infinite loop.
+	jenv, jobject, jmid, jValArray, freeFunc, err := setupMethodCall(env, C.jobject(e), "getMessage", nil, StringSign)
+	if err != nil {
+		return fmt.Errorf("error converting exception: " + err.Error())
+	}
+	defer freeFunc()
+	jMsg := C.CallObjectMethodA(jenv, jobject, jmid, jValArray)
+	if e := C.ExceptionOccurred(env); e != nil {
+		C.ExceptionClear(env)
+		return fmt.Errorf("error converting exception: exception during Throwable.getMessage()")
+	}
 	return errors.New(GoString(env, jMsg))
 }
 

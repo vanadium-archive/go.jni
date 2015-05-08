@@ -26,8 +26,12 @@ import (
 import "C"
 
 var (
-	optionsSign        = jutil.ClassSign("io.v.v23.Options")
-	streamSign         = jutil.ClassSign("io.v.impl.google.rpc.Stream")
+	contextSign          = jutil.ClassSign("io.v.v23.context.VContext")
+	serverCallSign       = jutil.ClassSign("io.v.v23.rpc.ServerCall")
+	streamServerCallSign = jutil.ClassSign("io.v.v23.rpc.StreamServerCall")
+	streamSign           = jutil.ClassSign("io.v.impl.google.rpc.Stream")
+	optionsSign          = jutil.ClassSign("io.v.v23.Options")
+
 	listenAddrSign     = jutil.ClassSign("io.v.v23.rpc.ListenSpec$Address")
 	addressChooserSign = jutil.ClassSign("io.v.v23.rpc.AddressChooser")
 	serverStateSign    = jutil.ClassSign("io.v.v23.rpc.ServerState")
@@ -45,24 +49,26 @@ var (
 	jServerCallClass C.jclass
 	// Global reference for io.v.impl.google.rpc.Stream class.
 	jStreamClass C.jclass
-	// Global reference for io.v.impl.google.rpc.VDLInvoker class.
-	jVDLInvokerClass C.jclass
-	// Global reference for io.v.v23.rpc.ServerStatus class.
-	jServerStatusClass C.jclass
-	// Global reference for io.v.v23.rpc.ServerState class.
-	jServerStateClass C.jclass
-	// Global reference for io.v.v23.rpc.MountStatus class.
-	jMountStatusClass C.jclass
-	// Global reference for io.v.v23.rpc.ProxyStatus class.
-	jProxyStatusClass C.jclass
+	// Global reference for io.v.v23.rpc.Invoker class.
+	jInvokerClass C.jclass
 	// Global reference for io.v.v23.rpc.ListenSpec class.
 	jListenSpecClass C.jclass
 	// Global reference for io.v.v23.rpc.ListenSpec$Address class.
 	jListenSpecAddressClass C.jclass
+	// Global reference for io.v.v23.rpc.MountStatus class.
+	jMountStatusClass C.jclass
 	// Global reference for io.v.v23.rpc.NetworkAddress class.
 	jNetworkAddressClass C.jclass
 	// Global reference for io.v.v23.rpc.NetworkChange class.
 	jNetworkChangeClass C.jclass
+	// Global reference for io.v.v23.rpc.ProxyStatus class.
+	jProxyStatusClass C.jclass
+	// Global reference for io.v.v23.rpc.ReflectInvoker class.
+	jReflectInvokerClass C.jclass
+	// Global reference for io.v.v23.rpc.ServerStatus class.
+	jServerStatusClass C.jclass
+	// Global reference for io.v.v23.rpc.ServerState class.
+	jServerStateClass C.jclass
 	// Global reference for io.v.v23.OptionDefs class.
 	jOptionDefsClass C.jclass
 	// Global reference for java.io.EOFException class.
@@ -75,6 +81,8 @@ var (
 	jMethodClass C.jclass
 	// Global reference for io.v.v23.naming.GlobReply
 	jGlobReplyClass C.jclass
+	// Global reference for java.lang.Object class.
+	jObjectClass C.jclass
 )
 
 // Init initializes the JNI code with the given Java environment. This method
@@ -121,31 +129,11 @@ func Init(jEnv interface{}) error {
 		return err
 	}
 	jStreamClass = C.jclass(class)
-	class, err = jutil.JFindClass(jEnv, "io/v/impl/google/rpc/VDLInvoker")
+	class, err = jutil.JFindClass(jEnv, "io/v/v23/rpc/Invoker")
 	if err != nil {
 		return err
 	}
-	jVDLInvokerClass = C.jclass(class)
-	class, err = jutil.JFindClass(jEnv, "io/v/v23/rpc/ServerStatus")
-	if err != nil {
-		return err
-	}
-	jServerStatusClass = C.jclass(class)
-	class, err = jutil.JFindClass(jEnv, "io/v/v23/rpc/ServerState")
-	if err != nil {
-		return err
-	}
-	jServerStateClass = C.jclass(class)
-	class, err = jutil.JFindClass(jEnv, "io/v/v23/rpc/MountStatus")
-	if err != nil {
-		return err
-	}
-	jMountStatusClass = C.jclass(class)
-	class, err = jutil.JFindClass(jEnv, "io/v/v23/rpc/ProxyStatus")
-	if err != nil {
-		return err
-	}
-	jProxyStatusClass = C.jclass(class)
+	jInvokerClass = C.jclass(class)
 	class, err = jutil.JFindClass(jEnv, "io/v/v23/rpc/ListenSpec")
 	if err != nil {
 		return err
@@ -156,6 +144,11 @@ func Init(jEnv interface{}) error {
 		return err
 	}
 	jListenSpecAddressClass = C.jclass(class)
+	class, err = jutil.JFindClass(jEnv, "io/v/v23/rpc/MountStatus")
+	if err != nil {
+		return err
+	}
+	jMountStatusClass = C.jclass(class)
 	class, err = jutil.JFindClass(jEnv, "io/v/v23/rpc/NetworkAddress")
 	if err != nil {
 		return err
@@ -166,6 +159,26 @@ func Init(jEnv interface{}) error {
 		return err
 	}
 	jNetworkChangeClass = C.jclass(class)
+	class, err = jutil.JFindClass(jEnv, "io/v/v23/rpc/ProxyStatus")
+	if err != nil {
+		return err
+	}
+	jProxyStatusClass = C.jclass(class)
+	class, err = jutil.JFindClass(jEnv, "io/v/v23/rpc/ReflectInvoker")
+	if err != nil {
+		return err
+	}
+	jReflectInvokerClass = C.jclass(class)
+	class, err = jutil.JFindClass(jEnv, "io/v/v23/rpc/ServerStatus")
+	if err != nil {
+		return err
+	}
+	jServerStatusClass = C.jclass(class)
+	class, err = jutil.JFindClass(jEnv, "io/v/v23/rpc/ServerState")
+	if err != nil {
+		return err
+	}
+	jServerStateClass = C.jclass(class)
 	class, err = jutil.JFindClass(jEnv, "io/v/v23/OptionDefs")
 	if err != nil {
 		return err
@@ -196,6 +209,11 @@ func Init(jEnv interface{}) error {
 		return err
 	}
 	jGlobReplyClass = C.jclass(class)
+	class, err = jutil.JFindClass(jEnv, "java/lang/Object")
+	if err != nil {
+		return err
+	}
+	jObjectClass = C.jclass(class)
 	return nil
 }
 
