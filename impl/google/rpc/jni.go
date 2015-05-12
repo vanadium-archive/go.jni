@@ -12,6 +12,7 @@ import (
 	"net"
 	"unsafe"
 
+	"v.io/v23/options"
 	"v.io/v23/rpc"
 	"v.io/v23/vdl"
 	"v.io/v23/vom"
@@ -27,6 +28,7 @@ import "C"
 
 var (
 	contextSign          = jutil.ClassSign("io.v.v23.context.VContext")
+	invokerSign          = jutil.ClassSign("io.v.v23.rpc.Invoker")
 	serverCallSign       = jutil.ClassSign("io.v.v23.rpc.ServerCall")
 	streamServerCallSign = jutil.ClassSign("io.v.v23.rpc.StreamServerCall")
 	streamSign           = jutil.ClassSign("io.v.impl.google.rpc.Stream")
@@ -49,6 +51,8 @@ var (
 	jServerCallClass C.jclass
 	// Global reference for io.v.impl.google.rpc.Stream class.
 	jStreamClass C.jclass
+	// Global reference for io.v.impl.google.rpc.Util class.
+	jUtilClass C.jclass
 	// Global reference for io.v.v23.rpc.Invoker class.
 	jInvokerClass C.jclass
 	// Global reference for io.v.v23.rpc.ListenSpec class.
@@ -129,6 +133,11 @@ func Init(jEnv interface{}) error {
 		return err
 	}
 	jStreamClass = C.jclass(class)
+	class, err = jutil.JFindClass(jEnv, "io/v/impl/google/rpc/Util")
+	if err != nil {
+		return err
+	}
+	jUtilClass = C.jclass(class)
 	class, err = jutil.JFindClass(jEnv, "io/v/v23/rpc/Invoker")
 	if err != nil {
 		return err
@@ -330,7 +339,7 @@ func Java_io_v_impl_google_rpc_Server_nativeFinalize(env *C.JNIEnv, server C.job
 }
 
 //export Java_io_v_impl_google_rpc_Client_nativeStartCall
-func Java_io_v_impl_google_rpc_Client_nativeStartCall(env *C.JNIEnv, jClient C.jobject, goPtr C.jlong, jContext C.jobject, jName C.jstring, jMethod C.jstring, jVomArgs C.jobjectArray, jOptions C.jobject) C.jobject {
+func Java_io_v_impl_google_rpc_Client_nativeStartCall(env *C.JNIEnv, jClient C.jobject, goPtr C.jlong, jContext C.jobject, jName C.jstring, jMethod C.jstring, jVomArgs C.jobjectArray, jSkipServerEndpointAuthorization C.jboolean) C.jobject {
 	name := jutil.GoString(env, jName)
 	method := jutil.GoString(env, jMethod)
 	context, err := jcontext.GoContext(env, jContext)
@@ -348,9 +357,13 @@ func Java_io_v_impl_google_rpc_Client_nativeStartCall(env *C.JNIEnv, jClient C.j
 			return nil
 		}
 	}
+	var opts []rpc.CallOpt
+	if jSkipServerEndpointAuthorization == C.JNI_TRUE {
+		opts = append(opts, options.SkipServerEndpointAuthorization{})
+	}
 
 	// Invoke StartCall
-	call, err := (*(*rpc.Client)(jutil.Ptr(goPtr))).StartCall(context, name, method, args)
+	call, err := (*(*rpc.Client)(jutil.Ptr(goPtr))).StartCall(context, name, method, args, opts...)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -525,4 +538,26 @@ func Java_io_v_impl_google_rpc_AddressChooser_nativeChoose(env *C.JNIEnv, jAddre
 //export Java_io_v_impl_google_rpc_AddressChooser_nativeFinalize
 func Java_io_v_impl_google_rpc_AddressChooser_nativeFinalize(env *C.JNIEnv, jAddressChooser C.jobject, goPtr C.jlong) {
 	jutil.GoUnref(jutil.Ptr(goPtr))
+}
+
+//export Java_io_v_impl_google_rpc_Util_nativeGoInvoker
+func Java_io_v_impl_google_rpc_Util_nativeGoInvoker(env *C.JNIEnv, jUtil C.jclass, jServiceObject C.jobject) C.jlong {
+	invoker, err := goInvoker(env, jServiceObject)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return C.jlong(0)
+	}
+	jutil.GoRef(&invoker) // Un-refed when the Go invoker is returned to the Go runtime
+	return C.jlong(jutil.PtrValue(&invoker))
+}
+
+//export Java_io_v_impl_google_rpc_Util_nativeGoAuthorizer
+func Java_io_v_impl_google_rpc_Util_nativeGoAuthorizer(env *C.JNIEnv, jUtil C.jclass, jAuthorizer C.jobject) C.jlong {
+	auth, err := jsecurity.GoAuthorizer(env, jAuthorizer)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return C.jlong(0)
+	}
+	jutil.GoRef(&auth) // Un-refed when the Go authorizer is returned to the Go runtime
+	return C.jlong(jutil.PtrValue(&auth))
 }

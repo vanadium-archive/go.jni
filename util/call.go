@@ -430,6 +430,15 @@ func CallStaticByteArrayMethod(env interface{}, class interface{}, name string, 
 	return GoByteArray(env, jArr), nil
 }
 
+// CallStaticLongArrayMethod calls a static Java method that returns a array of long.
+func CallStaticLongArrayMethod(env interface{}, class interface{}, name string, argSigns []Sign, args ...interface{}) ([]int64, error) {
+	jArr, err := CallStaticObjectMethod(env, class, name, argSigns, ArraySign(LongSign), args...)
+	if err != nil {
+		return nil, err
+	}
+	return GoLongArray(env, jArr), nil
+}
+
 // CallStaticIntMethod calls a static Java method that returns an int.
 func CallStaticIntMethod(env interface{}, class interface{}, name string, argSigns []Sign, args ...interface{}) (int, error) {
 	jenv, jclass, jmid, jvalArray, freeFunc, err := setupStaticMethodCall(env, class, name, argSigns, IntSign, args...)

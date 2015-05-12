@@ -16,6 +16,7 @@ import (
 	"v.io/v23/rpc"
 	"v.io/v23/vdl"
 	"v.io/v23/vdlroot/signature"
+	"v.io/v23/vom"
 
 	jchannel "v.io/x/jni/impl/google/channel"
 	jutil "v.io/x/jni/util"
@@ -69,14 +70,17 @@ func (i *invoker) Prepare(method string, numArgs int) (argptrs []interface{}, ta
 		value := new(vdl.Value)
 		argptrs[i] = &value
 	}
-	// Get the method tags.
-	jTags, err := jutil.CallObjectMethod(env, i.jInvoker, "getMethodTags", []jutil.Sign{jutil.StringSign}, jutil.ArraySign(jutil.VdlValueSign), jutil.CamelCase(method))
+	jVomTags, err := jutil.CallStaticObjectMethod(env, jUtilClass, "getMethodTags", []jutil.Sign{invokerSign, jutil.StringSign}, jutil.ArraySign(jutil.ByteArraySign), i.jInvoker, jutil.CamelCase(method))
 	if err != nil {
 		return nil, nil, err
 	}
-	tags, err = jutil.GoVDLValueArray(env, jTags)
-	if err != nil {
-		return nil, nil, err
+	vomTags := jutil.GoByteArrayArray(env, jVomTags)
+	tags = make([]*vdl.Value, len(vomTags))
+	for i, vomTag := range vomTags {
+		var err error
+		if tags[i], err = jutil.VomDecodeToValue(vomTag); err != nil {
+			return nil, nil, err
+		}
 	}
 	return
 }
@@ -94,18 +98,28 @@ func (i *invoker) Invoke(ctx *context.T, call rpc.StreamServerCall, method strin
 	if err != nil {
 		return nil, err
 	}
-	// Convert Go arguments to Java.
-	jArgs, err := i.prepareArgs(env, method, argptrs)
+	vomArgs := make([][]byte, len(argptrs))
+	for i, argptr := range argptrs {
+		arg := interface{}(jutil.DerefOrDie(argptr))
+		var err error
+		if vomArgs[i], err = vom.Encode(arg); err != nil {
+			return nil, err
+		}
+	}
+	jVomArgs := jutil.JByteArrayArray(env, vomArgs)
+	jVomResults, err := jutil.CallStaticObjectMethod(env, jUtilClass, "invoke", []jutil.Sign{invokerSign, contextSign, streamServerCallSign, jutil.StringSign, jutil.ArraySign(jutil.ByteArraySign)}, jutil.ArraySign(jutil.ByteArraySign), i.jInvoker, jContext, jStreamServerCall, jutil.CamelCase(method), jVomArgs)
 	if err != nil {
 		return nil, err
 	}
-	// Invoke the method.
-	resultarr, err := jutil.CallObjectArrayMethod(env, i.jInvoker, "invoke", []jutil.Sign{contextSign, streamServerCallSign, jutil.StringSign, jutil.ArraySign(jutil.ObjectSign)}, jutil.ObjectSign, jContext, jStreamServerCall, jutil.CamelCase(method), jArgs)
-	if err != nil {
-		return nil, err
+	vomResults := jutil.GoByteArrayArray(env, jVomResults)
+	results = make([]interface{}, len(vomResults))
+	for i, vomResult := range vomResults {
+		var err error
+		if results[i], err = jutil.VomDecodeToValue(vomResult); err != nil {
+			return nil, err
+		}
 	}
-	// Convert Java results into Go.
-	return i.prepareResults(env, method, resultarr)
+	return
 }
 
 func (i *invoker) Signature(ctx *context.T, call rpc.ServerCall) ([]signature.Interface, error) {

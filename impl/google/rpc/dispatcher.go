@@ -10,9 +10,10 @@ import (
 	"fmt"
 	"runtime"
 
+	"v.io/v23/rpc"
 	"v.io/v23/security"
+
 	jutil "v.io/x/jni/util"
-	jsecurity "v.io/x/jni/v23/security"
 )
 
 // #include "jni.h"
@@ -45,40 +46,25 @@ func (d *dispatcher) Lookup(suffix string) (interface{}, security.Authorizer, er
 	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
 
-	// Call Java dispatcher's lookup() method.
-	serviceObjectWithAuthorizerSign := jutil.ClassSign("io.v.v23.rpc.ServiceObjectWithAuthorizer")
-	jObj, err := jutil.CallObjectMethod(env, d.jDispatcher, "lookup", []jutil.Sign{jutil.StringSign}, serviceObjectWithAuthorizerSign, suffix)
+	dispatcherSign := jutil.ClassSign("io.v.v23.rpc.Dispatcher")
+	result, err := jutil.CallStaticLongArrayMethod(env, jUtilClass, "lookup", []jutil.Sign{dispatcherSign, jutil.StringSign}, d.jDispatcher, suffix)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error invoking Java dispatcher's lookup() method: %v", err)
 	}
-	if jObj == nil {
+	if result == nil {
 		// Lookup returned null, which means that the dispatcher isn't handling the object -
 		// this is not an error.
 		return nil, nil, nil
 	}
-
-	// Extract the Java service object and Authorizer.
-	jServiceObj, err := jutil.CallObjectMethod(env, jObj, "getServiceObject", nil, jutil.ObjectSign)
-	if err != nil {
-		return nil, nil, err
+	if len(result) != 2 {
+		return nil, nil, fmt.Errorf("lookup returned %d elems, want 2", len(result))
 	}
-	if jServiceObj == nil {
-		return nil, nil, fmt.Errorf("null service object returned by Java's ServiceObjectWithAuthorizer")
+	invoker := *(*rpc.Invoker)(jutil.Ptr(result[0]))
+	jutil.GoUnref(jutil.Ptr(result[0]))
+	authorizer := security.Authorizer(nil)
+	if result[1] != 0 {
+		authorizer = *(*security.Authorizer)(jutil.Ptr(result[1]))
+		jutil.GoUnref(jutil.Ptr(result[1]))
 	}
-	authSign := jutil.ClassSign("io.v.v23.security.Authorizer")
-	jAuth, err := jutil.CallObjectMethod(env, jObj, "getAuthorizer", nil, authSign)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	// Create Go Invoker and Authorizer.
-	i, err := goInvoker((*C.JNIEnv)(env), C.jobject(jServiceObj))
-	if err != nil {
-		return nil, nil, err
-	}
-	a, err := jsecurity.GoAuthorizer(env, jAuth)
-	if err != nil {
-		return nil, nil, err
-	}
-	return i, a, nil
+	return invoker, authorizer, nil
 }

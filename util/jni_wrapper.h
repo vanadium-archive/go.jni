@@ -64,8 +64,9 @@ jobject GetObjectArrayElement(JNIEnv* env, jobjectArray array, jsize index);
 // Sets an element of an Object array.
 void SetObjectArrayElement(JNIEnv* env, jobjectArray array, jsize index, jobject obj);
 
-// Returns the contents of a provided Java byte array as a primitive array.
+// Returns the contents of a provided Java byte/long array as a primitive array.
 jbyte* GetByteArrayElements(JNIEnv* env, jbyteArray array, jboolean *isCopy);
+jlong* GetLongArrayElements(JNIEnv* env, jlongArray array, jboolean *isCopy);
 
 // Informs the VM that the native code no longer needs access to elems.
 // If necessary, this function copies back all changes made to elems to the
@@ -74,6 +75,7 @@ jbyte* GetByteArrayElements(JNIEnv* env, jbyteArray array, jboolean *isCopy);
 //     JNI_COMMIT      copy back the content but do not free the elems buffer
 //     JNI_ABORT       free the buffer without copying back the possible changes
 void ReleaseByteArrayElements(JNIEnv* env, jbyteArray array, jbyte* elems, jint mode);
+void ReleaseLongArrayElements(JNIEnv* env, jlongArray array, jlong* elems, jint mode);
 
 // Copies the data from a primitive array into the Java array.
 void SetByteArrayRegion(JNIEnv* env, jbyteArray array, jsize start, jsize len, const jbyte* data);
@@ -117,6 +119,10 @@ void ExceptionClear(JNIEnv* env);
 
 // Attaches the current thread to a Java VM.
 jint AttachCurrentThread(JavaVM* jvm, JNIEnv** env, void* args);
+
+// Attaches the current thread as a daemon to a Java VM.  This means that the
+// Java VM will not wait for this thread to complete before exiting the program.
+jint AttachCurrentThreadAsDaemon(JavaVM* jvm, JNIEnv** env, void* args);
 
 // Detaches the current thread from a Java VM.
 jint DetachCurrentThread(JavaVM* jvm);
