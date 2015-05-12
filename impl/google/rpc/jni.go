@@ -454,6 +454,20 @@ func Java_io_v_impl_google_rpc_Call_nativeFinalize(env *C.JNIEnv, jCall C.jobjec
 	jutil.GoUnref(jutil.Ptr(goPtr))
 }
 
+//export Java_io_v_impl_google_rpc_ServerCall_nativeSecurity
+func Java_io_v_impl_google_rpc_ServerCall_nativeSecurity(env *C.JNIEnv, jServerCallClass C.jclass, goPtr C.jlong) C.jobject {
+	securityCall := (*(*rpc.ServerCall)(jutil.Ptr(goPtr))).Security()
+	if securityCall == nil {
+		return nil
+	}
+	jSecurityCall, err := jsecurity.JavaCall(env, securityCall)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	return C.jobject(jSecurityCall)
+}
+
 //export Java_io_v_impl_google_rpc_ServerCall_nativeSuffix
 func Java_io_v_impl_google_rpc_ServerCall_nativeSuffix(env *C.JNIEnv, jServerCall C.jobject, goPtr C.jlong) C.jstring {
 	return C.jstring(jutil.JString(env, (*(*rpc.ServerCall)(jutil.Ptr(goPtr))).Suffix()))
