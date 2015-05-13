@@ -195,15 +195,12 @@ func GetEnv() (jEnv unsafe.Pointer, free func()) {
 	// to *C.JNIEnv, the above scenario can never occur.
 	runtime.LockOSThread()
 	var env *C.JNIEnv
-	if C.GetEnv(jVM, &env, C.JNI_VERSION_1_6) == C.JNI_OK {
-		return unsafe.Pointer(env), func() {
-			runtime.UnlockOSThread()
-		}
+	if C.GetEnv(jVM, &env, C.JNI_VERSION_1_6) != C.JNI_OK {
+		// Couldn't get env - attach the thread.  Note that we never detach
+		// the thread so the next call to GetEnv on this thread will succeed.
+		C.AttachCurrentThreadAsDaemon(jVM, &env, nil)
 	}
-	// Couldn't get env, attach the thread.
-	C.AttachCurrentThread(jVM, &env, nil)
 	return unsafe.Pointer(env), func() {
-		C.DetachCurrentThread(jVM)
 		runtime.UnlockOSThread()
 	}
 }
@@ -584,6 +581,28 @@ func GoByteArray(jEnv, jArr interface{}) (ret []byte) {
 	return
 }
 
+// GoLongArray converts the provided Java long array into a Go int64 slice.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func GoLongArray(jEnv, jArr interface{}) (ret []int64) {
+	env := getEnv(jEnv)
+	arr := getLongArray(jArr)
+	if arr == nil {
+		return
+	}
+	length := int(C.GetArrayLength(env, C.jarray(arr)))
+	ret = make([]int64, length)
+	elems := C.GetLongArrayElements(env, arr, nil)
+	defer C.ReleaseLongArrayElements(env, arr, elems, C.JNI_ABORT)
+	ptr := elems
+	for i := 0; i < length; i++ {
+		ret[i] = int64(*ptr)
+		ptr = (*C.jlong)(unsafe.Pointer(uintptr(unsafe.Pointer(ptr)) + unsafe.Sizeof(*ptr)))
+	}
+	return
+}
+
 // JByteArrayArray converts the provided [][]byte value into a Java array of
 // byte arrays.
 // NOTE: Because CGO creates package-local types and because this method may be
@@ -793,7 +812,7 @@ func JStaticMethodID(jEnv, jClass interface{}, name string, signature Sign) (uns
 	defer C.free(unsafe.Pointer(cSignature))
 	mid := C.GetStaticMethodID(env, class, cName, cSignature)
 	if err := JExceptionMsg(env); err != nil || mid == C.jmethodID(nil) {
-		return nil, fmt.Errorf("couldn't find method %s with a given signature.", name)
+		return nil, fmt.Errorf("couldn't find method %s with a given signature: %s", name, signature)
 	}
 	return unsafe.Pointer(mid), nil
 }
@@ -875,6 +894,9 @@ func getJVM(jVM interface{}) *C.JavaVM {
 }
 func getByteArray(jByteArray interface{}) C.jbyteArray {
 	return C.jbyteArray(unsafe.Pointer(PtrValue(jByteArray)))
+}
+func getLongArray(jLongArray interface{}) C.jlongArray {
+	return C.jlongArray(unsafe.Pointer(PtrValue(jLongArray)))
 }
 func getObject(jObj interface{}) C.jobject {
 	return C.jobject(unsafe.Pointer(PtrValue(jObj)))

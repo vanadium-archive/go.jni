@@ -106,8 +106,16 @@ jbyte* GetByteArrayElements(JNIEnv* env, jbyteArray array, jboolean *isCopy) {
   return (*env)->GetByteArrayElements(env, array, isCopy);
 }
 
+jlong* GetLongArrayElements(JNIEnv* env, jlongArray array, jboolean *isCopy) {
+  return (*env)->GetLongArrayElements(env, array, isCopy);
+}
+
 void ReleaseByteArrayElements(JNIEnv* env, jbyteArray array, jbyte* elems, jint mode) {
   (*env)->ReleaseByteArrayElements(env, array, elems, mode);
+}
+
+void ReleaseLongArrayElements(JNIEnv* env, jlongArray array, jlong* elems, jint mode) {
+  (*env)->ReleaseLongArrayElements(env, array, elems, mode);
 }
 
 void SetByteArrayRegion(JNIEnv* env, jbyteArray array, jsize start, jsize len, const jbyte* data) {
@@ -160,6 +168,10 @@ void ExceptionClear(JNIEnv* env) {
 
 jint AttachCurrentThread(JavaVM* jvm, JNIEnv** env, void* args) {
   return (*jvm)->AttachCurrentThread(jvm, (void**) env, args);
+}
+
+jint AttachCurrentThreadAsDaemon(JavaVM* jvm, JNIEnv** env, void* args) {
+  return (*jvm)->AttachCurrentThreadAsDaemon(jvm, (void**) env, args);
 }
 
 jint DetachCurrentThread(JavaVM* jvm) {
