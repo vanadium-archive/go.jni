@@ -530,22 +530,6 @@ func Java_io_v_v23_security_Blessings_nativeCreateUnion(env *C.JNIEnv, jBlessing
 	return C.jobject(jBlessings)
 }
 
-//export Java_io_v_v23_security_Blessings_nativeBlessingNames
-func Java_io_v_v23_security_Blessings_nativeBlessingNames(env *C.JNIEnv, jBlessingsClass C.jclass, jCtx C.jobject, jCall C.jobject) C.jobjectArray {
-	ctx, err := jcontext.GoContext(env, jCtx)
-	if err != nil {
-		jutil.JThrowV(env, err)
-		return nil
-	}
-	call, err := GoCall(env, jCall)
-	if err != nil {
-		jutil.JThrowV(env, err)
-		return nil
-	}
-	blessingStrs, _ := security.RemoteBlessingNames(ctx, call)
-	return C.jobjectArray(jutil.JStringArray(env, blessingStrs))
-}
-
 //export Java_io_v_v23_security_Blessings_nativePublicKey
 func Java_io_v_v23_security_Blessings_nativePublicKey(env *C.JNIEnv, jBlessings C.jobject, goPtr C.jlong) C.jobject {
 	key := (*(*security.Blessings)(jutil.Ptr(goPtr))).PublicKey()
@@ -656,7 +640,6 @@ func Java_io_v_v23_security_BlessingStoreImpl_nativeSet(env *C.JNIEnv, jBlessing
 		return nil
 	}
 	jOldBlessings, err := JavaBlessings(env, oldBlessings)
-	return nil
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -796,4 +779,36 @@ func Java_io_v_v23_security_BlessingPattern_nativeMakeNonExtendable(env *C.JNIEn
 //export Java_io_v_v23_security_BlessingPattern_nativeFinalize
 func Java_io_v_v23_security_BlessingPattern_nativeFinalize(env *C.JNIEnv, jBlessingPattern C.jobject, goPtr C.jlong) {
 	jutil.GoUnref(jutil.Ptr(goPtr))
+}
+
+//export Java_io_v_v23_security_Security_nativeGetRemoteBlessingNames
+func Java_io_v_v23_security_Security_nativeGetRemoteBlessingNames(env *C.JNIEnv, jSecurityClass C.jclass, jCtx C.jobject, jCall C.jobject) C.jobjectArray {
+	ctx, err := jcontext.GoContext(env, jCtx)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	call, err := GoCall(env, jCall)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	blessingStrs, _ := security.RemoteBlessingNames(ctx, call)
+	return C.jobjectArray(jutil.JStringArray(env, blessingStrs))
+}
+
+//export Java_io_v_v23_security_Security_nativeGetLocalBlessingNames
+func Java_io_v_v23_security_Security_nativeGetLocalBlessingNames(env *C.JNIEnv, jSecurityClass C.jclass, jCtx C.jobject, jCall C.jobject) C.jobjectArray {
+	ctx, err := jcontext.GoContext(env, jCtx)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	call, err := GoCall(env, jCall)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	blessingStrs := security.LocalBlessingNames(ctx, call)
+	return C.jobjectArray(jutil.JStringArray(env, blessingStrs))
 }
