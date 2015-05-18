@@ -22,6 +22,7 @@ var (
 	principalSign       = jutil.ClassSign("io.v.v23.security.Principal")
 	blessingsSign       = jutil.ClassSign("io.v.v23.security.Blessings")
 	wireBlessingsSign   = jutil.ClassSign("io.v.v23.security.WireBlessings")
+	wireDischargeSign   = jutil.ClassSign("io.v.v23.security.WireDischarge")
 	blessingStoreSign   = jutil.ClassSign("io.v.v23.security.BlessingStore")
 	blessingRootsSign   = jutil.ClassSign("io.v.v23.security.BlessingRoots")
 	blessingPatternSign = jutil.ClassSign("io.v.v23.security.BlessingPattern")
@@ -56,6 +57,12 @@ var (
 	jObjectClass C.jclass
 	// Global reference for io.v.v23.security.Security class.
 	jSecurityClass C.jclass
+	// Global reference for io.v.v23.vdl.VdlValue class.
+	jVdlValueClass C.jclass
+	// Global reference for io.v.v23.vdl.WireDischarge class.
+	jWireDischargeClass C.jclass
+	// Global reference for io.v.v23.vdl.Discharge class.
+	jDischargeClass C.jclass
 )
 
 // Init initializes the JNI code with the given Java evironment. This method
@@ -129,7 +136,21 @@ func Init(jEnv interface{}) error {
 		return err
 	}
 	jSecurityClass = C.jclass(class)
-
+	class, err = jutil.JFindClass(jEnv, "io/v/v23/vdl/VdlValue")
+	if err != nil {
+		return err
+	}
+	jVdlValueClass = C.jclass(class)
+	class, err = jutil.JFindClass(jEnv, "io/v/v23/security/WireDischarge")
+	if err != nil {
+		return err
+	}
+	jWireDischargeClass = C.jclass(class)
+	class, err = jutil.JFindClass(jEnv, "io/v/v23/security/Discharge")
+	if err != nil {
+		return err
+	}
+	jDischargeClass = C.jclass(class)
 	return nil
 }
 
@@ -164,6 +185,28 @@ func Java_io_v_v23_security_CallImpl_nativeMethodTags(env *C.JNIEnv, jCall C.job
 //export Java_io_v_v23_security_CallImpl_nativeSuffix
 func Java_io_v_v23_security_CallImpl_nativeSuffix(env *C.JNIEnv, jCall C.jobject, goPtr C.jlong) C.jstring {
 	return C.jstring(jutil.JString(env, (*(*security.Call)(jutil.Ptr(goPtr))).Suffix()))
+}
+
+//export Java_io_v_v23_security_CallImpl_nativeRemoteDischarges
+func Java_io_v_v23_security_CallImpl_nativeRemoteDischarges(env *C.JNIEnv, jCall C.jobject, goPtr C.jlong) C.jobject {
+	remoteDischarges := (*(*security.Call)(jutil.Ptr(goPtr))).RemoteDischarges()
+	jObjectMap, err := javaDischargeMap(env, remoteDischarges)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	return jObjectMap
+}
+
+//export Java_io_v_v23_security_CallImpl_nativeLocalDischarges
+func Java_io_v_v23_security_CallImpl_nativeLocalDischarges(env *C.JNIEnv, jCall C.jobject, goPtr C.jlong) C.jobject {
+	localDischarges := (*(*security.Call)(jutil.Ptr(goPtr))).LocalDischarges()
+	jObjectMap, err := javaDischargeMap(env, localDischarges)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	return jObjectMap
 }
 
 //export Java_io_v_v23_security_CallImpl_nativeLocalEndpoint
@@ -779,6 +822,33 @@ func Java_io_v_v23_security_BlessingPattern_nativeMakeNonExtendable(env *C.JNIEn
 //export Java_io_v_v23_security_BlessingPattern_nativeFinalize
 func Java_io_v_v23_security_BlessingPattern_nativeFinalize(env *C.JNIEnv, jBlessingPattern C.jobject, goPtr C.jlong) {
 	jutil.GoUnref(jutil.Ptr(goPtr))
+}
+
+//export Java_io_v_v23_security_PublicKeyThirdPartyCaveatValidator_nativeValidate
+func Java_io_v_v23_security_PublicKeyThirdPartyCaveatValidator_nativeValidate(env *C.JNIEnv, jThirdPartyValidatorClass C.jclass, jContext C.jobject, jCall C.jobject, jCaveatParam C.jobject) {
+	param, err := jutil.GoVomCopyValue(env, jCaveatParam)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return
+	}
+	ctx, err := jcontext.GoContext(env, jContext)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return
+	}
+	call, err := GoCall(env, jCall)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return
+	}
+	caveat, err := security.NewCaveat(security.PublicKeyThirdPartyCaveat, param)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return
+	}
+	if err := caveat.Validate(ctx, call); err != nil {
+		jutil.JThrowV(env, err)
+	}
 }
 
 //export Java_io_v_v23_security_Security_nativeGetRemoteBlessingNames

@@ -106,13 +106,11 @@ func (c *callImpl) Suffix() string {
 }
 
 func (c *callImpl) LocalDischarges() map[string]security.Discharge {
-	// TODO(spetrovic): implement this method.
-	return nil
+	return c.callDischargeMapMethod("localDischarges")
 }
 
 func (c *callImpl) RemoteDischarges() map[string]security.Discharge {
-	// TODO(spetrovic): implement this method.
-	return nil
+	return c.callDischargeMapMethod("remoteDischarges")
 }
 
 func (c *callImpl) LocalEndpoint() naming.Endpoint {
@@ -207,4 +205,25 @@ func (c *callImpl) callStringMethod(methodName string) string {
 		return ""
 	}
 	return ret
+}
+
+func (c *callImpl) callDischargeMapMethod(methodName string) map[string]security.Discharge {
+	env, freeFunc := jutil.GetEnv()
+	defer freeFunc()
+	javaObjectMap, err := jutil.CallMapMethod(env, c.jCall, methodName, nil)
+	if err != nil {
+		log.Printf("Couldn't call Java %q method: %v", methodName, err)
+		return nil
+	}
+	discharges := make(map[string]security.Discharge)
+	for jKey, jValue := range javaObjectMap {
+		key := jutil.GoString(env, jKey)
+		discharge, err := GoDischarge(env, jValue)
+		if err != nil {
+			log.Printf("Couldn't convert Java Discharge to Go Discharge: %v", err)
+			return nil
+		}
+		discharges[key] = discharge
+	}
+	return discharges
 }

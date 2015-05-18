@@ -202,3 +202,44 @@ func GoSignature(jEnv, jSignature interface{}) (security.Signature, error) {
 	}
 	return sig, nil
 }
+
+// GoDischarge converts the provided Java Discharge into a Go Discharge.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func GoDischarge(jEnv, jDischarge interface{}) (security.Discharge, error) {
+	var discharge security.Discharge
+	if err := jutil.GoVomCopy(jEnv, jDischarge, jDischargeClass, &discharge); err != nil {
+		return security.Discharge{}, err
+	}
+	return discharge, nil
+}
+
+// JavaDischarge converts the provided Go Discharge into a Java discharge.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func JavaDischarge(jEnv interface{}, discharge security.Discharge) (C.jobject, error) {
+	jDischarge, err := jutil.JVomCopy(jEnv, discharge, jDischargeClass)
+	if err != nil {
+		return nil, err
+	}
+	return C.jobject(jDischarge), nil
+}
+
+func javaDischargeMap(env *C.JNIEnv, discharges map[string]security.Discharge) (C.jobject, error) {
+	objectMap := make(map[interface{}]interface{})
+	for key, discharge := range discharges {
+		jKey := jutil.JString(env, key)
+		jDischarge, err := JavaDischarge(env, discharge)
+		if err != nil {
+			return nil, err
+		}
+		objectMap[jKey] = jDischarge
+	}
+	jObjectMap, err := jutil.JObjectMap(env, objectMap)
+	if err != nil {
+		return nil, err
+	}
+	return C.jobject(jObjectMap), nil
+}

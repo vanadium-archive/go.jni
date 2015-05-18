@@ -28,7 +28,7 @@ type ComplexErrorParam struct {
 }
 
 func (ComplexErrorParam) __VDLReflect(struct {
-	Name string "v.io/x/jni/test/fortune.ComplexErrorParam"
+	Name string `vdl:"v.io/x/jni/test/fortune.ComplexErrorParam"`
 }) {
 }
 
