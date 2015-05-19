@@ -19,7 +19,7 @@ import (
 // #include "jni.h"
 import "C"
 
-// JavaPrincipal converts the provided Go Principal into a Java Principal
+// JavaPrincipal converts the provided Go Principal into a Java VPrincipal
 // object.
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
@@ -28,15 +28,15 @@ func JavaPrincipal(jEnv interface{}, principal security.Principal) (unsafe.Point
 	if principal == nil {
 		return nil, nil
 	}
-	jPrincipal, err := jutil.NewObject(jEnv, jPrincipalImplClass, []jutil.Sign{jutil.LongSign, signerSign, blessingStoreSign, blessingRootsSign}, int64(jutil.PtrValue(&principal)), C.jobject(nil), C.jobject(nil), C.jobject(nil))
+	jPrincipal, err := jutil.NewObject(jEnv, jVPrincipalImplClass, []jutil.Sign{jutil.LongSign, signerSign, blessingStoreSign, blessingRootsSign}, int64(jutil.PtrValue(&principal)), C.jobject(nil), C.jobject(nil), C.jobject(nil))
 	if err != nil {
 		return nil, err
 	}
-	jutil.GoRef(&principal) // Un-refed when the Java PrincipalImpl is finalized.
+	jutil.GoRef(&principal) // Un-refed when the Java VPrincipalImpl is finalized.
 	return jPrincipal, nil
 }
 
-// GoPrincipal converts the provided Java Principal object into a Go Principal.
+// GoPrincipal converts the provided Java VPrincipal object into a Go Principal.
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
@@ -44,7 +44,7 @@ func GoPrincipal(jEnv, jPrincipalObj interface{}) (security.Principal, error) {
 	if jutil.IsNull(jPrincipalObj) {
 		return nil, nil
 	}
-	// Reference Java Principal; it will be de-referenced when the Go Principal
+	// Reference Java VPrincipal; it will be de-referenced when the Go Principal
 	// created below is garbage-collected (through the finalizer callback we
 	// setup just below).
 	jPrincipal := C.jobject(jutil.NewGlobalRef(jEnv, jPrincipalObj))

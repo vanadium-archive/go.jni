@@ -27,7 +27,7 @@ func JavaServer(jEnv interface{}, server rpc.Server) (unsafe.Pointer, error) {
 	if server == nil {
 		return nil, fmt.Errorf("Go Server value cannot be nil")
 	}
-	jServer, err := jutil.NewObject(jEnv, jServerClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&server)))
+	jServer, err := jutil.NewObject(jEnv, jServerImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&server)))
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +43,7 @@ func JavaClient(jEnv interface{}, client rpc.Client) (unsafe.Pointer, error) {
 	if client == nil {
 		return nil, fmt.Errorf("Go Client value cannot be nil")
 	}
-	jClient, err := jutil.NewObject(jEnv, jClientClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&client)))
+	jClient, err := jutil.NewObject(jEnv, jClientImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&client)))
 	if err != nil {
 		return nil, err
 	}
@@ -65,8 +65,8 @@ func javaStreamServerCall(env *C.JNIEnv, call rpc.StreamServerCall) (C.jobject, 
 	if err != nil {
 		return nil, err
 	}
-	serverCallSign := jutil.ClassSign("io.v.impl.google.rpc.ServerCall")
-	jStreamServerCall, err := jutil.NewObject(env, jStreamServerCallClass, []jutil.Sign{jutil.LongSign, streamSign, serverCallSign}, int64(jutil.PtrValue(&call)), jStream, jServerCall)
+	serverCallSign := jutil.ClassSign("io.v.v23.rpc.ServerCall")
+	jStreamServerCall, err := jutil.NewObject(env, jStreamServerCallImplClass, []jutil.Sign{jutil.LongSign, streamSign, serverCallSign}, int64(jutil.PtrValue(&call)), jStream, jServerCall)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +83,7 @@ func javaCall(env *C.JNIEnv, call rpc.ClientCall) (C.jobject, error) {
 	if err != nil {
 		return nil, err
 	}
-	jCall, err := jutil.NewObject(env, jCallClass, []jutil.Sign{jutil.LongSign, streamSign}, int64(jutil.PtrValue(&call)), jStream)
+	jCall, err := jutil.NewObject(env, jClientCallImplClass, []jutil.Sign{jutil.LongSign, streamSign}, int64(jutil.PtrValue(&call)), jStream)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +93,7 @@ func javaCall(env *C.JNIEnv, call rpc.ClientCall) (C.jobject, error) {
 
 // javaStream converts the provided Go stream into a Java Stream object.
 func javaStream(env *C.JNIEnv, stream rpc.Stream) (C.jobject, error) {
-	jStream, err := jutil.NewObject(env, jStreamClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&stream)))
+	jStream, err := jutil.NewObject(env, jStreamImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&stream)))
 	if err != nil {
 		return nil, err
 	}
@@ -329,7 +329,7 @@ func JavaNetworkChange(jEnv interface{}, change rpc.NetworkChange) (unsafe.Point
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func JavaServerCall(jEnv interface{}, serverCall rpc.ServerCall) (unsafe.Pointer, error) {
-	jServerCall, err := jutil.NewObject(jEnv, jServerCallClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&serverCall)))
+	jServerCall, err := jutil.NewObject(jEnv, jServerCallImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&serverCall)))
 	if err != nil {
 		return nil, err
 	}
@@ -412,7 +412,7 @@ func GoNetworkAddressArray(jEnv, jAddrs interface{}) ([]net.Addr, error) {
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
 func JavaAddressChooser(jEnv interface{}, chooser func(protocol string, candidates []net.Addr) ([]net.Addr, error)) (unsafe.Pointer, error) {
-	jAddressChooser, err := jutil.NewObject(jEnv, jAddressChooserClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&chooser)))
+	jAddressChooser, err := jutil.NewObject(jEnv, jAddressChooserImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&chooser)))
 	if err != nil {
 		return nil, err
 	}

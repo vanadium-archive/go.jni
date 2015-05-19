@@ -171,7 +171,7 @@ func GoPublicKey(jEnv, jKey interface{}) (security.PublicKey, error) {
 	return security.UnmarshalPublicKey(encoded)
 }
 
-// JavaSignature converts the provided Go Signature into a Java Signature.
+// JavaSignature converts the provided Go Signature into a Java VSignature.
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
@@ -187,7 +187,7 @@ func JavaSignature(jEnv interface{}, sig security.Signature) (unsafe.Pointer, er
 	return jSignature, nil
 }
 
-// GoSignature converts the provided Java Signature into a Go Signature.
+// GoSignature converts the provided Java VSignature into a Go Signature.
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.

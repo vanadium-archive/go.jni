@@ -19,7 +19,7 @@ import (
 import "C"
 
 var (
-	// Global reference for io.v.impl.google.namespace.Namespace class.
+	// Global reference for io.v.impl.google.namespace.NamespaceImpl class.
 	jNamespaceImplClass C.jclass
 	// Global reference for io.v.v23.naming.GlobReply class.
 	jGlobReplyClass C.jclass
@@ -31,7 +31,7 @@ var (
 // invoked from a different package, Java environment is passed in an empty
 // interface and then cast into the package-local environment type.
 func Init(jEnv interface{}) error {
-	class, err := jutil.JFindClass(jEnv, "io/v/impl/google/namespace/Namespace")
+	class, err := jutil.JFindClass(jEnv, "io/v/impl/google/namespace/NamespaceImpl")
 	if err != nil {
 		return err
 	}
@@ -44,8 +44,8 @@ func Init(jEnv interface{}) error {
 	return nil
 }
 
-//export Java_io_v_impl_google_namespace_Namespace_nativeGlob
-func Java_io_v_impl_google_namespace_Namespace_nativeGlob(env *C.JNIEnv, jNamespace C.jobject, goNamespacePtr C.jlong, jContext C.jobject, pattern C.jstring) C.jobject {
+//export Java_io_v_impl_google_namespace_NamespaceImpl_nativeGlob
+func Java_io_v_impl_google_namespace_NamespaceImpl_nativeGlob(env *C.JNIEnv, jNamespace C.jobject, goNamespacePtr C.jlong, jContext C.jobject, pattern C.jstring) C.jobject {
 	n := *(*namespace.T)(jutil.Ptr(goNamespacePtr))
 	context, err := jcontext.GoContext(env, jContext)
 	if err != nil {
@@ -67,7 +67,7 @@ func Java_io_v_impl_google_namespace_Namespace_nativeGlob(env *C.JNIEnv, jNamesp
 		for globReply := range entryChan {
 			jGlobReply, err := jutil.JVomCopy(env, globReply, jGlobReplyClass)
 			if err != nil {
-				log.Println("Couldn't convert Go glob result %v to Java", globReply)
+				log.Printf("Couldn't convert Go glob result %v to Java\n", globReply)
 				continue
 			}
 			// The other side of the channel is responsible
@@ -85,7 +85,7 @@ func Java_io_v_impl_google_namespace_Namespace_nativeGlob(env *C.JNIEnv, jNamesp
 	return C.jobject(jInputChannel)
 }
 
-//export Java_io_v_impl_google_namespace_Namespace_nativeFinalize
-func Java_io_v_impl_google_namespace_Namespace_nativeFinalize(env *C.JNIEnv, jNamespace C.jobject, goNamespacePtr C.jlong) {
+//export Java_io_v_impl_google_namespace_NamespaceImpl_nativeFinalize
+func Java_io_v_impl_google_namespace_NamespaceImpl_nativeFinalize(env *C.JNIEnv, jNamespace C.jobject, goNamespacePtr C.jlong) {
 	jutil.GoUnref(jutil.Ptr(goNamespacePtr))
 }

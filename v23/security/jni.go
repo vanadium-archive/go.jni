@@ -19,18 +19,18 @@ import (
 import "C"
 
 var (
-	principalSign       = jutil.ClassSign("io.v.v23.security.Principal")
+	principalSign       = jutil.ClassSign("io.v.v23.security.VPrincipal")
 	blessingsSign       = jutil.ClassSign("io.v.v23.security.Blessings")
 	wireBlessingsSign   = jutil.ClassSign("io.v.v23.security.WireBlessings")
 	wireDischargeSign   = jutil.ClassSign("io.v.v23.security.WireDischarge")
 	blessingStoreSign   = jutil.ClassSign("io.v.v23.security.BlessingStore")
 	blessingRootsSign   = jutil.ClassSign("io.v.v23.security.BlessingRoots")
 	blessingPatternSign = jutil.ClassSign("io.v.v23.security.BlessingPattern")
-	signerSign          = jutil.ClassSign("io.v.v23.security.Signer")
+	signerSign          = jutil.ClassSign("io.v.v23.security.VSigner")
 	caveatSign          = jutil.ClassSign("io.v.v23.security.Caveat")
 	contextSign         = jutil.ClassSign("io.v.v23.context.VContext")
 	callSign            = jutil.ClassSign("io.v.v23.security.Call")
-	signatureSign       = jutil.ClassSign("io.v.v23.security.Signature")
+	signatureSign       = jutil.ClassSign("io.v.v23.security.VSignature")
 	publicKeySign       = jutil.ClassSign("java.security.interfaces.ECPublicKey")
 
 	// Global reference for io.v.v23.security.Blessings class.
@@ -39,8 +39,8 @@ var (
 	jCaveatClass C.jclass
 	// Global reference for io.v.v23.security.WireBlessings class.
 	jWireBlessingsClass C.jclass
-	// Global reference for io.v.v23.security.PrincipalImpl class.
-	jPrincipalImplClass C.jclass
+	// Global reference for io.v.v23.security.VPrincipalImpl class.
+	jVPrincipalImplClass C.jclass
 	// Global reference for io.v.v23.security.BlessingStoreImpl class.
 	jBlessingStoreImplClass C.jclass
 	// Global reference for io.v.v23.security.BlessingRootsImpl class.
@@ -55,13 +55,9 @@ var (
 	jUtilClass C.jclass
 	// Global reference for java.lang.Object class.
 	jObjectClass C.jclass
-	// Global reference for io.v.v23.security.Security class.
-	jSecurityClass C.jclass
-	// Global reference for io.v.v23.vdl.VdlValue class.
-	jVdlValueClass C.jclass
-	// Global reference for io.v.v23.vdl.WireDischarge class.
-	jWireDischargeClass C.jclass
-	// Global reference for io.v.v23.vdl.Discharge class.
+	// Global reference for io.v.v23.security.VSecurity class.
+	jVSecurityClass C.jclass
+	// Global reference for io.v.v23.security.Discharge class.
 	jDischargeClass C.jclass
 )
 
@@ -91,11 +87,11 @@ func Init(jEnv interface{}) error {
 		return err
 	}
 	jWireBlessingsClass = C.jclass(class)
-	class, err = jutil.JFindClass(jEnv, "io/v/v23/security/PrincipalImpl")
+	class, err = jutil.JFindClass(jEnv, "io/v/v23/security/VPrincipalImpl")
 	if err != nil {
 		return err
 	}
-	jPrincipalImplClass = C.jclass(class)
+	jVPrincipalImplClass = C.jclass(class)
 	class, err = jutil.JFindClass(jEnv, "io/v/v23/security/BlessingStoreImpl")
 	if err != nil {
 		return err
@@ -131,21 +127,11 @@ func Init(jEnv interface{}) error {
 		return err
 	}
 	jObjectClass = C.jclass(class)
-	class, err = jutil.JFindClass(jEnv, "io/v/v23/security/Security")
+	class, err = jutil.JFindClass(jEnv, "io/v/v23/security/VSecurity")
 	if err != nil {
 		return err
 	}
-	jSecurityClass = C.jclass(class)
-	class, err = jutil.JFindClass(jEnv, "io/v/v23/vdl/VdlValue")
-	if err != nil {
-		return err
-	}
-	jVdlValueClass = C.jclass(class)
-	class, err = jutil.JFindClass(jEnv, "io/v/v23/security/WireDischarge")
-	if err != nil {
-		return err
-	}
-	jWireDischargeClass = C.jclass(class)
+	jVSecurityClass = C.jclass(class)
 	class, err = jutil.JFindClass(jEnv, "io/v/v23/security/Discharge")
 	if err != nil {
 		return err
@@ -257,8 +243,8 @@ func Java_io_v_v23_security_CallImpl_nativeFinalize(env *C.JNIEnv, jCall C.jobje
 	jutil.GoUnref(jutil.Ptr(goPtr))
 }
 
-//export Java_io_v_v23_security_PrincipalImpl_nativeCreate
-func Java_io_v_v23_security_PrincipalImpl_nativeCreate(env *C.JNIEnv, jPrincipalImplClass C.jclass) C.jobject {
+//export Java_io_v_v23_security_VPrincipalImpl_nativeCreate
+func Java_io_v_v23_security_VPrincipalImpl_nativeCreate(env *C.JNIEnv, jVPrincipalImplClass C.jclass) C.jobject {
 	principal, err := vsecurity.NewPrincipal()
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -272,8 +258,8 @@ func Java_io_v_v23_security_PrincipalImpl_nativeCreate(env *C.JNIEnv, jPrincipal
 	return C.jobject(jPrincipal)
 }
 
-//export Java_io_v_v23_security_PrincipalImpl_nativeCreateForSigner
-func Java_io_v_v23_security_PrincipalImpl_nativeCreateForSigner(env *C.JNIEnv, jPrincipalImplClass C.jclass, jSigner C.jobject) C.jobject {
+//export Java_io_v_v23_security_VPrincipalImpl_nativeCreateForSigner
+func Java_io_v_v23_security_VPrincipalImpl_nativeCreateForSigner(env *C.JNIEnv, jVPrincipalImplClass C.jclass, jSigner C.jobject) C.jobject {
 	signer, err := GoSigner(env, jSigner)
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -284,17 +270,17 @@ func Java_io_v_v23_security_PrincipalImpl_nativeCreateForSigner(env *C.JNIEnv, j
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	jPrincipal, err := jutil.NewObject(env, jPrincipalImplClass, []jutil.Sign{jutil.LongSign, signerSign, blessingStoreSign, blessingRootsSign}, &principal, jSigner, C.jobject(nil), C.jobject(nil))
+	jPrincipal, err := jutil.NewObject(env, jVPrincipalImplClass, []jutil.Sign{jutil.LongSign, signerSign, blessingStoreSign, blessingRootsSign}, &principal, jSigner, C.jobject(nil), C.jobject(nil))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	jutil.GoRef(&principal) // Un-refed when the Java PrincipalImpl is finalized.
+	jutil.GoRef(&principal) // Un-refed when the Java VPrincipalImpl is finalized.
 	return C.jobject(jPrincipal)
 }
 
-//export Java_io_v_v23_security_PrincipalImpl_nativeCreateForAll
-func Java_io_v_v23_security_PrincipalImpl_nativeCreateForAll(env *C.JNIEnv, jPrincipalImplClass C.jclass, jSigner C.jobject, jStore C.jobject, jRoots C.jobject) C.jobject {
+//export Java_io_v_v23_security_VPrincipalImpl_nativeCreateForAll
+func Java_io_v_v23_security_VPrincipalImpl_nativeCreateForAll(env *C.JNIEnv, jVPrincipalImplClass C.jclass, jSigner C.jobject, jStore C.jobject, jRoots C.jobject) C.jobject {
 	signer, err := GoSigner(env, jSigner)
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -315,17 +301,17 @@ func Java_io_v_v23_security_PrincipalImpl_nativeCreateForAll(env *C.JNIEnv, jPri
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	jPrincipal, err := jutil.NewObject(env, jPrincipalImplClass, []jutil.Sign{jutil.LongSign, signerSign, blessingStoreSign, blessingRootsSign}, &principal, jSigner, jStore, jRoots)
+	jPrincipal, err := jutil.NewObject(env, jVPrincipalImplClass, []jutil.Sign{jutil.LongSign, signerSign, blessingStoreSign, blessingRootsSign}, &principal, jSigner, jStore, jRoots)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	jutil.GoRef(&principal) // Un-refed when the Java PrincipalImpl is finalized.
+	jutil.GoRef(&principal) // Un-refed when the Java VPrincipalImpl is finalized.
 	return C.jobject(jPrincipal)
 }
 
-//export Java_io_v_v23_security_PrincipalImpl_nativeCreatePersistent
-func Java_io_v_v23_security_PrincipalImpl_nativeCreatePersistent(env *C.JNIEnv, jPrincipalImplClass C.jclass, jPassphrase C.jstring, jDir C.jstring) C.jobject {
+//export Java_io_v_v23_security_VPrincipalImpl_nativeCreatePersistent
+func Java_io_v_v23_security_VPrincipalImpl_nativeCreatePersistent(env *C.JNIEnv, jVPrincipalImplClass C.jclass, jPassphrase C.jstring, jDir C.jstring) C.jobject {
 	passphrase := jutil.GoString(env, jPassphrase)
 	dir := jutil.GoString(env, jDir)
 	principal, err := vsecurity.LoadPersistentPrincipal(dir, []byte(passphrase))
@@ -343,8 +329,8 @@ func Java_io_v_v23_security_PrincipalImpl_nativeCreatePersistent(env *C.JNIEnv, 
 	return C.jobject(jPrincipal)
 }
 
-//export Java_io_v_v23_security_PrincipalImpl_nativeCreatePersistentForSigner
-func Java_io_v_v23_security_PrincipalImpl_nativeCreatePersistentForSigner(env *C.JNIEnv, jPrincipalImplClass C.jclass, jSigner C.jobject, jDir C.jstring) C.jobject {
+//export Java_io_v_v23_security_VPrincipalImpl_nativeCreatePersistentForSigner
+func Java_io_v_v23_security_VPrincipalImpl_nativeCreatePersistentForSigner(env *C.JNIEnv, jVPrincipalImplClass C.jclass, jSigner C.jobject, jDir C.jstring) C.jobject {
 	signer, err := GoSigner(env, jSigner)
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -361,17 +347,17 @@ func Java_io_v_v23_security_PrincipalImpl_nativeCreatePersistentForSigner(env *C
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	jPrincipal, err := jutil.NewObject(env, jPrincipalImplClass, []jutil.Sign{jutil.LongSign, signerSign, blessingStoreSign, blessingRootsSign}, &principal, jSigner, C.jobject(nil), C.jobject(nil))
+	jPrincipal, err := jutil.NewObject(env, jVPrincipalImplClass, []jutil.Sign{jutil.LongSign, signerSign, blessingStoreSign, blessingRootsSign}, &principal, jSigner, C.jobject(nil), C.jobject(nil))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	jutil.GoRef(&principal) // Un-refed when the Java PrincipalImpl is finalized.
+	jutil.GoRef(&principal) // Un-refed when the Java VPrincipalImpl is finalized.
 	return C.jobject(jPrincipal)
 }
 
-//export Java_io_v_v23_security_PrincipalImpl_nativeBless
-func Java_io_v_v23_security_PrincipalImpl_nativeBless(env *C.JNIEnv, jPrincipalImpl C.jobject, goPtr C.jlong, jKey C.jobject, jWith C.jobject, jExtension C.jstring, jCaveat C.jobject, jAdditionalCaveats C.jobjectArray) C.jobject {
+//export Java_io_v_v23_security_VPrincipalImpl_nativeBless
+func Java_io_v_v23_security_VPrincipalImpl_nativeBless(env *C.JNIEnv, jVPrincipalImpl C.jobject, goPtr C.jlong, jKey C.jobject, jWith C.jobject, jExtension C.jstring, jCaveat C.jobject, jAdditionalCaveats C.jobjectArray) C.jobject {
 	key, err := GoPublicKey(env, jKey)
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -406,8 +392,8 @@ func Java_io_v_v23_security_PrincipalImpl_nativeBless(env *C.JNIEnv, jPrincipalI
 	return C.jobject(jBlessings)
 }
 
-//export Java_io_v_v23_security_PrincipalImpl_nativeBlessSelf
-func Java_io_v_v23_security_PrincipalImpl_nativeBlessSelf(env *C.JNIEnv, jPrincipalImpl C.jobject, goPtr C.jlong, jName C.jstring, jCaveats C.jobjectArray) C.jobject {
+//export Java_io_v_v23_security_VPrincipalImpl_nativeBlessSelf
+func Java_io_v_v23_security_VPrincipalImpl_nativeBlessSelf(env *C.JNIEnv, jVPrincipalImpl C.jobject, goPtr C.jlong, jName C.jstring, jCaveats C.jobjectArray) C.jobject {
 	name := jutil.GoString(env, jName)
 	caveats, err := GoCaveats(env, jCaveats)
 	if err != nil {
@@ -427,8 +413,8 @@ func Java_io_v_v23_security_PrincipalImpl_nativeBlessSelf(env *C.JNIEnv, jPrinci
 	return C.jobject(jBlessings)
 }
 
-//export Java_io_v_v23_security_PrincipalImpl_nativeSign
-func Java_io_v_v23_security_PrincipalImpl_nativeSign(env *C.JNIEnv, jPrincipalImpl C.jobject, goPtr C.jlong, jMessage C.jbyteArray) C.jobject {
+//export Java_io_v_v23_security_VPrincipalImpl_nativeSign
+func Java_io_v_v23_security_VPrincipalImpl_nativeSign(env *C.JNIEnv, jVPrincipalImpl C.jobject, goPtr C.jlong, jMessage C.jbyteArray) C.jobject {
 	message := jutil.GoByteArray(env, jMessage)
 	sig, err := (*(*security.Principal)(jutil.Ptr(goPtr))).Sign(message)
 	if err != nil {
@@ -443,8 +429,8 @@ func Java_io_v_v23_security_PrincipalImpl_nativeSign(env *C.JNIEnv, jPrincipalIm
 	return C.jobject(jSig)
 }
 
-//export Java_io_v_v23_security_PrincipalImpl_nativePublicKey
-func Java_io_v_v23_security_PrincipalImpl_nativePublicKey(env *C.JNIEnv, jPrincipalImpl C.jobject, goPtr C.jlong) C.jobject {
+//export Java_io_v_v23_security_VPrincipalImpl_nativePublicKey
+func Java_io_v_v23_security_VPrincipalImpl_nativePublicKey(env *C.JNIEnv, jVPrincipalImpl C.jobject, goPtr C.jlong) C.jobject {
 	key := (*(*security.Principal)(jutil.Ptr(goPtr))).PublicKey()
 	jKey, err := JavaPublicKey(env, key)
 	if err != nil {
@@ -454,8 +440,8 @@ func Java_io_v_v23_security_PrincipalImpl_nativePublicKey(env *C.JNIEnv, jPrinci
 	return C.jobject(jKey)
 }
 
-//export Java_io_v_v23_security_PrincipalImpl_nativeBlessingsByName
-func Java_io_v_v23_security_PrincipalImpl_nativeBlessingsByName(env *C.JNIEnv, jPrincipalImpl C.jobject, goPtr C.jlong, jPattern C.jobject) C.jobjectArray {
+//export Java_io_v_v23_security_VPrincipalImpl_nativeBlessingsByName
+func Java_io_v_v23_security_VPrincipalImpl_nativeBlessingsByName(env *C.JNIEnv, jVPrincipalImpl C.jobject, goPtr C.jlong, jPattern C.jobject) C.jobjectArray {
 	pattern, err := GoBlessingPattern(env, jPattern)
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -473,8 +459,8 @@ func Java_io_v_v23_security_PrincipalImpl_nativeBlessingsByName(env *C.JNIEnv, j
 	return C.jobjectArray(jutil.JObjectArray(env, barr, jBlessingsClass))
 }
 
-//export Java_io_v_v23_security_PrincipalImpl_nativeBlessingsInfo
-func Java_io_v_v23_security_PrincipalImpl_nativeBlessingsInfo(env *C.JNIEnv, jPrincipalImpl C.jobject, goPtr C.jlong, jBlessings C.jobject) C.jobject {
+//export Java_io_v_v23_security_VPrincipalImpl_nativeBlessingsInfo
+func Java_io_v_v23_security_VPrincipalImpl_nativeBlessingsInfo(env *C.JNIEnv, jPrincipalImpl C.jobject, goPtr C.jlong, jBlessings C.jobject) C.jobject {
 	blessings, err := GoBlessings(env, jBlessings)
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -499,8 +485,8 @@ func Java_io_v_v23_security_PrincipalImpl_nativeBlessingsInfo(env *C.JNIEnv, jPr
 	return C.jobject(jInfo)
 }
 
-//export Java_io_v_v23_security_PrincipalImpl_nativeBlessingStore
-func Java_io_v_v23_security_PrincipalImpl_nativeBlessingStore(env *C.JNIEnv, jPrincipalImpl C.jobject, goPtr C.jlong) C.jobject {
+//export Java_io_v_v23_security_VPrincipalImpl_nativeBlessingStore
+func Java_io_v_v23_security_VPrincipalImpl_nativeBlessingStore(env *C.JNIEnv, jVPrincipalImpl C.jobject, goPtr C.jlong) C.jobject {
 	store := (*(*security.Principal)(jutil.Ptr(goPtr))).BlessingStore()
 	jStore, err := JavaBlessingStore(env, store)
 	if err != nil {
@@ -510,8 +496,8 @@ func Java_io_v_v23_security_PrincipalImpl_nativeBlessingStore(env *C.JNIEnv, jPr
 	return C.jobject(jStore)
 }
 
-//export Java_io_v_v23_security_PrincipalImpl_nativeRoots
-func Java_io_v_v23_security_PrincipalImpl_nativeRoots(env *C.JNIEnv, jPrincipalImpl C.jobject, goPtr C.jlong) C.jobject {
+//export Java_io_v_v23_security_VPrincipalImpl_nativeRoots
+func Java_io_v_v23_security_VPrincipalImpl_nativeRoots(env *C.JNIEnv, jVPrincipalImpl C.jobject, goPtr C.jlong) C.jobject {
 	roots := (*(*security.Principal)(jutil.Ptr(goPtr))).Roots()
 	jRoots, err := JavaBlessingRoots(env, roots)
 	if err != nil {
@@ -521,8 +507,8 @@ func Java_io_v_v23_security_PrincipalImpl_nativeRoots(env *C.JNIEnv, jPrincipalI
 	return C.jobject(jRoots)
 }
 
-//export Java_io_v_v23_security_PrincipalImpl_nativeAddToRoots
-func Java_io_v_v23_security_PrincipalImpl_nativeAddToRoots(env *C.JNIEnv, jPrincipalImpl C.jobject, goPtr C.jlong, jBlessings C.jobject) {
+//export Java_io_v_v23_security_VPrincipalImpl_nativeAddToRoots
+func Java_io_v_v23_security_VPrincipalImpl_nativeAddToRoots(env *C.JNIEnv, jVPrincipalImpl C.jobject, goPtr C.jlong, jBlessings C.jobject) {
 	blessings, err := GoBlessings(env, jBlessings)
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -533,8 +519,8 @@ func Java_io_v_v23_security_PrincipalImpl_nativeAddToRoots(env *C.JNIEnv, jPrinc
 	}
 }
 
-//export Java_io_v_v23_security_PrincipalImpl_nativeFinalize
-func Java_io_v_v23_security_PrincipalImpl_nativeFinalize(env *C.JNIEnv, jPrincipalImpl C.jobject, goPtr C.jlong) {
+//export Java_io_v_v23_security_VPrincipalImpl_nativeFinalize
+func Java_io_v_v23_security_VPrincipalImpl_nativeFinalize(env *C.JNIEnv, jVPrincipalImpl C.jobject, goPtr C.jlong) {
 	jutil.GoUnref(jutil.Ptr(goPtr))
 }
 
@@ -851,8 +837,8 @@ func Java_io_v_v23_security_PublicKeyThirdPartyCaveatValidator_nativeValidate(en
 	}
 }
 
-//export Java_io_v_v23_security_Security_nativeGetRemoteBlessingNames
-func Java_io_v_v23_security_Security_nativeGetRemoteBlessingNames(env *C.JNIEnv, jSecurityClass C.jclass, jCtx C.jobject, jCall C.jobject) C.jobjectArray {
+//export Java_io_v_v23_security_VSecurity_nativeGetRemoteBlessingNames
+func Java_io_v_v23_security_VSecurity_nativeGetRemoteBlessingNames(env *C.JNIEnv, jVSecurityClass C.jclass, jCtx C.jobject, jCall C.jobject) C.jobjectArray {
 	ctx, err := jcontext.GoContext(env, jCtx)
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -867,8 +853,8 @@ func Java_io_v_v23_security_Security_nativeGetRemoteBlessingNames(env *C.JNIEnv,
 	return C.jobjectArray(jutil.JStringArray(env, blessingStrs))
 }
 
-//export Java_io_v_v23_security_Security_nativeGetLocalBlessingNames
-func Java_io_v_v23_security_Security_nativeGetLocalBlessingNames(env *C.JNIEnv, jSecurityClass C.jclass, jCtx C.jobject, jCall C.jobject) C.jobjectArray {
+//export Java_io_v_v23_security_VSecurity_nativeGetLocalBlessingNames
+func Java_io_v_v23_security_VSecurity_nativeGetLocalBlessingNames(env *C.JNIEnv, jVSecurityClass C.jclass, jCtx C.jobject, jCall C.jobject) C.jobjectArray {
 	ctx, err := jcontext.GoContext(env, jCtx)
 	if err != nil {
 		jutil.JThrowV(env, err)

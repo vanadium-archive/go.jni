@@ -26,6 +26,6 @@ func JavaNamespace(jEnv interface{}, namespace namespace.T) (unsafe.Pointer, err
 	if err != nil {
 		return nil, err
 	}
-	jutil.GoRef(&namespace) // Un-refed when the Java PrincipalImpl is finalized.
+	jutil.GoRef(&namespace) // Un-refed when the Java NamespaceImpl is finalized.
 	return jNamespace, nil
 }
