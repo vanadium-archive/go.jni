@@ -10,6 +10,8 @@ import (
 	"log"
 
 	"v.io/v23/namespace"
+	"v.io/v23/naming"
+	"v.io/v23/options"
 	jchannel "v.io/x/jni/impl/google/channel"
 	jutil "v.io/x/jni/util"
 	jcontext "v.io/x/jni/v23/context"
@@ -45,14 +47,18 @@ func Init(jEnv interface{}) error {
 }
 
 //export Java_io_v_impl_google_namespace_NamespaceImpl_nativeGlob
-func Java_io_v_impl_google_namespace_NamespaceImpl_nativeGlob(env *C.JNIEnv, jNamespace C.jobject, goNamespacePtr C.jlong, jContext C.jobject, pattern C.jstring) C.jobject {
+func Java_io_v_impl_google_namespace_NamespaceImpl_nativeGlob(env *C.JNIEnv, jNamespace C.jobject, goNamespacePtr C.jlong, jContext C.jobject, pattern C.jstring, jSkipServerAuth C.jboolean) C.jobject {
 	n := *(*namespace.T)(jutil.Ptr(goNamespacePtr))
 	context, err := jcontext.GoContext(env, jContext)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	entryChan, err := n.Glob(context, jutil.GoString(env, pattern))
+	var opts []naming.NamespaceOpt
+	if jSkipServerAuth == C.JNI_TRUE {
+		opts = append(opts, options.SkipServerEndpointAuthorization{})
+	}
+	entryChan, err := n.Glob(context, jutil.GoString(env, pattern), opts...)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil

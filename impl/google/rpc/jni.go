@@ -338,7 +338,7 @@ func Java_io_v_impl_google_rpc_ServerImpl_nativeFinalize(env *C.JNIEnv, server C
 }
 
 //export Java_io_v_impl_google_rpc_ClientImpl_nativeStartCall
-func Java_io_v_impl_google_rpc_ClientImpl_nativeStartCall(env *C.JNIEnv, jClient C.jobject, goPtr C.jlong, jContext C.jobject, jName C.jstring, jMethod C.jstring, jVomArgs C.jobjectArray, jSkipServerEndpointAuthorization C.jboolean) C.jobject {
+func Java_io_v_impl_google_rpc_ClientImpl_nativeStartCall(env *C.JNIEnv, jClient C.jobject, goPtr C.jlong, jContext C.jobject, jName C.jstring, jMethod C.jstring, jVomArgs C.jobjectArray, jSkipServerAuth C.jboolean) C.jobject {
 	name := jutil.GoString(env, jName)
 	method := jutil.GoString(env, jMethod)
 	context, err := jcontext.GoContext(env, jContext)
@@ -357,7 +357,7 @@ func Java_io_v_impl_google_rpc_ClientImpl_nativeStartCall(env *C.JNIEnv, jClient
 		}
 	}
 	var opts []rpc.CallOpt
-	if jSkipServerEndpointAuthorization == C.JNI_TRUE {
+	if jSkipServerAuth == C.JNI_TRUE {
 		opts = append(opts, options.SkipServerEndpointAuthorization{})
 	}
 
