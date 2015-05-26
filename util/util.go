@@ -43,6 +43,8 @@ var (
 	jDateTimeClass C.jclass
 	// Global reference for org.joda.time.Duration class.
 	jDurationClass C.jclass
+	// Global reference for java.util.ArrayList class.
+	jArrayListClass C.jclass
 	// Global reference for java.lang.Throwable class.
 	jThrowableClass C.jclass
 	// Global reference for java.lang.System class.
@@ -104,6 +106,11 @@ func Init(jEnv interface{}) error {
 		return err
 	}
 	jDurationClass = C.jclass(class)
+	class, err = JFindClass(env, "java/util/ArrayList")
+	if err != nil {
+		return err
+	}
+	jArrayListClass = C.jclass(class)
 	class, err = JFindClass(env, "java/lang/Throwable")
 	if err != nil {
 		return err

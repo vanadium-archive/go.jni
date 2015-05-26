@@ -9,6 +9,7 @@ package v23
 import (
 	jcontext "v.io/x/jni/v23/context"
 	ji18n "v.io/x/jni/v23/i18n"
+	jnaming "v.io/x/jni/v23/naming"
 	jsecurity "v.io/x/jni/v23/security"
 	jaccess "v.io/x/jni/v23/security/access"
 )
@@ -27,6 +28,9 @@ func Init(jEnv interface{}) error {
 		return err
 	}
 	if err := ji18n.Init(jEnv); err != nil {
+		return err
+	}
+	if err := jnaming.Init(jEnv); err != nil {
 		return err
 	}
 	if err := jsecurity.Init(jEnv); err != nil {

@@ -39,6 +39,8 @@ var (
 	ObjectSign = ClassSign("java.lang.Object")
 	// TypeSign denotes a signature of a Java Type type.
 	TypeSign = ClassSign("java.lang.reflect.Type")
+	// ListSign denotes a signature of a Java List type.
+	ListSign = ClassSign("java.util.List")
 	// SetSign denotes a signature of a Java Set type.
 	SetSign = ClassSign("java.util.Set")
 	// MapSign denotes a signature of a Java Map type.

@@ -20,6 +20,7 @@ import (
 	jchannel "v.io/x/jni/impl/google/channel"
 	jutil "v.io/x/jni/util"
 	jcontext "v.io/x/jni/v23/context"
+	jnaming "v.io/x/jni/v23/naming"
 	jsecurity "v.io/x/jni/v23/security"
 )
 
@@ -76,8 +77,8 @@ var (
 	jOptionDefsClass C.jclass
 	// Global reference for java.io.EOFException class.
 	jEOFExceptionClass C.jclass
-	// Global reference for java.lang.String class.
-	jStringClass C.jclass
+	// Global reference for io.v.v23.naming.Endpoint.
+	jEndpointClass C.jclass
 	// Global reference for io.v.v23.vdlroot.signature.Interface class.
 	jInterfaceClass C.jclass
 	// Global reference for io.v.v23.vdlroot.signature.Method class.
@@ -197,11 +198,11 @@ func Init(jEnv interface{}) error {
 		return err
 	}
 	jEOFExceptionClass = C.jclass(class)
-	class, err = jutil.JFindClass(jEnv, "java/lang/String")
+	class, err = jutil.JFindClass(jEnv, "io/v/v23/naming/Endpoint")
 	if err != nil {
 		return err
 	}
-	jStringClass = C.jclass(class)
+	jEndpointClass = C.jclass(class)
 	class, err = jutil.JFindClass(jEnv, "io/v/v23/vdlroot/signature/Interface")
 	if err != nil {
 		return err
@@ -237,11 +238,16 @@ func Java_io_v_impl_google_rpc_ServerImpl_nativeListen(env *C.JNIEnv, jServer C.
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	epStrs := make([]string, len(eps))
+	jEps := make([]interface{}, len(eps))
 	for i, ep := range eps {
-		epStrs[i] = ep.String()
+		jEp, err := jnaming.JavaEndpoint(env, ep)
+		if err != nil {
+			jutil.JThrowV(env, err)
+			return nil
+		}
+		jEps[i] = C.jobject(jEp)
 	}
-	return C.jobjectArray(jutil.JStringArray(env, epStrs))
+	return C.jobjectArray(jutil.JObjectArray(env, jEps, jEndpointClass))
 }
 
 //export Java_io_v_impl_google_rpc_ServerImpl_nativeServe
@@ -486,13 +492,23 @@ func Java_io_v_impl_google_rpc_ServerCallImpl_nativeSuffix(env *C.JNIEnv, jServe
 }
 
 //export Java_io_v_impl_google_rpc_ServerCallImpl_nativeLocalEndpoint
-func Java_io_v_impl_google_rpc_ServerCallImpl_nativeLocalEndpoint(env *C.JNIEnv, jServerCall C.jobject, goPtr C.jlong) C.jstring {
-	return C.jstring(jutil.JString(env, (*(*rpc.ServerCall)(jutil.Ptr(goPtr))).LocalEndpoint().String()))
+func Java_io_v_impl_google_rpc_ServerCallImpl_nativeLocalEndpoint(env *C.JNIEnv, jServerCall C.jobject, goPtr C.jlong) C.jobject {
+	jEndpoint, err := jnaming.JavaEndpoint(env, (*(*rpc.ServerCall)(jutil.Ptr(goPtr))).LocalEndpoint())
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	return C.jobject(jEndpoint)
 }
 
 //export Java_io_v_impl_google_rpc_ServerCallImpl_nativeRemoteEndpoint
-func Java_io_v_impl_google_rpc_ServerCallImpl_nativeRemoteEndpoint(env *C.JNIEnv, jServerCall C.jobject, goPtr C.jlong) C.jstring {
-	return C.jstring(jutil.JString(env, (*(*rpc.ServerCall)(jutil.Ptr(goPtr))).RemoteEndpoint().String()))
+func Java_io_v_impl_google_rpc_ServerCallImpl_nativeRemoteEndpoint(env *C.JNIEnv, jServerCall C.jobject, goPtr C.jlong) C.jobject {
+	jEndpoint, err := jnaming.JavaEndpoint(env, (*(*rpc.ServerCall)(jutil.Ptr(goPtr))).RemoteEndpoint())
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	return C.jobject(jEndpoint)
 }
 
 //export Java_io_v_impl_google_rpc_ServerCallImpl_nativeGrantedBlessings
