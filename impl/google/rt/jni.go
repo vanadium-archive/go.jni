@@ -10,6 +10,7 @@ import (
 	"runtime"
 
 	"v.io/v23"
+	"v.io/v23/context"
 	_ "v.io/x/ref/runtime/factories/roaming"
 
 	jns "v.io/x/jni/impl/google/namespace"
@@ -32,16 +33,31 @@ func Init(jEnv interface{}) error {
 	return nil
 }
 
+type shutdownKey struct{}
+
 //export Java_io_v_impl_google_rt_VRuntimeImpl_nativeInit
 func Java_io_v_impl_google_rt_VRuntimeImpl_nativeInit(env *C.JNIEnv, jRuntime C.jclass, jNumCpus C.jint) C.jobject {
 	runtime.GOMAXPROCS(int(jNumCpus))
-	ctx, _ := v23.Init()
+	ctx, shutdownFunc := v23.Init()
+	ctx = context.WithValue(ctx, shutdownKey{}, shutdownFunc)
 	jCtx, err := jcontext.JavaContext(env, ctx, nil)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
 	}
 	return C.jobject(jCtx)
+}
+
+//export Java_io_v_impl_google_rt_VRuntimeImpl_nativeShutdown
+func Java_io_v_impl_google_rt_VRuntimeImpl_nativeShutdown(env *C.JNIEnv, jRuntime C.jclass, jContext C.jobject) {
+	ctx, err := jcontext.GoContext(env, jContext)
+	if err != nil {
+		jutil.JThrowV(env, err)
+	}
+	value := ctx.Value(shutdownKey{})
+	if shutdownFunc, ok := value.(v23.Shutdown); ok {
+		shutdownFunc()
+	}
 }
 
 //export Java_io_v_impl_google_rt_VRuntimeImpl_nativeSetNewClient

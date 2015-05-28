@@ -28,6 +28,8 @@ import (
 // }
 import "C"
 
+type skipOptionType struct{}
+
 var (
 	// Global reference for io.v.v23.vom.VomUtil class.
 	jVomUtilClass C.jclass
@@ -61,7 +63,16 @@ var (
 	jByteArrayClass C.jclass
 	// Cached Java VM.
 	jVM *C.JavaVM
+
+	// SkipOption is a special error that should be returned by the option
+	// processing function passed to GoOptions. It indicates that the
+	// option being processed should be skipped.
+	SkipOption = skipOptionType{}
 )
+
+func (skipOptionType) Error() string {
+	return "ignored option"
+}
 
 // Init initializes the JNI code with the given Java environment.  This method
 // must be invoked before any other method in this package and must be called
@@ -532,6 +543,28 @@ func JStringArray(jEnv interface{}, strs []string) unsafe.Pointer {
 	return unsafe.Pointer(ret)
 }
 
+// GoStringList converts the provided Java list of Strings into a Go slice of
+// strings.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func GoStringList(jEnv interface{}, jStrings interface{}) ([]string, error) {
+	n, err := CallIntMethod(jEnv, jStrings, "size", []Sign{})
+	if err != nil {
+		return nil, err
+	}
+
+	var result []string
+	for i := 0; i < n; i++ {
+		str, err := CallStringMethod(jEnv, jStrings, "get", []Sign{IntSign}, i)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, str)
+	}
+	return result, nil
+}
+
 // GoStringArray converts a Java string array to a Go string array.
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
@@ -838,6 +871,45 @@ func JFindClass(jEnv interface{}, name string) (unsafe.Pointer, error) {
 		return nil, fmt.Errorf("couldn't find class %s: %v", name, err)
 	}
 	return NewGlobalRef(env, C.jobject(class)), nil
+}
+
+// GoOptions converts a Java io.v.v23.Options instance into a slice of Go
+// interface{}.
+//
+// For each entry in the Java Option map, the user-supplied
+// optionFunc is called to turn the entry into its corresponding Go option. It
+// is up to the caller to cast the returned value to the appropriate Go type.
+// If optionFunc returns a non-nil error, the err and a nil slice will be
+// returned.
+//
+// The only exception to this rule is the special SkipOption error:
+// if optionFunc returns this, the option will not be added to the result and
+// option processing will continue.
+//
+// NOTE: Because CGO creates package-local types and because this
+// method may be invoked from a different package, Java types are passed in an
+// empty interface and then cast into their package local types.
+func GoOptions(jEnv, jOptions interface{}, optionFunc func(jEnv interface{}, key string, jValue interface{}) (interface{}, error)) ([]interface{}, error) {
+	if IsNull(jOptions) {
+		return []interface{}{}, nil
+	}
+	optsMap, err := CallMapMethod(jEnv, jOptions, "asMap", []Sign{})
+	if err != nil {
+		return nil, err
+	}
+	var result []interface{}
+	for jKey, jValue := range optsMap {
+		key := GoString(jEnv, jKey)
+		value, err := optionFunc(jEnv, key, jValue)
+		if err == SkipOption {
+			continue
+		}
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, value)
+	}
+	return result, nil
 }
 
 // GoTime converts the provided Java DateTime object into a Go time.Time value.

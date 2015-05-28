@@ -10,6 +10,8 @@ import (
 	"unsafe"
 
 	"v.io/v23/namespace"
+	"v.io/v23/naming"
+	"v.io/v23/options"
 	jutil "v.io/x/jni/util"
 )
 
@@ -28,4 +30,34 @@ func JavaNamespace(jEnv interface{}, namespace namespace.T) (unsafe.Pointer, err
 	}
 	jutil.GoRef(&namespace) // Un-refed when the Java NamespaceImpl is finalized.
 	return jNamespace, nil
+}
+
+func javaToGoOptions(jEnv interface{}, key string, jValue interface{}) (interface{}, error) {
+	switch key {
+	case "io.v.v23.SKIP_SERVER_ENDPOINT_AUTHORIZATION":
+		value, err := jutil.CallBooleanMethod(jEnv, jValue, "booleanValue", []jutil.Sign{})
+		if err != nil {
+			return nil, err
+		}
+		if value {
+			return options.SkipServerEndpointAuthorization{}, nil
+		}
+	}
+	// Otherwise we don't know what this option is, ignore it.
+	return nil, jutil.SkipOption
+}
+
+func namespaceOptions(jEnv interface{}, jOptions interface{}) ([]naming.NamespaceOpt, error) {
+	opts, err := jutil.GoOptions(jEnv, jOptions, javaToGoOptions)
+	if err != nil {
+		return nil, err
+	}
+	var actualOpts []naming.NamespaceOpt
+	for _, opt := range opts {
+		switch opt := opt.(type) {
+		case naming.NamespaceOpt:
+			actualOpts = append(actualOpts, opt)
+		}
+	}
+	return actualOpts, nil
 }
