@@ -20,7 +20,7 @@ import (
 //   return malloc(sizeof(jvalue) * elements);
 // }
 //
-// static setJValueArrayElement(jvalue* arr, int index, jvalue val) {
+// static void setJValueArrayElement(jvalue* arr, int index, jvalue val) {
 //   arr[index] = val;
 // }
 //
