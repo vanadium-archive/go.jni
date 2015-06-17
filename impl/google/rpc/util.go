@@ -411,7 +411,7 @@ func GoNetworkAddressArray(jEnv, jAddrs interface{}) ([]net.Addr, error) {
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func JavaAddressChooser(jEnv interface{}, chooser func(protocol string, candidates []net.Addr) ([]net.Addr, error)) (unsafe.Pointer, error) {
+func JavaAddressChooser(jEnv interface{}, chooser rpc.AddressChooser) (unsafe.Pointer, error) {
 	jAddressChooser, err := jutil.NewObject(jEnv, jAddressChooserImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&chooser)))
 	if err != nil {
 		return nil, err
@@ -420,34 +420,41 @@ func JavaAddressChooser(jEnv interface{}, chooser func(protocol string, candidat
 	return jAddressChooser, nil
 }
 
+type jniAddressChooser struct {
+	jChooser C.jobject
+}
+
+func (chooser *jniAddressChooser) ChooseAddress(protocol string, candidates []net.Addr) ([]net.Addr, error) {
+	javaEnv, freeFunc := jutil.GetEnv()
+	defer freeFunc()
+	jCandidates, err := JavaNetworkAddressArray(javaEnv, candidates)
+	if err != nil {
+		return nil, err
+	}
+	addrsSign := jutil.ArraySign(jutil.ClassSign("io.v.v23.rpc.NetworkAddress"))
+	jAddrs, err := jutil.CallObjectMethod(javaEnv, chooser.jChooser, "choose", []jutil.Sign{jutil.StringSign, addrsSign}, addrsSign, protocol, jCandidates)
+	if err != nil {
+		return nil, err
+	}
+	return GoNetworkAddressArray(javaEnv, jAddrs)
+}
+
 // GoAddressChooser converts a Java AddressChooser object into a Go address
 // chooser function.
 // NOTE: Because CGO creates package-local types and because this method may be
 // invoked from a different package, Java types are passed in an empty interface
 // and then cast into their package local types.
-func GoAddressChooser(jEnv, jChooserObj interface{}) func(protocol string, candidates []net.Addr) ([]net.Addr, error) {
+func GoAddressChooser(jEnv, jChooserObj interface{}) rpc.AddressChooser {
 	// Reference Java chooser; it will be de-referenced when the go function
 	// created below is garbage-collected (through the finalizer callback we
 	// setup just below).
-	jChooser := jutil.NewGlobalRef(jEnv, jChooserObj)
-	f := func(protocol string, candidates []net.Addr) ([]net.Addr, error) {
-		javaEnv, freeFunc := jutil.GetEnv()
-		defer freeFunc()
-		jCandidates, err := JavaNetworkAddressArray(javaEnv, candidates)
-		if err != nil {
-			return nil, err
-		}
-		addrsSign := jutil.ArraySign(jutil.ClassSign("io.v.v23.rpc.NetworkAddress"))
-		jAddrs, err := jutil.CallObjectMethod(javaEnv, jChooser, "choose", []jutil.Sign{jutil.StringSign, addrsSign}, addrsSign, protocol, jCandidates)
-		if err != nil {
-			return nil, err
-		}
-		return GoNetworkAddressArray(javaEnv, jAddrs)
+	chooser := &jniAddressChooser{
+		jChooser: C.jobject(jutil.NewGlobalRef(jEnv, jChooserObj)),
 	}
-	runtime.SetFinalizer(&f, func(f *func(protocol string, candidates []net.Addr) ([]net.Addr, error)) {
+	runtime.SetFinalizer(chooser, func(chooser *jniAddressChooser) {
 		javaEnv, freeFunc := jutil.GetEnv()
 		defer freeFunc()
-		jutil.DeleteGlobalRef(javaEnv, jChooser)
+		jutil.DeleteGlobalRef(javaEnv, chooser.jChooser)
 	})
-	return f
+	return chooser
 }

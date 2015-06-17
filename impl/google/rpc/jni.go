@@ -9,7 +9,6 @@ package rpc
 import (
 	"io"
 	"log"
-	"net"
 	"unsafe"
 
 	"v.io/v23/options"
@@ -551,7 +550,7 @@ func Java_io_v_impl_google_rpc_AddressChooserImpl_nativeChoose(env *C.JNIEnv, jA
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	addrs, err := (*((*func(protocol string, candidates []net.Addr) ([]net.Addr, error))(jutil.Ptr(goPtr))))(protocol, candidates)
+	addrs, err := (*(*rpc.AddressChooser)(jutil.Ptr(goPtr))).ChooseAddress(protocol, candidates)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
