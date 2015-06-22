@@ -167,6 +167,18 @@ func (s *blessingStore) PeerBlessings() map[security.BlessingPattern]security.Bl
 	return ret
 }
 
+func (s *blessingStore) CacheDischarge(discharge security.Discharge, caveat security.Caveat, impetus security.DischargeImpetus) {
+	panic("BlessingStore.CacheDischarge() unimplemented in Java")
+}
+
+func (s *blessingStore) ClearDischarges(discharges ...security.Discharge) {
+	panic("BlessingStore.ClearDischarges() unimplemented in Java")
+}
+
+func (s *blessingStore) Discharge(caveat security.Caveat, impetus security.DischargeImpetus) security.Discharge {
+	panic("BlessingStore.Discharge() unimplemented in Java")
+}
+
 func (r *blessingStore) DebugString() string {
 	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
