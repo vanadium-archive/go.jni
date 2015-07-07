@@ -182,10 +182,10 @@ func (s *blessingStore) Discharge(caveat security.Caveat, impetus security.Disch
 func (r *blessingStore) DebugString() string {
 	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
-	jString, err := jutil.CallStringMethod(env, r.jBlessingStore, "debugString", nil)
+	result, err := jutil.CallStringMethod(env, r.jBlessingStore, "debugString", nil)
 	if err != nil {
 		log.Printf("Couldn't call Java debugString: %v", err)
 		return ""
 	}
-	return jutil.GoString(env, jString)
+	return result
 }
