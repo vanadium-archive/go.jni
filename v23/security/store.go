@@ -168,15 +168,76 @@ func (s *blessingStore) PeerBlessings() map[security.BlessingPattern]security.Bl
 }
 
 func (s *blessingStore) CacheDischarge(discharge security.Discharge, caveat security.Caveat, impetus security.DischargeImpetus) {
-	panic("BlessingStore.CacheDischarge() unimplemented in Java")
+	env, freeFunc := jutil.GetEnv()
+	defer freeFunc()
+	jDischarge, err := JavaDischarge(env, discharge)
+	if err != nil {
+		log.Printf("Couldn't get Java discharge: %v", err)
+		return
+	}
+	jCaveat, err := JavaCaveat(env, caveat)
+	if err != nil {
+		log.Printf("Couldn't get Java caveat: %v", err)
+		return
+	}
+	jImpetus, err := jutil.JVomCopy(env, impetus, jDischargeImpetusClass)
+	if err != nil {
+		log.Printf("Couldn't get Java DischargeImpetus: %v", err)
+		return
+	}
+	err = jutil.CallVoidMethod(env, s.jBlessingStore, "cacheDischarge", []jutil.Sign{dischargeSign, caveatSign, dischargeImpetusSign}, jDischarge, jCaveat, jImpetus)
+	if err != nil {
+		log.Printf("Couldn't call cacheDischarge: %v", err)
+	}
 }
 
 func (s *blessingStore) ClearDischarges(discharges ...security.Discharge) {
-	panic("BlessingStore.ClearDischarges() unimplemented in Java")
+	env, freeFunc := jutil.GetEnv()
+	defer freeFunc()
+	jDischarges := make([]interface{}, len(discharges))
+	for i := 0; i < len(discharges); i++ {
+		jDischarge, err := JavaDischarge(env, discharges[i])
+		if err != nil {
+			log.Printf("Couldn't get Java discharge: %v", err)
+			return
+		}
+		jDischarges[i] = jDischarge
+	}
+	jDischargeList, err := jutil.JObjectArrayList(env, jDischarges, jDischargeClass)
+	if err != nil {
+		log.Printf("Couldn't get Java discharge list: %v", err)
+		return
+	}
+	err = jutil.CallVoidMethod(env, s.jBlessingStore, "clearDischarges", []jutil.Sign{jutil.ListSign}, jDischargeList)
+	if err != nil {
+		log.Printf("Couldn't call Java clearDischarges method: %v", err)
+	}
 }
 
 func (s *blessingStore) Discharge(caveat security.Caveat, impetus security.DischargeImpetus) security.Discharge {
-	panic("BlessingStore.Discharge() unimplemented in Java")
+	env, freeFunc := jutil.GetEnv()
+	defer freeFunc()
+	jCaveat, err := JavaCaveat(env, caveat)
+	if err != nil {
+		log.Printf("Couldn't get Java caveat: %v", err)
+		return security.Discharge{}
+	}
+	jImpetus, err := jutil.JVomCopy(env, impetus, jDischargeImpetusClass)
+	if err != nil {
+		log.Printf("Couldn't get Java DischargeImpetus: %v", err)
+		return security.Discharge{}
+	}
+	jDischarge, err := jutil.CallObjectMethod(env, s.jBlessingStore, "discharge", []jutil.Sign{caveatSign, dischargeImpetusSign}, dischargeSign, jCaveat, jImpetus)
+	if err != nil {
+		log.Printf("Couldn't call Java discharge method: %v", err)
+		return security.Discharge{}
+	}
+	discharge, err := GoDischarge(env, jDischarge)
+	if err != nil {
+		log.Printf("Couldn't convert Java discharge to Go: %v", err)
+		return security.Discharge{}
+	}
+	return discharge
 }
 
 func (r *blessingStore) DebugString() string {

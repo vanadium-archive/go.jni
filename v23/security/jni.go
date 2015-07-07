@@ -19,19 +19,21 @@ import (
 import "C"
 
 var (
-	principalSign       = jutil.ClassSign("io.v.v23.security.VPrincipal")
-	blessingsSign       = jutil.ClassSign("io.v.v23.security.Blessings")
-	wireBlessingsSign   = jutil.ClassSign("io.v.v23.security.WireBlessings")
-	wireDischargeSign   = jutil.ClassSign("io.v.v23.security.WireDischarge")
-	blessingStoreSign   = jutil.ClassSign("io.v.v23.security.BlessingStore")
-	blessingRootsSign   = jutil.ClassSign("io.v.v23.security.BlessingRoots")
-	blessingPatternSign = jutil.ClassSign("io.v.v23.security.BlessingPattern")
-	signerSign          = jutil.ClassSign("io.v.v23.security.VSigner")
-	caveatSign          = jutil.ClassSign("io.v.v23.security.Caveat")
-	contextSign         = jutil.ClassSign("io.v.v23.context.VContext")
-	callSign            = jutil.ClassSign("io.v.v23.security.Call")
-	signatureSign       = jutil.ClassSign("io.v.v23.security.VSignature")
-	publicKeySign       = jutil.ClassSign("java.security.interfaces.ECPublicKey")
+	dischargeSign        = jutil.ClassSign("io.v.v23.security.Discharge")
+	dischargeImpetusSign = jutil.ClassSign("io.v.v23.security.DischargeImpetus")
+	principalSign        = jutil.ClassSign("io.v.v23.security.VPrincipal")
+	blessingsSign        = jutil.ClassSign("io.v.v23.security.Blessings")
+	wireBlessingsSign    = jutil.ClassSign("io.v.v23.security.WireBlessings")
+	wireDischargeSign    = jutil.ClassSign("io.v.v23.security.WireDischarge")
+	blessingStoreSign    = jutil.ClassSign("io.v.v23.security.BlessingStore")
+	blessingRootsSign    = jutil.ClassSign("io.v.v23.security.BlessingRoots")
+	blessingPatternSign  = jutil.ClassSign("io.v.v23.security.BlessingPattern")
+	signerSign           = jutil.ClassSign("io.v.v23.security.VSigner")
+	caveatSign           = jutil.ClassSign("io.v.v23.security.Caveat")
+	contextSign          = jutil.ClassSign("io.v.v23.context.VContext")
+	callSign             = jutil.ClassSign("io.v.v23.security.Call")
+	signatureSign        = jutil.ClassSign("io.v.v23.security.VSignature")
+	publicKeySign        = jutil.ClassSign("java.security.interfaces.ECPublicKey")
 
 	// Global reference for io.v.v23.security.Blessings class.
 	jBlessingsClass C.jclass
@@ -59,6 +61,8 @@ var (
 	jVSecurityClass C.jclass
 	// Global reference for io.v.v23.security.Discharge class.
 	jDischargeClass C.jclass
+	// Global reference for io.v.v23.security.DischargeImpetus class.
+	jDischargeImpetusClass C.jclass
 )
 
 // Init initializes the JNI code with the given Java evironment. This method
@@ -137,6 +141,11 @@ func Init(jEnv interface{}) error {
 		return err
 	}
 	jDischargeClass = C.jclass(class)
+	class, err = jutil.JFindClass(jEnv, "io/v/v23/security/DischargeImpetus")
+	if err != nil {
+		return err
+	}
+	jDischargeImpetusClass = C.jclass(class)
 	return nil
 }
 
@@ -745,6 +754,66 @@ func Java_io_v_v23_security_BlessingStoreImpl_nativePeerBlessings(env *C.JNIEnv,
 		return nil
 	}
 	return C.jobject(jBlessingsMap)
+}
+
+//export Java_io_v_v23_security_BlessingStoreImpl_nativeCacheDischarge
+func Java_io_v_v23_security_BlessingStoreImpl_nativeCacheDischarge(env *C.JNIEnv, jBlessingStoreImpl C.jobject, goPtr C.jlong, jDischarge C.jobject, jCaveat C.jobject, jImpetus C.jobject) {
+	blessingStore := *(*security.BlessingStore)(jutil.Ptr(goPtr))
+	discharge, err := GoDischarge(env, jDischarge)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return
+	}
+	caveat, err := GoCaveat(env, jCaveat)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return
+	}
+	var impetus security.DischargeImpetus
+	err = jutil.GoVomCopy(env, jImpetus, jDischargeImpetusClass, &impetus)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return
+	}
+	blessingStore.CacheDischarge(discharge, caveat, impetus)
+}
+
+//export Java_io_v_v23_security_BlessingStoreImpl_nativeClearDischarges
+func Java_io_v_v23_security_BlessingStoreImpl_nativeClearDischarges(env *C.JNIEnv, jBlessingStoreImpl C.jobject, goPtr C.jlong, jDischarges C.jobject) {
+	blessingStore := *(*security.BlessingStore)(jutil.Ptr(goPtr))
+	var discharges []security.Discharge
+	for _, jDischarge := range jutil.GoObjectArray(env, jDischarges) {
+		discharge, err := GoDischarge(env, jDischarge)
+		if err != nil {
+			jutil.JThrowV(env, err)
+			return
+		}
+		discharges = append(discharges, discharge)
+	}
+	blessingStore.ClearDischarges(discharges...)
+}
+
+//export Java_io_v_v23_security_BlessingStoreImpl_nativeDischarge
+func Java_io_v_v23_security_BlessingStoreImpl_nativeDischarge(env *C.JNIEnv, jBlessingStoreImpl C.jobject, goPtr C.jlong, jCaveat C.jobject, jImpetus C.jobject) C.jobject {
+	blessingStore := *(*security.BlessingStore)(jutil.Ptr(goPtr))
+	caveat, err := GoCaveat(env, jCaveat)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	var impetus security.DischargeImpetus
+	err = jutil.GoVomCopy(env, jImpetus, jDischargeImpetusClass, &impetus)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	discharge := blessingStore.Discharge(caveat, impetus)
+	jDischarge, err := JavaDischarge(env, discharge)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	return jDischarge
 }
 
 //export Java_io_v_v23_security_BlessingStoreImpl_nativeDebugString

@@ -45,6 +45,8 @@ var (
 	jDateTimeClass C.jclass
 	// Global reference for org.joda.time.Duration class.
 	jDurationClass C.jclass
+	// Global reference for java.util.Arrays class
+	jArraysClass C.jclass
 	// Global reference for java.util.ArrayList class.
 	jArrayListClass C.jclass
 	// Global reference for java.lang.Throwable class.
@@ -117,6 +119,11 @@ func Init(jEnv interface{}) error {
 		return err
 	}
 	jDurationClass = C.jclass(class)
+	class, err = JFindClass(env, "java/util/Arrays")
+	if err != nil {
+		return err
+	}
+	jArraysClass = C.jclass(class)
 	class, err = JFindClass(env, "java/util/ArrayList")
 	if err != nil {
 		return err
@@ -505,6 +512,26 @@ func JObjectArray(jEnv interface{}, arr []interface{}, jElemClass interface{}) u
 		C.SetObjectArrayElement(env, ret, C.jsize(i), jElem)
 	}
 	return unsafe.Pointer(ret)
+}
+
+// JObjectArrayList converts the provided slice of C.jobject pointers into a
+// Java ArrayList of the provided element type. The implementation is based on
+// http://stackoverflow.com/questions/157944.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func JObjectArrayList(jEnv interface{}, arr []interface{}, jElemClass interface{}) (unsafe.Pointer, error) {
+	jArr := JObjectArray(jEnv, arr, jElemClass)
+	env := getEnv(jEnv)
+	jArrAsList, err := CallStaticObjectMethod(env, jArraysClass, "asList", []Sign{ArraySign(ObjectSign)}, ListSign, jArr)
+	if err != nil {
+		return nil, err
+	}
+	jArrayList, err := NewObject(env, jArrayListClass, []Sign{CollectionSign}, C.jobject(jArrAsList))
+	if err != nil {
+		return nil, err
+	}
+	return jArrayList, nil
 }
 
 // GoObjectArray converts a Java Object array to a Go slice of C.jobject

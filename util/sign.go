@@ -33,6 +33,8 @@ const (
 )
 
 var (
+	// CollectionSign denotes a signature of a Java Collection type.
+	CollectionSign = ClassSign("java.util.Collection")
 	// StringSign denotes a signature of a Java String type.
 	StringSign = ClassSign("java.lang.String")
 	// ObjectSign denotes a signature of a Java Object type.
