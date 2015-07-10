@@ -60,7 +60,7 @@ type invoker struct {
 	jInvoker C.jobject
 }
 
-func (i *invoker) Prepare(method string, numArgs int) (argptrs []interface{}, tags []*vdl.Value, err error) {
+func (i *invoker) Prepare(ctx *context.T, method string, numArgs int) (argptrs []interface{}, tags []*vdl.Value, err error) {
 	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
 

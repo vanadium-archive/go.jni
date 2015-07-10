@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"runtime"
 
+	"v.io/v23/context"
 	"v.io/v23/rpc"
 	"v.io/v23/security"
 
@@ -41,7 +42,7 @@ type dispatcher struct {
 	jDispatcher C.jobject
 }
 
-func (d *dispatcher) Lookup(suffix string) (interface{}, security.Authorizer, error) {
+func (d *dispatcher) Lookup(ctx *context.T, suffix string) (interface{}, security.Authorizer, error) {
 	// Get Java environment.
 	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
