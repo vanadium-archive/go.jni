@@ -217,9 +217,14 @@ func Java_io_v_impl_google_namespace_NamespaceImpl_nativeResolveToMountTable(env
 }
 
 //export Java_io_v_impl_google_namespace_NamespaceImpl_nativeFlushCacheEntry
-func Java_io_v_impl_google_namespace_NamespaceImpl_nativeFlushCacheEntry(env *C.JNIEnv, jNamespaceClass C.jclass, goNamespacePtr C.jlong, jName string) C.jboolean {
+func Java_io_v_impl_google_namespace_NamespaceImpl_nativeFlushCacheEntry(env *C.JNIEnv, jNamespaceClass C.jclass, goNamespacePtr C.jlong, jContext C.jobject, jName string) C.jboolean {
 	n := *(*namespace.T)(jutil.Ptr(goNamespacePtr))
-	result := n.FlushCacheEntry(jutil.GoString(env, jName))
+	context, err := jcontext.GoContext(env, jContext)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return C.JNI_FALSE
+	}
+	result := n.FlushCacheEntry(context, jutil.GoString(env, jName))
 	if result {
 		return C.JNI_TRUE
 	} else {
