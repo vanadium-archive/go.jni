@@ -185,3 +185,11 @@ jint GetEnv(JavaVM* jvm, JNIEnv** env, jint version) {
 jboolean IsInstanceOf(JNIEnv *env, jobject obj, jclass class) {
   return (*env)->IsInstanceOf(env, obj, class);
 }
+
+jint PushLocalFrame(JNIEnv *env, jint capacity) {
+  return (*env)->PushLocalFrame(env, capacity);
+}
+
+jobject PopLocalFrame(JNIEnv *env, jobject result) {
+  return (*env)->PopLocalFrame(env, result);
+}

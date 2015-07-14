@@ -225,7 +225,21 @@ func GetEnv() (jEnv unsafe.Pointer, free func()) {
 		// the thread so the next call to GetEnv on this thread will succeed.
 		C.AttachCurrentThreadAsDaemon(jVM, &env, nil)
 	}
+	// GetEnv is called by Go code that wishes to call Java methods. In
+	// this case, JNI cannot automatically free unused local refererences.
+	// We must do it manually by pushing a new local reference frame. The
+	// frame will be popped in the env's cleanup function below, at which
+	// point JNI will free the unused references.
+	// http://developer.android.com/training/articles/perf-jni.html states
+	// that the JNI implementation is only required to provide a local
+	// reference table with a capacity of 16, so here we provide a table of
+	// that size.
+	localRefCapacity := 16
+	if newCapacity := PushLocalFrame(env, localRefCapacity); newCapacity < 0 {
+		panic("PushLocalFrame(" + string(localRefCapacity) + ") returned < 0 (was " + string(newCapacity) + ")")
+	}
 	return unsafe.Pointer(env), func() {
+		PopLocalFrame(env, nil)
 		runtime.UnlockOSThread()
 	}
 }
@@ -988,6 +1002,32 @@ func GoDuration(jEnv interface{}, jDuration interface{}) (time.Duration, error) 
 func JDuration(jEnv interface{}, d time.Duration) (unsafe.Pointer, error) {
 	millis := d.Nanoseconds() / 1000000
 	return NewObject(jEnv, jDurationClass, []Sign{LongSign}, int64(millis))
+}
+
+// PushLocalFrame pushes a new local reference frame onto the reference frame
+// stack. If the return value is >= 0, the new frame will have capacity for at
+// least the specified number of local references. If the return value is < 0,
+// the reference frame could not be created.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func PushLocalFrame(jEnv interface{}, capacity int) int {
+	return int(C.PushLocalFrame(getEnv(jEnv), C.jint(capacity)))
+}
+
+// PopLocalFrame pops the most recent local reference frame off the reference
+// frame stack. Returns a local reference in the previous reference frame to
+// the given jFramePtr object. If you do not require a reference to the
+// previous frame, you may pass nil for the jFramePtr parameter.
+// NOTE: Because CGO creates package-local types and because this method may be
+// invoked from a different package, Java types are passed in an empty interface
+// and then cast into their package local types.
+func PopLocalFrame(jEnv interface{}, jFramePtr interface{}) unsafe.Pointer {
+	if jFramePtr == nil {
+		return unsafe.Pointer(C.PopLocalFrame(getEnv(jEnv), nil))
+	} else {
+		return unsafe.Pointer(C.PopLocalFrame(getEnv(jEnv), getObject(jFramePtr)))
+	}
 }
 
 // Various functions that cast CGO types from various other packages into this

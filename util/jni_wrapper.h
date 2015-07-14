@@ -135,3 +135,19 @@ jint GetEnv(JavaVM* jvm, JNIEnv** env, jint version);
 
 // Tests whether an object is an instance of a class.
 jboolean IsInstanceOf(JNIEnv *env, jobject obj, jclass class);
+
+// Creates a new local reference frame, in which at least a given number of
+// local references can be created. Returns 0 on success, a negative number and
+// a pending OutOfMemoryError on failure.
+//
+// Note that local references already created in previous local frames are still
+// valid in the current local frame.
+jint PushLocalFrame(JNIEnv *env, jint capacity);
+
+// Pops off the current local reference frame, frees all the local references,
+// and returns a local reference in the previous local reference frame for the
+// given result object.
+//
+// Pass NULL as result if you do not need to return a reference to the previous
+// frame.
+jobject PopLocalFrame(JNIEnv *env, jobject result);
