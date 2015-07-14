@@ -247,15 +247,16 @@ func (j javaGlobber) Glob__(ctx *context.T, call rpc.ServerCall, pattern string)
 	actualChannel := make(chan naming.GlobReply)
 	readFunc := func(input interface{}) error {
 		jEnv, freeFunc := jutil.GetEnv()
-		defer freeFunc()
 		env := (*C.JNIEnv)(jEnv)
 
 		defer jutil.DeleteGlobalRef(env, input)
 		var reply naming.GlobReply
 		err := jutil.GoVomCopy(env, input, jGlobReplyClass, &reply)
 		if err != nil {
+			freeFunc()
 			return err
 		}
+		freeFunc()
 		actualChannel <- reply
 		return nil
 	}

@@ -298,13 +298,14 @@ func Java_io_v_impl_google_rpc_ServerImpl_nativeWatchNetwork(env *C.JNIEnv, jSer
 		for change := range networkChan {
 			jEnv, freeFunc := jutil.GetEnv()
 			env := (*C.JNIEnv)(jEnv)
-			defer freeFunc()
 			jChangeObj, err := JavaNetworkChange(env, change)
 			if err != nil {
 				log.Printf("Couldn't convert Go NetworkChange %v to Java\n", change)
+				freeFunc()
 				continue
 			}
 			jChange := C.jobject(jutil.NewGlobalRef(env, jChangeObj))
+			freeFunc()
 			retChan <- jChange
 		}
 		close(retChan)
