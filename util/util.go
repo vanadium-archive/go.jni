@@ -203,6 +203,8 @@ func GoString(jEnv, jStr interface{}) string {
 	return C.GoString(cString)
 }
 
+var envRefs = newSafeRefCounter()
+
 // GetEnv returns the Java environment for the running thread, creating a new
 // one if it doesn't already exist.  This method also returns a function which
 // must be invoked when the returned environment is no longer needed. The
@@ -238,9 +240,19 @@ func GetEnv() (jEnv unsafe.Pointer, free func()) {
 	if newCapacity := PushLocalFrame(env, localRefCapacity); newCapacity < 0 {
 		panic("PushLocalFrame(" + string(localRefCapacity) + ") returned < 0 (was " + string(newCapacity) + ")")
 	}
+	// Reference-count *env.  This is necessary to make GetEnv() re-entrant:
+	// same goroutine should be allowed to call GetEnv() multiple times and
+	// the OS thread should only be released after the last call to the free
+	// function.
+	envRefs.ref(env)
 	return unsafe.Pointer(env), func() {
 		PopLocalFrame(env, nil)
-		runtime.UnlockOSThread()
+		if envRefs.unref(env) == 0 {
+			// Last call to free the env out of possibly many successive
+			// GetEnv() calls by the same goroutine: it is now safe to release
+			// the thread.
+			runtime.UnlockOSThread()
+		}
 	}
 }
 

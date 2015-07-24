@@ -205,7 +205,7 @@ func setupStaticMethodCall(env interface{}, class interface{}, name string, argS
 	jclass = getClass(class)
 
 	var id unsafe.Pointer
-	id, err = JStaticMethodID(jenv, jclass, name, FuncSign(argSigns, retSign))
+	id, err = JStaticMethodID(env, jclass, name, FuncSign(argSigns, retSign))
 	if err != nil {
 		return
 	}

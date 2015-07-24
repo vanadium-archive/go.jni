@@ -8,9 +8,7 @@ package util
 
 import (
 	"fmt"
-	"log"
 	"reflect"
-	"runtime/debug"
 	"sync"
 	"unsafe"
 )
@@ -156,23 +154,24 @@ func (c *safeRefCounter) ref(valptr interface{}) {
 	}
 }
 
-func (c *safeRefCounter) unref(valptr interface{}) {
+// unref decreases the reference count of the given valptr by 1, returning
+// the new reference count value.
+func (c *safeRefCounter) unref(valptr interface{}) int {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 	p := PtrValue(valptr)
 	ref, ok := c.refs[p]
 	if !ok {
-		log.Printf("Unrefing pointer %d of type %T that hasn't been refed before, stack: %s", int64(p), valptr, string(debug.Stack()))
-		return
+		panic(fmt.Sprintf("Unrefing pointer %d of type %T that hasn't been refed before", int64(p), valptr))
 	}
 	count := ref.count
 	if count == 0 {
-		log.Printf("Ref count for pointer %d of type %T is zero: that shouldn't happen, stack: %s", int64(p), valptr, string(debug.Stack()))
-		return
+		panic(fmt.Sprintf("Ref count for pointer %d of type %T is zero", int64(p), valptr))
 	}
 	if count > 1 {
 		ref.count--
-		return
+		return ref.count
 	}
 	delete(c.refs, p)
+	return 0
 }
