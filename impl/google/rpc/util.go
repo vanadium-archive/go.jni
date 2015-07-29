@@ -240,13 +240,12 @@ func JavaListenSpec(jEnv interface{}, spec rpc.ListenSpec) (unsafe.Pointer, erro
 	if err != nil {
 		return nil, err
 	}
-	jProxy := jutil.JString(jEnv, spec.Proxy)
 	jChooser, err := JavaAddressChooser(jEnv, spec.AddressChooser)
 	if err != nil {
 		return nil, err
 	}
 	addressSign := jutil.ClassSign("io.v.v23.rpc.ListenSpec$Address")
-	jSpec, err := jutil.NewObject(jEnv, jListenSpecClass, []jutil.Sign{jutil.ArraySign(addressSign), jutil.StringSign, addressChooserSign}, jAddrs, jProxy, jChooser)
+	jSpec, err := jutil.NewObject(jEnv, jListenSpecClass, []jutil.Sign{jutil.ArraySign(addressSign), jutil.StringSign, addressChooserSign}, jAddrs, spec.Proxy, jChooser)
 	if err != nil {
 		return nil, err
 	}

@@ -279,7 +279,7 @@ func Java_io_v_v23_security_VPrincipalImpl_nativeCreateForSigner(env *C.JNIEnv, 
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	jPrincipal, err := jutil.NewObject(env, jVPrincipalImplClass, []jutil.Sign{jutil.LongSign, signerSign, blessingStoreSign, blessingRootsSign}, &principal, jSigner, C.jobject(nil), C.jobject(nil))
+	jPrincipal, err := jutil.NewObject(env, jVPrincipalImplClass, []jutil.Sign{jutil.LongSign, signerSign, blessingStoreSign, blessingRootsSign}, int64(jutil.PtrValue(&principal)), jSigner, C.jobject(nil), C.jobject(nil))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -310,7 +310,7 @@ func Java_io_v_v23_security_VPrincipalImpl_nativeCreateForAll(env *C.JNIEnv, jVP
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	jPrincipal, err := jutil.NewObject(env, jVPrincipalImplClass, []jutil.Sign{jutil.LongSign, signerSign, blessingStoreSign, blessingRootsSign}, &principal, jSigner, jStore, jRoots)
+	jPrincipal, err := jutil.NewObject(env, jVPrincipalImplClass, []jutil.Sign{jutil.LongSign, signerSign, blessingStoreSign, blessingRootsSign}, int64(jutil.PtrValue(&principal)), jSigner, jStore, jRoots)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -356,7 +356,7 @@ func Java_io_v_v23_security_VPrincipalImpl_nativeCreatePersistentForSigner(env *
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	jPrincipal, err := jutil.NewObject(env, jVPrincipalImplClass, []jutil.Sign{jutil.LongSign, signerSign, blessingStoreSign, blessingRootsSign}, &principal, jSigner, C.jobject(nil), C.jobject(nil))
+	jPrincipal, err := jutil.NewObject(env, jVPrincipalImplClass, []jutil.Sign{jutil.LongSign, signerSign, blessingStoreSign, blessingRootsSign}, int64(jutil.PtrValue(&principal)), jSigner, C.jobject(nil), C.jobject(nil))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
