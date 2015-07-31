@@ -7,8 +7,6 @@
 package namespace
 
 import (
-	"unsafe"
-
 	"v.io/v23/namespace"
 	"v.io/v23/naming"
 	"v.io/v23/options"
@@ -20,22 +18,19 @@ import "C"
 
 // JavaNamespace converts the provided Go Namespace into a Java Namespace
 // object.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func JavaNamespace(jEnv interface{}, namespace namespace.T) (unsafe.Pointer, error) {
-	jNamespace, err := jutil.NewObject(jEnv, jNamespaceImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&namespace)))
+func JavaNamespace(env jutil.Env, namespace namespace.T) (jutil.Object, error) {
+	jNamespace, err := jutil.NewObject(env, jNamespaceImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&namespace)))
 	if err != nil {
-		return nil, err
+		return jutil.NullObject, err
 	}
 	jutil.GoRef(&namespace) // Un-refed when the Java NamespaceImpl is finalized.
 	return jNamespace, nil
 }
 
-func javaToGoOptions(jEnv interface{}, key string, jValue interface{}) (interface{}, error) {
+func javaToGoOptions(env jutil.Env, key string, jValue jutil.Object) (interface{}, error) {
 	switch key {
 	case "io.v.v23.SKIP_SERVER_ENDPOINT_AUTHORIZATION":
-		value, err := jutil.CallBooleanMethod(jEnv, jValue, "booleanValue", []jutil.Sign{})
+		value, err := jutil.CallBooleanMethod(env, jValue, "booleanValue", []jutil.Sign{})
 		if err != nil {
 			return nil, err
 		}
@@ -47,8 +42,8 @@ func javaToGoOptions(jEnv interface{}, key string, jValue interface{}) (interfac
 	return nil, jutil.SkipOption
 }
 
-func namespaceOptions(jEnv interface{}, jOptions interface{}) ([]naming.NamespaceOpt, error) {
-	opts, err := jutil.GoOptions(jEnv, jOptions, javaToGoOptions)
+func namespaceOptions(env jutil.Env, jOptions jutil.Object) ([]naming.NamespaceOpt, error) {
+	opts, err := jutil.GoOptions(env, jOptions, javaToGoOptions)
 	if err != nil {
 		return nil, err
 	}

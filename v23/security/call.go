@@ -10,7 +10,6 @@ import (
 	"log"
 	"runtime"
 	"time"
-	"unsafe"
 
 	jutil "v.io/x/jni/util"
 	jcontext "v.io/x/jni/v23/context"
@@ -26,13 +25,10 @@ import (
 import "C"
 
 // JavaCall converts the provided Go (security) Call into a Java Call object.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func JavaCall(jEnv interface{}, call security.Call) (unsafe.Pointer, error) {
-	jCall, err := jutil.NewObject(jEnv, jCallImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&call)))
+func JavaCall(env jutil.Env, call security.Call) (jutil.Object, error) {
+	jCall, err := jutil.NewObject(env, jCallImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&call)))
 	if err != nil {
-		return nil, err
+		return jutil.NullObject, err
 	}
 	jutil.GoRef(&call) // Un-refed when the Java CallImpl object is finalized.
 	return jCall, nil
@@ -40,29 +36,25 @@ func JavaCall(jEnv interface{}, call security.Call) (unsafe.Pointer, error) {
 
 // GoCall creates instance of security.Call that uses the provided Java
 // Call as its underlying implementation.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func GoCall(jEnv, jCallObj interface{}) (security.Call, error) {
+func GoCall(env jutil.Env, jCall jutil.Object) (security.Call, error) {
 	// Reference Java call; it will be de-referenced when the go call
 	// created below is garbage-collected (through the finalizer callback we
 	// setup just below).
-	jCall := C.jobject(jutil.NewGlobalRef(jEnv, jCallObj))
+	jCall = jutil.NewGlobalRef(env, jCall)
 	call := &callImpl{
 		jCall: jCall,
 	}
 	runtime.SetFinalizer(call, func(c *callImpl) {
-		javaEnv, freeFunc := jutil.GetEnv()
-		jenv := (*C.JNIEnv)(javaEnv)
+		env, freeFunc := jutil.GetEnv()
 		defer freeFunc()
-		jutil.DeleteGlobalRef(jenv, c.jCall)
+		jutil.DeleteGlobalRef(env, c.jCall)
 	})
 	return call, nil
 }
 
 // callImpl is the go interface to the java implementation of security.Call
 type callImpl struct {
-	jCall C.jobject
+	jCall jutil.Object
 }
 
 func (c *callImpl) Timestamp() time.Time {
@@ -88,7 +80,7 @@ func (c *callImpl) Method() string {
 func (c *callImpl) MethodTags() []*vdl.Value {
 	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
-	jTags, err := jutil.CallObjectArrayMethod(env, c.jCall, "methodTags", nil, jutil.VdlValueSign)
+	jTags, err := jutil.CallObjectMethod(env, c.jCall, "methodTags", nil, jutil.ArraySign(jutil.VdlValueSign))
 	if err != nil {
 		log.Println("Couldn't call Java methodTags method: ", err)
 		return nil

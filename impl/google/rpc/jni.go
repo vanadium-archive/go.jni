@@ -37,274 +37,258 @@ var (
 	streamSign           = jutil.ClassSign("io.v.v23.rpc.Stream")
 	optionsSign          = jutil.ClassSign("io.v.v23.Options")
 	// Global reference for io.v.impl.google.rpc.AddressChooserImpl class.
-	jAddressChooserImplClass C.jclass
+	jAddressChooserImplClass jutil.Class
 	// Global reference for io.v.impl.google.rpc.ServerImpl class.
-	jServerImplClass C.jclass
+	jServerImplClass jutil.Class
 	// Global reference for io.v.impl.google.rpc.ClientImpl class.
-	jClientImplClass C.jclass
+	jClientImplClass jutil.Class
 	// Global reference for io.v.impl.google.rpc.ClientCallImpl class.
-	jClientCallImplClass C.jclass
+	jClientCallImplClass jutil.Class
 	// Global reference for io.v.impl.google.rpc.StreamServerCallImpl class.
-	jStreamServerCallImplClass C.jclass
+	jStreamServerCallImplClass jutil.Class
 	// Global reference for io.v.impl.google.rpc.ServerCallImpl class.
-	jServerCallImplClass C.jclass
+	jServerCallImplClass jutil.Class
 	// Global reference for io.v.impl.google.rpc.StreamImpl class.
-	jStreamImplClass C.jclass
+	jStreamImplClass jutil.Class
 	// Global reference for io.v.impl.google.rpc.Util class.
-	jUtilClass C.jclass
+	jUtilClass jutil.Class
 	// Global reference for io.v.v23.rpc.Invoker class.
-	jInvokerClass C.jclass
+	jInvokerClass jutil.Class
 	// Global reference for io.v.v23.rpc.ListenSpec class.
-	jListenSpecClass C.jclass
+	jListenSpecClass jutil.Class
 	// Global reference for io.v.v23.rpc.ListenSpec$Address class.
-	jListenSpecAddressClass C.jclass
+	jListenSpecAddressClass jutil.Class
 	// Global reference for io.v.v23.rpc.MountStatus class.
-	jMountStatusClass C.jclass
+	jMountStatusClass jutil.Class
 	// Global reference for io.v.v23.rpc.NetworkAddress class.
-	jNetworkAddressClass C.jclass
+	jNetworkAddressClass jutil.Class
 	// Global reference for io.v.v23.rpc.NetworkChange class.
-	jNetworkChangeClass C.jclass
+	jNetworkChangeClass jutil.Class
 	// Global reference for io.v.v23.rpc.ProxyStatus class.
-	jProxyStatusClass C.jclass
+	jProxyStatusClass jutil.Class
 	// Global reference for io.v.v23.rpc.ReflectInvoker class.
-	jReflectInvokerClass C.jclass
+	jReflectInvokerClass jutil.Class
 	// Global reference for io.v.v23.rpc.ServerStatus class.
-	jServerStatusClass C.jclass
+	jServerStatusClass jutil.Class
 	// Global reference for io.v.v23.rpc.ServerState class.
-	jServerStateClass C.jclass
+	jServerStateClass jutil.Class
 	// Global reference for io.v.v23.OptionDefs class.
-	jOptionDefsClass C.jclass
+	jOptionDefsClass jutil.Class
 	// Global reference for java.io.EOFException class.
-	jEOFExceptionClass C.jclass
+	jEOFExceptionClass jutil.Class
 	// Global reference for io.v.v23.naming.Endpoint.
-	jEndpointClass C.jclass
+	jEndpointClass jutil.Class
 	// Global reference for io.v.v23.vdlroot.signature.Interface class.
-	jInterfaceClass C.jclass
+	jInterfaceClass jutil.Class
 	// Global reference for io.v.v23.vdlroot.signature.Method class.
-	jMethodClass C.jclass
+	jMethodClass jutil.Class
 	// Global reference for io.v.v23.naming.GlobReply
-	jGlobReplyClass C.jclass
+	jGlobReplyClass jutil.Class
 	// Global reference for java.lang.Object class.
-	jObjectClass C.jclass
+	jObjectClass jutil.Class
 )
 
 // Init initializes the JNI code with the given Java environment. This method
 // must be called from the main Java thread.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java environment is passed in an empty
 // interface and then cast into the package-local environment type.
-func Init(jEnv interface{}) error {
+func Init(env jutil.Env) error {
 	// Cache global references to all Java classes used by the package.  This is
 	// necessary because JNI gets access to the class loader only in the system
 	// thread, so we aren't able to invoke FindClass in other threads.
-	class, err := jutil.JFindClass(jEnv, "io/v/impl/google/rpc/AddressChooserImpl")
+	var err error
+	jAddressChooserImplClass, err = jutil.JFindClass(env, "io/v/impl/google/rpc/AddressChooserImpl")
 	if err != nil {
 		return err
 	}
-	jAddressChooserImplClass = C.jclass(class)
-	class, err = jutil.JFindClass(jEnv, "io/v/impl/google/rpc/ServerImpl")
+	jServerImplClass, err = jutil.JFindClass(env, "io/v/impl/google/rpc/ServerImpl")
 	if err != nil {
 		return err
 	}
-	jServerImplClass = C.jclass(class)
-	class, err = jutil.JFindClass(jEnv, "io/v/impl/google/rpc/ClientImpl")
+	jClientImplClass, err = jutil.JFindClass(env, "io/v/impl/google/rpc/ClientImpl")
 	if err != nil {
 		return err
 	}
-	jClientImplClass = C.jclass(class)
-	class, err = jutil.JFindClass(jEnv, "io/v/impl/google/rpc/ClientCallImpl")
+	jClientCallImplClass, err = jutil.JFindClass(env, "io/v/impl/google/rpc/ClientCallImpl")
 	if err != nil {
 		return err
 	}
-	jClientCallImplClass = C.jclass(class)
-	class, err = jutil.JFindClass(jEnv, "io/v/impl/google/rpc/StreamServerCallImpl")
+	jStreamServerCallImplClass, err = jutil.JFindClass(env, "io/v/impl/google/rpc/StreamServerCallImpl")
 	if err != nil {
 		return err
 	}
-	jStreamServerCallImplClass = C.jclass(class)
-	class, err = jutil.JFindClass(jEnv, "io/v/impl/google/rpc/ServerCallImpl")
+	jServerCallImplClass, err = jutil.JFindClass(env, "io/v/impl/google/rpc/ServerCallImpl")
 	if err != nil {
 		return err
 	}
-	jServerCallImplClass = C.jclass(class)
-	class, err = jutil.JFindClass(jEnv, "io/v/impl/google/rpc/StreamImpl")
+	jStreamImplClass, err = jutil.JFindClass(env, "io/v/impl/google/rpc/StreamImpl")
 	if err != nil {
 		return err
 	}
-	jStreamImplClass = C.jclass(class)
-	class, err = jutil.JFindClass(jEnv, "io/v/impl/google/rpc/Util")
+	jUtilClass, err = jutil.JFindClass(env, "io/v/impl/google/rpc/Util")
 	if err != nil {
 		return err
 	}
-	jUtilClass = C.jclass(class)
-	class, err = jutil.JFindClass(jEnv, "io/v/v23/rpc/Invoker")
+	jInvokerClass, err = jutil.JFindClass(env, "io/v/v23/rpc/Invoker")
 	if err != nil {
 		return err
 	}
-	jInvokerClass = C.jclass(class)
-	class, err = jutil.JFindClass(jEnv, "io/v/v23/rpc/ListenSpec")
+	jListenSpecClass, err = jutil.JFindClass(env, "io/v/v23/rpc/ListenSpec")
 	if err != nil {
 		return err
 	}
-	jListenSpecClass = C.jclass(class)
-	class, err = jutil.JFindClass(jEnv, "io/v/v23/rpc/ListenSpec$Address")
+	jListenSpecAddressClass, err = jutil.JFindClass(env, "io/v/v23/rpc/ListenSpec$Address")
 	if err != nil {
 		return err
 	}
-	jListenSpecAddressClass = C.jclass(class)
-	class, err = jutil.JFindClass(jEnv, "io/v/v23/rpc/MountStatus")
+	jMountStatusClass, err = jutil.JFindClass(env, "io/v/v23/rpc/MountStatus")
 	if err != nil {
 		return err
 	}
-	jMountStatusClass = C.jclass(class)
-	class, err = jutil.JFindClass(jEnv, "io/v/v23/rpc/NetworkAddress")
+	jNetworkAddressClass, err = jutil.JFindClass(env, "io/v/v23/rpc/NetworkAddress")
 	if err != nil {
 		return err
 	}
-	jNetworkAddressClass = C.jclass(class)
-	class, err = jutil.JFindClass(jEnv, "io/v/v23/rpc/NetworkChange")
+	jNetworkChangeClass, err = jutil.JFindClass(env, "io/v/v23/rpc/NetworkChange")
 	if err != nil {
 		return err
 	}
-	jNetworkChangeClass = C.jclass(class)
-	class, err = jutil.JFindClass(jEnv, "io/v/v23/rpc/ProxyStatus")
+	jProxyStatusClass, err = jutil.JFindClass(env, "io/v/v23/rpc/ProxyStatus")
 	if err != nil {
 		return err
 	}
-	jProxyStatusClass = C.jclass(class)
-	class, err = jutil.JFindClass(jEnv, "io/v/v23/rpc/ReflectInvoker")
+	jReflectInvokerClass, err = jutil.JFindClass(env, "io/v/v23/rpc/ReflectInvoker")
 	if err != nil {
 		return err
 	}
-	jReflectInvokerClass = C.jclass(class)
-	class, err = jutil.JFindClass(jEnv, "io/v/v23/rpc/ServerStatus")
+	jServerStatusClass, err = jutil.JFindClass(env, "io/v/v23/rpc/ServerStatus")
 	if err != nil {
 		return err
 	}
-	jServerStatusClass = C.jclass(class)
-	class, err = jutil.JFindClass(jEnv, "io/v/v23/rpc/ServerState")
+	jServerStateClass, err = jutil.JFindClass(env, "io/v/v23/rpc/ServerState")
 	if err != nil {
 		return err
 	}
-	jServerStateClass = C.jclass(class)
-	class, err = jutil.JFindClass(jEnv, "io/v/v23/OptionDefs")
+	jOptionDefsClass, err = jutil.JFindClass(env, "io/v/v23/OptionDefs")
 	if err != nil {
 		return err
 	}
-	jOptionDefsClass = C.jclass(class)
-	class, err = jutil.JFindClass(jEnv, "java/io/EOFException")
+	jEOFExceptionClass, err = jutil.JFindClass(env, "java/io/EOFException")
 	if err != nil {
 		return err
 	}
-	jEOFExceptionClass = C.jclass(class)
-	class, err = jutil.JFindClass(jEnv, "io/v/v23/naming/Endpoint")
+	jEndpointClass, err = jutil.JFindClass(env, "io/v/v23/naming/Endpoint")
 	if err != nil {
 		return err
 	}
-	jEndpointClass = C.jclass(class)
-	class, err = jutil.JFindClass(jEnv, "io/v/v23/vdlroot/signature/Interface")
+	jInterfaceClass, err = jutil.JFindClass(env, "io/v/v23/vdlroot/signature/Interface")
 	if err != nil {
 		return err
 	}
-	jInterfaceClass = C.jclass(class)
-	class, err = jutil.JFindClass(jEnv, "io/v/v23/vdlroot/signature/Method")
+	jMethodClass, err = jutil.JFindClass(env, "io/v/v23/vdlroot/signature/Method")
 	if err != nil {
 		return err
 	}
-	jMethodClass = C.jclass(class)
-	class, err = jutil.JFindClass(jEnv, "io/v/v23/naming/GlobReply")
+	jGlobReplyClass, err = jutil.JFindClass(env, "io/v/v23/naming/GlobReply")
 	if err != nil {
 		return err
 	}
-	jGlobReplyClass = C.jclass(class)
-	class, err = jutil.JFindClass(jEnv, "java/lang/Object")
+	jObjectClass, err = jutil.JFindClass(env, "java/lang/Object")
 	if err != nil {
 		return err
 	}
-	jObjectClass = C.jclass(class)
 	return nil
 }
 
 //export Java_io_v_impl_google_rpc_ServerImpl_nativeListen
-func Java_io_v_impl_google_rpc_ServerImpl_nativeListen(env *C.JNIEnv, jServer C.jobject, goPtr C.jlong, jSpec C.jobject) C.jobjectArray {
-	spec, err := GoListenSpec(env, jSpec)
+func Java_io_v_impl_google_rpc_ServerImpl_nativeListen(jenv *C.JNIEnv, jServer C.jobject, goPtr C.jlong, jSpec C.jobject) C.jobjectArray {
+	env := jutil.WrapEnv(jenv)
+	spec, err := GoListenSpec(env, jutil.WrapObject(jSpec))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	eps, err := (*(*rpc.Server)(jutil.Ptr(goPtr))).Listen(spec)
+	eps, err := (*(*rpc.Server)(jutil.NativePtr(goPtr))).Listen(spec)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	jEps := make([]interface{}, len(eps))
+	jEps := make([]jutil.Object, len(eps))
 	for i, ep := range eps {
 		jEp, err := jnaming.JavaEndpoint(env, ep)
 		if err != nil {
 			jutil.JThrowV(env, err)
 			return nil
 		}
-		jEps[i] = C.jobject(jEp)
+		jEps[i] = jEp
 	}
-	return C.jobjectArray(jutil.JObjectArray(env, jEps, jEndpointClass))
+	jArr, err := jutil.JObjectArray(env, jEps, jEndpointClass)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	return C.jobjectArray(unsafe.Pointer(jArr))
 }
 
 //export Java_io_v_impl_google_rpc_ServerImpl_nativeServe
-func Java_io_v_impl_google_rpc_ServerImpl_nativeServe(env *C.JNIEnv, jServer C.jobject, goPtr C.jlong, jName C.jstring, jDispatcher C.jobject) {
-	name := jutil.GoString(env, jName)
-	d, err := goDispatcher(env, jDispatcher)
+func Java_io_v_impl_google_rpc_ServerImpl_nativeServe(jenv *C.JNIEnv, jServer C.jobject, goPtr C.jlong, jName C.jstring, jDispatcher C.jobject) {
+	env := jutil.WrapEnv(jenv)
+	name := jutil.GoString(env, jutil.WrapObject(jName))
+	d, err := goDispatcher(env, jutil.WrapObject(jDispatcher))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return
 	}
-	if err := (*(*rpc.Server)(jutil.Ptr(goPtr))).ServeDispatcher(name, d); err != nil {
+	if err := (*(*rpc.Server)(jutil.NativePtr(goPtr))).ServeDispatcher(name, d); err != nil {
 		jutil.JThrowV(env, err)
 		return
 	}
 }
 
 //export Java_io_v_impl_google_rpc_ServerImpl_nativeAddName
-func Java_io_v_impl_google_rpc_ServerImpl_nativeAddName(env *C.JNIEnv, jServer C.jobject, goPtr C.jlong, jName C.jstring) {
-	name := jutil.GoString(env, jName)
-	if err := (*(*rpc.Server)(jutil.Ptr(goPtr))).AddName(name); err != nil {
+func Java_io_v_impl_google_rpc_ServerImpl_nativeAddName(jenv *C.JNIEnv, jServer C.jobject, goPtr C.jlong, jName C.jstring) {
+	env := jutil.WrapEnv(jenv)
+	name := jutil.GoString(env, jutil.WrapObject(jName))
+	if err := (*(*rpc.Server)(jutil.NativePtr(goPtr))).AddName(name); err != nil {
 		jutil.JThrowV(env, err)
 		return
 	}
 }
 
 //export Java_io_v_impl_google_rpc_ServerImpl_nativeRemoveName
-func Java_io_v_impl_google_rpc_ServerImpl_nativeRemoveName(env *C.JNIEnv, jServer C.jobject, goPtr C.jlong, jName C.jstring) {
-	name := jutil.GoString(env, jName)
-	(*(*rpc.Server)(jutil.Ptr(goPtr))).RemoveName(name)
+func Java_io_v_impl_google_rpc_ServerImpl_nativeRemoveName(jenv *C.JNIEnv, jServer C.jobject, goPtr C.jlong, jName C.jstring) {
+	env := jutil.WrapEnv(jenv)
+	name := jutil.GoString(env, jutil.WrapObject(jName))
+	(*(*rpc.Server)(jutil.NativePtr(goPtr))).RemoveName(name)
 }
 
 //export Java_io_v_impl_google_rpc_ServerImpl_nativeGetStatus
-func Java_io_v_impl_google_rpc_ServerImpl_nativeGetStatus(env *C.JNIEnv, jServer C.jobject, goPtr C.jlong) C.jobject {
-	status := (*(*rpc.Server)(jutil.Ptr(goPtr))).Status()
+func Java_io_v_impl_google_rpc_ServerImpl_nativeGetStatus(jenv *C.JNIEnv, jServer C.jobject, goPtr C.jlong) C.jobject {
+	env := jutil.WrapEnv(jenv)
+	status := (*(*rpc.Server)(jutil.NativePtr(goPtr))).Status()
 	jStatus, err := JavaServerStatus(env, status)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return C.jobject(jStatus)
+	return C.jobject(unsafe.Pointer(jStatus))
 }
 
 //export Java_io_v_impl_google_rpc_ServerImpl_nativeWatchNetwork
-func Java_io_v_impl_google_rpc_ServerImpl_nativeWatchNetwork(env *C.JNIEnv, jServer C.jobject, goPtr C.jlong) C.jobject {
+func Java_io_v_impl_google_rpc_ServerImpl_nativeWatchNetwork(jenv *C.JNIEnv, jServer C.jobject, goPtr C.jlong) C.jobject {
+	env := jutil.WrapEnv(jenv)
 	networkChan := make(chan rpc.NetworkChange, 100)
-	(*(*rpc.Server)(jutil.Ptr(goPtr))).WatchNetwork(networkChan)
-	retChan := make(chan C.jobject, 100)
+	(*(*rpc.Server)(jutil.NativePtr(goPtr))).WatchNetwork(networkChan)
+	retChan := make(chan jutil.Object, 100)
 	go func() {
 		for change := range networkChan {
-			jEnv, freeFunc := jutil.GetEnv()
-			env := (*C.JNIEnv)(jEnv)
-			jChangeObj, err := JavaNetworkChange(env, change)
+			env, freeFunc := jutil.GetEnv()
+			jChange, err := JavaNetworkChange(env, change)
 			if err != nil {
 				log.Printf("Couldn't convert Go NetworkChange %v to Java\n", change)
 				freeFunc()
 				continue
 			}
-			jChange := C.jobject(jutil.NewGlobalRef(env, jChangeObj))
+			jChange = jutil.NewGlobalRef(env, jChange)
 			freeFunc()
 			retChan <- jChange
 		}
@@ -315,23 +299,25 @@ func Java_io_v_impl_google_rpc_ServerImpl_nativeWatchNetwork(env *C.JNIEnv, jSer
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return C.jobject(jInputChannel)
+	return C.jobject(unsafe.Pointer(jInputChannel))
 }
 
 //export Java_io_v_impl_google_rpc_ServerImpl_nativeUnwatchNetwork
-func Java_io_v_impl_google_rpc_ServerImpl_nativeUnwatchNetwork(env *C.JNIEnv, jServer C.jobject, goPtr C.jlong, jInputChannel C.jobject) {
-	goNetworkChanPtr, err := jutil.CallLongMethod(env, jInputChannel, "getSourceNativePtr", nil)
+func Java_io_v_impl_google_rpc_ServerImpl_nativeUnwatchNetwork(jenv *C.JNIEnv, jServer C.jobject, goPtr C.jlong, jInputChannel C.jobject) {
+	env := jutil.WrapEnv(jenv)
+	goNetworkChanPtr, err := jutil.CallLongMethod(env, jutil.WrapObject(jInputChannel), "getSourceNativePtr", nil)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return
 	}
 	networkChan := *(*chan rpc.NetworkChange)(unsafe.Pointer(uintptr(goNetworkChanPtr)))
-	(*(*rpc.Server)(jutil.Ptr(goPtr))).UnwatchNetwork(networkChan)
+	(*(*rpc.Server)(jutil.NativePtr(goPtr))).UnwatchNetwork(networkChan)
 }
 
 //export Java_io_v_impl_google_rpc_ServerImpl_nativeStop
-func Java_io_v_impl_google_rpc_ServerImpl_nativeStop(env *C.JNIEnv, server C.jobject, goPtr C.jlong) {
-	s := (*rpc.Server)(jutil.Ptr(goPtr))
+func Java_io_v_impl_google_rpc_ServerImpl_nativeStop(jenv *C.JNIEnv, jServer C.jobject, goPtr C.jlong) {
+	env := jutil.WrapEnv(jenv)
+	s := (*rpc.Server)(jutil.NativePtr(goPtr))
 	if err := (*s).Stop(); err != nil {
 		jutil.JThrowV(env, err)
 		return
@@ -339,20 +325,25 @@ func Java_io_v_impl_google_rpc_ServerImpl_nativeStop(env *C.JNIEnv, server C.job
 }
 
 //export Java_io_v_impl_google_rpc_ServerImpl_nativeFinalize
-func Java_io_v_impl_google_rpc_ServerImpl_nativeFinalize(env *C.JNIEnv, server C.jobject, goPtr C.jlong) {
-	jutil.GoUnref(jutil.Ptr(goPtr))
+func Java_io_v_impl_google_rpc_ServerImpl_nativeFinalize(jenv *C.JNIEnv, jServer C.jobject, goPtr C.jlong) {
+	jutil.GoUnref(jutil.NativePtr(goPtr))
 }
 
 //export Java_io_v_impl_google_rpc_ClientImpl_nativeStartCall
-func Java_io_v_impl_google_rpc_ClientImpl_nativeStartCall(env *C.JNIEnv, jClient C.jobject, goPtr C.jlong, jContext C.jobject, jName C.jstring, jMethod C.jstring, jVomArgs C.jobjectArray, jSkipServerAuth C.jboolean) C.jobject {
-	name := jutil.GoString(env, jName)
-	method := jutil.GoString(env, jMethod)
-	context, err := jcontext.GoContext(env, jContext)
+func Java_io_v_impl_google_rpc_ClientImpl_nativeStartCall(jenv *C.JNIEnv, jClient C.jobject, goPtr C.jlong, jContext C.jobject, jName C.jstring, jMethod C.jstring, jVomArgs C.jobjectArray, jSkipServerAuth C.jboolean) C.jobject {
+	env := jutil.WrapEnv(jenv)
+	name := jutil.GoString(env, jutil.WrapObject(jName))
+	method := jutil.GoString(env, jutil.WrapObject(jMethod))
+	context, err := jcontext.GoContext(env, jutil.WrapObject(jContext))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	vomArgs := jutil.GoByteArrayArray(env, jVomArgs)
+	vomArgs, err := jutil.GoByteArrayArray(env, jutil.WrapObject(jVomArgs))
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
 	// VOM-decode each arguments into a *vdl.Value.
 	args := make([]interface{}, len(vomArgs))
 	for i := 0; i < len(vomArgs); i++ {
@@ -368,7 +359,7 @@ func Java_io_v_impl_google_rpc_ClientImpl_nativeStartCall(env *C.JNIEnv, jClient
 	}
 
 	// Invoke StartCall
-	call, err := (*(*rpc.Client)(jutil.Ptr(goPtr))).StartCall(context, name, method, args, opts...)
+	call, err := (*(*rpc.Client)(jutil.NativePtr(goPtr))).StartCall(context, name, method, args, opts...)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -378,37 +369,39 @@ func Java_io_v_impl_google_rpc_ClientImpl_nativeStartCall(env *C.JNIEnv, jClient
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return jCall
+	return C.jobject(unsafe.Pointer(jCall))
 }
 
 //export Java_io_v_impl_google_rpc_ClientImpl_nativeClose
-func Java_io_v_impl_google_rpc_ClientImpl_nativeClose(env *C.JNIEnv, jClient C.jobject, goPtr C.jlong) {
-	(*(*rpc.Client)(jutil.Ptr(goPtr))).Close()
+func Java_io_v_impl_google_rpc_ClientImpl_nativeClose(jenv *C.JNIEnv, jClient C.jobject, goPtr C.jlong) {
+	(*(*rpc.Client)(jutil.NativePtr(goPtr))).Close()
 }
 
 //export Java_io_v_impl_google_rpc_ClientImpl_nativeFinalize
-func Java_io_v_impl_google_rpc_ClientImpl_nativeFinalize(env *C.JNIEnv, jClient C.jobject, goPtr C.jlong) {
-	jutil.GoUnref(jutil.Ptr(goPtr))
+func Java_io_v_impl_google_rpc_ClientImpl_nativeFinalize(jenv *C.JNIEnv, jClient C.jobject, goPtr C.jlong) {
+	jutil.GoUnref(jutil.NativePtr(goPtr))
 }
 
 //export Java_io_v_impl_google_rpc_StreamImpl_nativeSend
-func Java_io_v_impl_google_rpc_StreamImpl_nativeSend(env *C.JNIEnv, jStream C.jobject, goPtr C.jlong, jVomItem C.jbyteArray) {
-	vomItem := jutil.GoByteArray(env, jVomItem)
+func Java_io_v_impl_google_rpc_StreamImpl_nativeSend(jenv *C.JNIEnv, jStream C.jobject, goPtr C.jlong, jVomItem C.jbyteArray) {
+	env := jutil.WrapEnv(jenv)
+	vomItem := jutil.GoByteArray(env, jutil.WrapObject(jVomItem))
 	item, err := jutil.VomDecodeToValue(vomItem)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return
 	}
-	if err := (*(*rpc.Stream)(jutil.Ptr(goPtr))).Send(item); err != nil {
+	if err := (*(*rpc.Stream)(jutil.NativePtr(goPtr))).Send(item); err != nil {
 		jutil.JThrowV(env, err)
 		return
 	}
 }
 
 //export Java_io_v_impl_google_rpc_StreamImpl_nativeRecv
-func Java_io_v_impl_google_rpc_StreamImpl_nativeRecv(env *C.JNIEnv, jStream C.jobject, goPtr C.jlong) C.jbyteArray {
+func Java_io_v_impl_google_rpc_StreamImpl_nativeRecv(jenv *C.JNIEnv, jStream C.jobject, goPtr C.jlong) C.jbyteArray {
+	env := jutil.WrapEnv(jenv)
 	result := new(vdl.Value)
-	if err := (*(*rpc.Stream)(jutil.Ptr(goPtr))).Recv(&result); err != nil {
+	if err := (*(*rpc.Stream)(jutil.NativePtr(goPtr))).Recv(&result); err != nil {
 		if err == io.EOF {
 			jutil.JThrow(env, jEOFExceptionClass, err.Error())
 			return nil
@@ -421,24 +414,31 @@ func Java_io_v_impl_google_rpc_StreamImpl_nativeRecv(env *C.JNIEnv, jStream C.jo
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return C.jbyteArray(jutil.JByteArray(env, vomResult))
+	jArr, err := jutil.JByteArray(env, vomResult)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	return C.jbyteArray(unsafe.Pointer(jArr))
 }
 
 //export Java_io_v_impl_google_rpc_StreamImpl_nativeFinalize
-func Java_io_v_impl_google_rpc_StreamImpl_nativeFinalize(env *C.JNIEnv, jStream C.jobject, goPtr C.jlong) {
-	jutil.GoUnref(jutil.Ptr(goPtr))
+func Java_io_v_impl_google_rpc_StreamImpl_nativeFinalize(jenv *C.JNIEnv, jStream C.jobject, goPtr C.jlong) {
+	jutil.GoUnref(jutil.NativePtr(goPtr))
 }
 
 //export Java_io_v_impl_google_rpc_ClientCallImpl_nativeCloseSend
-func Java_io_v_impl_google_rpc_ClientCallImpl_nativeCloseSend(env *C.JNIEnv, jCall C.jobject, goPtr C.jlong) {
-	if err := (*(*rpc.ClientCall)(jutil.Ptr(goPtr))).CloseSend(); err != nil {
+func Java_io_v_impl_google_rpc_ClientCallImpl_nativeCloseSend(jenv *C.JNIEnv, jCall C.jobject, goPtr C.jlong) {
+	env := jutil.WrapEnv(jenv)
+	if err := (*(*rpc.ClientCall)(jutil.NativePtr(goPtr))).CloseSend(); err != nil {
 		jutil.JThrowV(env, err)
 		return
 	}
 }
 
 //export Java_io_v_impl_google_rpc_ClientCallImpl_nativeFinish
-func Java_io_v_impl_google_rpc_ClientCallImpl_nativeFinish(env *C.JNIEnv, jCall C.jobject, goPtr C.jlong, jNumResults C.jint) C.jobjectArray {
+func Java_io_v_impl_google_rpc_ClientCallImpl_nativeFinish(jenv *C.JNIEnv, jCall C.jobject, goPtr C.jlong, jNumResults C.jint) C.jobjectArray {
+	env := jutil.WrapEnv(jenv)
 	// Have all the results be decoded into *vdl.Value.
 	numResults := int(jNumResults)
 	resultPtrs := make([]interface{}, numResults)
@@ -446,7 +446,7 @@ func Java_io_v_impl_google_rpc_ClientCallImpl_nativeFinish(env *C.JNIEnv, jCall 
 		value := new(vdl.Value)
 		resultPtrs[i] = &value
 	}
-	if err := (*(*rpc.ClientCall)(jutil.Ptr(goPtr))).Finish(resultPtrs...); err != nil {
+	if err := (*(*rpc.ClientCall)(jutil.NativePtr(goPtr))).Finish(resultPtrs...); err != nil {
 		// Invocation error.
 		jutil.JThrowV(env, err)
 		return nil
@@ -464,17 +464,23 @@ func Java_io_v_impl_google_rpc_ClientCallImpl_nativeFinish(env *C.JNIEnv, jCall 
 			return nil
 		}
 	}
-	return C.jobjectArray(jutil.JByteArrayArray(env, vomResults))
+	jArr, err := jutil.JByteArrayArray(env, vomResults)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	return C.jobjectArray(unsafe.Pointer(jArr))
 }
 
 //export Java_io_v_impl_google_rpc_ClientCallImpl_nativeFinalize
-func Java_io_v_impl_google_rpc_ClientCallImpl_nativeFinalize(env *C.JNIEnv, jCall C.jobject, goPtr C.jlong) {
-	jutil.GoUnref(jutil.Ptr(goPtr))
+func Java_io_v_impl_google_rpc_ClientCallImpl_nativeFinalize(jenv *C.JNIEnv, jCall C.jobject, goPtr C.jlong) {
+	jutil.GoUnref(jutil.NativePtr(goPtr))
 }
 
 //export Java_io_v_impl_google_rpc_ServerCallImpl_nativeSecurity
-func Java_io_v_impl_google_rpc_ServerCallImpl_nativeSecurity(env *C.JNIEnv, jServerCallClass C.jclass, goPtr C.jlong) C.jobject {
-	securityCall := (*(*rpc.ServerCall)(jutil.Ptr(goPtr))).Security()
+func Java_io_v_impl_google_rpc_ServerCallImpl_nativeSecurity(jenv *C.JNIEnv, jServerCallClass C.jclass, goPtr C.jlong) C.jobject {
+	env := jutil.WrapEnv(jenv)
+	securityCall := (*(*rpc.ServerCall)(jutil.NativePtr(goPtr))).Security()
 	if securityCall == nil {
 		return nil
 	}
@@ -483,75 +489,82 @@ func Java_io_v_impl_google_rpc_ServerCallImpl_nativeSecurity(env *C.JNIEnv, jSer
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return C.jobject(jSecurityCall)
+	return C.jobject(unsafe.Pointer(jSecurityCall))
 }
 
 //export Java_io_v_impl_google_rpc_ServerCallImpl_nativeSuffix
-func Java_io_v_impl_google_rpc_ServerCallImpl_nativeSuffix(env *C.JNIEnv, jServerCall C.jobject, goPtr C.jlong) C.jstring {
-	return C.jstring(jutil.JString(env, (*(*rpc.ServerCall)(jutil.Ptr(goPtr))).Suffix()))
+func Java_io_v_impl_google_rpc_ServerCallImpl_nativeSuffix(jenv *C.JNIEnv, jServerCall C.jobject, goPtr C.jlong) C.jstring {
+	env := jutil.WrapEnv(jenv)
+	jSuffix := jutil.JString(env, (*(*rpc.ServerCall)(jutil.NativePtr(goPtr))).Suffix())
+	return C.jstring(unsafe.Pointer(jSuffix))
 }
 
 //export Java_io_v_impl_google_rpc_ServerCallImpl_nativeLocalEndpoint
-func Java_io_v_impl_google_rpc_ServerCallImpl_nativeLocalEndpoint(env *C.JNIEnv, jServerCall C.jobject, goPtr C.jlong) C.jobject {
-	jEndpoint, err := jnaming.JavaEndpoint(env, (*(*rpc.ServerCall)(jutil.Ptr(goPtr))).LocalEndpoint())
+func Java_io_v_impl_google_rpc_ServerCallImpl_nativeLocalEndpoint(jenv *C.JNIEnv, jServerCall C.jobject, goPtr C.jlong) C.jobject {
+	env := jutil.WrapEnv(jenv)
+	jEndpoint, err := jnaming.JavaEndpoint(env, (*(*rpc.ServerCall)(jutil.NativePtr(goPtr))).LocalEndpoint())
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return C.jobject(jEndpoint)
+	return C.jobject(unsafe.Pointer(jEndpoint))
 }
 
 //export Java_io_v_impl_google_rpc_ServerCallImpl_nativeRemoteEndpoint
-func Java_io_v_impl_google_rpc_ServerCallImpl_nativeRemoteEndpoint(env *C.JNIEnv, jServerCall C.jobject, goPtr C.jlong) C.jobject {
-	jEndpoint, err := jnaming.JavaEndpoint(env, (*(*rpc.ServerCall)(jutil.Ptr(goPtr))).RemoteEndpoint())
+func Java_io_v_impl_google_rpc_ServerCallImpl_nativeRemoteEndpoint(jenv *C.JNIEnv, jServerCall C.jobject, goPtr C.jlong) C.jobject {
+	env := jutil.WrapEnv(jenv)
+	jEndpoint, err := jnaming.JavaEndpoint(env, (*(*rpc.ServerCall)(jutil.NativePtr(goPtr))).RemoteEndpoint())
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return C.jobject(jEndpoint)
+	return C.jobject(unsafe.Pointer(jEndpoint))
 }
 
 //export Java_io_v_impl_google_rpc_ServerCallImpl_nativeGrantedBlessings
-func Java_io_v_impl_google_rpc_ServerCallImpl_nativeGrantedBlessings(env *C.JNIEnv, jServerCall C.jobject, goPtr C.jlong) C.jobject {
-	blessings := (*(*rpc.ServerCall)(jutil.Ptr(goPtr))).GrantedBlessings()
+func Java_io_v_impl_google_rpc_ServerCallImpl_nativeGrantedBlessings(jenv *C.JNIEnv, jServerCall C.jobject, goPtr C.jlong) C.jobject {
+	env := jutil.WrapEnv(jenv)
+	blessings := (*(*rpc.ServerCall)(jutil.NativePtr(goPtr))).GrantedBlessings()
 	jBlessings, err := jsecurity.JavaBlessings(env, blessings)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return C.jobject(jBlessings)
+	return C.jobject(unsafe.Pointer(jBlessings))
 }
 
 //export Java_io_v_impl_google_rpc_ServerCallImpl_nativeServer
-func Java_io_v_impl_google_rpc_ServerCallImpl_nativeServer(env *C.JNIEnv, jServerCall C.jobject, goPtr C.jlong) C.jobject {
-	server := (*(*rpc.ServerCall)(jutil.Ptr(goPtr))).Server()
+func Java_io_v_impl_google_rpc_ServerCallImpl_nativeServer(jenv *C.JNIEnv, jServerCall C.jobject, goPtr C.jlong) C.jobject {
+	env := jutil.WrapEnv(jenv)
+	server := (*(*rpc.ServerCall)(jutil.NativePtr(goPtr))).Server()
 	jServer, err := JavaServer(env, server)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return C.jobject(jServer)
+	return C.jobject(unsafe.Pointer(jServer))
 }
 
 //export Java_io_v_impl_google_rpc_ServerCallImpl_nativeFinalize
-func Java_io_v_impl_google_rpc_ServerCallImpl_nativeFinalize(env *C.JNIEnv, jServerCall C.jobject, goPtr C.jlong) {
-	jutil.GoUnref(jutil.Ptr(goPtr))
+func Java_io_v_impl_google_rpc_ServerCallImpl_nativeFinalize(jenv *C.JNIEnv, jServerCall C.jobject, goPtr C.jlong) {
+	jutil.GoUnref(jutil.NativePtr(goPtr))
 }
 
 //export Java_io_v_impl_google_rpc_StreamServerCallImpl_nativeFinalize
-func Java_io_v_impl_google_rpc_StreamServerCallImpl_nativeFinalize(env *C.JNIEnv, jStreamServerCall C.jobject, goPtr C.jlong) {
-	jutil.GoUnref(jutil.Ptr(goPtr))
+func Java_io_v_impl_google_rpc_StreamServerCallImpl_nativeFinalize(jenv *C.JNIEnv, jStreamServerCall C.jobject, goPtr C.jlong) {
+	jutil.GoUnref(jutil.NativePtr(goPtr))
 }
 
 //export Java_io_v_impl_google_rpc_AddressChooserImpl_nativeChoose
-func Java_io_v_impl_google_rpc_AddressChooserImpl_nativeChoose(env *C.JNIEnv, jAddressChooser C.jobject, goPtr C.jlong, jProtocol C.jstring, jCandidates C.jobjectArray) C.jobjectArray {
-	protocol := jutil.GoString(env, jProtocol)
-	candidates, err := GoNetworkAddressArray(env, jCandidates)
+func Java_io_v_impl_google_rpc_AddressChooserImpl_nativeChoose(jenv *C.JNIEnv, jAddressChooser C.jobject, goPtr C.jlong, jProtocol C.jstring, jCandidates C.jobjectArray) C.jobjectArray {
+	env := jutil.WrapEnv(jenv)
+	protocol := jutil.GoString(env, jutil.WrapObject(jProtocol))
+	candidates, err := GoNetworkAddressArray(env, jutil.WrapObject(jCandidates))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	addrs, err := (*(*rpc.AddressChooser)(jutil.Ptr(goPtr))).ChooseAddress(protocol, candidates)
+	addrs, err := (*(*rpc.AddressChooser)(jutil.NativePtr(goPtr))).ChooseAddress(protocol, candidates)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -561,17 +574,18 @@ func Java_io_v_impl_google_rpc_AddressChooserImpl_nativeChoose(env *C.JNIEnv, jA
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return C.jobjectArray(jAddrs)
+	return C.jobjectArray(unsafe.Pointer(jAddrs))
 }
 
 //export Java_io_v_impl_google_rpc_AddressChooserImpl_nativeFinalize
-func Java_io_v_impl_google_rpc_AddressChooserImpl_nativeFinalize(env *C.JNIEnv, jAddressChooser C.jobject, goPtr C.jlong) {
-	jutil.GoUnref(jutil.Ptr(goPtr))
+func Java_io_v_impl_google_rpc_AddressChooserImpl_nativeFinalize(jenv *C.JNIEnv, jAddressChooser C.jobject, goPtr C.jlong) {
+	jutil.GoUnref(jutil.NativePtr(goPtr))
 }
 
 //export Java_io_v_impl_google_rpc_Util_nativeGoInvoker
-func Java_io_v_impl_google_rpc_Util_nativeGoInvoker(env *C.JNIEnv, jUtil C.jclass, jServiceObject C.jobject) C.jlong {
-	invoker, err := goInvoker(env, jServiceObject)
+func Java_io_v_impl_google_rpc_Util_nativeGoInvoker(jenv *C.JNIEnv, jUtil C.jclass, jServiceObject C.jobject) C.jlong {
+	env := jutil.WrapEnv(jenv)
+	invoker, err := goInvoker(env, jutil.WrapObject(jServiceObject))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return C.jlong(0)
@@ -581,8 +595,9 @@ func Java_io_v_impl_google_rpc_Util_nativeGoInvoker(env *C.JNIEnv, jUtil C.jclas
 }
 
 //export Java_io_v_impl_google_rpc_Util_nativeGoAuthorizer
-func Java_io_v_impl_google_rpc_Util_nativeGoAuthorizer(env *C.JNIEnv, jUtil C.jclass, jAuthorizer C.jobject) C.jlong {
-	auth, err := jsecurity.GoAuthorizer(env, jAuthorizer)
+func Java_io_v_impl_google_rpc_Util_nativeGoAuthorizer(jenv *C.JNIEnv, jUtil C.jclass, jAuthorizer C.jobject) C.jlong {
+	env := jutil.WrapEnv(jenv)
+	auth, err := jsecurity.GoAuthorizer(env, jutil.WrapObject(jAuthorizer))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return C.jlong(0)

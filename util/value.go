@@ -9,7 +9,6 @@ package util
 import (
 	"reflect"
 	"time"
-	"unsafe"
 )
 
 // #include "jni_wrapper.h"
@@ -55,7 +54,7 @@ import "C"
 var errJValue = C.jObjectValue(nil)
 
 // jValue converts a Go value into a Java value with the given sign.
-func jValue(env *C.JNIEnv, v interface{}, sign Sign) (C.jvalue, bool) {
+func jValue(env Env, v interface{}, sign Sign) (C.jvalue, bool) {
 	switch sign {
 	case BoolSign:
 		return jBoolValue(v)
@@ -138,7 +137,7 @@ func jLongValue(v interface{}) (C.jvalue, bool) {
 	return C.jLongValue(C.jlong(val)), true
 }
 
-func jStringValue(env *C.JNIEnv, v interface{}) (C.jvalue, bool) {
+func jStringValue(env Env, v interface{}) (C.jvalue, bool) {
 	str, ok := v.(string)
 	if !ok {
 		return errJValue, false
@@ -146,7 +145,7 @@ func jStringValue(env *C.JNIEnv, v interface{}) (C.jvalue, bool) {
 	return jObjectValue(JString(env, str))
 }
 
-func jDateTimeValue(env *C.JNIEnv, v interface{}) (C.jvalue, bool) {
+func jDateTimeValue(env Env, v interface{}) (C.jvalue, bool) {
 	t, ok := v.(time.Time)
 	if !ok {
 		return errJValue, false
@@ -158,7 +157,7 @@ func jDateTimeValue(env *C.JNIEnv, v interface{}) (C.jvalue, bool) {
 	return jObjectValue(jTime)
 }
 
-func jDurationValue(env *C.JNIEnv, v interface{}) (C.jvalue, bool) {
+func jDurationValue(env Env, v interface{}) (C.jvalue, bool) {
 	d, ok := v.(time.Duration)
 	if !ok {
 		return errJValue, false
@@ -170,7 +169,7 @@ func jDurationValue(env *C.JNIEnv, v interface{}) (C.jvalue, bool) {
 	return jObjectValue(jDuration)
 }
 
-func jVExceptionValue(env *C.JNIEnv, v interface{}) (C.jvalue, bool) {
+func jVExceptionValue(env Env, v interface{}) (C.jvalue, bool) {
 	err, ok := v.(error)
 	if !ok {
 		return errJValue, false
@@ -182,20 +181,28 @@ func jVExceptionValue(env *C.JNIEnv, v interface{}) (C.jvalue, bool) {
 	return jObjectValue(jVException)
 }
 
-func jByteArrayValue(env *C.JNIEnv, v interface{}) (C.jvalue, bool) {
+func jByteArrayValue(env Env, v interface{}) (C.jvalue, bool) {
 	arr, ok := v.([]byte)
 	if !ok {
 		return errJValue, false
 	}
-	return jObjectValue(JByteArray(env, arr))
+	jArr, err := JByteArray(env, arr)
+	if err != nil {
+		return errJValue, false
+	}
+	return jObjectValue(jArr)
 }
 
-func jStringArrayValue(env *C.JNIEnv, v interface{}) (C.jvalue, bool) {
+func jStringArrayValue(env Env, v interface{}) (C.jvalue, bool) {
 	arr, ok := v.([]string)
 	if !ok {
 		return errJValue, false
 	}
-	return jObjectValue(JStringArray(env, arr))
+	jArr, err := JStringArray(env, arr)
+	if err != nil {
+		return errJValue, false
+	}
+	return jObjectValue(jArr)
 }
 
 func jObjectValue(v interface{}) (C.jvalue, bool) {
@@ -203,12 +210,14 @@ func jObjectValue(v interface{}) (C.jvalue, bool) {
 	if !rv.IsValid() { // nil value
 		return C.jObjectValue(nil), true
 	}
-	ptr, ok := ptrValue(v)
-	if !ok {
+	switch val := v.(type) {
+	case Object:
+		return C.jObjectValue(val.value()), true
+	case Class:
+		return C.jObjectValue(C.jobject(val.value())), true
+	default:
 		return errJValue, false
 	}
-	// TODO(spetrovic): figure out a way to not use unsafe.Pointer here.
-	return C.jObjectValue(C.jobject(unsafe.Pointer(ptr))), true
 }
 
 func intValue(v interface{}) (int64, bool) {
@@ -233,18 +242,6 @@ func intValue(v interface{}) (int64, bool) {
 		return int64(val), true
 	case uint8:
 		return int64(val), true
-	default:
-		return 0, false
-	}
-}
-
-func ptrValue(v interface{}) (uintptr, bool) {
-	rv := reflect.ValueOf(v)
-	switch rv.Kind() {
-	case reflect.Ptr, reflect.UnsafePointer:
-		return rv.Pointer(), true
-	case reflect.Uintptr:
-		return uintptr(rv.Uint()), true
 	default:
 		return 0, false
 	}

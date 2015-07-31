@@ -19,23 +19,19 @@ import (
 import "C"
 
 // GoAuthorizer converts the given Java authorizer into a Go authorizer.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func GoAuthorizer(jEnv, jAuthObj interface{}) (security.Authorizer, error) {
-	if jutil.IsNull(jAuthObj) {
+func GoAuthorizer(env jutil.Env, jAuth jutil.Object) (security.Authorizer, error) {
+	if jAuth.IsNull() {
 		return nil, nil
 	}
 	// Reference Java dispatcher; it will be de-referenced when the go
 	// dispatcher created below is garbage-collected (through the finalizer
 	// callback we setup below).
-	jAuth := C.jobject(jutil.NewGlobalRef(jEnv, jAuthObj))
+	jAuth = jutil.NewGlobalRef(env, jAuth)
 	a := &authorizer{
 		jAuth: jAuth,
 	}
 	runtime.SetFinalizer(a, func(a *authorizer) {
-		jEnv, freeFunc := jutil.GetEnv()
-		env := (*C.JNIEnv)(jEnv)
+		env, freeFunc := jutil.GetEnv()
 		defer freeFunc()
 		jutil.DeleteGlobalRef(env, a.jAuth)
 	})
@@ -43,7 +39,7 @@ func GoAuthorizer(jEnv, jAuthObj interface{}) (security.Authorizer, error) {
 }
 
 type authorizer struct {
-	jAuth C.jobject
+	jAuth jutil.Object
 }
 
 func (a *authorizer) Authorize(ctx *context.T, call security.Call) error {

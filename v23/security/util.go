@@ -7,8 +7,6 @@
 package security
 
 import (
-	"unsafe"
-
 	"v.io/v23/security"
 	"v.io/v23/vom"
 	jutil "v.io/x/jni/util"
@@ -18,36 +16,30 @@ import (
 import "C"
 
 // JavaBlessings converts the provided Go Blessings into Java Blessings.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func JavaBlessings(jEnv interface{}, blessings security.Blessings) (unsafe.Pointer, error) {
-	jWire, err := jutil.JVomCopy(jEnv, blessings, jWireBlessingsClass)
+func JavaBlessings(env jutil.Env, blessings security.Blessings) (jutil.Object, error) {
+	jWire, err := jutil.JVomCopy(env, blessings, jWireBlessingsClass)
 	if err != nil {
-		return nil, err
+		return jutil.NullObject, err
 	}
-	jBlessings, err := jutil.NewObject(jEnv, jBlessingsClass, []jutil.Sign{jutil.LongSign, wireBlessingsSign}, int64(jutil.PtrValue(&blessings)), jWire)
+	jBlessings, err := jutil.NewObject(env, jBlessingsClass, []jutil.Sign{jutil.LongSign, wireBlessingsSign}, int64(jutil.PtrValue(&blessings)), jWire)
 	if err != nil {
-		return nil, err
+		return jutil.NullObject, err
 	}
 	jutil.GoRef(&blessings) // Un-refed when the Java Blessings object is finalized.
 	return jBlessings, nil
 }
 
 // GoBlessings converts the provided Java Blessings into Go Blessings.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func GoBlessings(jEnv, jBlessings interface{}) (security.Blessings, error) {
-	if jutil.IsNull(jBlessings) {
+func GoBlessings(env jutil.Env, jBlessings jutil.Object) (security.Blessings, error) {
+	if jBlessings.IsNull() {
 		return security.Blessings{}, nil
 	}
-	jWire, err := jutil.CallObjectMethod(jEnv, jBlessings, "wireFormat", nil, wireBlessingsSign)
+	jWire, err := jutil.CallObjectMethod(env, jBlessings, "wireFormat", nil, wireBlessingsSign)
 	if err != nil {
 		return security.Blessings{}, err
 	}
 	var blessings security.Blessings
-	if err := jutil.GoVomCopy(jEnv, jWire, jWireBlessingsClass, &blessings); err != nil {
+	if err := jutil.GoVomCopy(env, jWire, jWireBlessingsClass, &blessings); err != nil {
 		return security.Blessings{}, err
 	}
 	return blessings, nil
@@ -55,15 +47,15 @@ func GoBlessings(jEnv, jBlessings interface{}) (security.Blessings, error) {
 
 // GoBlessingsArray converts the provided Java Blessings array into a Go
 // Blessings slice.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func GoBlessingsArray(jEnv, jBlessingsArr interface{}) ([]security.Blessings, error) {
-	barr := jutil.GoObjectArray(jEnv, jBlessingsArr)
+func GoBlessingsArray(env jutil.Env, jBlessingsArr jutil.Object) ([]security.Blessings, error) {
+	barr, err := jutil.GoObjectArray(env, jBlessingsArr)
+	if err != nil {
+		return nil, err
+	}
 	ret := make([]security.Blessings, len(barr))
 	for i, jBlessings := range barr {
 		var err error
-		if ret[i], err = GoBlessings(jEnv, jBlessings); err != nil {
+		if ret[i], err = GoBlessings(env, jBlessings); err != nil {
 			return nil, err
 		}
 	}
@@ -71,51 +63,41 @@ func GoBlessingsArray(jEnv, jBlessingsArr interface{}) ([]security.Blessings, er
 }
 
 // JavaCaveat converts the provided Go Caveat into a Java Caveat.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func JavaCaveat(jEnv interface{}, caveat security.Caveat) (unsafe.Pointer, error) {
-	return jutil.JVomCopy(jEnv, caveat, jCaveatClass)
+func JavaCaveat(env jutil.Env, caveat security.Caveat) (jutil.Object, error) {
+	return jutil.JVomCopy(env, caveat, jCaveatClass)
 }
 
 // GoCaveat converts the provided Java Caveat into a Go Caveat.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func GoCaveat(jEnv, jCav interface{}) (security.Caveat, error) {
+func GoCaveat(env jutil.Env, jCav jutil.Object) (security.Caveat, error) {
 	var caveat security.Caveat
-	if err := jutil.GoVomCopy(jEnv, jCav, jCaveatClass, &caveat); err != nil {
+	if err := jutil.GoVomCopy(env, jCav, jCaveatClass, &caveat); err != nil {
 		return security.Caveat{}, err
 	}
 	return caveat, nil
 }
 
 // JavaCaveats converts the provided Go Caveat slice into a Java Caveat array.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func JavaCaveats(jEnv interface{}, caveats []security.Caveat) (unsafe.Pointer, error) {
-	cavarr := make([]interface{}, len(caveats))
+func JavaCaveats(env jutil.Env, caveats []security.Caveat) (jutil.Object, error) {
+	cavarr := make([]jutil.Object, len(caveats))
 	for i, caveat := range caveats {
 		var err error
-		if cavarr[i], err = JavaCaveat(jEnv, caveat); err != nil {
-			return nil, err
+		if cavarr[i], err = JavaCaveat(env, caveat); err != nil {
+			return jutil.NullObject, err
 		}
 	}
-	jCaveats := jutil.JObjectArray(jEnv, cavarr, jCaveatClass)
-	return jCaveats, nil
+	return jutil.JObjectArray(env, cavarr, jCaveatClass)
 }
 
 // GoCaveats converts the provided Java Caveat array into a Go Caveat slice.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func GoCaveats(jEnv, jCaveats interface{}) ([]security.Caveat, error) {
-	cavarr := jutil.GoObjectArray(jEnv, jCaveats)
+func GoCaveats(env jutil.Env, jCaveats jutil.Object) ([]security.Caveat, error) {
+	cavarr, err := jutil.GoObjectArray(env, jCaveats)
+	if err != nil {
+		return nil, err
+	}
 	caveats := make([]security.Caveat, len(cavarr))
 	for i, jCaveat := range cavarr {
 		var err error
-		if caveats[i], err = GoCaveat(jEnv, jCaveat); err != nil {
+		if caveats[i], err = GoCaveat(env, jCaveat); err != nil {
 			return nil, err
 		}
 	}
@@ -124,47 +106,35 @@ func GoCaveats(jEnv, jCaveats interface{}) ([]security.Caveat, error) {
 
 // JavaBlessingPattern converts the provided Go BlessingPattern into Java
 // BlessingPattern.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func JavaBlessingPattern(jEnv interface{}, pattern security.BlessingPattern) (unsafe.Pointer, error) {
-	return jutil.JVomCopy(jEnv, pattern, jBlessingPatternClass)
+func JavaBlessingPattern(env jutil.Env, pattern security.BlessingPattern) (jutil.Object, error) {
+	return jutil.JVomCopy(env, pattern, jBlessingPatternClass)
 }
 
 // GoBlessingPattern converts the provided Java BlessingPattern into Go BlessingPattern.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func GoBlessingPattern(jEnv, jPattern interface{}) (pattern security.BlessingPattern, err error) {
-	err = jutil.GoVomCopy(jEnv, jPattern, jBlessingPatternClass, &pattern)
+func GoBlessingPattern(env jutil.Env, jPattern jutil.Object) (pattern security.BlessingPattern, err error) {
+	err = jutil.GoVomCopy(env, jPattern, jBlessingPatternClass, &pattern)
 	return
 }
 
 // JavaPublicKey converts the provided Go PublicKey into Java PublicKey.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func JavaPublicKey(jEnv interface{}, key security.PublicKey) (unsafe.Pointer, error) {
+func JavaPublicKey(env jutil.Env, key security.PublicKey) (jutil.Object, error) {
 	if key == nil {
-		return nil, nil
+		return jutil.NullObject, nil
 	}
 	encoded, err := key.MarshalBinary()
 	if err != nil {
-		return nil, err
+		return jutil.NullObject, err
 	}
-	jPublicKey, err := jutil.CallStaticObjectMethod(jEnv, jUtilClass, "decodePublicKey", []jutil.Sign{jutil.ArraySign(jutil.ByteSign)}, publicKeySign, encoded)
+	jPublicKey, err := jutil.CallStaticObjectMethod(env, jUtilClass, "decodePublicKey", []jutil.Sign{jutil.ArraySign(jutil.ByteSign)}, publicKeySign, encoded)
 	if err != nil {
-		return nil, err
+		return jutil.NullObject, err
 	}
 	return jPublicKey, nil
 }
 
 // GoPublicKey converts the provided Java PublicKey into Go PublicKey.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func GoPublicKey(jEnv, jKey interface{}) (security.PublicKey, error) {
-	encoded, err := jutil.CallStaticByteArrayMethod(jEnv, jUtilClass, "encodePublicKey", []jutil.Sign{publicKeySign}, jKey)
+func GoPublicKey(env jutil.Env, jKey jutil.Object) (security.PublicKey, error) {
+	encoded, err := jutil.CallStaticByteArrayMethod(env, jUtilClass, "encodePublicKey", []jutil.Sign{publicKeySign}, jKey)
 	if err != nil {
 		return nil, err
 	}
@@ -172,27 +142,21 @@ func GoPublicKey(jEnv, jKey interface{}) (security.PublicKey, error) {
 }
 
 // JavaSignature converts the provided Go Signature into a Java VSignature.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func JavaSignature(jEnv interface{}, sig security.Signature) (unsafe.Pointer, error) {
+func JavaSignature(env jutil.Env, sig security.Signature) (jutil.Object, error) {
 	encoded, err := vom.Encode(sig)
 	if err != nil {
-		return nil, err
+		return jutil.NullObject, err
 	}
-	jSignature, err := jutil.CallStaticObjectMethod(jEnv, jUtilClass, "decodeSignature", []jutil.Sign{jutil.ByteArraySign}, signatureSign, encoded)
+	jSignature, err := jutil.CallStaticObjectMethod(env, jUtilClass, "decodeSignature", []jutil.Sign{jutil.ByteArraySign}, signatureSign, encoded)
 	if err != nil {
-		return nil, err
+		return jutil.NullObject, err
 	}
 	return jSignature, nil
 }
 
 // GoSignature converts the provided Java VSignature into a Go Signature.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func GoSignature(jEnv, jSignature interface{}) (security.Signature, error) {
-	encoded, err := jutil.CallStaticByteArrayMethod(jEnv, jUtilClass, "encodeSignature", []jutil.Sign{signatureSign}, jSignature)
+func GoSignature(env jutil.Env, jSignature jutil.Object) (security.Signature, error) {
+	encoded, err := jutil.CallStaticByteArrayMethod(env, jUtilClass, "encodeSignature", []jutil.Sign{signatureSign}, jSignature)
 	if err != nil {
 		return security.Signature{}, err
 	}
@@ -204,42 +168,28 @@ func GoSignature(jEnv, jSignature interface{}) (security.Signature, error) {
 }
 
 // GoDischarge converts the provided Java Discharge into a Go Discharge.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func GoDischarge(jEnv, jDischarge interface{}) (security.Discharge, error) {
+func GoDischarge(env jutil.Env, jDischarge jutil.Object) (security.Discharge, error) {
 	var discharge security.Discharge
-	if err := jutil.GoVomCopy(jEnv, jDischarge, jDischargeClass, &discharge); err != nil {
+	if err := jutil.GoVomCopy(env, jDischarge, jDischargeClass, &discharge); err != nil {
 		return security.Discharge{}, err
 	}
 	return discharge, nil
 }
 
 // JavaDischarge converts the provided Go Discharge into a Java discharge.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func JavaDischarge(jEnv interface{}, discharge security.Discharge) (C.jobject, error) {
-	jDischarge, err := jutil.JVomCopy(jEnv, discharge, jDischargeClass)
-	if err != nil {
-		return nil, err
-	}
-	return C.jobject(jDischarge), nil
+func JavaDischarge(env jutil.Env, discharge security.Discharge) (jutil.Object, error) {
+	return jutil.JVomCopy(env, discharge, jDischargeClass)
 }
 
-func javaDischargeMap(env *C.JNIEnv, discharges map[string]security.Discharge) (C.jobject, error) {
-	objectMap := make(map[interface{}]interface{})
+func javaDischargeMap(env jutil.Env, discharges map[string]security.Discharge) (jutil.Object, error) {
+	objectMap := make(map[jutil.Object]jutil.Object)
 	for key, discharge := range discharges {
 		jKey := jutil.JString(env, key)
 		jDischarge, err := JavaDischarge(env, discharge)
 		if err != nil {
-			return nil, err
+			return jutil.NullObject, err
 		}
 		objectMap[jKey] = jDischarge
 	}
-	jObjectMap, err := jutil.JObjectMap(env, objectMap)
-	if err != nil {
-		return nil, err
-	}
-	return C.jobject(jObjectMap), nil
+	return jutil.JObjectMap(env, objectMap)
 }

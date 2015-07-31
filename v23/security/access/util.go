@@ -15,10 +15,7 @@ import (
 import "C"
 
 // GoAccessList converts the provided Java AccessList into a Go AccessList.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func GoAccessList(jEnv, jAccessList interface{}) (acl access.AccessList, err error) {
-	err = jutil.GoVomCopy(jEnv, jAccessList, jAccessListClass, &acl)
+func GoAccessList(env jutil.Env, jAccessList jutil.Object) (acl access.AccessList, err error) {
+	err = jutil.GoVomCopy(env, jAccessList, jAccessListClass, &acl)
 	return
 }

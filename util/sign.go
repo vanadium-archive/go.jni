@@ -33,8 +33,6 @@ const (
 )
 
 var (
-	// CollectionSign denotes a signature of a Java Collection type.
-	CollectionSign = ClassSign("java.util.Collection")
 	// StringSign denotes a signature of a Java String type.
 	StringSign = ClassSign("java.lang.String")
 	// ObjectSign denotes a signature of a Java Object type.
@@ -43,6 +41,8 @@ var (
 	TypeSign = ClassSign("java.lang.reflect.Type")
 	// ListSign denotes a signature of a Java List type.
 	ListSign = ClassSign("java.util.List")
+	// CollectionSign denotes a signature of a Java Collection type.
+	CollectionSign = ClassSign("java.util.Collection")
 	// SetSign denotes a signature of a Java Set type.
 	SetSign = ClassSign("java.util.Set")
 	// MapSign denotes a signature of a Java Map type.

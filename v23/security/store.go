@@ -9,7 +9,6 @@ package security
 import (
 	"log"
 	"runtime"
-	"unsafe"
 
 	"v.io/v23/security"
 	jutil "v.io/x/jni/util"
@@ -20,13 +19,10 @@ import "C"
 
 // JavaBlessingStore creates an instance of Java BlessingStore that uses the provided Go
 // BlessingStore as its underlying implementation.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func JavaBlessingStore(jEnv interface{}, store security.BlessingStore) (unsafe.Pointer, error) {
-	jObj, err := jutil.NewObject(jEnv, jBlessingStoreImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&store)))
+func JavaBlessingStore(env jutil.Env, store security.BlessingStore) (jutil.Object, error) {
+	jObj, err := jutil.NewObject(env, jBlessingStoreImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&store)))
 	if err != nil {
-		return nil, err
+		return jutil.NullObject, err
 	}
 	jutil.GoRef(&store) // Un-refed when the Java BlessingStoreImpl is finalized.
 	return jObj, nil
@@ -34,23 +30,19 @@ func JavaBlessingStore(jEnv interface{}, store security.BlessingStore) (unsafe.P
 
 // GoBlessingStore creates an instance of security.BlessingStore that uses the
 // provided Java BlessingStore as its underlying implementation.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func GoBlessingStore(jEnv, jBlessingStoreObj interface{}) (security.BlessingStore, error) {
-	if jutil.IsNull(jBlessingStoreObj) {
+func GoBlessingStore(env jutil.Env, jBlessingStore jutil.Object) (security.BlessingStore, error) {
+	if jBlessingStore.IsNull() {
 		return nil, nil
 	}
 	// Reference Java BlessingStore; it will be de-referenced when the Go
 	// BlessingStore created below is garbage-collected (through the finalizer
 	// callback we setup just below).
-	jBlessingStore := C.jobject(jutil.NewGlobalRef(jEnv, jBlessingStoreObj))
+	jBlessingStore = jutil.NewGlobalRef(env, jBlessingStore)
 	s := &blessingStore{
 		jBlessingStore: jBlessingStore,
 	}
 	runtime.SetFinalizer(s, func(s *blessingStore) {
-		envPtr, freeFunc := jutil.GetEnv()
-		env := (*C.JNIEnv)(envPtr)
+		env, freeFunc := jutil.GetEnv()
 		defer freeFunc()
 		jutil.DeleteGlobalRef(env, s.jBlessingStore)
 	})
@@ -58,7 +50,7 @@ func GoBlessingStore(jEnv, jBlessingStoreObj interface{}) (security.BlessingStor
 }
 
 type blessingStore struct {
-	jBlessingStore C.jobject
+	jBlessingStore jutil.Object
 }
 
 func (s *blessingStore) Set(blessings security.Blessings, forPeers security.BlessingPattern) (security.Blessings, error) {
@@ -152,12 +144,12 @@ func (s *blessingStore) PeerBlessings() map[security.BlessingPattern]security.Bl
 	}
 	ret := make(map[security.BlessingPattern]security.Blessings)
 	for jPattern, jBlessings := range bmap {
-		pattern, err := GoBlessingPattern(env, C.jobject(jPattern))
+		pattern, err := GoBlessingPattern(env, jPattern)
 		if err != nil {
 			log.Printf("Couldn't convert Java pattern into Go: %v", err)
 			return nil
 		}
-		blessings, err := GoBlessings(env, C.jobject(jBlessings))
+		blessings, err := GoBlessings(env, jBlessings)
 		if err != nil {
 			log.Printf("Couldn't convert Java blessings into Go: %v", err)
 			return nil
@@ -194,7 +186,7 @@ func (s *blessingStore) CacheDischarge(discharge security.Discharge, caveat secu
 func (s *blessingStore) ClearDischarges(discharges ...security.Discharge) {
 	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
-	jDischarges := make([]interface{}, len(discharges))
+	jDischarges := make([]jutil.Object, len(discharges))
 	for i := 0; i < len(discharges); i++ {
 		jDischarge, err := JavaDischarge(env, discharges[i])
 		if err != nil {
@@ -203,7 +195,7 @@ func (s *blessingStore) ClearDischarges(discharges ...security.Discharge) {
 		}
 		jDischarges[i] = jDischarge
 	}
-	jDischargeList, err := jutil.JObjectArrayList(env, jDischarges, jDischargeClass)
+	jDischargeList, err := jutil.JObjectList(env, jDischarges, jDischargeClass)
 	if err != nil {
 		log.Printf("Couldn't get Java discharge list: %v", err)
 		return

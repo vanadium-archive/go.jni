@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"net"
 	"runtime"
-	"unsafe"
 
 	"v.io/v23/rpc"
 	jutil "v.io/x/jni/util"
@@ -20,32 +19,26 @@ import (
 import "C"
 
 // JavaServer converts the provided Go Server into a Java Server object.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func JavaServer(jEnv interface{}, server rpc.Server) (unsafe.Pointer, error) {
+func JavaServer(env jutil.Env, server rpc.Server) (jutil.Object, error) {
 	if server == nil {
-		return nil, fmt.Errorf("Go Server value cannot be nil")
+		return jutil.NullObject, fmt.Errorf("Go Server value cannot be nil")
 	}
-	jServer, err := jutil.NewObject(jEnv, jServerImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&server)))
+	jServer, err := jutil.NewObject(env, jServerImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&server)))
 	if err != nil {
-		return nil, err
+		return jutil.NullObject, err
 	}
 	jutil.GoRef(&server) // Un-refed when the Java Server object is finalized.
 	return jServer, nil
 }
 
 // JavaClient converts the provided Go client into a Java Client object.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func JavaClient(jEnv interface{}, client rpc.Client) (unsafe.Pointer, error) {
+func JavaClient(env jutil.Env, client rpc.Client) (jutil.Object, error) {
 	if client == nil {
-		return nil, fmt.Errorf("Go Client value cannot be nil")
+		return jutil.NullObject, fmt.Errorf("Go Client value cannot be nil")
 	}
-	jClient, err := jutil.NewObject(jEnv, jClientImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&client)))
+	jClient, err := jutil.NewObject(env, jClientImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&client)))
 	if err != nil {
-		return nil, err
+		return jutil.NullObject, err
 	}
 	jutil.GoRef(&client) // Un-refed when the Java Client object is finalized.
 	return jClient, nil
@@ -53,109 +46,112 @@ func JavaClient(jEnv interface{}, client rpc.Client) (unsafe.Pointer, error) {
 
 // javaStreamServerCall converts the provided Go serverCall into a Java StreamServerCall
 // object.
-func javaStreamServerCall(env *C.JNIEnv, call rpc.StreamServerCall) (C.jobject, error) {
+func javaStreamServerCall(env jutil.Env, call rpc.StreamServerCall) (jutil.Object, error) {
 	if call == nil {
-		return nil, fmt.Errorf("Go StreamServerCall value cannot be nil")
+		return jutil.NullObject, fmt.Errorf("Go StreamServerCall value cannot be nil")
 	}
 	jStream, err := javaStream(env, call)
 	if err != nil {
-		return nil, err
+		return jutil.NullObject, err
 	}
 	jServerCall, err := JavaServerCall(env, call)
 	if err != nil {
-		return nil, err
+		return jutil.NullObject, err
 	}
 	serverCallSign := jutil.ClassSign("io.v.v23.rpc.ServerCall")
 	jStreamServerCall, err := jutil.NewObject(env, jStreamServerCallImplClass, []jutil.Sign{jutil.LongSign, streamSign, serverCallSign}, int64(jutil.PtrValue(&call)), jStream, jServerCall)
 	if err != nil {
-		return nil, err
+		return jutil.NullObject, err
 	}
 	jutil.GoRef(&call) // Un-refed when the Java StreamServerCall object is finalized.
-	return C.jobject(jStreamServerCall), nil
+	return jStreamServerCall, nil
 }
 
 // javaCall converts the provided Go Call value into a Java Call object.
-func javaCall(env *C.JNIEnv, call rpc.ClientCall) (C.jobject, error) {
+func javaCall(env jutil.Env, call rpc.ClientCall) (jutil.Object, error) {
 	if call == nil {
-		return nil, fmt.Errorf("Go Call value cannot be nil")
+		return jutil.NullObject, fmt.Errorf("Go Call value cannot be nil")
 	}
 	jStream, err := javaStream(env, call)
 	if err != nil {
-		return nil, err
+		return jutil.NullObject, err
 	}
 	jCall, err := jutil.NewObject(env, jClientCallImplClass, []jutil.Sign{jutil.LongSign, streamSign}, int64(jutil.PtrValue(&call)), jStream)
 	if err != nil {
-		return nil, err
+		return jutil.NullObject, err
 	}
 	jutil.GoRef(&call) // Un-refed when the Java Call object is finalized.
-	return C.jobject(jCall), nil
+	return jCall, nil
 }
 
 // javaStream converts the provided Go stream into a Java Stream object.
-func javaStream(env *C.JNIEnv, stream rpc.Stream) (C.jobject, error) {
+func javaStream(env jutil.Env, stream rpc.Stream) (jutil.Object, error) {
 	jStream, err := jutil.NewObject(env, jStreamImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&stream)))
 	if err != nil {
-		return nil, err
+		return jutil.NullObject, err
 	}
 	jutil.GoRef(&stream) // Un-refed when the Java stream object is finalized.
-	return C.jobject(jStream), nil
+	return jStream, nil
 }
 
 // JavaServerStatus converts the provided rpc.ServerStatus value into a Java
 // ServerStatus object.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func JavaServerStatus(jEnv interface{}, status rpc.ServerStatus) (unsafe.Pointer, error) {
+func JavaServerStatus(env jutil.Env, status rpc.ServerStatus) (jutil.Object, error) {
 	// Create Java state enum value.
-	jState, err := JavaServerState(jEnv, status.State)
+	jState, err := JavaServerState(env, status.State)
 	if err != nil {
-		return nil, err
+		return jutil.NullObject, err
 	}
 
 	// Create Java array of mounts.
-	mountarr := make([]interface{}, len(status.Mounts))
+	mountarr := make([]jutil.Object, len(status.Mounts))
 	for i, mount := range status.Mounts {
 		var err error
-		if mountarr[i], err = JavaMountStatus(jEnv, mount); err != nil {
-			return nil, err
+		if mountarr[i], err = JavaMountStatus(env, mount); err != nil {
+			return jutil.NullObject, err
 		}
 	}
-	jMounts := jutil.JObjectArray(jEnv, mountarr, jMountStatusClass)
+	jMounts, err := jutil.JObjectArray(env, mountarr, jMountStatusClass)
+	if err != nil {
+		return jutil.NullObject, err
+	}
 
 	// Create Java array of endpoints.
 	eps := make([]string, len(status.Endpoints))
 	for i, ep := range status.Endpoints {
 		eps[i] = ep.String()
 	}
-	jEndpoints := jutil.JStringArray(jEnv, eps)
+	jEndpoints, err := jutil.JStringArray(env, eps)
+	if err != nil {
+		return jutil.NullObject, err
+	}
 
 	// Create Java array of proxies.
-	proxarr := make([]interface{}, len(status.Proxies))
+	proxarr := make([]jutil.Object, len(status.Proxies))
 	for i, proxy := range status.Proxies {
 		var err error
-		if proxarr[i], err = JavaProxyStatus(jEnv, proxy); err != nil {
-			return nil, err
+		if proxarr[i], err = JavaProxyStatus(env, proxy); err != nil {
+			return jutil.NullObject, err
 		}
 	}
-	jProxies := jutil.JObjectArray(jEnv, proxarr, jProxyStatusClass)
+	jProxies, err := jutil.JObjectArray(env, proxarr, jProxyStatusClass)
+	if err != nil {
+		return jutil.NullObject, err
+	}
 
 	// Create final server status.
 	mountStatusSign := jutil.ClassSign("io.v.v23.rpc.MountStatus")
 	proxyStatusSign := jutil.ClassSign("io.v.v23.rpc.ProxyStatus")
-	jServerStatus, err := jutil.NewObject(jEnv, jServerStatusClass, []jutil.Sign{serverStateSign, jutil.BoolSign, jutil.ArraySign(mountStatusSign), jutil.ArraySign(jutil.StringSign), jutil.ArraySign(proxyStatusSign)}, jState, status.ServesMountTable, jMounts, jEndpoints, jProxies)
+	jServerStatus, err := jutil.NewObject(env, jServerStatusClass, []jutil.Sign{serverStateSign, jutil.BoolSign, jutil.ArraySign(mountStatusSign), jutil.ArraySign(jutil.StringSign), jutil.ArraySign(proxyStatusSign)}, jState, status.ServesMountTable, jMounts, jEndpoints, jProxies)
 	if err != nil {
-		return nil, err
+		return jutil.NullObject, err
 	}
 	return jServerStatus, nil
 }
 
 // JavaServerState converts the provided rpc.ServerState value into a Java
 // ServerState enum.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func JavaServerState(jEnv interface{}, state rpc.ServerState) (unsafe.Pointer, error) {
+func JavaServerState(env jutil.Env, state rpc.ServerState) (jutil.Object, error) {
 	var name string
 	switch state {
 	case rpc.ServerInit:
@@ -167,63 +163,54 @@ func JavaServerState(jEnv interface{}, state rpc.ServerState) (unsafe.Pointer, e
 	case rpc.ServerStopped:
 		name = "SERVER_STOPPED"
 	default:
-		return nil, fmt.Errorf("Unrecognized state: %d", state)
+		return jutil.NullObject, fmt.Errorf("Unrecognized state: %d", state)
 	}
-	jState, err := jutil.CallStaticObjectMethod(jEnv, jServerStateClass, "valueOf", []jutil.Sign{jutil.StringSign}, serverStateSign, name)
+	jState, err := jutil.CallStaticObjectMethod(env, jServerStateClass, "valueOf", []jutil.Sign{jutil.StringSign}, serverStateSign, name)
 	if err != nil {
-		return nil, err
+		return jutil.NullObject, err
 	}
 	return jState, nil
 }
 
 // JavaMountStatus converts the provided rpc.MountStatus value into a Java
 // MountStatus object.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func JavaMountStatus(jEnv interface{}, status rpc.MountStatus) (unsafe.Pointer, error) {
-	jStatus, err := jutil.NewObject(jEnv, jMountStatusClass, []jutil.Sign{jutil.StringSign, jutil.StringSign, jutil.DateTimeSign, jutil.VExceptionSign, jutil.DurationSign, jutil.DateTimeSign, jutil.VExceptionSign}, status.Name, status.Server, status.LastMount, status.LastMountErr, status.TTL, status.LastUnmount, status.LastUnmountErr)
+func JavaMountStatus(env jutil.Env, status rpc.MountStatus) (jutil.Object, error) {
+	jStatus, err := jutil.NewObject(env, jMountStatusClass, []jutil.Sign{jutil.StringSign, jutil.StringSign, jutil.DateTimeSign, jutil.VExceptionSign, jutil.DurationSign, jutil.DateTimeSign, jutil.VExceptionSign}, status.Name, status.Server, status.LastMount, status.LastMountErr, status.TTL, status.LastUnmount, status.LastUnmountErr)
 	if err != nil {
-		return nil, err
+		return jutil.NullObject, err
 	}
 	return jStatus, nil
 }
 
 // JavaProxyStatus converts the provided rpc.ProxyStatus value into a Java
 // ProxyStatus object.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func JavaProxyStatus(jEnv interface{}, status rpc.ProxyStatus) (unsafe.Pointer, error) {
-	jStatus, err := jutil.NewObject(jEnv, jProxyStatusClass, []jutil.Sign{jutil.StringSign, jutil.StringSign, jutil.VExceptionSign}, status.Proxy, status.Endpoint.String(), status.Error)
+func JavaProxyStatus(env jutil.Env, status rpc.ProxyStatus) (jutil.Object, error) {
+	jStatus, err := jutil.NewObject(env, jProxyStatusClass, []jutil.Sign{jutil.StringSign, jutil.StringSign, jutil.VExceptionSign}, status.Proxy, status.Endpoint.String(), status.Error)
 	if err != nil {
-		return nil, err
+		return jutil.NullObject, err
 	}
 	return jStatus, nil
 }
 
 // GoListenSpec converts the provided Java ListenSpec into a Go ListenSpec.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func GoListenSpec(jEnv, jSpec interface{}) (rpc.ListenSpec, error) {
-	jAddrs, err := jutil.CallObjectMethod(jEnv, jSpec, "getAddresses", nil, jutil.ArraySign(listenAddrSign))
+func GoListenSpec(env jutil.Env, jSpec jutil.Object) (rpc.ListenSpec, error) {
+	jAddrs, err := jutil.CallObjectMethod(env, jSpec, "getAddresses", nil, jutil.ArraySign(listenAddrSign))
 	if err != nil {
 		return rpc.ListenSpec{}, err
 	}
-	addrs, err := GoListenAddrs(jEnv, jAddrs)
+	addrs, err := GoListenAddrs(env, jAddrs)
 	if err != nil {
 		return rpc.ListenSpec{}, err
 	}
-	proxy, err := jutil.CallStringMethod(jEnv, jSpec, "getProxy", nil)
+	proxy, err := jutil.CallStringMethod(env, jSpec, "getProxy", nil)
 	if err != nil {
 		return rpc.ListenSpec{}, err
 	}
-	jChooser, err := jutil.CallObjectMethod(jEnv, jSpec, "getChooser", nil, addressChooserSign)
+	jChooser, err := jutil.CallObjectMethod(env, jSpec, "getChooser", nil, addressChooserSign)
 	if err != nil {
 		return rpc.ListenSpec{}, err
 	}
-	chooser := GoAddressChooser(jEnv, jChooser)
+	chooser := GoAddressChooser(env, jChooser)
 	return rpc.ListenSpec{
 		Addrs:          addrs,
 		Proxy:          proxy,
@@ -232,57 +219,51 @@ func GoListenSpec(jEnv, jSpec interface{}) (rpc.ListenSpec, error) {
 }
 
 // GoListenSpec converts the provided Go ListenSpec into a Java ListenSpec.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func JavaListenSpec(jEnv interface{}, spec rpc.ListenSpec) (unsafe.Pointer, error) {
-	jAddrs, err := JavaListenAddrArray(jEnv, spec.Addrs)
+func JavaListenSpec(env jutil.Env, spec rpc.ListenSpec) (jutil.Object, error) {
+	jAddrs, err := JavaListenAddrArray(env, spec.Addrs)
 	if err != nil {
-		return nil, err
+		return jutil.NullObject, err
 	}
-	jChooser, err := JavaAddressChooser(jEnv, spec.AddressChooser)
+	jChooser, err := JavaAddressChooser(env, spec.AddressChooser)
 	if err != nil {
-		return nil, err
+		return jutil.NullObject, err
 	}
 	addressSign := jutil.ClassSign("io.v.v23.rpc.ListenSpec$Address")
-	jSpec, err := jutil.NewObject(jEnv, jListenSpecClass, []jutil.Sign{jutil.ArraySign(addressSign), jutil.StringSign, addressChooserSign}, jAddrs, spec.Proxy, jChooser)
+	jSpec, err := jutil.NewObject(env, jListenSpecClass, []jutil.Sign{jutil.ArraySign(addressSign), jutil.StringSign, addressChooserSign}, jAddrs, spec.Proxy, jChooser)
 	if err != nil {
-		return nil, err
+		return jutil.NullObject, err
 	}
 	return jSpec, nil
 }
 
 // JavaListenAddrArray converts Go rpc.ListenAddrs into a Java
 // ListenSpec$Address array.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func JavaListenAddrArray(jEnv interface{}, addrs rpc.ListenAddrs) (unsafe.Pointer, error) {
-	addrarr := make([]interface{}, len(addrs))
+func JavaListenAddrArray(env jutil.Env, addrs rpc.ListenAddrs) (jutil.Object, error) {
+	addrarr := make([]jutil.Object, len(addrs))
 	for i, addr := range addrs {
 		var err error
-		if addrarr[i], err = jutil.NewObject(jEnv, jListenSpecAddressClass, []jutil.Sign{jutil.StringSign, jutil.StringSign}, addr.Protocol, addr.Address); err != nil {
-			return nil, err
+		if addrarr[i], err = jutil.NewObject(env, jListenSpecAddressClass, []jutil.Sign{jutil.StringSign, jutil.StringSign}, addr.Protocol, addr.Address); err != nil {
+			return jutil.NullObject, err
 		}
 	}
-	return jutil.JObjectArray(jEnv, addrarr, jListenSpecAddressClass), nil
+	return jutil.JObjectArray(env, addrarr, jListenSpecAddressClass)
 }
 
 // GoListenAddrs converts Java ListenSpec$Address array into a Go
 // rpc.ListenAddrs value.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func GoListenAddrs(jEnv, jAddrs interface{}) (rpc.ListenAddrs, error) {
-	addrarr := jutil.GoObjectArray(jEnv, jAddrs)
+func GoListenAddrs(env jutil.Env, jAddrs jutil.Object) (rpc.ListenAddrs, error) {
+	addrarr, err := jutil.GoObjectArray(env, jAddrs)
+	if err != nil {
+		return nil, err
+	}
 	addrs := make(rpc.ListenAddrs, len(addrarr))
 	for i, jAddr := range addrarr {
 		var err error
-		addrs[i].Protocol, err = jutil.CallStringMethod(jEnv, jAddr, "getProtocol", nil)
+		addrs[i].Protocol, err = jutil.CallStringMethod(env, jAddr, "getProtocol", nil)
 		if err != nil {
 			return nil, err
 		}
-		addrs[i].Address, err = jutil.CallStringMethod(jEnv, jAddr, "getAddress", nil)
+		addrs[i].Address, err = jutil.CallStringMethod(env, jAddr, "getAddress", nil)
 		if err != nil {
 			return nil, err
 		}
@@ -291,57 +272,48 @@ func GoListenAddrs(jEnv, jAddrs interface{}) (rpc.ListenAddrs, error) {
 }
 
 // JavaNetworkChange converts the Go NetworkChange value into a Java NetworkChange object.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func JavaNetworkChange(jEnv interface{}, change rpc.NetworkChange) (unsafe.Pointer, error) {
-	jTime, err := jutil.JTime(jEnv, change.Time)
+func JavaNetworkChange(env jutil.Env, change rpc.NetworkChange) (jutil.Object, error) {
+	jTime, err := jutil.JTime(env, change.Time)
 	if err != nil {
-		return nil, err
+		return jutil.NullObject, err
 	}
-	jState, err := JavaServerState(jEnv, change.State)
+	jState, err := JavaServerState(env, change.State)
 	if err != nil {
-		return nil, err
+		return jutil.NullObject, err
 	}
-	jAddedAddrs, err := JavaNetworkAddressArray(jEnv, change.AddedAddrs)
+	jAddedAddrs, err := JavaNetworkAddressArray(env, change.AddedAddrs)
 	if err != nil {
-		return nil, err
+		return jutil.NullObject, err
 	}
-	jRemovedAddrs, err := JavaNetworkAddressArray(jEnv, change.RemovedAddrs)
+	jRemovedAddrs, err := JavaNetworkAddressArray(env, change.RemovedAddrs)
 	if err != nil {
-		return nil, err
+		return jutil.NullObject, err
 	}
 	changedEndpointStrs := make([]string, len(change.Changed))
 	for i, ep := range change.Changed {
 		changedEndpointStrs[i] = fmt.Sprintf("%v", ep)
 	}
 	addrSign := jutil.ClassSign("io.v.v23.rpc.NetworkAddress")
-	jNetworkChange, err := jutil.NewObject(jEnv, jNetworkChangeClass, []jutil.Sign{jutil.DateTimeSign, serverStateSign, jutil.ArraySign(addrSign), jutil.ArraySign(addrSign), jutil.ArraySign(jutil.StringSign), jutil.VExceptionSign}, jTime, jState, jAddedAddrs, jRemovedAddrs, changedEndpointStrs, change.Error)
+	jNetworkChange, err := jutil.NewObject(env, jNetworkChangeClass, []jutil.Sign{jutil.DateTimeSign, serverStateSign, jutil.ArraySign(addrSign), jutil.ArraySign(addrSign), jutil.ArraySign(jutil.StringSign), jutil.VExceptionSign}, jTime, jState, jAddedAddrs, jRemovedAddrs, changedEndpointStrs, change.Error)
 	if err != nil {
-		return nil, err
+		return jutil.NullObject, err
 	}
 	return jNetworkChange, nil
 }
 
 // JavaServerCall converts a Go rpc.ServerCall into a Java ServerCall object.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func JavaServerCall(jEnv interface{}, serverCall rpc.ServerCall) (unsafe.Pointer, error) {
-	jServerCall, err := jutil.NewObject(jEnv, jServerCallImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&serverCall)))
+func JavaServerCall(env jutil.Env, serverCall rpc.ServerCall) (jutil.Object, error) {
+	jServerCall, err := jutil.NewObject(env, jServerCallImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&serverCall)))
 	if err != nil {
-		return nil, err
+		return jutil.NullObject, err
 	}
 	jutil.GoRef(&serverCall) // Un-refed when the Java ServerCall object is finalized.
 	return jServerCall, nil
 }
 
 // JavaNetworkAddress converts a Go net.Addr into a Java NetworkAddress object.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func JavaNetworkAddress(jEnv interface{}, addr net.Addr) (unsafe.Pointer, error) {
-	return jutil.NewObject(jEnv, jNetworkAddressClass, []jutil.Sign{jutil.StringSign, jutil.StringSign}, addr.Network(), addr.String())
+func JavaNetworkAddress(env jutil.Env, addr net.Addr) (jutil.Object, error) {
+	return jutil.NewObject(env, jNetworkAddressClass, []jutil.Sign{jutil.StringSign, jutil.StringSign}, addr.Network(), addr.String())
 }
 
 type jniAddr struct {
@@ -357,15 +329,12 @@ func (a *jniAddr) String() string {
 }
 
 // GoNetworkAddress converts a Java NetworkAddress object into Go net.Addr.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func GoNetworkAddress(jEnv, jAddr interface{}) (net.Addr, error) {
-	network, err := jutil.CallStringMethod(jEnv, jAddr, "network", nil)
+func GoNetworkAddress(env jutil.Env, jAddr jutil.Object) (net.Addr, error) {
+	network, err := jutil.CallStringMethod(env, jAddr, "network", nil)
 	if err != nil {
 		return nil, err
 	}
-	addr, err := jutil.CallStringMethod(jEnv, jAddr, "address", nil)
+	addr, err := jutil.CallStringMethod(env, jAddr, "address", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -374,31 +343,28 @@ func GoNetworkAddress(jEnv, jAddr interface{}) (net.Addr, error) {
 
 // JavaNetworkAddressArray converts a Go slice of net.Addr values into a Java
 // array of NetworkAddress objects.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func JavaNetworkAddressArray(jEnv interface{}, addrs []net.Addr) (unsafe.Pointer, error) {
-	arr := make([]interface{}, len(addrs))
+func JavaNetworkAddressArray(env jutil.Env, addrs []net.Addr) (jutil.Object, error) {
+	arr := make([]jutil.Object, len(addrs))
 	for i, addr := range addrs {
 		var err error
-		if arr[i], err = JavaNetworkAddress(jEnv, addr); err != nil {
-			return nil, err
+		if arr[i], err = JavaNetworkAddress(env, addr); err != nil {
+			return jutil.NullObject, err
 		}
 	}
-	return jutil.JObjectArray(jEnv, arr, jNetworkAddressClass), nil
+	return jutil.JObjectArray(env, arr, jNetworkAddressClass)
 }
 
 // GoNetworkAddressArray converts a Java array of NetworkAddress objects into a
 // Go slice of net.Addr values.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func GoNetworkAddressArray(jEnv, jAddrs interface{}) ([]net.Addr, error) {
-	arr := jutil.GoObjectArray(jEnv, jAddrs)
+func GoNetworkAddressArray(env jutil.Env, jAddrs jutil.Object) ([]net.Addr, error) {
+	arr, err := jutil.GoObjectArray(env, jAddrs)
+	if err != nil {
+		return nil, err
+	}
 	ret := make([]net.Addr, len(arr))
 	for i, jAddr := range arr {
 		var err error
-		if ret[i], err = GoNetworkAddress(jEnv, jAddr); err != nil {
+		if ret[i], err = GoNetworkAddress(env, jAddr); err != nil {
 			return nil, err
 		}
 	}
@@ -407,53 +373,47 @@ func GoNetworkAddressArray(jEnv, jAddrs interface{}) ([]net.Addr, error) {
 
 // JavaAddressChooser converts a Go address chooser function into a Java
 // AddressChooser object.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func JavaAddressChooser(jEnv interface{}, chooser rpc.AddressChooser) (unsafe.Pointer, error) {
-	jAddressChooser, err := jutil.NewObject(jEnv, jAddressChooserImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&chooser)))
+func JavaAddressChooser(env jutil.Env, chooser rpc.AddressChooser) (jutil.Object, error) {
+	jAddressChooser, err := jutil.NewObject(env, jAddressChooserImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&chooser)))
 	if err != nil {
-		return nil, err
+		return jutil.NullObject, err
 	}
 	jutil.GoRef(&chooser) // Un-refed when the Java AddressChooser object is finalized.
 	return jAddressChooser, nil
 }
 
 type jniAddressChooser struct {
-	jChooser C.jobject
+	jChooser jutil.Object
 }
 
 func (chooser *jniAddressChooser) ChooseAddress(protocol string, candidates []net.Addr) ([]net.Addr, error) {
-	javaEnv, freeFunc := jutil.GetEnv()
+	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
-	jCandidates, err := JavaNetworkAddressArray(javaEnv, candidates)
+	jCandidates, err := JavaNetworkAddressArray(env, candidates)
 	if err != nil {
 		return nil, err
 	}
 	addrsSign := jutil.ArraySign(jutil.ClassSign("io.v.v23.rpc.NetworkAddress"))
-	jAddrs, err := jutil.CallObjectMethod(javaEnv, chooser.jChooser, "choose", []jutil.Sign{jutil.StringSign, addrsSign}, addrsSign, protocol, jCandidates)
+	jAddrs, err := jutil.CallObjectMethod(env, chooser.jChooser, "choose", []jutil.Sign{jutil.StringSign, addrsSign}, addrsSign, protocol, jCandidates)
 	if err != nil {
 		return nil, err
 	}
-	return GoNetworkAddressArray(javaEnv, jAddrs)
+	return GoNetworkAddressArray(env, jAddrs)
 }
 
 // GoAddressChooser converts a Java AddressChooser object into a Go address
 // chooser function.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func GoAddressChooser(jEnv, jChooserObj interface{}) rpc.AddressChooser {
+func GoAddressChooser(env jutil.Env, jChooser jutil.Object) rpc.AddressChooser {
 	// Reference Java chooser; it will be de-referenced when the go function
 	// created below is garbage-collected (through the finalizer callback we
 	// setup just below).
 	chooser := &jniAddressChooser{
-		jChooser: C.jobject(jutil.NewGlobalRef(jEnv, jChooserObj)),
+		jChooser: jutil.NewGlobalRef(env, jChooser),
 	}
 	runtime.SetFinalizer(chooser, func(chooser *jniAddressChooser) {
-		javaEnv, freeFunc := jutil.GetEnv()
+		env, freeFunc := jutil.GetEnv()
 		defer freeFunc()
-		jutil.DeleteGlobalRef(javaEnv, chooser.jChooser)
+		jutil.DeleteGlobalRef(env, chooser.jChooser)
 	})
 	return chooser
 }

@@ -20,17 +20,16 @@ import (
 // #include "jni.h"
 import "C"
 
-func goDispatcher(env *C.JNIEnv, jDispatcher C.jobject) (*dispatcher, error) {
+func goDispatcher(env jutil.Env, jDispatcher jutil.Object) (*dispatcher, error) {
 	// Reference Java dispatcher; it will be de-referenced when the go
 	// dispatcher created below is garbage-collected (through the finalizer
 	// callback we setup below).
-	jDispatcher = C.jobject(jutil.NewGlobalRef(env, jDispatcher))
+	jDispatcher = jutil.NewGlobalRef(env, jDispatcher)
 	d := &dispatcher{
 		jDispatcher: jDispatcher,
 	}
 	runtime.SetFinalizer(d, func(d *dispatcher) {
-		jEnv, freeFunc := jutil.GetEnv()
-		env := (*C.JNIEnv)(jEnv)
+		env, freeFunc := jutil.GetEnv()
 		defer freeFunc()
 		jutil.DeleteGlobalRef(env, d.jDispatcher)
 	})
@@ -39,7 +38,7 @@ func goDispatcher(env *C.JNIEnv, jDispatcher C.jobject) (*dispatcher, error) {
 }
 
 type dispatcher struct {
-	jDispatcher C.jobject
+	jDispatcher jutil.Object
 }
 
 func (d *dispatcher) Lookup(ctx *context.T, suffix string) (interface{}, security.Authorizer, error) {
@@ -60,12 +59,12 @@ func (d *dispatcher) Lookup(ctx *context.T, suffix string) (interface{}, securit
 	if len(result) != 2 {
 		return nil, nil, fmt.Errorf("lookup returned %d elems, want 2", len(result))
 	}
-	invoker := *(*rpc.Invoker)(jutil.Ptr(result[0]))
-	jutil.GoUnref(jutil.Ptr(result[0]))
+	invoker := *(*rpc.Invoker)(jutil.NativePtr(result[0]))
+	jutil.GoUnref(jutil.NativePtr(result[0]))
 	authorizer := security.Authorizer(nil)
 	if result[1] != 0 {
-		authorizer = *(*security.Authorizer)(jutil.Ptr(result[1]))
-		jutil.GoUnref(jutil.Ptr(result[1]))
+		authorizer = *(*security.Authorizer)(jutil.NativePtr(result[1]))
+		jutil.GoUnref(jutil.NativePtr(result[1]))
 	}
 	return invoker, authorizer, nil
 }

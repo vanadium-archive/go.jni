@@ -8,6 +8,7 @@ package rt
 
 import (
 	"runtime"
+	"unsafe"
 
 	"v.io/v23"
 	"v.io/v23/context"
@@ -26,17 +27,16 @@ import "C"
 // Init initializes the JNI code with the given Java environment.  This method
 // must be invoked before any other method in this package and must be called
 // from the main Java thread (e.g., On_Load()).
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java environment is passed in an empty
 // interface and then cast into the package-local environment type.
-func Init(jEnv interface{}) error {
+func Init(env jutil.Env) error {
 	return nil
 }
 
 type shutdownKey struct{}
 
 //export Java_io_v_impl_google_rt_VRuntimeImpl_nativeInit
-func Java_io_v_impl_google_rt_VRuntimeImpl_nativeInit(env *C.JNIEnv, jRuntime C.jclass, jNumCpus C.jint) C.jobject {
+func Java_io_v_impl_google_rt_VRuntimeImpl_nativeInit(jenv *C.JNIEnv, jRuntime C.jclass, jNumCpus C.jint) C.jobject {
+	env := jutil.WrapEnv(jenv)
 	runtime.GOMAXPROCS(int(jNumCpus))
 	ctx, shutdownFunc := v23.Init()
 	ctx = context.WithValue(ctx, shutdownKey{}, shutdownFunc)
@@ -45,12 +45,13 @@ func Java_io_v_impl_google_rt_VRuntimeImpl_nativeInit(env *C.JNIEnv, jRuntime C.
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return C.jobject(jCtx)
+	return C.jobject(unsafe.Pointer(jCtx))
 }
 
 //export Java_io_v_impl_google_rt_VRuntimeImpl_nativeShutdown
-func Java_io_v_impl_google_rt_VRuntimeImpl_nativeShutdown(env *C.JNIEnv, jRuntime C.jclass, jContext C.jobject) {
-	ctx, err := jcontext.GoContext(env, jContext)
+func Java_io_v_impl_google_rt_VRuntimeImpl_nativeShutdown(jenv *C.JNIEnv, jRuntime C.jclass, jContext C.jobject) {
+	env := jutil.WrapEnv(jenv)
+	ctx, err := jcontext.GoContext(env, jutil.WrapObject(jContext))
 	if err != nil {
 		jutil.JThrowV(env, err)
 	}
@@ -61,9 +62,10 @@ func Java_io_v_impl_google_rt_VRuntimeImpl_nativeShutdown(env *C.JNIEnv, jRuntim
 }
 
 //export Java_io_v_impl_google_rt_VRuntimeImpl_nativeSetNewClient
-func Java_io_v_impl_google_rt_VRuntimeImpl_nativeSetNewClient(env *C.JNIEnv, jRuntime C.jclass, jContext C.jobject, jOptions C.jobject) C.jobject {
+func Java_io_v_impl_google_rt_VRuntimeImpl_nativeSetNewClient(jenv *C.JNIEnv, jRuntime C.jclass, jContext C.jobject, jOptions C.jobject) C.jobject {
+	env := jutil.WrapEnv(jenv)
 	// TODO(spetrovic): Have Java context support nativePtr()?
-	ctx, err := jcontext.GoContext(env, jContext)
+	ctx, err := jcontext.GoContext(env, jutil.WrapObject(jContext))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -79,13 +81,14 @@ func Java_io_v_impl_google_rt_VRuntimeImpl_nativeSetNewClient(env *C.JNIEnv, jRu
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return C.jobject(jNewCtx)
+	return C.jobject(unsafe.Pointer(jNewCtx))
 }
 
 //export Java_io_v_impl_google_rt_VRuntimeImpl_nativeGetClient
-func Java_io_v_impl_google_rt_VRuntimeImpl_nativeGetClient(env *C.JNIEnv, jRuntime C.jclass, jContext C.jobject) C.jobject {
+func Java_io_v_impl_google_rt_VRuntimeImpl_nativeGetClient(jenv *C.JNIEnv, jRuntime C.jclass, jContext C.jobject) C.jobject {
+	env := jutil.WrapEnv(jenv)
 	// TODO(spetrovic): Have Java context support nativePtr()?
-	ctx, err := jcontext.GoContext(env, jContext)
+	ctx, err := jcontext.GoContext(env, jutil.WrapObject(jContext))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -96,13 +99,14 @@ func Java_io_v_impl_google_rt_VRuntimeImpl_nativeGetClient(env *C.JNIEnv, jRunti
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return C.jobject(jClient)
+	return C.jobject(unsafe.Pointer(jClient))
 }
 
 //export Java_io_v_impl_google_rt_VRuntimeImpl_nativeNewServer
-func Java_io_v_impl_google_rt_VRuntimeImpl_nativeNewServer(env *C.JNIEnv, jRuntime C.jclass, jContext C.jobject) C.jobject {
+func Java_io_v_impl_google_rt_VRuntimeImpl_nativeNewServer(jenv *C.JNIEnv, jRuntime C.jclass, jContext C.jobject) C.jobject {
+	env := jutil.WrapEnv(jenv)
 	// TODO(spetrovic): Have Java context support nativePtr()?
-	ctx, err := jcontext.GoContext(env, jContext)
+	ctx, err := jcontext.GoContext(env, jutil.WrapObject(jContext))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -117,18 +121,19 @@ func Java_io_v_impl_google_rt_VRuntimeImpl_nativeNewServer(env *C.JNIEnv, jRunti
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return C.jobject(jServer)
+	return C.jobject(unsafe.Pointer(jServer))
 }
 
 //export Java_io_v_impl_google_rt_VRuntimeImpl_nativeSetPrincipal
-func Java_io_v_impl_google_rt_VRuntimeImpl_nativeSetPrincipal(env *C.JNIEnv, jRuntime C.jclass, jContext C.jobject, jPrincipal C.jobject) C.jobject {
+func Java_io_v_impl_google_rt_VRuntimeImpl_nativeSetPrincipal(jenv *C.JNIEnv, jRuntime C.jclass, jContext C.jobject, jPrincipal C.jobject) C.jobject {
+	env := jutil.WrapEnv(jenv)
 	// TODO(spetrovic): Have Java context support nativePtr()?
-	ctx, err := jcontext.GoContext(env, jContext)
+	ctx, err := jcontext.GoContext(env, jutil.WrapObject(jContext))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	principal, err := jsecurity.GoPrincipal(env, jPrincipal)
+	principal, err := jsecurity.GoPrincipal(env, jutil.WrapObject(jPrincipal))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -143,13 +148,14 @@ func Java_io_v_impl_google_rt_VRuntimeImpl_nativeSetPrincipal(env *C.JNIEnv, jRu
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return C.jobject(jNewCtx)
+	return C.jobject(unsafe.Pointer(jNewCtx))
 }
 
 //export Java_io_v_impl_google_rt_VRuntimeImpl_nativeGetPrincipal
-func Java_io_v_impl_google_rt_VRuntimeImpl_nativeGetPrincipal(env *C.JNIEnv, jRuntime C.jclass, jContext C.jobject) C.jobject {
+func Java_io_v_impl_google_rt_VRuntimeImpl_nativeGetPrincipal(jenv *C.JNIEnv, jRuntime C.jclass, jContext C.jobject) C.jobject {
+	env := jutil.WrapEnv(jenv)
 	// TODO(spetrovic): Have Java context support nativePtr()?
-	ctx, err := jcontext.GoContext(env, jContext)
+	ctx, err := jcontext.GoContext(env, jutil.WrapObject(jContext))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -160,18 +166,24 @@ func Java_io_v_impl_google_rt_VRuntimeImpl_nativeGetPrincipal(env *C.JNIEnv, jRu
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return C.jobject(jPrincipal)
+	return C.jobject(unsafe.Pointer(jPrincipal))
 }
 
 //export Java_io_v_impl_google_rt_VRuntimeImpl_nativeSetNamespace
-func Java_io_v_impl_google_rt_VRuntimeImpl_nativeSetNamespace(env *C.JNIEnv, jRuntime C.jclass, jContext C.jobject, jRoots C.jobjectArray) C.jobject {
+func Java_io_v_impl_google_rt_VRuntimeImpl_nativeSetNamespace(jenv *C.JNIEnv, jRuntime C.jclass, jContext C.jobject, jRoots C.jobjectArray) C.jobject {
+	env := jutil.WrapEnv(jenv)
 	// TODO(spetrovic): Have Java context support nativePtr()?
-	ctx, err := jcontext.GoContext(env, jContext)
+	ctx, err := jcontext.GoContext(env, jutil.WrapObject(jContext))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	roots := jutil.GoStringArray(env, jRoots)
+	roots, err := jutil.GoStringArray(env, jutil.WrapObject(jRoots))
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+
 	newCtx, _, err := v23.WithNewNamespace(ctx, roots...)
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -182,13 +194,14 @@ func Java_io_v_impl_google_rt_VRuntimeImpl_nativeSetNamespace(env *C.JNIEnv, jRu
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return C.jobject(jNewCtx)
+	return C.jobject(unsafe.Pointer(jNewCtx))
 }
 
 //export Java_io_v_impl_google_rt_VRuntimeImpl_nativeGetNamespace
-func Java_io_v_impl_google_rt_VRuntimeImpl_nativeGetNamespace(env *C.JNIEnv, jRuntime C.jclass, jContext C.jobject) C.jobject {
+func Java_io_v_impl_google_rt_VRuntimeImpl_nativeGetNamespace(jenv *C.JNIEnv, jRuntime C.jclass, jContext C.jobject) C.jobject {
+	env := jutil.WrapEnv(jenv)
 	// TODO(spetrovic): Have Java context support nativePtr()?
-	ctx, err := jcontext.GoContext(env, jContext)
+	ctx, err := jcontext.GoContext(env, jutil.WrapObject(jContext))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -199,12 +212,13 @@ func Java_io_v_impl_google_rt_VRuntimeImpl_nativeGetNamespace(env *C.JNIEnv, jRu
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return C.jobject(jNamespace)
+	return C.jobject(unsafe.Pointer(jNamespace))
 }
 
 //export Java_io_v_impl_google_rt_VRuntimeImpl_nativeGetListenSpec
-func Java_io_v_impl_google_rt_VRuntimeImpl_nativeGetListenSpec(env *C.JNIEnv, jRuntime C.jclass, jContext C.jobject) C.jobject {
-	ctx, err := jcontext.GoContext(env, jContext)
+func Java_io_v_impl_google_rt_VRuntimeImpl_nativeGetListenSpec(jenv *C.JNIEnv, jRuntime C.jclass, jContext C.jobject) C.jobject {
+	env := jutil.WrapEnv(jenv)
+	ctx, err := jcontext.GoContext(env, jutil.WrapObject(jContext))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -215,5 +229,5 @@ func Java_io_v_impl_google_rt_VRuntimeImpl_nativeGetListenSpec(env *C.JNIEnv, jR
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return C.jobject(jSpec)
+	return C.jobject(unsafe.Pointer(jSpec))
 }

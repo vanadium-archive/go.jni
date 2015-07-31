@@ -9,7 +9,6 @@ package rpc
 import (
 	"fmt"
 	"runtime"
-	"unsafe"
 
 	"v.io/v23/context"
 	"v.io/v23/naming"
@@ -26,30 +25,29 @@ import (
 // #include "jni.h"
 import "C"
 
-func goInvoker(env *C.JNIEnv, jObj C.jobject) (rpc.Invoker, error) {
+func goInvoker(env jutil.Env, obj jutil.Object) (rpc.Invoker, error) {
 	// See if the Java object is an invoker.
-	var jInvoker C.jobject
-	if jutil.IsInstanceOf(env, jObj, jInvokerClass) {
-		jInvoker = jObj
+	var jInvoker jutil.Object
+	if jutil.IsInstanceOf(env, obj, jInvokerClass) {
+		jInvoker = obj
 	} else {
 		// Create a new Java ReflectInvoker object.
-		jReflectInvoker, err := jutil.NewObject(env, jReflectInvokerClass, []jutil.Sign{jutil.ObjectSign}, jObj)
+		jReflectInvoker, err := jutil.NewObject(env, jReflectInvokerClass, []jutil.Sign{jutil.ObjectSign}, obj)
 		if err != nil {
 			return nil, fmt.Errorf("error creating Java ReflectInvoker object: %v", err)
 		}
-		jInvoker = C.jobject(jReflectInvoker)
+		jInvoker = jReflectInvoker
 	}
 
 	// Reference Java invoker; it will be de-referenced when the go invoker
 	// created below is garbage-collected (through the finalizer callback we
 	// setup just below).
-	jInvokerRef := C.jobject(jutil.NewGlobalRef(env, jInvoker))
+	jInvoker = jutil.NewGlobalRef(env, jInvoker)
 	i := &invoker{
-		jInvoker: jInvokerRef,
+		jInvoker: jInvoker,
 	}
 	runtime.SetFinalizer(i, func(i *invoker) {
-		jEnv, freeFunc := jutil.GetEnv()
-		env := (*C.JNIEnv)(jEnv)
+		env, freeFunc := jutil.GetEnv()
 		defer freeFunc()
 		jutil.DeleteGlobalRef(env, i.jInvoker)
 	})
@@ -57,7 +55,7 @@ func goInvoker(env *C.JNIEnv, jObj C.jobject) (rpc.Invoker, error) {
 }
 
 type invoker struct {
-	jInvoker C.jobject
+	jInvoker jutil.Object
 }
 
 func (i *invoker) Prepare(ctx *context.T, method string, numArgs int) (argptrs []interface{}, tags []*vdl.Value, err error) {
@@ -74,7 +72,10 @@ func (i *invoker) Prepare(ctx *context.T, method string, numArgs int) (argptrs [
 	if err != nil {
 		return nil, nil, err
 	}
-	vomTags := jutil.GoByteArrayArray(env, jVomTags)
+	vomTags, err := jutil.GoByteArrayArray(env, jVomTags)
+	if err != nil {
+		return nil, nil, err
+	}
 	tags = make([]*vdl.Value, len(vomTags))
 	for i, vomTag := range vomTags {
 		var err error
@@ -86,8 +87,7 @@ func (i *invoker) Prepare(ctx *context.T, method string, numArgs int) (argptrs [
 }
 
 func (i *invoker) Invoke(ctx *context.T, call rpc.StreamServerCall, method string, argptrs []interface{}) (results []interface{}, err error) {
-	jEnv, freeFunc := jutil.GetEnv()
-	env := (*C.JNIEnv)(jEnv)
+	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
 
 	jContext, err := jcontext.JavaContext(env, ctx, nil)
@@ -106,12 +106,18 @@ func (i *invoker) Invoke(ctx *context.T, call rpc.StreamServerCall, method strin
 			return nil, err
 		}
 	}
-	jVomArgs := jutil.JByteArrayArray(env, vomArgs)
+	jVomArgs, err := jutil.JByteArrayArray(env, vomArgs)
+	if err != nil {
+		return nil, err
+	}
 	jVomResults, err := jutil.CallStaticObjectMethod(env, jUtilClass, "invoke", []jutil.Sign{invokerSign, contextSign, streamServerCallSign, jutil.StringSign, jutil.ArraySign(jutil.ByteArraySign)}, jutil.ArraySign(jutil.ByteArraySign), i.jInvoker, jContext, jStreamServerCall, jutil.CamelCase(method), jVomArgs)
 	if err != nil {
 		return nil, err
 	}
-	vomResults := jutil.GoByteArrayArray(env, jVomResults)
+	vomResults, err := jutil.GoByteArrayArray(env, jVomResults)
+	if err != nil {
+		return nil, err
+	}
 	results = make([]interface{}, len(vomResults))
 	for i, vomResult := range vomResults {
 		var err error
@@ -123,8 +129,7 @@ func (i *invoker) Invoke(ctx *context.T, call rpc.StreamServerCall, method strin
 }
 
 func (i *invoker) Signature(ctx *context.T, call rpc.ServerCall) ([]signature.Interface, error) {
-	jEnv, freeFunc := jutil.GetEnv()
-	env := (*C.JNIEnv)(jEnv)
+	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
 
 	jContext, err := jcontext.JavaContext(env, ctx, nil)
@@ -143,7 +148,7 @@ func (i *invoker) Signature(ctx *context.T, call rpc.ServerCall) ([]signature.In
 
 	result := make([]signature.Interface, len(interfacesArr))
 	for i, jInterface := range interfacesArr {
-		err = jutil.GoVomCopy(jEnv, jInterface, jInterfaceClass, &result[i])
+		err = jutil.GoVomCopy(env, jInterface, jInterfaceClass, &result[i])
 		if err != nil {
 			return nil, err
 		}
@@ -152,8 +157,7 @@ func (i *invoker) Signature(ctx *context.T, call rpc.ServerCall) ([]signature.In
 }
 
 func (i *invoker) MethodSignature(ctx *context.T, call rpc.ServerCall, method string) (signature.Method, error) {
-	jEnv, freeFunc := jutil.GetEnv()
-	env := (*C.JNIEnv)(jEnv)
+	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
 
 	jContext, err := jcontext.JavaContext(env, ctx, nil)
@@ -171,7 +175,7 @@ func (i *invoker) MethodSignature(ctx *context.T, call rpc.ServerCall, method st
 	}
 
 	var result signature.Method
-	err = jutil.GoVomCopy(jEnv, jMethod, jMethodClass, &result)
+	err = jutil.GoVomCopy(env, jMethod, jMethodClass, &result)
 	if err != nil {
 		return signature.Method{}, err
 	}
@@ -182,62 +186,13 @@ func (i *invoker) Globber() *rpc.GlobState {
 	return &rpc.GlobState{AllGlobber: javaGlobber{i}}
 }
 
-// prepareArgs converts the provided arguments pointers into a Java Object array.
-func (i *invoker) prepareArgs(env *C.JNIEnv, method string, argptrs []interface{}) (unsafe.Pointer, error) {
-	args := make([]interface{}, len(argptrs))
-	for i, argptr := range argptrs {
-		args[i] = interface{}(jutil.DerefOrDie(argptr))
-	}
-	// Get Java argument types.
-	typesarr, err := jutil.CallObjectArrayMethod(env, i.jInvoker, "getArgumentTypes", []jutil.Sign{jutil.StringSign}, jutil.TypeSign, jutil.CamelCase(method))
-	if err != nil {
-		return nil, err
-	}
-	if len(typesarr) != len(args) {
-		return nil, fmt.Errorf("wrong number of arguments for method %s, want %d, have %d", method, len(typesarr), len(args))
-	}
-	arr := make([]interface{}, len(args))
-	for i, arg := range args {
-		var err error
-		if arr[i], err = jutil.JVomCopy(env, arg, typesarr[i]); err != nil {
-			return nil, err
-		}
-	}
-	return jutil.JObjectArray(env, arr, jObjectClass), nil
-}
-
-// prepareResults converts the provided Java result array into a Go slice of *vdl.Value.
-func (i *invoker) prepareResults(env *C.JNIEnv, method string, jResults []unsafe.Pointer) ([]interface{}, error) {
-	// Get Java result types.
-	typesarr, err := jutil.CallObjectArrayMethod(env, i.jInvoker, "getResultTypes", []jutil.Sign{jutil.StringSign}, jutil.TypeSign, jutil.CamelCase(method))
-	if err != nil {
-		return nil, err
-	}
-	if len(typesarr) != len(jResults) {
-		return nil, fmt.Errorf("wrong number of results for method %s, want %d, have %d", method, len(typesarr), len(jResults))
-	}
-	// VOM-encode Java results and decode into []*vdl.Value.
-	ret := make([]interface{}, len(jResults))
-	for i, jResult := range jResults {
-		data, err := jutil.JVomEncode(env, jResult, typesarr[i])
-		if err != nil {
-			return nil, err
-		}
-		if ret[i], err = jutil.VomDecodeToValue(data); err != nil {
-			return nil, err
-		}
-	}
-	return ret, nil
-}
-
 type javaGlobber struct {
 	i *invoker
 }
 
 func (j javaGlobber) Glob__(ctx *context.T, call rpc.ServerCall, pattern string) (<-chan naming.GlobReply, error) {
-	jEnv, freeFunc := jutil.GetEnv()
+	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
-	env := (*C.JNIEnv)(jEnv)
 
 	jServerCall, err := JavaServerCall(env, call)
 	if err != nil {
@@ -245,10 +200,8 @@ func (j javaGlobber) Glob__(ctx *context.T, call rpc.ServerCall, pattern string)
 	}
 
 	actualChannel := make(chan naming.GlobReply)
-	readFunc := func(input interface{}) error {
-		jEnv, freeFunc := jutil.GetEnv()
-		env := (*C.JNIEnv)(jEnv)
-
+	readFunc := func(input jutil.Object) error {
+		env, freeFunc := jutil.GetEnv()
 		defer jutil.DeleteGlobalRef(env, input)
 		var reply naming.GlobReply
 		err := jutil.GoVomCopy(env, input, jGlobReplyClass, &reply)
@@ -272,15 +225,16 @@ func (j javaGlobber) Glob__(ctx *context.T, call rpc.ServerCall, pattern string)
 
 	callSign := jutil.ClassSign("io.v.v23.rpc.ServerCall")
 	channelSign := jutil.ClassSign("io.v.v23.OutputChannel")
-	// Calls Java invoker's glob method.
-	go func(jServerCallRef C.jobject, jOutputChannelRef C.jobject) {
-		jEnv, freeFunc := jutil.GetEnv()
-		defer freeFunc()
-		env := (*C.JNIEnv)(jEnv)
-		jutil.CallVoidMethod(env, j.i.jInvoker, "glob", []jutil.Sign{callSign, jutil.StringSign, channelSign}, jServerCallRef, pattern, jOutputChannelRef)
-		jutil.DeleteGlobalRef(env, jServerCallRef)
-		jutil.DeleteGlobalRef(env, jOutputChannelRef)
-	}(C.jobject(jutil.NewGlobalRef(env, jServerCall)), C.jobject(jutil.NewGlobalRef(env, jOutputChannel)))
 
+	jServerCall = jutil.NewGlobalRef(env, jServerCall)
+	jOutputChannel = jutil.NewGlobalRef(env, jOutputChannel)
+	// Calls Java invoker's glob method.
+	go func() {
+		env, freeFunc := jutil.GetEnv()
+		defer freeFunc()
+		jutil.CallVoidMethod(env, j.i.jInvoker, "glob", []jutil.Sign{callSign, jutil.StringSign, channelSign}, jServerCall, pattern, jOutputChannel)
+		jutil.DeleteGlobalRef(env, jServerCall)
+		jutil.DeleteGlobalRef(env, jOutputChannel)
+	}()
 	return actualChannel, nil
 }

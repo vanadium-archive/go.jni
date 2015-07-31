@@ -9,7 +9,6 @@ package security
 import (
 	"log"
 	"runtime"
-	"unsafe"
 
 	"v.io/v23/security"
 	jutil "v.io/x/jni/util"
@@ -20,13 +19,10 @@ import "C"
 
 // JavaBlessingRoots creates an instance of Java BlessingRoots that uses the provided Go
 // BlessingRoots as its underlying implementation.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func JavaBlessingRoots(jEnv interface{}, roots security.BlessingRoots) (unsafe.Pointer, error) {
-	jObj, err := jutil.NewObject(jEnv, jBlessingRootsImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&roots)))
+func JavaBlessingRoots(env jutil.Env, roots security.BlessingRoots) (jutil.Object, error) {
+	jObj, err := jutil.NewObject(env, jBlessingRootsImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&roots)))
 	if err != nil {
-		return nil, err
+		return jutil.NullObject, err
 	}
 	jutil.GoRef(&roots) // Un-refed when the Java BlessingRootsImpl is finalized.
 	return jObj, nil
@@ -34,23 +30,19 @@ func JavaBlessingRoots(jEnv interface{}, roots security.BlessingRoots) (unsafe.P
 
 // GoBlessingRoots creates an instance of security.BlessingRoots that uses the
 // provided Java BlessingRoots as its underlying implementation.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func GoBlessingRoots(jEnv, jBlessingRootsObj interface{}) (security.BlessingRoots, error) {
-	if jBlessingRootsObj == nil {
+func GoBlessingRoots(env jutil.Env, jBlessingRoots jutil.Object) (security.BlessingRoots, error) {
+	if jBlessingRoots.IsNull() {
 		return nil, nil
 	}
 	// Reference Java BlessingRoots; it will be de-referenced when the Go
 	// BlessingRoots created below is garbage-collected (through the finalizer
 	// callback we setup just below).
-	jBlessingRoots := C.jobject(jutil.NewGlobalRef(jEnv, jBlessingRootsObj))
+	jBlessingRoots = jutil.NewGlobalRef(env, jBlessingRoots)
 	r := &blessingRoots{
 		jBlessingRoots: jBlessingRoots,
 	}
 	runtime.SetFinalizer(r, func(r *blessingRoots) {
-		envPtr, freeFunc := jutil.GetEnv()
-		env := (*C.JNIEnv)(envPtr)
+		env, freeFunc := jutil.GetEnv()
 		defer freeFunc()
 		jutil.DeleteGlobalRef(env, r.jBlessingRoots)
 	})
@@ -58,7 +50,7 @@ func GoBlessingRoots(jEnv, jBlessingRootsObj interface{}) (security.BlessingRoot
 }
 
 type blessingRoots struct {
-	jBlessingRoots C.jobject
+	jBlessingRoots jutil.Object
 }
 
 func (r *blessingRoots) Add(root security.PublicKey, pattern security.BlessingPattern) error {

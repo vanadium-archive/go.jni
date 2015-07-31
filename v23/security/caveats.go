@@ -17,25 +17,25 @@ import (
 import "C"
 
 func caveatValidator(context *context.T, call security.Call, sets [][]security.Caveat) []error {
-	jEnv, freeFunc := jutil.GetEnv()
+	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
-	jContext, err := jcontext.JavaContext(jEnv, context, nil)
+	jContext, err := jcontext.JavaContext(env, context, nil)
 	if err != nil {
 		return errors(err, len(sets))
 	}
-	jCall, err := JavaCall(jEnv, call)
+	jCall, err := JavaCall(env, call)
 	if err != nil {
 		return errors(err, len(sets))
 	}
 	ret := make([]error, len(sets))
 	for i, set := range sets {
 		for _, caveat := range set {
-			jCaveat, err := JavaCaveat(jEnv, caveat)
+			jCaveat, err := JavaCaveat(env, caveat)
 			if err != nil {
 				ret[i] = err
 				break
 			}
-			if err := jutil.CallStaticVoidMethod(jEnv, jCaveatRegistryClass, "validate", []jutil.Sign{contextSign, callSign, caveatSign}, jContext, jCall, jCaveat); err != nil {
+			if err := jutil.CallStaticVoidMethod(env, jCaveatRegistryClass, "validate", []jutil.Sign{contextSign, callSign, caveatSign}, jContext, jCall, jCaveat); err != nil {
 				ret[i] = err
 				break
 			}

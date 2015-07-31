@@ -19,20 +19,16 @@ import "C"
 
 // GoSigner creates an instance of security.Signer that uses the provided
 // Java VSigner as its underlying implementation.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func GoSigner(jEnv, jSignerObj interface{}) (security.Signer, error) {
+func GoSigner(env jutil.Env, jSigner jutil.Object) (security.Signer, error) {
 	// Reference Java VSigner; it will be de-referenced when the Go Signer
 	// created below is garbage-collected (through the finalizer callback we
 	// setup just below).
-	jSigner := C.jobject(jutil.NewGlobalRef(jEnv, jSignerObj))
+	jSigner = jutil.NewGlobalRef(env, jSigner)
 	s := &signer{
 		jSigner: jSigner,
 	}
 	runtime.SetFinalizer(s, func(s *signer) {
-		jEnv, freeFunc := jutil.GetEnv()
-		env := (*C.JNIEnv)(jEnv)
+		env, freeFunc := jutil.GetEnv()
 		defer freeFunc()
 		jutil.DeleteGlobalRef(env, s.jSigner)
 	})
@@ -40,7 +36,7 @@ func GoSigner(jEnv, jSignerObj interface{}) (security.Signer, error) {
 }
 
 type signer struct {
-	jSigner C.jobject
+	jSigner jutil.Object
 }
 
 func (s *signer) Sign(purpose, message []byte) (security.Signature, error) {

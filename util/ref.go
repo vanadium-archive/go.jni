@@ -19,43 +19,20 @@ import "C"
 // NewGlobalRef creates a new global reference to the object referred to by the
 // obj argument.  The obj argument may be a global or local reference. Global
 // references must be explicitly disposed of by calling DeleteGlobalRef().
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func NewGlobalRef(env, obj interface{}) unsafe.Pointer {
-	jEnv := getEnv(env)
-	jObj := getObject(obj)
-	return unsafe.Pointer(C.NewGlobalRef(jEnv, jObj))
+func NewGlobalRef(env Env, obj Object) Object {
+	return WrapObject(C.NewGlobalRef(env.value(), obj.value()))
 }
 
 // DeleteGlobalRef deletes the global reference pointed to by obj.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func DeleteGlobalRef(env, obj interface{}) {
-	jEnv := getEnv(env)
-	jObj := getObject(obj)
-	C.DeleteGlobalRef(jEnv, jObj)
+func DeleteGlobalRef(env Env, obj Object) {
+	C.DeleteGlobalRef(env.value(), obj.value())
 }
 
 // Creates a new local reference that refers to the same object as obj. The
 // given obj may be a global or local reference. Returns null if ref refers
 // to null.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func NewLocalRef(env, obj interface{}) unsafe.Pointer {
-	jEnv := getEnv(env)
-	jObj := getObject(obj)
-	return unsafe.Pointer(C.NewLocalRef(jEnv, jObj))
-}
-
-// IsNull returns true iff the provided object is not null.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func IsNull(obj interface{}) bool {
-	return getObject(obj) == nil
+func NewLocalRef(env Env, obj Object) Object {
+	return WrapObject(C.NewLocalRef(env.value(), obj.value()))
 }
 
 // GoRef creates a new reference to the value addressed by the provided pointer.
@@ -80,17 +57,15 @@ func GoUnref(valptr interface{}) {
 
 // IsPointer returns true iff the provided value is a pointer.
 func IsPointer(val interface{}) bool {
-	if _, ok := val.(unsafe.Pointer); ok {
-		return true
-	}
-	return reflect.ValueOf(val).Kind() == reflect.Ptr
+	v := reflect.ValueOf(val)
+	return v.Kind() == reflect.Ptr || v.Kind() == reflect.UnsafePointer
 }
 
 // PtrValue returns the value of the pointer as a uintptr.
 func PtrValue(ptr interface{}) uintptr {
 	v := reflect.ValueOf(ptr)
 	if v.Kind() != reflect.Ptr && v.Kind() != reflect.UnsafePointer {
-		panic(fmt.Sprintf("must pass pointer value to PtrValue, was %v", v.Kind()))
+		panic(fmt.Sprintf("must pass pointer value to PtrValue, was %v ", v.Type()))
 	}
 	return v.Pointer()
 }
@@ -100,18 +75,17 @@ func PtrValue(ptr interface{}) uintptr {
 func DerefOrDie(i interface{}) interface{} {
 	v := reflect.ValueOf(i)
 	if v.Kind() != reflect.Ptr {
-		panic(fmt.Sprintf("want reflect.Ptr value for %v, have %v", i, v.Kind()))
+		panic(fmt.Sprintf("want reflect.Ptr value for %v, have %v", i, v.Type()))
 	}
 	return v.Elem().Interface()
 }
 
-// Ptr returns the value of the provided Java pointer (of type C.jlong) as an
-// unsafe.Pointer.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func Ptr(jPtr interface{}) unsafe.Pointer {
-	v := reflect.ValueOf(jPtr)
+// NativePtr returns the value of the provided Go pointer as an unsafe.Pointer.
+// This function should only be used for converting Go pointers that have been
+// passed in to Java and then back into Go, and are of (local-package) type
+// C.jlong.
+func NativePtr(goPtr interface{}) unsafe.Pointer {
+	v := reflect.ValueOf(goPtr)
 	return unsafe.Pointer(uintptr(v.Int()))
 }
 

@@ -7,8 +7,6 @@
 package util
 
 import (
-	"unsafe"
-
 	"v.io/v23/vdl"
 	"v.io/v23/vom"
 )
@@ -18,9 +16,6 @@ import "C"
 
 // VomDecodeToValue VOM-decodes the provided value into *vdl.Value using a new
 // instance of a VOM decoder.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
 func VomDecodeToValue(data []byte) (*vdl.Value, error) {
 	var value *vdl.Value
 	if err := vom.Decode(data, &value); err != nil {
@@ -30,9 +25,6 @@ func VomDecodeToValue(data []byte) (*vdl.Value, error) {
 }
 
 // VomCopy copies the provided Go value by encoding/decoding it from VOM.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
 func VomCopy(src interface{}, dstptr interface{}) error {
 	data, err := vom.Encode(src)
 	if err != nil {
@@ -42,53 +34,50 @@ func VomCopy(src interface{}, dstptr interface{}) error {
 }
 
 // JVomEncode VOM-encodes the provided Java object of the given type.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func JVomEncode(jEnv, jObj, jType interface{}) ([]byte, error) {
-	return CallStaticByteArrayMethod(jEnv, jVomUtilClass, "encode", []Sign{ObjectSign, TypeSign}, jObj, jType)
+func JVomEncode(env Env, obj Object, typeObj Object) ([]byte, error) {
+	return CallStaticByteArrayMethod(env, jVomUtilClass, "encode", []Sign{ObjectSign, TypeSign}, obj, typeObj)
 }
 
 // JVomEncode VOM-encodes the provided Java VdlValue object.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func JVomEncodeValue(jEnv, jVdlValue interface{}) ([]byte, error) {
-	return CallStaticByteArrayMethod(jEnv, jVomUtilClass, "encode", []Sign{VdlValueSign}, jVdlValue)
+func JVomEncodeValue(env Env, vdlValue Object) ([]byte, error) {
+	return CallStaticByteArrayMethod(env, jVomUtilClass, "encode", []Sign{VdlValueSign}, vdlValue)
 }
 
-// JVomDecode VOM-decodes the provided data into a Java object.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func JVomDecode(jEnv interface{}, data []byte, jTypeObj interface{}) (unsafe.Pointer, error) {
-	jType := getObject(jTypeObj)
-	if jType == nil {
-		jType = C.jobject(jObjectClass)
+// JVomDecode VOM-decodes the provided data into a Java object of the
+// given class.
+func JVomDecode(env Env, data []byte, class Class) (Object, error) {
+	return JVomDecodeWithType(env, data, WrapObject(class.value()))
+}
+
+// JVomDecodeWithType VOM-decodes the provided data into a Java object
+// of the given type.
+func JVomDecodeWithType(env Env, data []byte, typeObj Object) (Object, error) {
+	if typeObj.IsNull() {
+		typeObj = WrapObject(jObjectClass.value())
 	}
-	return CallStaticObjectMethod(jEnv, jVomUtilClass, "decode", []Sign{ByteArraySign, TypeSign}, ObjectSign, data, jType)
+	return CallStaticObjectMethod(env, jVomUtilClass, "decode", []Sign{ByteArraySign, TypeSign}, ObjectSign, data, typeObj)
 }
 
-// JVomCopy copies the provided Go value into a corresponding Java object by
-// encoding/decoding it from VOM.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func JVomCopy(jEnv interface{}, val interface{}, jType interface{}) (unsafe.Pointer, error) {
+// JVomCopy copies the provided Go value into a Java object of the given class,
+// by encoding/decoding it from VOM.
+func JVomCopy(env Env, val interface{}, class Class) (Object, error) {
+	return JVomCopyWithType(env, val, WrapObject(class.value()))
+}
+
+// JVomCopyWithType copies the provided Go value into a Java object of the
+// given type, by encoding/decoding it from VOM.
+func JVomCopyWithType(env Env, val interface{}, typeObj Object) (Object, error) {
 	data, err := vom.Encode(val)
 	if err != nil {
-		return nil, err
+		return NullObject, err
 	}
-	return JVomDecode(jEnv, data, jType)
+	return JVomDecodeWithType(env, data, typeObj)
 }
 
 // GoVomCopy copies the provided Java object into a provided Go value pointer by
 // encoding/decoding it from VOM.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func GoVomCopy(jEnv, jObj, jClass, dstptr interface{}) error {
-	data, err := JVomEncode(jEnv, jObj, jClass)
+func GoVomCopy(env Env, obj Object, class Class, dstptr interface{}) error {
+	data, err := JVomEncode(env, obj, WrapObject(class.value()))
 	if err != nil {
 		return err
 	}
@@ -97,11 +86,8 @@ func GoVomCopy(jEnv, jObj, jClass, dstptr interface{}) error {
 
 // GoVomCopyValue copies the provided Java VDLValue object into a Go *vdl.Value
 // by encoding/decoding it from VOM.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func GoVomCopyValue(jEnv, jVdlValue interface{}) (*vdl.Value, error) {
-	data, err := JVomEncodeValue(jEnv, jVdlValue)
+func GoVomCopyValue(env Env, vdlValue Object) (*vdl.Value, error) {
+	data, err := JVomEncodeValue(env, vdlValue)
 	if err != nil {
 		return nil, err
 	}

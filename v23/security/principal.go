@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"log"
 	"runtime"
-	"unsafe"
 
 	"v.io/v23/security"
 	jutil "v.io/x/jni/util"
@@ -21,40 +20,33 @@ import "C"
 
 // JavaPrincipal converts the provided Go Principal into a Java VPrincipal
 // object.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func JavaPrincipal(jEnv interface{}, principal security.Principal) (unsafe.Pointer, error) {
+func JavaPrincipal(env jutil.Env, principal security.Principal) (jutil.Object, error) {
 	if principal == nil {
-		return nil, nil
+		return jutil.NullObject, nil
 	}
-	jPrincipal, err := jutil.NewObject(jEnv, jVPrincipalImplClass, []jutil.Sign{jutil.LongSign, signerSign, blessingStoreSign, blessingRootsSign}, int64(jutil.PtrValue(&principal)), C.jobject(nil), C.jobject(nil), C.jobject(nil))
+	jPrincipal, err := jutil.NewObject(env, jVPrincipalImplClass, []jutil.Sign{jutil.LongSign, signerSign, blessingStoreSign, blessingRootsSign}, int64(jutil.PtrValue(&principal)), jutil.NullObject, jutil.NullObject, jutil.NullObject)
 	if err != nil {
-		return nil, err
+		return jutil.NullObject, err
 	}
 	jutil.GoRef(&principal) // Un-refed when the Java VPrincipalImpl is finalized.
 	return jPrincipal, nil
 }
 
 // GoPrincipal converts the provided Java VPrincipal object into a Go Principal.
-// NOTE: Because CGO creates package-local types and because this method may be
-// invoked from a different package, Java types are passed in an empty interface
-// and then cast into their package local types.
-func GoPrincipal(jEnv, jPrincipalObj interface{}) (security.Principal, error) {
-	if jutil.IsNull(jPrincipalObj) {
+func GoPrincipal(env jutil.Env, jPrincipal jutil.Object) (security.Principal, error) {
+	if jPrincipal.IsNull() {
 		return nil, nil
 	}
 	// Reference Java VPrincipal; it will be de-referenced when the Go Principal
 	// created below is garbage-collected (through the finalizer callback we
 	// setup just below).
-	jPrincipal := C.jobject(jutil.NewGlobalRef(jEnv, jPrincipalObj))
+	jPrincipal = jutil.NewGlobalRef(env, jPrincipal)
 	// Create Go Principal.
 	p := &principal{
 		jPrincipal: jPrincipal,
 	}
 	runtime.SetFinalizer(p, func(p *principal) {
-		jEnv, freeFunc := jutil.GetEnv()
-		env := (*C.JNIEnv)(jEnv)
+		env, freeFunc := jutil.GetEnv()
 		defer freeFunc()
 		jutil.DeleteGlobalRef(env, p.jPrincipal)
 	})
@@ -62,7 +54,7 @@ func GoPrincipal(jEnv, jPrincipalObj interface{}) (security.Principal, error) {
 }
 
 type principal struct {
-	jPrincipal C.jobject
+	jPrincipal jutil.Object
 }
 
 func (p *principal) Bless(key security.PublicKey, with security.Blessings, extension string, caveat security.Caveat, additionalCaveats ...security.Caveat) (security.Blessings, error) {
@@ -128,7 +120,7 @@ func (p *principal) PublicKey() security.PublicKey {
 		log.Printf("Couldn't get Java public key: %v", err)
 		return nil
 	}
-	key, err := GoPublicKey(env, C.jobject(jPublicKey))
+	key, err := GoPublicKey(env, jPublicKey)
 	if err != nil {
 		log.Printf("Couldn't convert Java public key to Go: %v", err)
 		return nil
@@ -194,7 +186,7 @@ func (p *principal) BlessingStore() security.BlessingStore {
 		log.Printf("Couldn't get Java Blessing Store: %v", err)
 		return nil
 	}
-	store, err := GoBlessingStore(env, C.jobject(jBlessingStore))
+	store, err := GoBlessingStore(env, jBlessingStore)
 	if err != nil {
 		log.Printf("Couldn't convert Java Blessing Store to Go: %v", err)
 		return nil
@@ -210,7 +202,7 @@ func (p *principal) Roots() security.BlessingRoots {
 		log.Printf("Couldn't get Java Blessing Roots: %v", err)
 		return nil
 	}
-	roots, err := GoBlessingRoots(env, C.jobject(jBlessingRoots))
+	roots, err := GoBlessingRoots(env, jBlessingRoots)
 	if err != nil {
 		log.Printf("Couldn't convert Java Blessing Roots to Go: %v", err)
 		return nil
