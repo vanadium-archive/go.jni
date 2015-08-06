@@ -11,6 +11,7 @@ import (
 	"runtime"
 
 	"v.io/v23/context"
+	"v.io/v23/glob"
 	"v.io/v23/naming"
 	"v.io/v23/rpc"
 	"v.io/v23/vdl"
@@ -183,23 +184,23 @@ func (i *invoker) MethodSignature(ctx *context.T, call rpc.ServerCall, method st
 }
 
 func (i *invoker) Globber() *rpc.GlobState {
-	return &rpc.GlobState{AllGlobber: javaGlobber{i}}
+	return &rpc.GlobState{AllGlobberX: javaGlobber{i}}
 }
 
 type javaGlobber struct {
 	i *invoker
 }
 
-func (j javaGlobber) Glob__(ctx *context.T, call rpc.ServerCall, pattern string) (<-chan naming.GlobReply, error) {
+func (j javaGlobber) Glob__(ctx *context.T, call rpc.GlobServerCall, g *glob.Glob) error {
+	// TODO(sjr,rthellend): Update the Java API to match the new GO API.
 	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
 
 	jServerCall, err := JavaServerCall(env, call)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	actualChannel := make(chan naming.GlobReply)
 	readFunc := func(input jutil.Object) error {
 		env, freeFunc := jutil.GetEnv()
 		defer jutil.DeleteGlobalRef(env, input)
@@ -210,17 +211,16 @@ func (j javaGlobber) Glob__(ctx *context.T, call rpc.ServerCall, pattern string)
 			return err
 		}
 		freeFunc()
-		actualChannel <- reply
+		call.SendStream().Send(reply)
 		return nil
 	}
 	closeFunc := func() error {
-		close(actualChannel)
 		return nil
 	}
 
 	jOutputChannel, err := jchannel.JavaOutputChannel(env, readFunc, closeFunc)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	callSign := jutil.ClassSign("io.v.v23.rpc.ServerCall")
@@ -229,12 +229,8 @@ func (j javaGlobber) Glob__(ctx *context.T, call rpc.ServerCall, pattern string)
 	jServerCall = jutil.NewGlobalRef(env, jServerCall)
 	jOutputChannel = jutil.NewGlobalRef(env, jOutputChannel)
 	// Calls Java invoker's glob method.
-	go func() {
-		env, freeFunc := jutil.GetEnv()
-		defer freeFunc()
-		jutil.CallVoidMethod(env, j.i.jInvoker, "glob", []jutil.Sign{callSign, jutil.StringSign, channelSign}, jServerCall, pattern, jOutputChannel)
-		jutil.DeleteGlobalRef(env, jServerCall)
-		jutil.DeleteGlobalRef(env, jOutputChannel)
-	}()
-	return actualChannel, nil
+	jutil.CallVoidMethod(env, j.i.jInvoker, "glob", []jutil.Sign{callSign, jutil.StringSign, channelSign}, jServerCall, g.String(), jOutputChannel)
+	jutil.DeleteGlobalRef(env, jServerCall)
+	jutil.DeleteGlobalRef(env, jOutputChannel)
+	return nil
 }
