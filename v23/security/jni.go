@@ -608,6 +608,18 @@ func Java_io_v_v23_security_Blessings_nativePublicKey(jenv *C.JNIEnv, jBlessings
 	return C.jobject(unsafe.Pointer(jPublicKey))
 }
 
+//export Java_io_v_v23_security_Blessings_nativeSigningBlessings
+func Java_io_v_v23_security_Blessings_nativeSigningBlessings(jenv *C.JNIEnv, jBlessings C.jobject, goPtr C.jlong) C.jobject {
+	env := jutil.WrapEnv(jenv)
+	blessings := security.SigningBlessings(*((*security.Blessings)(jutil.NativePtr(goPtr))))
+	jSigningBlessings, err := JavaBlessings(env, blessings)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	return C.jobject(unsafe.Pointer(jSigningBlessings))
+}
+
 //export Java_io_v_v23_security_Blessings_nativeFinalize
 func Java_io_v_v23_security_Blessings_nativeFinalize(jenv *C.JNIEnv, jBlessings C.jobject, goPtr C.jlong) {
 	jutil.GoUnref(jutil.NativePtr(goPtr))
@@ -988,6 +1000,33 @@ func Java_io_v_v23_security_VSecurity_nativeGetRemoteBlessingNames(jenv *C.JNIEn
 		return nil
 	}
 	blessingStrs, _ := security.RemoteBlessingNames(ctx, call)
+	jArr, err := jutil.JStringArray(env, blessingStrs)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	return C.jobjectArray(unsafe.Pointer(jArr))
+}
+
+//export Java_io_v_v23_security_VSecurity_nativeGetSigningBlessingNames
+func Java_io_v_v23_security_VSecurity_nativeGetSigningBlessingNames(jenv *C.JNIEnv, jVSecurityClass C.jclass, jCtx C.jobject, jPrincipal C.jobject, jBlessings C.jobject) C.jobjectArray {
+	env := jutil.WrapEnv(jenv)
+	ctx, err := jcontext.GoContext(env, jutil.WrapObject(jCtx))
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	principal, err := GoPrincipal(env, jutil.WrapObject(jPrincipal))
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	blessings, err := GoBlessings(env, jutil.WrapObject(jBlessings))
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	blessingStrs, _ := security.SigningBlessingNames(ctx, principal, blessings)
 	jArr, err := jutil.JStringArray(env, blessingStrs)
 	if err != nil {
 		jutil.JThrowV(env, err)
