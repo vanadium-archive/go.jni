@@ -184,7 +184,7 @@ func (i *invoker) MethodSignature(ctx *context.T, call rpc.ServerCall, method st
 }
 
 func (i *invoker) Globber() *rpc.GlobState {
-	return &rpc.GlobState{AllGlobberX: javaGlobber{i}}
+	return &rpc.GlobState{AllGlobber: javaGlobber{i}}
 }
 
 type javaGlobber struct {
