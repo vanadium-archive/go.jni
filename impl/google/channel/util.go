@@ -13,16 +13,16 @@ import (
 // #include "jni.h"
 import "C"
 
-// JavaInputChannel converts the provided Go channel of jutil.Object values into a Java
-// InputChannel object.
-func JavaInputChannel(env jutil.Env, chPtr interface{}, sourceChanPtr interface{}) (jutil.Object, error) {
-	jInputChannel, err := jutil.NewObject(env, jInputChannelImplClass, []jutil.Sign{jutil.LongSign, jutil.LongSign}, int64(jutil.PtrValue(chPtr)), int64(jutil.PtrValue(sourceChanPtr)))
+// JavaIterable converts the provided Go channel of jutil.Object values into a Java
+// Iterable object.
+func JavaIterable(env jutil.Env, chPtr interface{}, sourceChanPtr interface{}) (jutil.Object, error) {
+	jIterable, err := jutil.NewObject(env, jChannelIterableClass, []jutil.Sign{jutil.LongSign, jutil.LongSign}, int64(jutil.PtrValue(chPtr)), int64(jutil.PtrValue(sourceChanPtr)))
 	if err != nil {
 		return jutil.NullObject, err
 	}
-	jutil.GoRef(chPtr)         // Un-refed when the InputChannel is finalized.
-	jutil.GoRef(sourceChanPtr) // Un-refed when the InputChannel is finalized.
-	return jInputChannel, nil
+	jutil.GoRef(chPtr)         // Un-refed when the ChannelIterable object is finalized.
+	jutil.GoRef(sourceChanPtr) // Un-refed when the ChannelIterable is finalized.
+	return jIterable, nil
 }
 
 // outputChannel represents the Go-side of a Java OutputChannel. Each time the

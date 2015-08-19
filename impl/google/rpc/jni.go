@@ -294,18 +294,18 @@ func Java_io_v_impl_google_rpc_ServerImpl_nativeWatchNetwork(jenv *C.JNIEnv, jSe
 		}
 		close(retChan)
 	}()
-	jInputChannel, err := jchannel.JavaInputChannel(env, &retChan, &networkChan)
+	jIterable, err := jchannel.JavaIterable(env, &retChan, &networkChan)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return C.jobject(unsafe.Pointer(jInputChannel))
+	return C.jobject(unsafe.Pointer(jIterable))
 }
 
 //export Java_io_v_impl_google_rpc_ServerImpl_nativeUnwatchNetwork
-func Java_io_v_impl_google_rpc_ServerImpl_nativeUnwatchNetwork(jenv *C.JNIEnv, jServer C.jobject, goPtr C.jlong, jInputChannel C.jobject) {
+func Java_io_v_impl_google_rpc_ServerImpl_nativeUnwatchNetwork(jenv *C.JNIEnv, jServer C.jobject, goPtr C.jlong, jChannelIterable C.jobject) {
 	env := jutil.WrapEnv(jenv)
-	goNetworkChanPtr, err := jutil.CallLongMethod(env, jutil.WrapObject(jInputChannel), "getSourceNativePtr", nil)
+	goNetworkChanPtr, err := jutil.CallLongMethod(env, jutil.WrapObject(jChannelIterable), "getSourceNativePtr", nil)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return

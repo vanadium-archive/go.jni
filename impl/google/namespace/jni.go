@@ -92,12 +92,12 @@ func Java_io_v_impl_google_namespace_NamespaceImpl_nativeGlob(jenv *C.JNIEnv, jN
 		}
 		close(retChan)
 	}()
-	jInputChannel, err := jchannel.JavaInputChannel(env, &retChan, &entryChan)
+	jIterable, err := jchannel.JavaIterable(env, &retChan, &entryChan)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return C.jobject(unsafe.Pointer(jInputChannel))
+	return C.jobject(unsafe.Pointer(jIterable))
 }
 
 //export Java_io_v_impl_google_namespace_NamespaceImpl_nativeMount

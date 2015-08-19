@@ -17,8 +17,8 @@ import (
 import "C"
 
 var (
-	// Global reference for io.v.impl.google.channel.InputChannelImpl class.
-	jInputChannelImplClass jutil.Class
+	// Global reference for io.v.impl.google.channel.ChannelIterable class.
+	jChannelIterableClass jutil.Class
 	// Global reference for io.v.impl.google.channel.OutputChannelImpl class.
 	jOutputChannelImplClass jutil.Class
 	// Global reference for java.io.EOFException class.
@@ -31,7 +31,7 @@ var (
 // interface and then cast into the package-local environment type.
 func Init(env jutil.Env) error {
 	var err error
-	jInputChannelImplClass, err = jutil.JFindClass(env, "io/v/impl/google/channel/InputChannelImpl")
+	jChannelIterableClass, err = jutil.JFindClass(env, "io/v/impl/google/channel/ChannelIterable")
 	if err != nil {
 		return err
 	}
@@ -46,17 +46,8 @@ func Init(env jutil.Env) error {
 	return nil
 }
 
-//export Java_io_v_impl_google_channel_InputChannelImpl_nativeAvailable
-func Java_io_v_impl_google_channel_InputChannelImpl_nativeAvailable(jenv *C.JNIEnv, jInputChannel C.jobject, goChanPtr C.jlong) C.jboolean {
-	ch := *(*chan jutil.Object)(jutil.NativePtr(goChanPtr))
-	if len(ch) > 0 {
-		return C.JNI_TRUE
-	}
-	return C.JNI_FALSE
-}
-
-//export Java_io_v_impl_google_channel_InputChannelImpl_nativeReadValue
-func Java_io_v_impl_google_channel_InputChannelImpl_nativeReadValue(jenv *C.JNIEnv, jInputChannel C.jobject, goChanPtr C.jlong) C.jobject {
+//export Java_io_v_impl_google_channel_ChannelIterable_nativeReadValue
+func Java_io_v_impl_google_channel_ChannelIterable_nativeReadValue(jenv *C.JNIEnv, jChannelIterable C.jobject, goChanPtr C.jlong) C.jobject {
 	env := jutil.WrapEnv(jenv)
 	ch := *(*chan jutil.Object)(jutil.NativePtr(goChanPtr))
 	jObj, ok := <-ch
@@ -69,8 +60,8 @@ func Java_io_v_impl_google_channel_InputChannelImpl_nativeReadValue(jenv *C.JNIE
 	return C.jobject(unsafe.Pointer(jObjLocal))
 }
 
-//export Java_io_v_impl_google_channel_InputChannelImpl_nativeFinalize
-func Java_io_v_impl_google_channel_InputChannelImpl_nativeFinalize(jenv *C.JNIEnv, jInputChannel C.jobject, goChanPtr C.jlong, goSourceChanPtr C.jlong) {
+//export Java_io_v_impl_google_channel_ChannelIterable_nativeFinalize
+func Java_io_v_impl_google_channel_ChannelIterable_nativeFinalize(jenv *C.JNIEnv, jChannelIterable C.jobject, goChanPtr C.jlong, goSourceChanPtr C.jlong) {
 	jutil.GoUnref(jutil.NativePtr(goChanPtr))
 	jutil.GoUnref(jutil.NativePtr(goSourceChanPtr))
 }
