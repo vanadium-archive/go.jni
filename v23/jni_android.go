@@ -13,7 +13,7 @@ import (
 // #include "jni.h"
 import "C"
 
-//export Java_io_v_v23_android_RedirectStderr_nativeStart
-func Java_io_v_v23_android_RedirectStderr_nativeStart(jenv *C.JNIEnv, jRuntime C.jclass, fileno C.jint) {
+//export Java_io_v_android_v23_RedirectStderr_nativeStart
+func Java_io_v_android_v23_RedirectStderr_nativeStart(jenv *C.JNIEnv, jRuntime C.jclass, fileno C.jint) {
 	syscall.Dup2(int(fileno), syscall.Stderr)
 }

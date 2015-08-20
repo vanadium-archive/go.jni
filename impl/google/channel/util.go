@@ -20,8 +20,8 @@ func JavaIterable(env jutil.Env, chPtr interface{}, sourceChanPtr interface{}) (
 	if err != nil {
 		return jutil.NullObject, err
 	}
-	jutil.GoRef(chPtr)         // Un-refed when the ChannelIterable object is finalized.
-	jutil.GoRef(sourceChanPtr) // Un-refed when the ChannelIterable is finalized.
+	jutil.GoRef(chPtr)         // Un-refed when ChannelIterable is finalized.
+	jutil.GoRef(sourceChanPtr) // Un-refed when ChannelIterable is finalized.
 	return jIterable, nil
 }
 
