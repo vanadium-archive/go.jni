@@ -4,7 +4,7 @@
 
 // +build java android
 
-package main
+package jni
 
 import (
 	"os"

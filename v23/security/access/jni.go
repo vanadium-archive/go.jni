@@ -19,11 +19,17 @@ import "C"
 var (
 	// Global reference for io.v.v23.security.access.AccessList class.
 	jAccessListClass jutil.Class
+	// Global reference for io.v.v23.security.access.Permissions class.
+	jPermissionsClass jutil.Class
 )
 
 func Init(env jutil.Env) error {
 	var err error
 	jAccessListClass, err = jutil.JFindClass(env, "io/v/v23/security/access/AccessList")
+	if err != nil {
+		return err
+	}
+	jPermissionsClass, err = jutil.JFindClass(env, "io/v/v23/security/access/Permissions")
 	if err != nil {
 		return err
 	}

@@ -2,8 +2,13 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// +build !java,!android
+// +build java android
 
 package main
 
-func main() {}
+import (
+	_ "v.io/x/jni"
+)
+
+func main() {
+}

@@ -16,6 +16,18 @@ import "C"
 
 // GoAccessList converts the provided Java AccessList into a Go AccessList.
 func GoAccessList(env jutil.Env, jAccessList jutil.Object) (acl access.AccessList, err error) {
+	if jAccessList.IsNull() {
+		return
+	}
 	err = jutil.GoVomCopy(env, jAccessList, jAccessListClass, &acl)
+	return
+}
+
+// GoPermissions converts the provided Java Permissions into a Go Permissions.
+func GoPermissions(env jutil.Env, jPermissions jutil.Object) (perms access.Permissions, err error) {
+	if jPermissions.IsNull() {
+		return
+	}
+	err = jutil.GoVomCopy(env, jPermissions, jPermissionsClass, &perms)
 	return
 }
