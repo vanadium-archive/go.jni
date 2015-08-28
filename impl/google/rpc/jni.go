@@ -199,56 +199,11 @@ func Init(env jutil.Env) error {
 	return nil
 }
 
-//export Java_io_v_impl_google_rpc_ServerImpl_nativeListen
-func Java_io_v_impl_google_rpc_ServerImpl_nativeListen(jenv *C.JNIEnv, jServer C.jobject, goPtr C.jlong, jSpec C.jobject) C.jobjectArray {
-	env := jutil.WrapEnv(jenv)
-	spec, err := GoListenSpec(env, jutil.WrapObject(jSpec))
-	if err != nil {
-		jutil.JThrowV(env, err)
-		return nil
-	}
-	eps, err := (*(*rpc.Server)(jutil.NativePtr(goPtr))).Listen(spec)
-	if err != nil {
-		jutil.JThrowV(env, err)
-		return nil
-	}
-	jEps := make([]jutil.Object, len(eps))
-	for i, ep := range eps {
-		jEp, err := jnaming.JavaEndpoint(env, ep)
-		if err != nil {
-			jutil.JThrowV(env, err)
-			return nil
-		}
-		jEps[i] = jEp
-	}
-	jArr, err := jutil.JObjectArray(env, jEps, jEndpointClass)
-	if err != nil {
-		jutil.JThrowV(env, err)
-		return nil
-	}
-	return C.jobjectArray(unsafe.Pointer(jArr))
-}
-
-//export Java_io_v_impl_google_rpc_ServerImpl_nativeServe
-func Java_io_v_impl_google_rpc_ServerImpl_nativeServe(jenv *C.JNIEnv, jServer C.jobject, goPtr C.jlong, jName C.jstring, jDispatcher C.jobject) {
-	env := jutil.WrapEnv(jenv)
-	name := jutil.GoString(env, jutil.WrapObject(jName))
-	d, err := goDispatcher(env, jutil.WrapObject(jDispatcher))
-	if err != nil {
-		jutil.JThrowV(env, err)
-		return
-	}
-	if err := (*(*rpc.Server)(jutil.NativePtr(goPtr))).ServeDispatcher(name, d); err != nil {
-		jutil.JThrowV(env, err)
-		return
-	}
-}
-
 //export Java_io_v_impl_google_rpc_ServerImpl_nativeAddName
 func Java_io_v_impl_google_rpc_ServerImpl_nativeAddName(jenv *C.JNIEnv, jServer C.jobject, goPtr C.jlong, jName C.jstring) {
 	env := jutil.WrapEnv(jenv)
 	name := jutil.GoString(env, jutil.WrapObject(jName))
-	if err := (*(*rpc.Server)(jutil.NativePtr(goPtr))).AddName(name); err != nil {
+	if err := (*(*rpc.XServer)(jutil.NativePtr(goPtr))).AddName(name); err != nil {
 		jutil.JThrowV(env, err)
 		return
 	}
@@ -258,13 +213,13 @@ func Java_io_v_impl_google_rpc_ServerImpl_nativeAddName(jenv *C.JNIEnv, jServer 
 func Java_io_v_impl_google_rpc_ServerImpl_nativeRemoveName(jenv *C.JNIEnv, jServer C.jobject, goPtr C.jlong, jName C.jstring) {
 	env := jutil.WrapEnv(jenv)
 	name := jutil.GoString(env, jutil.WrapObject(jName))
-	(*(*rpc.Server)(jutil.NativePtr(goPtr))).RemoveName(name)
+	(*(*rpc.XServer)(jutil.NativePtr(goPtr))).RemoveName(name)
 }
 
 //export Java_io_v_impl_google_rpc_ServerImpl_nativeGetStatus
 func Java_io_v_impl_google_rpc_ServerImpl_nativeGetStatus(jenv *C.JNIEnv, jServer C.jobject, goPtr C.jlong) C.jobject {
 	env := jutil.WrapEnv(jenv)
-	status := (*(*rpc.Server)(jutil.NativePtr(goPtr))).Status()
+	status := (*(*rpc.XServer)(jutil.NativePtr(goPtr))).Status()
 	jStatus, err := JavaServerStatus(env, status)
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -277,7 +232,7 @@ func Java_io_v_impl_google_rpc_ServerImpl_nativeGetStatus(jenv *C.JNIEnv, jServe
 func Java_io_v_impl_google_rpc_ServerImpl_nativeWatchNetwork(jenv *C.JNIEnv, jServer C.jobject, goPtr C.jlong) C.jobject {
 	env := jutil.WrapEnv(jenv)
 	networkChan := make(chan rpc.NetworkChange, 100)
-	(*(*rpc.Server)(jutil.NativePtr(goPtr))).WatchNetwork(networkChan)
+	(*(*rpc.XServer)(jutil.NativePtr(goPtr))).WatchNetwork(networkChan)
 	retChan := make(chan jutil.Object, 100)
 	go func() {
 		for change := range networkChan {
@@ -311,13 +266,13 @@ func Java_io_v_impl_google_rpc_ServerImpl_nativeUnwatchNetwork(jenv *C.JNIEnv, j
 		return
 	}
 	networkChan := *(*chan rpc.NetworkChange)(unsafe.Pointer(uintptr(goNetworkChanPtr)))
-	(*(*rpc.Server)(jutil.NativePtr(goPtr))).UnwatchNetwork(networkChan)
+	(*(*rpc.XServer)(jutil.NativePtr(goPtr))).UnwatchNetwork(networkChan)
 }
 
 //export Java_io_v_impl_google_rpc_ServerImpl_nativeStop
 func Java_io_v_impl_google_rpc_ServerImpl_nativeStop(jenv *C.JNIEnv, jServer C.jobject, goPtr C.jlong) {
 	env := jutil.WrapEnv(jenv)
-	s := (*rpc.Server)(jutil.NativePtr(goPtr))
+	s := (*rpc.XServer)(jutil.NativePtr(goPtr))
 	if err := (*s).Stop(); err != nil {
 		jutil.JThrowV(env, err)
 		return

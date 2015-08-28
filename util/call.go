@@ -39,7 +39,7 @@ func jArgArray(env Env, args []interface{}, argSigns []Sign) (jArr *C.jvalue, fr
 		jVal, ok := jValue(env, arg, sign)
 		if !ok {
 			freeFunc()
-			return nil, nil, fmt.Errorf("couldn't get Java value for argument #%d [%v] of expected type %v", i, arg, sign)
+			return nil, nil, fmt.Errorf("couldn't get Java value for argument #%d [%#v] of expected type %v", i, arg, sign)
 		}
 		C.setJValueArrayElement(jArr, C.int(i), jVal)
 	}

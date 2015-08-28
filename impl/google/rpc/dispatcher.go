@@ -20,7 +20,7 @@ import (
 // #include "jni.h"
 import "C"
 
-func goDispatcher(env jutil.Env, jDispatcher jutil.Object) (*dispatcher, error) {
+func GoDispatcher(env jutil.Env, jDispatcher jutil.Object) (rpc.Dispatcher, error) {
 	// Reference Java dispatcher; it will be de-referenced when the go
 	// dispatcher created below is garbage-collected (through the finalizer
 	// callback we setup below).

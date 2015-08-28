@@ -12,6 +12,7 @@ import (
 
 	"v.io/v23"
 	"v.io/v23/context"
+	"v.io/x/ref/lib/xrpc"
 	_ "v.io/x/ref/runtime/factories/roaming"
 
 	jns "v.io/x/jni/impl/google/namespace"
@@ -103,7 +104,7 @@ func Java_io_v_impl_google_rt_VRuntimeImpl_nativeGetClient(jenv *C.JNIEnv, jRunt
 }
 
 //export Java_io_v_impl_google_rt_VRuntimeImpl_nativeNewServer
-func Java_io_v_impl_google_rt_VRuntimeImpl_nativeNewServer(jenv *C.JNIEnv, jRuntime C.jclass, jContext C.jobject) C.jobject {
+func Java_io_v_impl_google_rt_VRuntimeImpl_nativeNewServer(jenv *C.JNIEnv, jRuntime C.jclass, jContext C.jobject, jName C.jstring, jDispatcher C.jobject) C.jobject {
 	env := jutil.WrapEnv(jenv)
 	// TODO(spetrovic): Have Java context support nativePtr()?
 	ctx, err := jcontext.GoContext(env, jutil.WrapObject(jContext))
@@ -111,7 +112,13 @@ func Java_io_v_impl_google_rt_VRuntimeImpl_nativeNewServer(jenv *C.JNIEnv, jRunt
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	server, err := v23.NewServer(ctx)
+	name := jutil.GoString(env, jutil.WrapObject(jName))
+	d, err := jrpc.GoDispatcher(env, jutil.WrapObject(jDispatcher))
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	server, err := xrpc.NewDispatchingServer(ctx, name, d)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -230,4 +237,26 @@ func Java_io_v_impl_google_rt_VRuntimeImpl_nativeGetListenSpec(jenv *C.JNIEnv, j
 		return nil
 	}
 	return C.jobject(unsafe.Pointer(jSpec))
+}
+
+//export Java_io_v_impl_google_rt_VRuntimeImpl_nativeSetListenSpec
+func Java_io_v_impl_google_rt_VRuntimeImpl_nativeSetListenSpec(jenv *C.JNIEnv, jRuntime C.jclass, jContext C.jobject, jSpec C.jobject) C.jobject {
+	env := jutil.WrapEnv(jenv)
+	ctx, err := jcontext.GoContext(env, jutil.WrapObject(jContext))
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	spec, err := jrpc.GoListenSpec(env, jutil.WrapObject(jSpec))
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	newCtx := v23.WithListenSpec(ctx, spec)
+	jNewCtx, err := jcontext.JavaContext(env, newCtx, nil)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	return C.jobject(unsafe.Pointer(jNewCtx))
 }

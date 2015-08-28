@@ -19,7 +19,7 @@ import (
 import "C"
 
 // JavaServer converts the provided Go Server into a Java Server object.
-func JavaServer(env jutil.Env, server rpc.Server) (jutil.Object, error) {
+func JavaServer(env jutil.Env, server rpc.XServer) (jutil.Object, error) {
 	if server == nil {
 		return jutil.NullObject, fmt.Errorf("Go Server value cannot be nil")
 	}
@@ -116,14 +116,10 @@ func JavaServerStatus(env jutil.Env, status rpc.ServerStatus) (jutil.Object, err
 		return jutil.NullObject, err
 	}
 
-	// Create Java array of endpoints.
+	// Create an array of endpoint strings.
 	eps := make([]string, len(status.Endpoints))
 	for i, ep := range status.Endpoints {
 		eps[i] = ep.String()
-	}
-	jEndpoints, err := jutil.JStringArray(env, eps)
-	if err != nil {
-		return jutil.NullObject, err
 	}
 
 	// Create Java array of proxies.
@@ -142,7 +138,7 @@ func JavaServerStatus(env jutil.Env, status rpc.ServerStatus) (jutil.Object, err
 	// Create final server status.
 	mountStatusSign := jutil.ClassSign("io.v.v23.rpc.MountStatus")
 	proxyStatusSign := jutil.ClassSign("io.v.v23.rpc.ProxyStatus")
-	jServerStatus, err := jutil.NewObject(env, jServerStatusClass, []jutil.Sign{serverStateSign, jutil.BoolSign, jutil.ArraySign(mountStatusSign), jutil.ArraySign(jutil.StringSign), jutil.ArraySign(proxyStatusSign)}, jState, status.ServesMountTable, jMounts, jEndpoints, jProxies)
+	jServerStatus, err := jutil.NewObject(env, jServerStatusClass, []jutil.Sign{serverStateSign, jutil.BoolSign, jutil.ArraySign(mountStatusSign), jutil.ArraySign(jutil.StringSign), jutil.ArraySign(proxyStatusSign)}, jState, status.ServesMountTable, jMounts, eps, jProxies)
 	if err != nil {
 		return jutil.NullObject, err
 	}
