@@ -628,7 +628,7 @@ func Java_io_v_v23_security_Blessings_nativeFinalize(jenv *C.JNIEnv, jBlessings 
 //export Java_io_v_v23_security_BlessingRootsImpl_nativeAdd
 func Java_io_v_v23_security_BlessingRootsImpl_nativeAdd(jenv *C.JNIEnv, jBlessingRootsImpl C.jobject, goPtr C.jlong, jRoot C.jobject, jPattern C.jobject) {
 	env := jutil.WrapEnv(jenv)
-	root, err := GoPublicKey(env, jutil.WrapObject(jRoot))
+	root, err := JavaPublicKeyToDER(env, jutil.WrapObject(jRoot))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return
@@ -647,7 +647,7 @@ func Java_io_v_v23_security_BlessingRootsImpl_nativeAdd(jenv *C.JNIEnv, jBlessin
 //export Java_io_v_v23_security_BlessingRootsImpl_nativeRecognized
 func Java_io_v_v23_security_BlessingRootsImpl_nativeRecognized(jenv *C.JNIEnv, jBlessingRootsImpl C.jobject, goPtr C.jlong, jRoot C.jobject, jBlessing C.jstring) {
 	env := jutil.WrapEnv(jenv)
-	root, err := GoPublicKey(env, jutil.WrapObject(jRoot))
+	root, err := JavaPublicKeyToDER(env, jutil.WrapObject(jRoot))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return

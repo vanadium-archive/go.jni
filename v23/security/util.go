@@ -121,24 +121,34 @@ func JavaPublicKey(env jutil.Env, key security.PublicKey) (jutil.Object, error) 
 	if key == nil {
 		return jutil.NullObject, nil
 	}
-	encoded, err := key.MarshalBinary()
+	der, err := key.MarshalBinary()
 	if err != nil {
 		return jutil.NullObject, err
 	}
-	jPublicKey, err := jutil.CallStaticObjectMethod(env, jUtilClass, "decodePublicKey", []jutil.Sign{jutil.ArraySign(jutil.ByteSign)}, publicKeySign, encoded)
+	return JavaPublicKeyFromDER(env, der)
+}
+
+// JavaPublicKeyFromDER converts a DER-encoded public key into a Java PublicKey object.
+func JavaPublicKeyFromDER(env jutil.Env, der []byte) (jutil.Object, error) {
+	jPublicKey, err := jutil.CallStaticObjectMethod(env, jUtilClass, "decodePublicKey", []jutil.Sign{jutil.ArraySign(jutil.ByteSign)}, publicKeySign, der)
 	if err != nil {
 		return jutil.NullObject, err
 	}
 	return jPublicKey, nil
 }
 
+// JavaPublicKeyToDER returns the DER-encoded representations of a Java PublicKey object.
+func JavaPublicKeyToDER(env jutil.Env, jKey jutil.Object) ([]byte, error) {
+	return jutil.CallStaticByteArrayMethod(env, jUtilClass, "encodePublicKey", []jutil.Sign{publicKeySign}, jKey)
+}
+
 // GoPublicKey converts the provided Java PublicKey into Go PublicKey.
 func GoPublicKey(env jutil.Env, jKey jutil.Object) (security.PublicKey, error) {
-	encoded, err := jutil.CallStaticByteArrayMethod(env, jUtilClass, "encodePublicKey", []jutil.Sign{publicKeySign}, jKey)
+	der, err := JavaPublicKeyToDER(env, jKey)
 	if err != nil {
 		return nil, err
 	}
-	return security.UnmarshalPublicKey(encoded)
+	return security.UnmarshalPublicKey(der)
 }
 
 // JavaSignature converts the provided Go Signature into a Java VSignature.
