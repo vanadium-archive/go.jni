@@ -11,6 +11,7 @@ import (
 	jns "v.io/x/jni/impl/google/namespace"
 	jrpc "v.io/x/jni/impl/google/rpc"
 	jrt "v.io/x/jni/impl/google/rt"
+	jsyncbased "v.io/x/jni/impl/google/services/syncbase/syncbased"
 	jutil "v.io/x/jni/util"
 )
 
@@ -32,6 +33,9 @@ func Init(env jutil.Env) error {
 		return err
 	}
 	if err := jns.Init(env); err != nil {
+		return err
+	}
+	if err := jsyncbased.Init(env); err != nil {
 		return err
 	}
 	return nil
