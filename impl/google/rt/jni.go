@@ -12,7 +12,6 @@ import (
 
 	"v.io/v23"
 	"v.io/v23/context"
-	"v.io/x/ref/lib/xrpc"
 	_ "v.io/x/ref/runtime/factories/roaming"
 
 	jns "v.io/x/jni/impl/google/namespace"
@@ -118,7 +117,8 @@ func Java_io_v_impl_google_rt_VRuntimeImpl_nativeNewServer(jenv *C.JNIEnv, jRunt
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	server, err := xrpc.NewDispatchingServer(ctx, name, d)
+	// TODO(mattr): This should be returning the new context returned here.
+	_, server, err := v23.WithNewDispatchingServer(ctx, name, d)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
