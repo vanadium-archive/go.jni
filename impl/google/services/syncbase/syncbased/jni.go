@@ -9,8 +9,8 @@ package syncbased
 import (
 	"unsafe"
 
-	"v.io/x/ref/services/syncbase/server"
 	"v.io/v23"
+	"v.io/x/ref/services/syncbase/server"
 
 	jrpc "v.io/x/jni/impl/google/rpc"
 	jutil "v.io/x/jni/util"
@@ -22,13 +22,13 @@ import (
 import "C"
 
 var (
-	permissionsSign = jutil.ClassSign("io.v.v23.security.access.Permissions")
-	listenSpecSign  = jutil.ClassSign("io.v.v23.rpc.ListenSpec")
-	contextSign     = jutil.ClassSign("io.v.v23.context.VContext")
+	permissionsSign           = jutil.ClassSign("io.v.v23.security.access.Permissions")
+	listenSpecSign            = jutil.ClassSign("io.v.v23.rpc.ListenSpec")
+	contextSign               = jutil.ClassSign("io.v.v23.context.VContext")
 	syncbaseStorageEngineSign = jutil.ClassSign("io.v.v23.syncbase.SyncbaseStorageEngine")
 
 	jSystemClass jutil.Class
-	jVClass jutil.Class
+	jVClass      jutil.Class
 )
 
 func Init(env jutil.Env) error {

@@ -203,7 +203,7 @@ func Init(env jutil.Env) error {
 func Java_io_v_impl_google_rpc_ServerImpl_nativeAddName(jenv *C.JNIEnv, jServer C.jobject, goPtr C.jlong, jName C.jstring) {
 	env := jutil.WrapEnv(jenv)
 	name := jutil.GoString(env, jutil.WrapObject(jName))
-	if err := (*(*rpc.XServer)(jutil.NativePtr(goPtr))).AddName(name); err != nil {
+	if err := (*(*rpc.Server)(jutil.NativePtr(goPtr))).AddName(name); err != nil {
 		jutil.JThrowV(env, err)
 		return
 	}
@@ -213,13 +213,13 @@ func Java_io_v_impl_google_rpc_ServerImpl_nativeAddName(jenv *C.JNIEnv, jServer 
 func Java_io_v_impl_google_rpc_ServerImpl_nativeRemoveName(jenv *C.JNIEnv, jServer C.jobject, goPtr C.jlong, jName C.jstring) {
 	env := jutil.WrapEnv(jenv)
 	name := jutil.GoString(env, jutil.WrapObject(jName))
-	(*(*rpc.XServer)(jutil.NativePtr(goPtr))).RemoveName(name)
+	(*(*rpc.Server)(jutil.NativePtr(goPtr))).RemoveName(name)
 }
 
 //export Java_io_v_impl_google_rpc_ServerImpl_nativeGetStatus
 func Java_io_v_impl_google_rpc_ServerImpl_nativeGetStatus(jenv *C.JNIEnv, jServer C.jobject, goPtr C.jlong) C.jobject {
 	env := jutil.WrapEnv(jenv)
-	status := (*(*rpc.XServer)(jutil.NativePtr(goPtr))).Status()
+	status := (*(*rpc.Server)(jutil.NativePtr(goPtr))).Status()
 	jStatus, err := JavaServerStatus(env, status)
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -232,7 +232,7 @@ func Java_io_v_impl_google_rpc_ServerImpl_nativeGetStatus(jenv *C.JNIEnv, jServe
 func Java_io_v_impl_google_rpc_ServerImpl_nativeWatchNetwork(jenv *C.JNIEnv, jServer C.jobject, goPtr C.jlong) C.jobject {
 	env := jutil.WrapEnv(jenv)
 	networkChan := make(chan rpc.NetworkChange, 100)
-	(*(*rpc.XServer)(jutil.NativePtr(goPtr))).WatchNetwork(networkChan)
+	(*(*rpc.Server)(jutil.NativePtr(goPtr))).WatchNetwork(networkChan)
 	retChan := make(chan jutil.Object, 100)
 	go func() {
 		for change := range networkChan {
@@ -266,13 +266,13 @@ func Java_io_v_impl_google_rpc_ServerImpl_nativeUnwatchNetwork(jenv *C.JNIEnv, j
 		return
 	}
 	networkChan := *(*chan rpc.NetworkChange)(unsafe.Pointer(uintptr(goNetworkChanPtr)))
-	(*(*rpc.XServer)(jutil.NativePtr(goPtr))).UnwatchNetwork(networkChan)
+	(*(*rpc.Server)(jutil.NativePtr(goPtr))).UnwatchNetwork(networkChan)
 }
 
 //export Java_io_v_impl_google_rpc_ServerImpl_nativeStop
 func Java_io_v_impl_google_rpc_ServerImpl_nativeStop(jenv *C.JNIEnv, jServer C.jobject, goPtr C.jlong) {
 	env := jutil.WrapEnv(jenv)
-	s := (*rpc.XServer)(jutil.NativePtr(goPtr))
+	s := (*rpc.Server)(jutil.NativePtr(goPtr))
 	if err := (*s).Stop(); err != nil {
 		jutil.JThrowV(env, err)
 		return

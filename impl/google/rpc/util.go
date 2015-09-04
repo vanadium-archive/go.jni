@@ -19,7 +19,7 @@ import (
 import "C"
 
 // JavaServer converts the provided Go Server into a Java Server object.
-func JavaServer(env jutil.Env, server rpc.XServer) (jutil.Object, error) {
+func JavaServer(env jutil.Env, server rpc.Server) (jutil.Object, error) {
 	if server == nil {
 		return jutil.NullObject, fmt.Errorf("Go Server value cannot be nil")
 	}
