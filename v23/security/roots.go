@@ -53,10 +53,10 @@ type blessingRoots struct {
 	jBlessingRoots jutil.Object
 }
 
-func (r *blessingRoots) Add(root security.PublicKey, pattern security.BlessingPattern) error {
+func (r *blessingRoots) Add(root []byte, pattern security.BlessingPattern) error {
 	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
-	jRoot, err := JavaPublicKey(env, root)
+	jRoot, err := JavaPublicKeyFromDER(env, root)
 	if err != nil {
 		return err
 	}
@@ -67,10 +67,10 @@ func (r *blessingRoots) Add(root security.PublicKey, pattern security.BlessingPa
 	return jutil.CallVoidMethod(env, r.jBlessingRoots, "add", []jutil.Sign{publicKeySign, blessingPatternSign}, jRoot, jPattern)
 }
 
-func (r *blessingRoots) Recognized(root security.PublicKey, blessing string) error {
+func (r *blessingRoots) Recognized(root []byte, blessing string) error {
 	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
-	jRoot, err := JavaPublicKey(env, root)
+	jRoot, err := JavaPublicKeyFromDER(env, root)
 	if err != nil {
 		return err
 	}
