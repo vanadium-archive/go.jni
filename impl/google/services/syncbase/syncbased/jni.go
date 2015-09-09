@@ -44,15 +44,6 @@ func Init(env jutil.Env) error {
 	return nil
 }
 
-//export Java_io_v_impl_google_services_syncbase_syncbased_SyncbaseServer_nativeInit
-func Java_io_v_impl_google_services_syncbase_syncbased_SyncbaseServer_nativeInit(jenv *C.JNIEnv, jSyncbaseServerClass C.jclass) {
-	env := jutil.WrapEnv(jenv)
-	if err := Init(env); err != nil {
-		jutil.JThrowV(env, err)
-		return
-	}
-}
-
 //export Java_io_v_impl_google_services_syncbase_syncbased_SyncbaseServer_nativeStart
 func Java_io_v_impl_google_services_syncbase_syncbased_SyncbaseServer_nativeStart(jenv *C.JNIEnv, jSyncbaseServerClass C.jclass, jContext C.jobject, jSyncbaseServerParams C.jobject) C.jobject {
 	env := jutil.WrapEnv(jenv)

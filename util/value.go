@@ -170,6 +170,9 @@ func jDurationValue(env Env, v interface{}) (C.jvalue, bool) {
 }
 
 func jVExceptionValue(env Env, v interface{}) (C.jvalue, bool) {
+	if v == nil {
+		return C.jObjectValue(nil), true
+	}
 	err, ok := v.(error)
 	if !ok {
 		return errJValue, false
