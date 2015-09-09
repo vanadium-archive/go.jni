@@ -34,7 +34,7 @@ func JavaServer(env jutil.Env, server rpc.Server) (jutil.Object, error) {
 // JavaClient converts the provided Go client into a Java Client object.
 func JavaClient(env jutil.Env, client rpc.Client) (jutil.Object, error) {
 	if client == nil {
-		return jutil.NullObject, fmt.Errorf("Go Client value cannot be nil")
+		return jutil.NullObject, nil
 	}
 	jClient, err := jutil.NewObject(env, jClientImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&client)))
 	if err != nil {

@@ -19,6 +19,9 @@ import "C"
 // JavaNamespace converts the provided Go Namespace into a Java Namespace
 // object.
 func JavaNamespace(env jutil.Env, namespace namespace.T) (jutil.Object, error) {
+	if namespace == nil {
+		return jutil.NullObject, nil
+	}
 	jNamespace, err := jutil.NewObject(env, jNamespaceImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&namespace)))
 	if err != nil {
 		return jutil.NullObject, err
