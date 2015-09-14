@@ -13,7 +13,6 @@ import (
 	"v.io/v23"
 	"v.io/v23/context"
 	_ "v.io/x/ref/runtime/factories/roaming"
-	"v.io/v23/rpc"
 
 	jns "v.io/x/jni/impl/google/namespace"
 	jrpc "v.io/x/jni/impl/google/rpc"
@@ -25,16 +24,27 @@ import (
 // #include "jni.h"
 import "C"
 
+var (
+	contextSign = jutil.ClassSign("io.v.v23.context.VContext")
+	serverSign = jutil.ClassSign("io.v.v23.rpc.Server")
+
+	jVRuntimeImplClass jutil.Class
+)
+
 // Init initializes the JNI code with the given Java environment.  This method
 // must be invoked before any other method in this package and must be called
 // from the main Java thread (e.g., On_Load()).
 // interface and then cast into the package-local environment type.
 func Init(env jutil.Env) error {
+	var err error
+	jVRuntimeImplClass, err = jutil.JFindClass(env, "io/v/impl/google/rt/VRuntimeImpl")
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
 type shutdownKey struct{}
-type serverKey struct{}
 
 //export Java_io_v_impl_google_rt_VRuntimeImpl_nativeInit
 func Java_io_v_impl_google_rt_VRuntimeImpl_nativeInit(jenv *C.JNIEnv, jRuntime C.jclass, jNumCpus C.jint) C.jobject {
@@ -124,37 +134,23 @@ func Java_io_v_impl_google_rt_VRuntimeImpl_nativeWithNewServer(jenv *C.JNIEnv, j
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	// Explicitly attach a server to the new context.
-	serverAttCtx := context.WithValue(newCtx, serverKey{}, server)
-	jServerAttCtx, err := jcontext.JavaContext(env, serverAttCtx, nil)
-	if err != nil {
-		jutil.JThrowV(env, err)
-		return nil
-	}
-	return C.jobject(unsafe.Pointer(jServerAttCtx))
-}
-
-//export Java_io_v_impl_google_rt_VRuntimeImpl_nativeGetServer
-func Java_io_v_impl_google_rt_VRuntimeImpl_nativeGetServer(jenv *C.JNIEnv, jRuntime C.jclass, jContext C.jobject) C.jobject {
-	env := jutil.WrapEnv(jenv)
-	// TODO(spetrovic): Have Java context support nativePtr()?
-	ctx, err := jcontext.GoContext(env, jutil.WrapObject(jContext))
-	if err != nil {
-		jutil.JThrowV(env, err)
-		return nil
-	}
-	// Get the server we attached to the context.
-	value := ctx.Value(serverKey{})
-	server, ok := value.(rpc.Server)
-	if !ok {
-		server = nil
-	}
 	jServer, err := jrpc.JavaServer(env, server)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return C.jobject(unsafe.Pointer(jServer))
+	jNewCtx, err := jcontext.JavaContext(env, newCtx, nil)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	// Explicitly attach a server to the new context.
+	jServerAttCtx, err := jutil.CallStaticObjectMethod(env, jVRuntimeImplClass, "withServer", []jutil.Sign{contextSign, serverSign}, contextSign, jNewCtx, jServer)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	return C.jobject(unsafe.Pointer(jServerAttCtx))
 }
 
 //export Java_io_v_impl_google_rt_VRuntimeImpl_nativeWithPrincipal
