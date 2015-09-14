@@ -26,9 +26,11 @@ var (
 	listenSpecSign            = jutil.ClassSign("io.v.v23.rpc.ListenSpec")
 	contextSign               = jutil.ClassSign("io.v.v23.context.VContext")
 	syncbaseStorageEngineSign = jutil.ClassSign("io.v.v23.syncbase.SyncbaseStorageEngine")
+	serverSign                = jutil.ClassSign("io.v.v23.rpc.Server")
 
 	jSystemClass jutil.Class
 	jVClass      jutil.Class
+	jVRuntimeImplClass jutil.Class
 )
 
 func Init(env jutil.Env) error {
@@ -41,11 +43,15 @@ func Init(env jutil.Env) error {
 	if err != nil {
 		return err
 	}
+	jVRuntimeImplClass, err = jutil.JFindClass(env, "io/v/impl/google/rt/VRuntimeImpl")
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
-//export Java_io_v_impl_google_services_syncbase_syncbased_SyncbaseServer_nativeStart
-func Java_io_v_impl_google_services_syncbase_syncbased_SyncbaseServer_nativeStart(jenv *C.JNIEnv, jSyncbaseServerClass C.jclass, jContext C.jobject, jSyncbaseServerParams C.jobject) C.jobject {
+//export Java_io_v_impl_google_services_syncbase_syncbased_SyncbaseServer_nativeWithNewServer
+func Java_io_v_impl_google_services_syncbase_syncbased_SyncbaseServer_nativeWithNewServer(jenv *C.JNIEnv, jSyncbaseServerClass C.jclass, jContext C.jobject, jSyncbaseServerParams C.jobject) C.jobject {
 	env := jutil.WrapEnv(jenv)
 	jCtx := jutil.WrapObject(jContext)
 	jParams := jutil.WrapObject(jSyncbaseServerParams)
@@ -57,24 +63,6 @@ func Java_io_v_impl_google_services_syncbase_syncbased_SyncbaseServer_nativeStar
 		return nil
 	}
 	perms, err := jaccess.GoPermissions(env, jPerms)
-	if err != nil {
-		jutil.JThrowV(env, err)
-		return nil
-	}
-	jListenSpec, err := jutil.CallObjectMethod(env, jParams, "getListenSpec", nil, listenSpecSign)
-	if err != nil {
-		jutil.JThrowV(env, err)
-
-		return nil
-	}
-	if jListenSpec.IsNull() {
-		jListenSpec, err = jutil.CallStaticObjectMethod(env, jVClass, "getListenSpec", []jutil.Sign{contextSign}, listenSpecSign, jCtx)
-		if err != nil {
-			jutil.JThrowV(env, err)
-			return nil
-		}
-	}
-	listenSpec, err := jrpc.GoListenSpec(env, jListenSpec)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -106,23 +94,13 @@ func Java_io_v_impl_google_services_syncbase_syncbased_SyncbaseServer_nativeStar
 		jutil.JThrowV(env, err)
 		return nil
 	}
-
-	// Start the server.
 	ctx, err := jcontext.GoContext(env, jCtx)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	s, err := v23.NewServer(ctx)
-	if err != nil {
-		jutil.JThrowV(env, err)
-		return nil
-	}
-	_, err = s.Listen(listenSpec)
-	if err != nil {
-		jutil.JThrowV(env, err)
-		return nil
-	}
+
+	// Start the server.
 	service, err := server.NewService(ctx, nil, server.ServiceOptions{
 		Perms:   perms,
 		RootDir: rootDir,
@@ -132,8 +110,14 @@ func Java_io_v_impl_google_services_syncbase_syncbased_SyncbaseServer_nativeStar
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	dispatcher := server.NewDispatcher(service)
-	if err := s.ServeDispatcher(name, dispatcher); err != nil {
+	d := server.NewDispatcher(service)
+	newCtx, s, err := v23.WithNewDispatchingServer(ctx, name, d)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	jNewCtx, err := jcontext.JavaContext(env, newCtx, nil)
+	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
 	}
@@ -142,5 +126,11 @@ func Java_io_v_impl_google_services_syncbase_syncbased_SyncbaseServer_nativeStar
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	return C.jobject(unsafe.Pointer(jServer))
+	// Attach a server to the new context.
+	jServerAttCtx, err := jutil.CallStaticObjectMethod(env, jVRuntimeImplClass, "withServer", []jutil.Sign{contextSign, serverSign}, contextSign, jNewCtx, jServer)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	return C.jobject(unsafe.Pointer(jServerAttCtx))
 }
