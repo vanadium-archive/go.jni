@@ -150,8 +150,6 @@ func JavaServerStatus(env jutil.Env, status rpc.ServerStatus) (jutil.Object, err
 func JavaServerState(env jutil.Env, state rpc.ServerState) (jutil.Object, error) {
 	var name string
 	switch state {
-	case rpc.ServerInit:
-		name = "SERVER_INIT"
 	case rpc.ServerActive:
 		name = "SERVER_ACTIVE"
 	case rpc.ServerStopping:
