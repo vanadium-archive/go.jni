@@ -4,7 +4,7 @@
 
 // +build java android
 
-package syncbased
+package syncbase
 
 import (
 	jutil "v.io/x/jni/util"

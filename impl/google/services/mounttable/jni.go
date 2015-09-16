@@ -4,18 +4,25 @@
 
 // +build java android
 
-package syncbased
+package mounttable
 
 import (
+	"bufio"
+	"encoding/json"
+	"fmt"
+	"os"
+	"path/filepath"
 	"unsafe"
 
 	"v.io/v23"
-	"v.io/x/ref/services/syncbase/server"
+	"v.io/v23/security/access"
+	"v.io/x/ref/services/mounttable/mounttablelib"
 
 	jrpc "v.io/x/jni/impl/google/rpc"
 	jutil "v.io/x/jni/util"
 	jcontext "v.io/x/jni/v23/context"
 	jaccess "v.io/x/jni/v23/security/access"
+	"v.io/v23/options"
 )
 
 // #include "jni.h"
@@ -25,7 +32,6 @@ var (
 	permissionsSign           = jutil.ClassSign("io.v.v23.security.access.Permissions")
 	listenSpecSign            = jutil.ClassSign("io.v.v23.rpc.ListenSpec")
 	contextSign               = jutil.ClassSign("io.v.v23.context.VContext")
-	syncbaseStorageEngineSign = jutil.ClassSign("io.v.v23.syncbase.SyncbaseStorageEngine")
 	serverSign                = jutil.ClassSign("io.v.v23.rpc.Server")
 
 	jSystemClass jutil.Class
@@ -33,6 +39,9 @@ var (
 	jVRuntimeImplClass jutil.Class
 )
 
+// Init initializes the JNI code with the given Java environment.  This method
+// must be invoked before any other method in this package and must be called
+// from the main Java thread (e.g., On_Load()).
 func Init(env jutil.Env) error {
 	var err error
 	jSystemClass, err = jutil.JFindClass(env, "java/lang/System")
@@ -50,24 +59,14 @@ func Init(env jutil.Env) error {
 	return nil
 }
 
-//export Java_io_v_impl_google_services_syncbase_syncbased_SyncbaseServer_nativeWithNewServer
-func Java_io_v_impl_google_services_syncbase_syncbased_SyncbaseServer_nativeWithNewServer(jenv *C.JNIEnv, jSyncbaseServerClass C.jclass, jContext C.jobject, jSyncbaseServerParams C.jobject) C.jobject {
+//export Java_io_v_impl_google_services_mounttable_MountTableServer_nativeWithNewServer
+func Java_io_v_impl_google_services_mounttable_MountTableServer_nativeWithNewServer(jenv *C.JNIEnv, jMountTableServerClass C.jclass, jContext C.jobject, jMountTableServerParams C.jobject) C.jobject {
 	env := jutil.WrapEnv(jenv)
 	jCtx := jutil.WrapObject(jContext)
-	jParams := jutil.WrapObject(jSyncbaseServerParams)
+	jParams := jutil.WrapObject(jMountTableServerParams)
 
 	// Read and translate all of the server params.
-	jPerms, err := jutil.CallObjectMethod(env, jParams, "getPermissions", nil, permissionsSign)
-	if err != nil {
-		jutil.JThrowV(env, err)
-		return nil
-	}
-	perms, err := jaccess.GoPermissions(env, jPerms)
-	if err != nil {
-		jutil.JThrowV(env, err)
-		return nil
-	}
-	name, err := jutil.CallStringMethod(env, jParams, "getName", nil)
+	mountName, err := jutil.CallStringMethod(env, jParams, "getName", nil)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -84,34 +83,59 @@ func Java_io_v_impl_google_services_syncbase_syncbased_SyncbaseServer_nativeWith
 			return nil
 		}
 	}
-	jEngine, err := jutil.CallObjectMethod(env, jParams, "getStorageEngine", nil, syncbaseStorageEngineSign)
+	permsJMap, err := jutil.CallMapMethod(env, jParams, "getPermissions", nil)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	engine, err := GoStorageEngine(env, jEngine)
+	permsMap := make(map[string]access.Permissions)
+	for jPath, jPerms := range permsJMap {
+		path := jutil.GoString(env, jPath)
+		perms, err := jaccess.GoPermissions(env, jPerms)
+		if err != nil {
+			jutil.JThrowV(env, err)
+			return nil
+		}
+		permsMap[path] = perms
+	}
+	// Write JSON-encoded permissions to a file.
+	jsonPerms, err := json.Marshal(permsMap)
 	if err != nil {
-		jutil.JThrowV(env, err)
+		jutil.JThrowV(env, fmt.Errorf("Couldn't JSON-encode path-permissions: %v", err))
+		return nil
+
+	}
+	permsFile, err := os.Create(filepath.Join(rootDir, "jni_permissions"))
+	if err != nil {
+		jutil.JThrowV(env, fmt.Errorf("Couldn't create permissions file: %v", err))
 		return nil
 	}
-	ctx, err := jcontext.GoContext(env, jCtx)
+	w := bufio.NewWriter(permsFile)
+	if _, err := w.Write(jsonPerms); err != nil {
+		jutil.JThrowV(env, fmt.Errorf("Couldn't write to permissions file: %v", err))
+		return nil
+	}
+	if err := w.Flush(); err != nil {
+		jutil.JThrowV(env, fmt.Errorf("Couldn't flush to permissions file: %v", err))
+	}
+	statsPrefix, err := jutil.CallStringMethod(env, jParams, "getStatsPrefix", nil)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
 	}
 
-	// Start the server.
-	service, err := server.NewService(ctx, nil, server.ServiceOptions{
-		Perms:   perms,
-		RootDir: rootDir,
-		Engine:  engine,
-	})
+	// Start the mounttable server.
+	ctx, err := jcontext.GoContext(env, jCtx)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	d := server.NewDispatcher(service)
-	newCtx, s, err := v23.WithNewDispatchingServer(ctx, name, d)
+	d, err := mounttablelib.NewMountTableDispatcher(ctx, permsFile.Name(), rootDir, statsPrefix)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	newCtx, s, err := v23.WithNewDispatchingServer(ctx, mountName, d, options.ServesMountTable(true))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
