@@ -11,7 +11,8 @@ import (
 	jns "v.io/x/jni/impl/google/namespace"
 	jrpc "v.io/x/jni/impl/google/rpc"
 	jrt "v.io/x/jni/impl/google/rt"
-	jsyncbased "v.io/x/jni/impl/google/services/syncbase/syncbased"
+	jsyncbase "v.io/x/jni/impl/google/services/syncbase"
+	jmounttable "v.io/x/jni/impl/google/services/mounttable"
 	jutil "v.io/x/jni/util"
 )
 
@@ -21,7 +22,6 @@ import "C"
 // Init initializes the JNI code with the given Java environment.  This method
 // must be invoked before any other method in this package and must be called
 // from the main Java thread (e.g., On_Load()).
-// interface and then cast into the package-local environment type.
 func Init(env jutil.Env) error {
 	if err := jrpc.Init(env); err != nil {
 		return err
@@ -35,7 +35,10 @@ func Init(env jutil.Env) error {
 	if err := jns.Init(env); err != nil {
 		return err
 	}
-	if err := jsyncbased.Init(env); err != nil {
+	if err := jmounttable.Init(env); err != nil {
+		return err
+	}
+	if err := jsyncbase.Init(env); err != nil {
 		return err
 	}
 	return nil
