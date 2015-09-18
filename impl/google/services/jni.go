@@ -4,15 +4,14 @@
 
 // +build java android
 
-package google
+package services
 
 import (
-	jchannel "v.io/x/jni/impl/google/channel"
-	jns "v.io/x/jni/impl/google/namespace"
-	jrpc "v.io/x/jni/impl/google/rpc"
-	jrt "v.io/x/jni/impl/google/rt"
-	jservices "v.io/x/jni/impl/google/services"
 	jutil "v.io/x/jni/util"
+	jgroups "v.io/x/jni/impl/google/services/groups"
+	jmounttable "v.io/x/jni/impl/google/services/mounttable"
+	jsyncbase "v.io/x/jni/impl/google/services/syncbase"
+
 )
 
 // #include "jni.h"
@@ -22,20 +21,15 @@ import "C"
 // must be invoked before any other method in this package and must be called
 // from the main Java thread (e.g., On_Load()).
 func Init(env jutil.Env) error {
-	if err := jrpc.Init(env); err != nil {
+	if err := jgroups.Init(env); err != nil {
 		return err
 	}
-	if err := jrt.Init(env); err != nil {
+	if err := jmounttable.Init(env); err != nil {
 		return err
 	}
-	if err := jchannel.Init(env); err != nil {
-		return err
-	}
-	if err := jns.Init(env); err != nil {
-		return err
-	}
-	if err := jservices.Init(env); err != nil {
+	if err := jsyncbase.Init(env); err != nil {
 		return err
 	}
 	return nil
 }
+

@@ -41,6 +41,8 @@ var (
 	jIDActionClass Class
 	// Global reference for io.v.v23.vdl.VdlValue class.
 	jVdlValueClass Class
+	// Global reference for io.v.v23.vdl.VdlTypeObject class.
+	jVdlTypeObjectClass Class
 	// Global reference for org.joda.time.DateTime class.
 	jDateTimeClass Class
 	// Global reference for org.joda.time.Duration class.
@@ -98,6 +100,10 @@ func Init(env Env) error {
 		return err
 	}
 	jVdlValueClass, err = JFindClass(env, "io/v/v23/vdl/VdlValue")
+	if err != nil {
+		return err
+	}
+	jVdlTypeObjectClass, err = JFindClass(env, "io/v/v23/vdl/VdlTypeObject")
 	if err != nil {
 		return err
 	}

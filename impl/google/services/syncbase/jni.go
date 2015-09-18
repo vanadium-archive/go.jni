@@ -7,6 +7,8 @@
 package syncbase
 
 import (
+	"os"
+	"path/filepath"
 	"unsafe"
 
 	"v.io/v23"
@@ -23,13 +25,10 @@ import "C"
 
 var (
 	permissionsSign           = jutil.ClassSign("io.v.v23.security.access.Permissions")
-	listenSpecSign            = jutil.ClassSign("io.v.v23.rpc.ListenSpec")
 	contextSign               = jutil.ClassSign("io.v.v23.context.VContext")
 	storageEngineSign         = jutil.ClassSign("io.v.impl.google.services.syncbase.SyncbaseServer$StorageEngine")
 	serverSign                = jutil.ClassSign("io.v.v23.rpc.Server")
 
-	jSystemClass jutil.Class
-	jVClass      jutil.Class
 	jVRuntimeImplClass jutil.Class
 )
 
@@ -38,14 +37,6 @@ var (
 // from the main Java thread (e.g., On_Load()).
 func Init(env jutil.Env) error {
 	var err error
-	jSystemClass, err = jutil.JFindClass(env, "java/lang/System")
-	if err != nil {
-		return err
-	}
-	jVClass, err = jutil.JFindClass(env, "io/v/v23/V")
-	if err != nil {
-		return err
-	}
 	jVRuntimeImplClass, err = jutil.JFindClass(env, "io/v/impl/google/rt/VRuntimeImpl")
 	if err != nil {
 		return err
@@ -81,8 +72,8 @@ func Java_io_v_impl_google_services_syncbase_SyncbaseServer_nativeWithNewServer(
 		return nil
 	}
 	if rootDir == "" {
-		rootDir, err = jutil.CallStaticStringMethod(env, jSystemClass, "getProperty", []jutil.Sign{jutil.StringSign}, "java.io.tmpdir")
-		if err != nil {
+		rootDir = filepath.Join(os.TempDir(), "syncbaseserver")
+		if err := os.Mkdir(rootDir, 0755); err != nil && !os.IsExist(err) {
 			jutil.JThrowV(env, err)
 			return nil
 		}

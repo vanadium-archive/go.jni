@@ -93,3 +93,18 @@ func GoVomCopyValue(env Env, vdlValue Object) (*vdl.Value, error) {
 	}
 	return VomDecodeToValue(data)
 }
+
+// GoVdlType converts a Java VdlType object into a Go *vdl.Type
+// by encoding/decoding it from VOM.
+func GoVdlType(env Env, vdlType Object) (*vdl.Type, error) {
+	vdlTypeSign := ClassSign("io.v.v23.vdl.VdlType")
+	jTypeObject, err := NewObject(env, jVdlTypeObjectClass, []Sign{vdlTypeSign}, vdlType)
+	if err != nil {
+		return nil, err
+	}
+	var t *vdl.Type
+	if err := GoVomCopy(env, jTypeObject, jVdlTypeObjectClass, &t); err != nil {
+		return nil, err
+	}
+	return t, nil
+}

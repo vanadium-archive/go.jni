@@ -4,13 +4,13 @@
 
 // +build java android
 
-package syncbase
+package groups
 
 import (
 	jutil "v.io/x/jni/util"
 )
 
-// GoStorageEngine converts the provided Java SyncbaseServer.StorageEngine
+// GoStorageEngine converts the provided Java GroupServer.StorageEngine
 // enum object into a Go storage engine string.
 func GoStorageEngine(env jutil.Env, jEngine jutil.Object) (string, error) {
 	if jEngine.IsNull() {

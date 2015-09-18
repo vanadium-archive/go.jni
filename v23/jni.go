@@ -13,6 +13,7 @@ import (
 	jnaming "v.io/x/jni/v23/naming"
 	jsecurity "v.io/x/jni/v23/security"
 	jaccess "v.io/x/jni/v23/security/access"
+	jgroups "v.io/x/jni/v23/services/groups"
 )
 
 // #include "jni.h"
@@ -35,6 +36,9 @@ func Init(env jutil.Env) error {
 		return err
 	}
 	if err := jaccess.Init(env); err != nil {
+		return err
+	}
+	if err := jgroups.Init(env); err != nil {
 		return err
 	}
 	return nil
