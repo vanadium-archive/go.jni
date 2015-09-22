@@ -33,7 +33,6 @@ var (
 
 // Init initializes the JNI code with the given Java environment. This method
 // must be called from the main Java thread.
-// interface and then cast into the package-local environment type.
 func Init(env jutil.Env) error {
 	var err error
 	jNamespaceImplClass, err = jutil.JFindClass(env, "io/v/impl/google/namespace/NamespaceImpl")

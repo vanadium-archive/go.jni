@@ -16,6 +16,7 @@ import (
 	"v.io/v23/vdl"
 	"v.io/v23/vom"
 
+	jbt "v.io/x/jni/impl/google/rpc/protocols/bt"
 	jchannel "v.io/x/jni/impl/google/channel"
 	jutil "v.io/x/jni/util"
 	jcontext "v.io/x/jni/v23/context"
@@ -90,8 +91,10 @@ var (
 
 // Init initializes the JNI code with the given Java environment. This method
 // must be called from the main Java thread.
-// interface and then cast into the package-local environment type.
 func Init(env jutil.Env) error {
+	if err := jbt.Init(env); err != nil {
+		return err
+	}
 	// Cache global references to all Java classes used by the package.  This is
 	// necessary because JNI gets access to the class loader only in the system
 	// thread, so we aren't able to invoke FindClass in other threads.

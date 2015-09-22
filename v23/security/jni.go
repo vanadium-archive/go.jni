@@ -68,7 +68,6 @@ var (
 
 // Init initializes the JNI code with the given Java evironment. This method
 // must be called from the main Java thread.
-// interface and then cast into the package-local environment type.
 func Init(env jutil.Env) error {
 	security.OverrideCaveatValidation(caveatValidator)
 

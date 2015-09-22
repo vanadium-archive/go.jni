@@ -34,7 +34,6 @@ var (
 // Init initializes the JNI code with the given Java environment.  This method
 // must be invoked before any other method in this package and must be called
 // from the main Java thread (e.g., On_Load()).
-// interface and then cast into the package-local environment type.
 func Init(env jutil.Env) error {
 	var err error
 	jVRuntimeImplClass, err = jutil.JFindClass(env, "io/v/impl/google/rt/VRuntimeImpl")
