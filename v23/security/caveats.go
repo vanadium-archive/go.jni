@@ -9,12 +9,22 @@ package security
 import (
 	"v.io/v23/context"
 	"v.io/v23/security"
+	"v.io/v23/uniqueid"
+
 	jutil "v.io/x/jni/util"
 	jcontext "v.io/x/jni/v23/context"
 )
 
 // #include "jni.h"
 import "C"
+
+var systemCaveats = map[uniqueid.Id]bool{
+	security.ConstCaveat.Id: true,
+	security.ExpiryCaveat.Id: true,
+	security.MethodCaveat.Id: true,
+	security.PeerBlessingsCaveat.Id: true,
+	security.PublicKeyThirdPartyCaveat.Id: true,
+}
 
 func caveatValidator(context *context.T, call security.Call, sets [][]security.Caveat) []error {
 	env, freeFunc := jutil.GetEnv()
@@ -30,14 +40,22 @@ func caveatValidator(context *context.T, call security.Call, sets [][]security.C
 	ret := make([]error, len(sets))
 	for i, set := range sets {
 		for _, caveat := range set {
-			jCaveat, err := JavaCaveat(env, caveat)
-			if err != nil {
-				ret[i] = err
-				break
-			}
-			if err := jutil.CallStaticVoidMethod(env, jCaveatRegistryClass, "validate", []jutil.Sign{contextSign, callSign, caveatSign}, jContext, jCall, jCaveat); err != nil {
-				ret[i] = err
-				break
+			// NOTE(spetrovic): We validate system caveats in Go as it is significantly faster.
+			if _, ok := systemCaveats[caveat.Id]; ok {
+				if err := caveat.Validate(context, call); err != nil {
+					ret[i] = err
+					break
+				}
+			} else {
+				jCaveat, err := JavaCaveat(env, caveat)
+				if err != nil {
+					ret[i] = err
+					break
+				}
+				if err := jutil.CallStaticVoidMethod(env, jCaveatRegistryClass, "validate", []jutil.Sign{contextSign, callSign, caveatSign}, jContext, jCall, jCaveat); err != nil {
+					ret[i] = err
+					break
+				}
 			}
 		}
 	}

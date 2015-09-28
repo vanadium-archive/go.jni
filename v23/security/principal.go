@@ -73,7 +73,7 @@ func (p *principal) Bless(key security.PublicKey, with security.Blessings, exten
 	if err != nil {
 		return security.Blessings{}, err
 	}
-	jAdditionalCaveats, err := JavaCaveats(env, additionalCaveats)
+	jAdditionalCaveats, err := JavaCaveatArray(env, additionalCaveats)
 	if err != nil {
 		return security.Blessings{}, err
 	}
@@ -87,7 +87,7 @@ func (p *principal) Bless(key security.PublicKey, with security.Blessings, exten
 func (p *principal) BlessSelf(name string, caveats ...security.Caveat) (security.Blessings, error) {
 	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
-	jCaveats, err := JavaCaveats(env, caveats)
+	jCaveats, err := JavaCaveatArray(env, caveats)
 	if err != nil {
 		return security.Blessings{}, err
 	}

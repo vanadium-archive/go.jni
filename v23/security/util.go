@@ -8,7 +8,9 @@ package security
 
 import (
 	"v.io/v23/security"
+	"v.io/v23/uniqueid"
 	"v.io/v23/vom"
+
 	jutil "v.io/x/jni/util"
 )
 
@@ -17,11 +19,7 @@ import "C"
 
 // JavaBlessings converts the provided Go Blessings into Java Blessings.
 func JavaBlessings(env jutil.Env, blessings security.Blessings) (jutil.Object, error) {
-	jWire, err := jutil.JVomCopy(env, blessings, jWireBlessingsClass)
-	if err != nil {
-		return jutil.NullObject, err
-	}
-	jBlessings, err := jutil.NewObject(env, jBlessingsClass, []jutil.Sign{jutil.LongSign, wireBlessingsSign}, int64(jutil.PtrValue(&blessings)), jWire)
+	jBlessings, err := jutil.NewObject(env, jBlessingsClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&blessings)))
 	if err != nil {
 		return jutil.NullObject, err
 	}
@@ -34,15 +32,11 @@ func GoBlessings(env jutil.Env, jBlessings jutil.Object) (security.Blessings, er
 	if jBlessings.IsNull() {
 		return security.Blessings{}, nil
 	}
-	jWire, err := jutil.CallObjectMethod(env, jBlessings, "wireFormat", nil, wireBlessingsSign)
+	goPtr, err := jutil.CallLongMethod(env, jBlessings, "nativePtr", nil)
 	if err != nil {
 		return security.Blessings{}, err
 	}
-	var blessings security.Blessings
-	if err := jutil.GoVomCopy(env, jWire, jWireBlessingsClass, &blessings); err != nil {
-		return security.Blessings{}, err
-	}
-	return blessings, nil
+	return (*(*security.Blessings)(jutil.NativePtr(goPtr))), nil
 }
 
 // GoBlessingsArray converts the provided Java Blessings array into a Go
@@ -62,46 +56,81 @@ func GoBlessingsArray(env jutil.Env, jBlessingsArr jutil.Object) ([]security.Ble
 	return ret, nil
 }
 
+// JavaWireBlessings converts the provided Go WireBlessings into Java WireBlessings.
+func JavaWireBlessings(env jutil.Env, wire security.WireBlessings) (jutil.Object, error) {
+	return jutil.JVomCopy(env, wire, jWireBlessingsClass)
+}
+
 // JavaCaveat converts the provided Go Caveat into a Java Caveat.
 func JavaCaveat(env jutil.Env, caveat security.Caveat) (jutil.Object, error) {
-	return jutil.JVomCopy(env, caveat, jCaveatClass)
+	// NOTE(spetrovic): We could call JVomCopy here, but it's painfully slow and this code is
+	// on the critical path.
+
+	// Copy the Id field.
+	jId, err := jutil.NewObject(env, jIdClass, []jutil.Sign{jutil.ByteArraySign}, []byte(caveat.Id[:]))
+	if err != nil {
+		return jutil.NullObject, err
+	}
+	return jutil.NewObject(env, jCaveatClass, []jutil.Sign{idSign, jutil.ByteArraySign}, jId, caveat.ParamVom)
 }
 
 // GoCaveat converts the provided Java Caveat into a Go Caveat.
 func GoCaveat(env jutil.Env, jCav jutil.Object) (security.Caveat, error) {
-	var caveat security.Caveat
-	if err := jutil.GoVomCopy(env, jCav, jCaveatClass, &caveat); err != nil {
+	// NOTE(spetrovic): We could call GoVomCopy here, but it's painfully slow and this code is
+	// on the critical path.
+
+	// Copy the Id field.
+	jId, err := jutil.CallObjectMethod(env, jCav, "getId", nil, idSign)
+	if err != nil {
 		return security.Caveat{}, err
 	}
-	return caveat, nil
+	idBytes, err := jutil.CallByteArrayMethod(env, jId, "toPrimitiveArray", nil)
+	if err != nil {
+		return security.Caveat{}, err
+	}
+	var id uniqueid.Id
+	copy(id[:], idBytes[:len(id)])
+
+	// Copy the ParamVom field.
+	paramVom, err := jutil.CallByteArrayMethod(env, jCav, "getParamVom", nil)
+	if err != nil {
+		return security.Caveat{}, err
+	}
+	return security.Caveat {
+		Id: id,
+		ParamVom: paramVom,
+	}, nil
 }
 
-// JavaCaveats converts the provided Go Caveat slice into a Java Caveat array.
-func JavaCaveats(env jutil.Env, caveats []security.Caveat) (jutil.Object, error) {
-	cavarr := make([]jutil.Object, len(caveats))
+// JavaCaveatArray converts the provided Go Caveat slice into a Java Caveat array.
+func JavaCaveatArray(env jutil.Env, caveats []security.Caveat) (jutil.Object, error) {
+	if caveats == nil {
+		return jutil.NullObject, nil
+	}
+	cavArr := make([]jutil.Object, len(caveats))
 	for i, caveat := range caveats {
 		var err error
-		if cavarr[i], err = JavaCaveat(env, caveat); err != nil {
+		if cavArr[i], err = JavaCaveat(env, caveat); err != nil {
 			return jutil.NullObject, err
 		}
 	}
-	return jutil.JObjectArray(env, cavarr, jCaveatClass)
+	return jutil.JObjectArray(env, cavArr, jCaveatClass)
 }
 
 // GoCaveats converts the provided Java Caveat array into a Go Caveat slice.
 func GoCaveats(env jutil.Env, jCaveats jutil.Object) ([]security.Caveat, error) {
-	cavarr, err := jutil.GoObjectArray(env, jCaveats)
+	cavArr, err := jutil.GoObjectArray(env, jCaveats)
 	if err != nil {
 		return nil, err
 	}
-	caveats := make([]security.Caveat, len(cavarr))
-	for i, jCaveat := range cavarr {
+	ret := make([]security.Caveat, len(cavArr))
+	for i, jCav := range cavArr {
 		var err error
-		if caveats[i], err = GoCaveat(env, jCaveat); err != nil {
+		if ret[i], err = GoCaveat(env, jCav); err != nil {
 			return nil, err
 		}
 	}
-	return caveats, nil
+	return ret, nil
 }
 
 // JavaBlessingPattern converts the provided Go BlessingPattern into Java
