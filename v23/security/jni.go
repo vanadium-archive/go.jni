@@ -918,13 +918,9 @@ func Java_io_v_v23_security_BlessingStoreImpl_nativeFinalize(jenv *C.JNIEnv, jBl
 }
 
 //export Java_io_v_v23_security_BlessingPattern_nativeCreate
-func Java_io_v_v23_security_BlessingPattern_nativeCreate(jenv *C.JNIEnv, jBlessingPattern C.jobject) C.jlong {
+func Java_io_v_v23_security_BlessingPattern_nativeCreate(jenv *C.JNIEnv, jBlessingPatternClass C.jclass, jValue C.jstring) C.jlong {
 	env := jutil.WrapEnv(jenv)
-	pattern, err := GoBlessingPattern(env, jutil.WrapObject(jBlessingPattern))
-	if err != nil {
-		jutil.JThrowV(env, err)
-		return C.jlong(0)
-	}
+	pattern := security.BlessingPattern(jutil.GoString(env, jutil.WrapObject(jValue)))
 	jutil.GoRef(&pattern) // Un-refed when the BlessingPattern object is finalized.
 	return C.jlong(jutil.PtrValue(&pattern))
 }

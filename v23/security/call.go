@@ -37,6 +37,17 @@ func JavaCall(env jutil.Env, call security.Call) (jutil.Object, error) {
 // GoCall creates instance of security.Call that uses the provided Java
 // Call as its underlying implementation.
 func GoCall(env jutil.Env, jCall jutil.Object) (security.Call, error) {
+	if jCall.IsNull() {
+		return nil, nil
+	}
+	if jutil.IsInstanceOf(env, jCall, jCallImplClass) {
+		// Called with our implementation of Call, which maintains a Go pointer - use it.
+		goPtr, err := jutil.CallLongMethod(env, jCall, "nativePtr", nil)
+		if err != nil {
+			return nil, err
+		}
+		return (*(*security.Call)(jutil.NativePtr(goPtr))), nil
+	}
 	// Reference Java call; it will be de-referenced when the go call
 	// created below is garbage-collected (through the finalizer callback we
 	// setup just below).

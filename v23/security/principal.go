@@ -37,6 +37,15 @@ func GoPrincipal(env jutil.Env, jPrincipal jutil.Object) (security.Principal, er
 	if jPrincipal.IsNull() {
 		return nil, nil
 	}
+	if jutil.IsInstanceOf(env, jPrincipal, jVPrincipalImplClass) {
+		// Called with our implementation of VPrincipal, which maintains a Go pointer - use it.
+		goPtr, err := jutil.CallLongMethod(env, jPrincipal, "nativePtr", nil)
+		if err != nil {
+			return nil, err
+		}
+		return (*(*security.Principal)(jutil.NativePtr(goPtr))), nil
+	}
+
 	// Reference Java VPrincipal; it will be de-referenced when the Go Principal
 	// created below is garbage-collected (through the finalizer callback we
 	// setup just below).
