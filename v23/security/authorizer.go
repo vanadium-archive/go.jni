@@ -46,7 +46,7 @@ func (a *authorizer) Authorize(ctx *context.T, call security.Call) error {
 	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
 
-	jCtx, err := jcontext.JavaContext(env, ctx, nil)
+	jCtx, err := jcontext.JavaContext(env, ctx)
 	if err != nil {
 		return err
 	}

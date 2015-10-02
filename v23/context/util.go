@@ -24,24 +24,32 @@ type goContextValue struct {
 	jObj jutil.Object
 }
 
-// JavaContext converts the provided Go Context into a Java Context.
-func JavaContext(env jutil.Env, ctx *context.T, cancel context.CancelFunc) (jutil.Object, error) {
-	cancelPtr := int64(0)
-	if cancel != nil {
-		cancelPtr = int64(jutil.PtrValue(&cancel))
-	}
-	jCtx, err := jutil.NewObject(env, jVContextImplClass, []jutil.Sign{jutil.LongSign, jutil.LongSign}, int64(jutil.PtrValue(ctx)), cancelPtr)
+// JavaContext converts the provided Go Context into a Java VContext.
+func JavaContext(env jutil.Env, ctx *context.T) (jutil.Object, error) {
+	jCtx, err := jutil.NewObject(env, jVContextClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(ctx)))
 	if err != nil {
 		return jutil.NullObject, err
 	}
 	jutil.GoRef(ctx) // Un-refed when the Java context object is finalized.
-	if cancel != nil {
-		jutil.GoRef(&cancel) // Un-refed when the Java context object is finalized.
-	}
 	return jCtx, err
 }
 
-// GoContext converts the provided Java Context into a Go context.
+// JavaCancelableContext converts the provided Go Context and its associated cancel function
+// into a Java CancelableVContext.
+func JavaCancelableContext(env jutil.Env, ctx *context.T, cancel context.CancelFunc) (jutil.Object, error) {
+	if cancel == nil {
+		return jutil.NullObject, fmt.Errorf("Cannot create CancelableVContext with nil cancel function")
+	}
+	jCtx, err := jutil.NewObject(env, jCancelableVContextClass, []jutil.Sign{jutil.LongSign, jutil.LongSign}, int64(jutil.PtrValue(ctx)), int64(jutil.PtrValue(&cancel)))
+	if err != nil {
+		return jutil.NullObject, err
+	}
+	jutil.GoRef(ctx)     // Un-refed when the Java context object is finalized.
+	jutil.GoRef(&cancel) // Un-refed when the Java context object is finalized.
+	return jCtx, err
+}
+
+// GoContext converts the provided Java VContext into a Go context.
 func GoContext(env jutil.Env, jContext jutil.Object) (*context.T, error) {
 	if jContext.IsNull() {
 		return nil, nil

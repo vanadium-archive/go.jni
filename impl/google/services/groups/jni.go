@@ -93,7 +93,7 @@ func Java_io_v_impl_google_services_groups_GroupServer_nativeWithNewServer(jenv 
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	jNewCtx, err := jcontext.JavaContext(env, newCtx, nil)
+	jNewCtx, err := jcontext.JavaContext(env, newCtx)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
