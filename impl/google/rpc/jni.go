@@ -14,11 +14,12 @@ import (
 	"v.io/v23/context"
 	"v.io/v23/options"
 	"v.io/v23/rpc"
+	"v.io/v23/security"
 	"v.io/v23/vdl"
 	"v.io/v23/vom"
 
-	jbt "v.io/x/jni/impl/google/rpc/protocols/bt"
 	jchannel "v.io/x/jni/impl/google/channel"
+	jbt "v.io/x/jni/impl/google/rpc/protocols/bt"
 	jutil "v.io/x/jni/util"
 	jcontext "v.io/x/jni/v23/context"
 	jnaming "v.io/x/jni/v23/naming"
@@ -307,7 +308,9 @@ func decodeArgs(env jutil.Env, jVomArgs C.jobjectArray) ([]interface{}, error) {
 func doStartCall(env jutil.Env, context *context.T, name, method string, skipServerAuth bool, goPtr C.jlong, args []interface{}) (jutil.Object, error) {
 	var opts []rpc.CallOpt
 	if skipServerAuth {
-		opts = append(opts, options.SkipServerEndpointAuthorization{})
+		opts = append(opts,
+			options.NameResolutionAuthorizer{security.AllowEveryone()},
+			options.ServerAuthorizer{security.AllowEveryone()})
 	}
 	// Invoke StartCall
 	call, err := (*(*rpc.Client)(jutil.NativePtr(goPtr))).StartCall(context, name, method, args, opts...)

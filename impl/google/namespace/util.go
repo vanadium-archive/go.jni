@@ -10,6 +10,7 @@ import (
 	"v.io/v23/namespace"
 	"v.io/v23/naming"
 	"v.io/v23/options"
+	"v.io/v23/security"
 	jutil "v.io/x/jni/util"
 )
 
@@ -38,7 +39,10 @@ func javaToGoOptions(env jutil.Env, key string, jValue jutil.Object) (interface{
 			return nil, err
 		}
 		if value {
-			return options.SkipServerEndpointAuthorization{}, nil
+			// TODO(ashankar): The Java APIs need to reflect the
+			// change in the Go APIs: any authorization policy can
+			// be providfed as an option?
+			return options.NameResolutionAuthorizer{security.AllowEveryone()}, nil
 		}
 	}
 	// Otherwise we don't know what this option is, ignore it.
