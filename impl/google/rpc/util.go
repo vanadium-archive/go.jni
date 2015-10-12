@@ -380,7 +380,7 @@ type jniAddressChooser struct {
 	jChooser jutil.Object
 }
 
-func (chooser *jniAddressChooser) ChooseAddress(protocol string, candidates []net.Addr) ([]net.Addr, error) {
+func (chooser *jniAddressChooser) ChooseAddresses(protocol string, candidates []net.Addr) ([]net.Addr, error) {
 	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
 	jCandidates, err := JavaNetworkAddressArray(env, candidates)
