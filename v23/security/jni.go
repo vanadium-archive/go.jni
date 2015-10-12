@@ -320,7 +320,9 @@ func Java_io_v_v23_security_VPrincipalImpl_nativeCreateForAll(jenv *C.JNIEnv, jc
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	principal, err := security.CreatePrincipal(signer, store, roots)
+	// TODO(ataly): Implement BlessingsBasedEncrypter and BlessingsBasedDecrypter types
+	// in Java.
+	principal, err := security.CreatePrincipal(signer, store, roots, nil, nil)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil

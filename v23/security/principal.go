@@ -228,3 +228,11 @@ func (p *principal) AddToRoots(blessings security.Blessings) error {
 	}
 	return jutil.CallVoidMethod(env, p.jPrincipal, "addToRoots", []jutil.Sign{blessingsSign}, jBlessings)
 }
+
+func (p *principal) Encrypter() security.BlessingsBasedEncrypter {
+	return nil
+}
+
+func (p *principal) Decrypter() security.BlessingsBasedDecrypter {
+	return nil
+}
