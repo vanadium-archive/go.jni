@@ -600,7 +600,7 @@ func Java_io_v_impl_google_rpc_AddressChooserImpl_nativeChoose(jenv *C.JNIEnv, j
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	addrs, err := (*(*rpc.AddressChooser)(jutil.NativePtr(goPtr))).ChooseAddress(protocol, candidates)
+	addrs, err := (*(*rpc.AddressChooser)(jutil.NativePtr(goPtr))).ChooseAddresses(protocol, candidates)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
