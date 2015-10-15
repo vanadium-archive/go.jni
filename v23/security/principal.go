@@ -195,16 +195,6 @@ func (p *principal) Roots() security.BlessingRoots {
 	return roots
 }
 
-func (p *principal) AddToRoots(blessings security.Blessings) error {
-	env, freeFunc := jutil.GetEnv()
-	defer freeFunc()
-	jBlessings, err := JavaBlessings(env, blessings)
-	if err != nil {
-		return err
-	}
-	return jutil.CallVoidMethod(env, p.jPrincipal, "addToRoots", []jutil.Sign{blessingsSign}, jBlessings)
-}
-
 func (p *principal) Encrypter() security.BlessingsBasedEncrypter {
 	return nil
 }

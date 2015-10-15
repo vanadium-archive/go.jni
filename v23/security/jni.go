@@ -524,19 +524,6 @@ func Java_io_v_v23_security_VPrincipalImpl_nativeRoots(jenv *C.JNIEnv, jVPrincip
 	return C.jobject(unsafe.Pointer(jRoots))
 }
 
-//export Java_io_v_v23_security_VPrincipalImpl_nativeAddToRoots
-func Java_io_v_v23_security_VPrincipalImpl_nativeAddToRoots(jenv *C.JNIEnv, jVPrincipalImpl C.jobject, goPtr C.jlong, jBlessings C.jobject) {
-	env := jutil.WrapEnv(jenv)
-	blessings, err := GoBlessings(env, jutil.WrapObject(jBlessings))
-	if err != nil {
-		jutil.JThrowV(env, err)
-		return
-	}
-	if err := (*(*security.Principal)(jutil.NativePtr(goPtr))).AddToRoots(blessings); err != nil {
-		jutil.JThrowV(env, err)
-	}
-}
-
 //export Java_io_v_v23_security_VPrincipalImpl_nativeFinalize
 func Java_io_v_v23_security_VPrincipalImpl_nativeFinalize(jenv *C.JNIEnv, jVPrincipalImpl C.jobject, goPtr C.jlong) {
 	jutil.GoUnref(jutil.NativePtr(goPtr))
@@ -1042,4 +1029,21 @@ func Java_io_v_v23_security_VSecurity_nativeGetLocalBlessingNames(jenv *C.JNIEnv
 		return nil
 	}
 	return C.jobjectArray(unsafe.Pointer(jArr))
+}
+
+//export Java_io_v_v23_security_VSecurity_nativeAddToRoots
+func Java_io_v_v23_security_VSecurity_nativeAddToRoots(jenv *C.JNIEnv, jVPrincipalClass C.jclass, jPrincipal C.jobject, jBlessings C.jobject) {
+	env := jutil.WrapEnv(jenv)
+	blessings, err := GoBlessings(env, jutil.WrapObject(jBlessings))
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return
+	}
+	principal, err := GoPrincipal(env, jutil.WrapObject(jPrincipal))
+	if err != nil {
+		jutil.JThrowV(env, err)
+	}
+	if err := security.AddToRoots(principal, blessings); err != nil {
+		jutil.JThrowV(env, err)
+	}
 }
