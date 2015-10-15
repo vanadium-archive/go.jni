@@ -82,6 +82,10 @@ jint GetIntField(JNIEnv* env, jobject obj, jfieldID fieldID) {
   return (*env)->GetIntField(env, obj, fieldID);
 }
 
+jlong GetLongField(JNIEnv* env, jobject obj, jfieldID fieldID) {
+  return (*env)->GetLongField(env, obj, fieldID);
+}
+
 jobject GetStaticObjectField(JNIEnv* env, jclass cls, jfieldID fieldID) {
   return (*env)->GetStaticObjectField(env, cls, fieldID);
 }

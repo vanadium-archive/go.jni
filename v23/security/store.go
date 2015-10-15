@@ -36,7 +36,7 @@ func GoBlessingStore(env jutil.Env, jBlessingStore jutil.Object) (security.Bless
 	}
 	if jutil.IsInstanceOf(env, jBlessingStore, jBlessingStoreImplClass) {
 		// Called with our implementation of BlessingStore, which maintains a Go pointer - use it.
-		goPtr, err := jutil.CallLongMethod(env, jBlessingStore, "nativePtr", nil)
+		goPtr, err := jutil.JLongField(env, jBlessingStore, "nativePtr")
 		if err != nil {
 			return nil, err
 		}
