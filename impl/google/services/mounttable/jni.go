@@ -51,9 +51,9 @@ func Init(env jutil.Env) error {
 
 //export Java_io_v_impl_google_services_mounttable_MountTableServer_nativeWithNewServer
 func Java_io_v_impl_google_services_mounttable_MountTableServer_nativeWithNewServer(jenv *C.JNIEnv, jMountTableServerClass C.jclass, jContext C.jobject, jMountTableServerParams C.jobject) C.jobject {
-	env := jutil.WrapEnv(uintptr(unsafe.Pointer(jenv)))
-	jCtx := jutil.WrapObject(uintptr(unsafe.Pointer(jContext)))
-	jParams := jutil.WrapObject(uintptr(unsafe.Pointer(jMountTableServerParams)))
+	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
+	jCtx := jutil.Object(uintptr(unsafe.Pointer(jContext)))
+	jParams := jutil.Object(uintptr(unsafe.Pointer(jMountTableServerParams)))
 
 	// Read and translate all of the server params.
 	mountName, err := jutil.CallStringMethod(env, jParams, "getName", nil)

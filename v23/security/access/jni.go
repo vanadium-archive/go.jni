@@ -42,8 +42,8 @@ func Init(env jutil.Env) error {
 
 //export Java_io_v_v23_security_access_AccessList_nativeCreate
 func Java_io_v_v23_security_access_AccessList_nativeCreate(jenv *C.JNIEnv, jAccessList C.jobject) C.jlong {
-	env := jutil.WrapEnv(uintptr(unsafe.Pointer(jenv)))
-	acl, err := GoAccessList(env, jutil.WrapObject(uintptr(unsafe.Pointer(jAccessList))))
+	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
+	acl, err := GoAccessList(env, jutil.Object(uintptr(unsafe.Pointer(jAccessList))))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return C.jlong(0)
@@ -54,8 +54,8 @@ func Java_io_v_v23_security_access_AccessList_nativeCreate(jenv *C.JNIEnv, jAcce
 
 //export Java_io_v_v23_security_access_AccessList_nativeIncludes
 func Java_io_v_v23_security_access_AccessList_nativeIncludes(jenv *C.JNIEnv, jAccessList C.jobject, goPtr C.jlong, jBlessings C.jobjectArray) C.jboolean {
-	env := jutil.WrapEnv(uintptr(unsafe.Pointer(jenv)))
-	blessings, err := jutil.GoStringArray(env, jutil.WrapObject(uintptr(unsafe.Pointer(jBlessings))))
+	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
+	blessings, err := jutil.GoStringArray(env, jutil.Object(uintptr(unsafe.Pointer(jBlessings))))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return C.JNI_FALSE
@@ -69,13 +69,13 @@ func Java_io_v_v23_security_access_AccessList_nativeIncludes(jenv *C.JNIEnv, jAc
 
 //export Java_io_v_v23_security_access_AccessList_nativeAuthorize
 func Java_io_v_v23_security_access_AccessList_nativeAuthorize(jenv *C.JNIEnv, jAccessList C.jobject, goPtr C.jlong, jCtx C.jobject, jCall C.jobject) {
-	env := jutil.WrapEnv(uintptr(unsafe.Pointer(jenv)))
-	ctx, err := jcontext.GoContext(env, jutil.WrapObject(uintptr(unsafe.Pointer(jCtx))))
+	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
+	ctx, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jCtx))))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return
 	}
-	call, err := jsecurity.GoCall(env, jutil.WrapObject(uintptr(unsafe.Pointer(jCall))))
+	call, err := jsecurity.GoCall(env, jutil.Object(uintptr(unsafe.Pointer(jCall))))
 	if err != nil {
 		jutil.JThrowV(env, err)
 	}
@@ -92,13 +92,13 @@ func Java_io_v_v23_security_access_AccessList_nativeFinalize(jenv *C.JNIEnv, jAc
 
 //export Java_io_v_v23_security_access_PermissionsAuthorizer_nativeCreate
 func Java_io_v_v23_security_access_PermissionsAuthorizer_nativeCreate(jenv *C.JNIEnv, jPermissionsAuthorizerClass C.jclass, jPermissions C.jobject, jTagType C.jobject) C.jobject {
-	env := jutil.WrapEnv(uintptr(unsafe.Pointer(jenv)))
-	perms, err := GoPermissions(env, jutil.WrapObject(uintptr(unsafe.Pointer(jPermissions))))
+	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
+	perms, err := GoPermissions(env, jutil.Object(uintptr(unsafe.Pointer(jPermissions))))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	tagType, err := jutil.GoVdlType(env, jutil.WrapObject(uintptr(unsafe.Pointer(jTagType))))
+	tagType, err := jutil.GoVdlType(env, jutil.Object(uintptr(unsafe.Pointer(jTagType))))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -109,7 +109,7 @@ func Java_io_v_v23_security_access_PermissionsAuthorizer_nativeCreate(jenv *C.JN
 		return nil
 	}
 	jutil.GoRef(&authorizer) // Un-refed when the Java PermissionsAuthorizer is finalized
-	jAuthorizer, err := jutil.NewObject(env, jutil.WrapClass(uintptr(unsafe.Pointer(jPermissionsAuthorizerClass))), []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&authorizer)))
+	jAuthorizer, err := jutil.NewObject(env, jutil.Class(uintptr(unsafe.Pointer(jPermissionsAuthorizerClass))), []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&authorizer)))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -119,13 +119,13 @@ func Java_io_v_v23_security_access_PermissionsAuthorizer_nativeCreate(jenv *C.JN
 
 //export Java_io_v_v23_security_access_PermissionsAuthorizer_nativeAuthorize
 func Java_io_v_v23_security_access_PermissionsAuthorizer_nativeAuthorize(jenv *C.JNIEnv, jPermissionsAuthorizer C.jobject, goPtr C.jlong, jContext C.jobject, jCall C.jobject) {
-	env := jutil.WrapEnv(uintptr(unsafe.Pointer(jenv)))
-	ctx, err := jcontext.GoContext(env, jutil.WrapObject(uintptr(unsafe.Pointer(jContext))))
+	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
+	ctx, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jContext))))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return
 	}
-	call, err := jsecurity.GoCall(env, jutil.WrapObject(uintptr(unsafe.Pointer(jCall))))
+	call, err := jsecurity.GoCall(env, jutil.Object(uintptr(unsafe.Pointer(jCall))))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return

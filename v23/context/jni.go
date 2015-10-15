@@ -51,7 +51,7 @@ func Init(env jutil.Env) error {
 
 //export Java_io_v_v23_context_VContext_nativeCreate
 func Java_io_v_v23_context_VContext_nativeCreate(jenv *C.JNIEnv, jVContext C.jclass) C.jobject {
-	env := jutil.WrapEnv(uintptr(unsafe.Pointer(jenv)))
+	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	ctx, _ := context.RootContext()
 	jContext, err := JavaContext(env, ctx)
 	if err != nil {
@@ -63,7 +63,7 @@ func Java_io_v_v23_context_VContext_nativeCreate(jenv *C.JNIEnv, jVContext C.jcl
 
 //export Java_io_v_v23_context_VContext_nativeDeadline
 func Java_io_v_v23_context_VContext_nativeDeadline(jenv *C.JNIEnv, jVContext C.jobject, goPtr C.jlong) C.jobject {
-	env := jutil.WrapEnv(uintptr(unsafe.Pointer(jenv)))
+	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	d, ok := (*(*context.T)(jutil.NativePtr(goPtr))).Deadline()
 	if !ok {
 		return nil
@@ -78,7 +78,7 @@ func Java_io_v_v23_context_VContext_nativeDeadline(jenv *C.JNIEnv, jVContext C.j
 
 //export Java_io_v_v23_context_VContext_nativeDone
 func Java_io_v_v23_context_VContext_nativeDone(jenv *C.JNIEnv, jVContext C.jobject, goPtr C.jlong) C.jobject {
-	env := jutil.WrapEnv(uintptr(unsafe.Pointer(jenv)))
+	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	c := (*(*context.T)(jutil.NativePtr(goPtr))).Done()
 	jCounter, err := JavaCountDownLatch(env, c)
 	if err != nil {
@@ -90,8 +90,8 @@ func Java_io_v_v23_context_VContext_nativeDone(jenv *C.JNIEnv, jVContext C.jobje
 
 //export Java_io_v_v23_context_VContext_nativeValue
 func Java_io_v_v23_context_VContext_nativeValue(jenv *C.JNIEnv, jVContext C.jobject, goPtr C.jlong, jKey C.jobject) C.jobject {
-	env := jutil.WrapEnv(uintptr(unsafe.Pointer(jenv)))
-	key, err := GoContextKey(env, jutil.WrapObject(uintptr(unsafe.Pointer(jKey))))
+	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
+	key, err := GoContextKey(env, jutil.Object(uintptr(unsafe.Pointer(jKey))))
 	value := (*(*context.T)(jutil.NativePtr(goPtr))).Value(key)
 	jValue, err := JavaContextValue(env, value)
 	if err != nil {
@@ -103,7 +103,7 @@ func Java_io_v_v23_context_VContext_nativeValue(jenv *C.JNIEnv, jVContext C.jobj
 
 //export Java_io_v_v23_context_VContext_nativeWithCancel
 func Java_io_v_v23_context_VContext_nativeWithCancel(jenv *C.JNIEnv, jVContext C.jobject, goPtr C.jlong) C.jobject {
-	env := jutil.WrapEnv(uintptr(unsafe.Pointer(jenv)))
+	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	ctx, cancelFunc := context.WithCancel((*context.T)(jutil.NativePtr(goPtr)))
 	jCtx, err := JavaCancelableContext(env, ctx, cancelFunc)
 	if err != nil {
@@ -115,8 +115,8 @@ func Java_io_v_v23_context_VContext_nativeWithCancel(jenv *C.JNIEnv, jVContext C
 
 //export Java_io_v_v23_context_VContext_nativeWithDeadline
 func Java_io_v_v23_context_VContext_nativeWithDeadline(jenv *C.JNIEnv, jVContext C.jobject, goPtr C.jlong, jDeadline C.jobject) C.jobject {
-	env := jutil.WrapEnv(uintptr(unsafe.Pointer(jenv)))
-	deadline, err := jutil.GoTime(env, jutil.WrapObject(uintptr(unsafe.Pointer(jDeadline))))
+	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
+	deadline, err := jutil.GoTime(env, jutil.Object(uintptr(unsafe.Pointer(jDeadline))))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -132,8 +132,8 @@ func Java_io_v_v23_context_VContext_nativeWithDeadline(jenv *C.JNIEnv, jVContext
 
 //export Java_io_v_v23_context_VContext_nativeWithTimeout
 func Java_io_v_v23_context_VContext_nativeWithTimeout(jenv *C.JNIEnv, jVContext C.jobject, goPtr C.jlong, jTimeout C.jobject) C.jobject {
-	env := jutil.WrapEnv(uintptr(unsafe.Pointer(jenv)))
-	timeout, err := jutil.GoDuration(env, jutil.WrapObject(uintptr(unsafe.Pointer(jTimeout))))
+	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
+	timeout, err := jutil.GoDuration(env, jutil.Object(uintptr(unsafe.Pointer(jTimeout))))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -149,13 +149,13 @@ func Java_io_v_v23_context_VContext_nativeWithTimeout(jenv *C.JNIEnv, jVContext 
 
 //export Java_io_v_v23_context_VContext_nativeWithValue
 func Java_io_v_v23_context_VContext_nativeWithValue(jenv *C.JNIEnv, jVContext C.jobject, goPtr C.jlong, jKey C.jobject, jValue C.jobject) C.jobject {
-	env := jutil.WrapEnv(uintptr(unsafe.Pointer(jenv)))
-	key, err := GoContextKey(env, jutil.WrapObject(uintptr(unsafe.Pointer(jKey))))
+	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
+	key, err := GoContextKey(env, jutil.Object(uintptr(unsafe.Pointer(jKey))))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	value, err := GoContextValue(env, jutil.WrapObject(uintptr(unsafe.Pointer(jValue))))
+	value, err := GoContextValue(env, jutil.Object(uintptr(unsafe.Pointer(jValue))))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil

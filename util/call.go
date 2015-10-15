@@ -60,7 +60,7 @@ func NewObject(env Env, class Class, argSigns []Sign, args ...interface{}) (Obje
 	defer freeFunc()
 	obj := C.NewObjectA(env.value(), class.value(), jcid, jArr)
 	err = JExceptionMsg(env)
-	return WrapObject(uintptr(unsafe.Pointer(obj))), err
+	return Object(uintptr(unsafe.Pointer(obj))), err
 }
 
 // jMethodID returns the Java method ID for the given instance (non-static)
@@ -133,7 +133,7 @@ func CallObjectMethod(env Env, obj Object, name string, argSigns []Sign, retSign
 	}
 	defer freeFunc()
 	ret := C.CallObjectMethodA(env.value(), obj.value(), jmid, jArgArr)
-	return WrapObject(uintptr(unsafe.Pointer(ret))), JExceptionMsg(env)
+	return Object(uintptr(unsafe.Pointer(ret))), JExceptionMsg(env)
 }
 
 // CallStringMethod calls a Java method that returns a string.
@@ -243,7 +243,7 @@ func CallStaticObjectMethod(env Env, class Class, name string, argSigns []Sign, 
 	}
 	defer freeFunc()
 	ret := C.CallStaticObjectMethodA(env.value(), class.value(), jmid, jArgArr)
-	return WrapObject(uintptr(unsafe.Pointer(ret))), JExceptionMsg(env)
+	return Object(uintptr(unsafe.Pointer(ret))), JExceptionMsg(env)
 }
 
 // CallStaticStringMethod calls a static Java method that returns a string.

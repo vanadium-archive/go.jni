@@ -22,7 +22,7 @@ import "C"
 
 //export Java_io_v_v23_V_nativeInit
 func Java_io_v_v23_V_nativeInit(jenv *C.JNIEnv, jVRuntimeClass C.jclass) {
-	env := jutil.WrapEnv(uintptr(unsafe.Pointer(jenv)))
+	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	// Ignore all args except for the first one.
 	// NOTE(spetrovic): in the future, we could accept all arguments that are
 	// actually defined in Go.  We'd have to manually check.

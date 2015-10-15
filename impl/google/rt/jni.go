@@ -46,7 +46,7 @@ type shutdownKey struct{}
 
 //export Java_io_v_impl_google_rt_VRuntimeImpl_nativeInit
 func Java_io_v_impl_google_rt_VRuntimeImpl_nativeInit(jenv *C.JNIEnv, jRuntime C.jclass) C.jobject {
-	env := jutil.WrapEnv(uintptr(unsafe.Pointer(jenv)))
+	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	ctx, shutdownFunc := v23.Init()
 	ctx = context.WithValue(ctx, shutdownKey{}, shutdownFunc)
 	jCtx, err := jcontext.JavaContext(env, ctx)
@@ -59,8 +59,8 @@ func Java_io_v_impl_google_rt_VRuntimeImpl_nativeInit(jenv *C.JNIEnv, jRuntime C
 
 //export Java_io_v_impl_google_rt_VRuntimeImpl_nativeShutdown
 func Java_io_v_impl_google_rt_VRuntimeImpl_nativeShutdown(jenv *C.JNIEnv, jRuntime C.jclass, jContext C.jobject) {
-	env := jutil.WrapEnv(uintptr(unsafe.Pointer(jenv)))
-	ctx, err := jcontext.GoContext(env, jutil.WrapObject(uintptr(unsafe.Pointer(jContext))))
+	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
+	ctx, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jContext))))
 	if err != nil {
 		jutil.JThrowV(env, err)
 	}
@@ -72,8 +72,8 @@ func Java_io_v_impl_google_rt_VRuntimeImpl_nativeShutdown(jenv *C.JNIEnv, jRunti
 
 //export Java_io_v_impl_google_rt_VRuntimeImpl_nativeWithNewClient
 func Java_io_v_impl_google_rt_VRuntimeImpl_nativeWithNewClient(jenv *C.JNIEnv, jRuntime C.jclass, jContext C.jobject, jOptions C.jobject) C.jobject {
-	env := jutil.WrapEnv(uintptr(unsafe.Pointer(jenv)))
-	ctx, err := jcontext.GoContext(env, jutil.WrapObject(uintptr(unsafe.Pointer(jContext))))
+	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
+	ctx, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jContext))))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -94,8 +94,8 @@ func Java_io_v_impl_google_rt_VRuntimeImpl_nativeWithNewClient(jenv *C.JNIEnv, j
 
 //export Java_io_v_impl_google_rt_VRuntimeImpl_nativeGetClient
 func Java_io_v_impl_google_rt_VRuntimeImpl_nativeGetClient(jenv *C.JNIEnv, jRuntime C.jclass, jContext C.jobject) C.jobject {
-	env := jutil.WrapEnv(uintptr(unsafe.Pointer(jenv)))
-	ctx, err := jcontext.GoContext(env, jutil.WrapObject(uintptr(unsafe.Pointer(jContext))))
+	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
+	ctx, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jContext))))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -111,14 +111,14 @@ func Java_io_v_impl_google_rt_VRuntimeImpl_nativeGetClient(jenv *C.JNIEnv, jRunt
 
 //export Java_io_v_impl_google_rt_VRuntimeImpl_nativeWithNewServer
 func Java_io_v_impl_google_rt_VRuntimeImpl_nativeWithNewServer(jenv *C.JNIEnv, jRuntime C.jclass, jContext C.jobject, jName C.jstring, jDispatcher C.jobject) C.jobject {
-	env := jutil.WrapEnv(uintptr(unsafe.Pointer(jenv)))
-	ctx, err := jcontext.GoContext(env, jutil.WrapObject(uintptr(unsafe.Pointer(jContext))))
+	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
+	ctx, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jContext))))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	name := jutil.GoString(env, jutil.WrapObject(uintptr(unsafe.Pointer(jName))))
-	d, err := jrpc.GoDispatcher(env, jutil.WrapObject(uintptr(unsafe.Pointer(jDispatcher))))
+	name := jutil.GoString(env, jutil.Object(uintptr(unsafe.Pointer(jName))))
+	d, err := jrpc.GoDispatcher(env, jutil.Object(uintptr(unsafe.Pointer(jDispatcher))))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -149,13 +149,13 @@ func Java_io_v_impl_google_rt_VRuntimeImpl_nativeWithNewServer(jenv *C.JNIEnv, j
 
 //export Java_io_v_impl_google_rt_VRuntimeImpl_nativeWithPrincipal
 func Java_io_v_impl_google_rt_VRuntimeImpl_nativeWithPrincipal(jenv *C.JNIEnv, jRuntime C.jclass, jContext C.jobject, jPrincipal C.jobject) C.jobject {
-	env := jutil.WrapEnv(uintptr(unsafe.Pointer(jenv)))
-	ctx, err := jcontext.GoContext(env, jutil.WrapObject(uintptr(unsafe.Pointer(jContext))))
+	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
+	ctx, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jContext))))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	principal, err := jsecurity.GoPrincipal(env, jutil.WrapObject(uintptr(unsafe.Pointer(jPrincipal))))
+	principal, err := jsecurity.GoPrincipal(env, jutil.Object(uintptr(unsafe.Pointer(jPrincipal))))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -175,8 +175,8 @@ func Java_io_v_impl_google_rt_VRuntimeImpl_nativeWithPrincipal(jenv *C.JNIEnv, j
 
 //export Java_io_v_impl_google_rt_VRuntimeImpl_nativeGetPrincipal
 func Java_io_v_impl_google_rt_VRuntimeImpl_nativeGetPrincipal(jenv *C.JNIEnv, jRuntime C.jclass, jContext C.jobject) C.jobject {
-	env := jutil.WrapEnv(uintptr(unsafe.Pointer(jenv)))
-	ctx, err := jcontext.GoContext(env, jutil.WrapObject(uintptr(unsafe.Pointer(jContext))))
+	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
+	ctx, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jContext))))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -192,13 +192,13 @@ func Java_io_v_impl_google_rt_VRuntimeImpl_nativeGetPrincipal(jenv *C.JNIEnv, jR
 
 //export Java_io_v_impl_google_rt_VRuntimeImpl_nativeWithNamespace
 func Java_io_v_impl_google_rt_VRuntimeImpl_nativeWithNamespace(jenv *C.JNIEnv, jRuntime C.jclass, jContext C.jobject, jRoots C.jobjectArray) C.jobject {
-	env := jutil.WrapEnv(uintptr(unsafe.Pointer(jenv)))
-	ctx, err := jcontext.GoContext(env, jutil.WrapObject(uintptr(unsafe.Pointer(jContext))))
+	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
+	ctx, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jContext))))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	roots, err := jutil.GoStringArray(env, jutil.WrapObject(uintptr(unsafe.Pointer(jRoots))))
+	roots, err := jutil.GoStringArray(env, jutil.Object(uintptr(unsafe.Pointer(jRoots))))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -219,8 +219,8 @@ func Java_io_v_impl_google_rt_VRuntimeImpl_nativeWithNamespace(jenv *C.JNIEnv, j
 
 //export Java_io_v_impl_google_rt_VRuntimeImpl_nativeGetNamespace
 func Java_io_v_impl_google_rt_VRuntimeImpl_nativeGetNamespace(jenv *C.JNIEnv, jRuntime C.jclass, jContext C.jobject) C.jobject {
-	env := jutil.WrapEnv(uintptr(unsafe.Pointer(jenv)))
-	ctx, err := jcontext.GoContext(env, jutil.WrapObject(uintptr(unsafe.Pointer(jContext))))
+	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
+	ctx, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jContext))))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -236,13 +236,13 @@ func Java_io_v_impl_google_rt_VRuntimeImpl_nativeGetNamespace(jenv *C.JNIEnv, jR
 
 //export Java_io_v_impl_google_rt_VRuntimeImpl_nativeWithListenSpec
 func Java_io_v_impl_google_rt_VRuntimeImpl_nativeWithListenSpec(jenv *C.JNIEnv, jRuntime C.jclass, jContext C.jobject, jSpec C.jobject) C.jobject {
-	env := jutil.WrapEnv(uintptr(unsafe.Pointer(jenv)))
-	ctx, err := jcontext.GoContext(env, jutil.WrapObject(uintptr(unsafe.Pointer(jContext))))
+	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
+	ctx, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jContext))))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	spec, err := jrpc.GoListenSpec(env, jutil.WrapObject(uintptr(unsafe.Pointer(jSpec))))
+	spec, err := jrpc.GoListenSpec(env, jutil.Object(uintptr(unsafe.Pointer(jSpec))))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -258,8 +258,8 @@ func Java_io_v_impl_google_rt_VRuntimeImpl_nativeWithListenSpec(jenv *C.JNIEnv, 
 
 //export Java_io_v_impl_google_rt_VRuntimeImpl_nativeGetListenSpec
 func Java_io_v_impl_google_rt_VRuntimeImpl_nativeGetListenSpec(jenv *C.JNIEnv, jRuntime C.jclass, jContext C.jobject) C.jobject {
-	env := jutil.WrapEnv(uintptr(unsafe.Pointer(jenv)))
-	ctx, err := jcontext.GoContext(env, jutil.WrapObject(uintptr(unsafe.Pointer(jContext))))
+	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
+	ctx, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jContext))))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
