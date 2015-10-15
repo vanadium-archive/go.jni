@@ -137,30 +137,6 @@ func (p *principal) PublicKey() security.PublicKey {
 	return key
 }
 
-func (p *principal) BlessingsByName(name security.BlessingPattern) []security.Blessings {
-	env, freeFunc := jutil.GetEnv()
-	defer freeFunc()
-	jName, err := JavaBlessingPattern(env, name)
-	if err != nil {
-		log.Printf("Couldn't convert Go blessing pattern: %v", err)
-		return nil
-	}
-	barr, err := jutil.CallObjectArrayMethod(env, p.jPrincipal, "blessingsByName", []jutil.Sign{blessingPatternSign}, blessingsSign, jName)
-	if err != nil {
-		log.Printf("Couldn't get Java blessings for name: %v", err)
-		return nil
-	}
-	ret := make([]security.Blessings, len(barr))
-	for i, jBlessings := range barr {
-		var err error
-		if ret[i], err = GoBlessings(env, jBlessings); err != nil {
-			log.Printf("Couldn't convert Java blessings to Go: %v", err)
-			return nil
-		}
-	}
-	return ret
-}
-
 func (p *principal) BlessingsInfo(blessings security.Blessings) map[string][]security.Caveat {
 	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()

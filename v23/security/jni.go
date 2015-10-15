@@ -473,31 +473,6 @@ func Java_io_v_v23_security_VPrincipalImpl_nativePublicKey(jenv *C.JNIEnv, jVPri
 	return C.jobject(unsafe.Pointer(jKey))
 }
 
-//export Java_io_v_v23_security_VPrincipalImpl_nativeBlessingsByName
-func Java_io_v_v23_security_VPrincipalImpl_nativeBlessingsByName(jenv *C.JNIEnv, jVPrincipalImpl C.jobject, goPtr C.jlong, jPattern C.jobject) C.jobjectArray {
-	env := jutil.WrapEnv(jenv)
-	pattern, err := GoBlessingPattern(env, jutil.WrapObject(jPattern))
-	if err != nil {
-		jutil.JThrowV(env, err)
-		return nil
-	}
-	blessings := (*(*security.Principal)(jutil.NativePtr(goPtr))).BlessingsByName(pattern)
-	barr := make([]jutil.Object, len(blessings))
-	for i, b := range blessings {
-		var err error
-		if barr[i], err = JavaBlessings(env, b); err != nil {
-			jutil.JThrowV(env, err)
-			return nil
-		}
-	}
-	jArr, err := jutil.JObjectArray(env, barr, jBlessingsClass)
-	if err != nil {
-		jutil.JThrowV(env, err)
-		return nil
-	}
-	return C.jobjectArray(unsafe.Pointer(jArr))
-}
-
 //export Java_io_v_v23_security_VPrincipalImpl_nativeBlessingsInfo
 func Java_io_v_v23_security_VPrincipalImpl_nativeBlessingsInfo(jenv *C.JNIEnv, jPrincipalImpl C.jobject, goPtr C.jlong, jBlessings C.jobject) C.jobject {
 	env := jutil.WrapEnv(jenv)
