@@ -23,9 +23,9 @@ import (
 import "C"
 
 var (
-	contextSign               = jutil.ClassSign("io.v.v23.context.VContext")
-	storageEngineSign         = jutil.ClassSign("io.v.impl.google.services.groups.GroupServer$StorageEngine")
-	serverSign                = jutil.ClassSign("io.v.v23.rpc.Server")
+	contextSign       = jutil.ClassSign("io.v.v23.context.VContext")
+	storageEngineSign = jutil.ClassSign("io.v.impl.google.services.groups.GroupServer$StorageEngine")
+	serverSign        = jutil.ClassSign("io.v.v23.rpc.Server")
 
 	jVRuntimeImplClass jutil.Class
 )
@@ -44,9 +44,9 @@ func Init(env jutil.Env) error {
 
 //export Java_io_v_impl_google_services_groups_GroupServer_nativeWithNewServer
 func Java_io_v_impl_google_services_groups_GroupServer_nativeWithNewServer(jenv *C.JNIEnv, jGroupServerClass C.jclass, jContext C.jobject, jGroupServerParams C.jobject) C.jobject {
-	env := jutil.WrapEnv(jenv)
-	jCtx := jutil.WrapObject(jContext)
-	jParams := jutil.WrapObject(jGroupServerParams)
+	env := jutil.WrapEnv(uintptr(unsafe.Pointer(jenv)))
+	jCtx := jutil.WrapObject(uintptr(unsafe.Pointer(jContext)))
+	jParams := jutil.WrapObject(uintptr(unsafe.Pointer(jGroupServerParams)))
 
 	// Read and translate all of the server params.
 	name, err := jutil.CallStringMethod(env, jParams, "getName", nil)

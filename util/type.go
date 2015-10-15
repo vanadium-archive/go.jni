@@ -43,8 +43,8 @@ const (
 
 // WrapEnv returns a new Env from a *C.JNIEnv value (possibly from
 // another package).
-func WrapEnv(env interface{}) Env {
-	return Env(PtrValue(env))
+func WrapEnv(env uintptr) Env {
+	return Env(env)
 }
 
 func (e Env) value() *C.JNIEnv {
@@ -53,8 +53,8 @@ func (e Env) value() *C.JNIEnv {
 
 // WrapObject returns a new Object from a C.jobject value (possibly from
 // another package).
-func WrapObject(obj interface{}) Object {
-	return Object(PtrValue(obj))
+func WrapObject(obj uintptr) Object {
+	return Object(obj)
 }
 
 // IsNull returns true iff the Object holds a null C.jobject value.
@@ -68,8 +68,8 @@ func (o Object) value() C.jobject {
 
 // WrapClass returns a new Class from a C.jclass value (possibly from
 // another package).
-func WrapClass(class interface{}) Class {
-	return Class(PtrValue(class))
+func WrapClass(class uintptr) Class {
+	return Class(class)
 }
 
 // IsNull returns true iff the Object holds a null C.jobject value.

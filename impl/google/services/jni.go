@@ -7,11 +7,10 @@
 package services
 
 import (
-	jutil "v.io/x/jni/util"
 	jgroups "v.io/x/jni/impl/google/services/groups"
 	jmounttable "v.io/x/jni/impl/google/services/mounttable"
 	jsyncbase "v.io/x/jni/impl/google/services/syncbase"
-
+	jutil "v.io/x/jni/util"
 )
 
 // #include "jni.h"
@@ -32,4 +31,3 @@ func Init(env jutil.Env) error {
 	}
 	return nil
 }
-

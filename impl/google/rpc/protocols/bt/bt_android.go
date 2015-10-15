@@ -20,7 +20,7 @@ import (
 
 var (
 	connectionSign = jutil.ClassSign("io.v.android.impl.google.rpc.protocols.bt.Bluetooth$Connection")
-	listenerSign = jutil.ClassSign("io.v.android.impl.google.rpc.protocols.bt.Bluetooth$Listener")
+	listenerSign   = jutil.ClassSign("io.v.android.impl.google.rpc.protocols.bt.Bluetooth$Listener")
 
 	// Global reference for io.v.impl.google.rpc.protocols.bt.Bluetooth class.
 	jBluetoothClass jutil.Class

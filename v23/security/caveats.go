@@ -19,10 +19,10 @@ import (
 import "C"
 
 var systemCaveats = map[uniqueid.Id]bool{
-	security.ConstCaveat.Id: true,
-	security.ExpiryCaveat.Id: true,
-	security.MethodCaveat.Id: true,
-	security.PeerBlessingsCaveat.Id: true,
+	security.ConstCaveat.Id:               true,
+	security.ExpiryCaveat.Id:              true,
+	security.MethodCaveat.Id:              true,
+	security.PeerBlessingsCaveat.Id:       true,
 	security.PublicKeyThirdPartyCaveat.Id: true,
 }
 

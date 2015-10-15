@@ -96,8 +96,8 @@ func GoCaveat(env jutil.Env, jCav jutil.Object) (security.Caveat, error) {
 	if err != nil {
 		return security.Caveat{}, err
 	}
-	return security.Caveat {
-		Id: id,
+	return security.Caveat{
+		Id:       id,
 		ParamVom: paramVom,
 	}, nil
 }

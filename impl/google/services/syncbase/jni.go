@@ -24,10 +24,10 @@ import (
 import "C"
 
 var (
-	permissionsSign           = jutil.ClassSign("io.v.v23.security.access.Permissions")
-	contextSign               = jutil.ClassSign("io.v.v23.context.VContext")
-	storageEngineSign         = jutil.ClassSign("io.v.impl.google.services.syncbase.SyncbaseServer$StorageEngine")
-	serverSign                = jutil.ClassSign("io.v.v23.rpc.Server")
+	permissionsSign   = jutil.ClassSign("io.v.v23.security.access.Permissions")
+	contextSign       = jutil.ClassSign("io.v.v23.context.VContext")
+	storageEngineSign = jutil.ClassSign("io.v.impl.google.services.syncbase.SyncbaseServer$StorageEngine")
+	serverSign        = jutil.ClassSign("io.v.v23.rpc.Server")
 
 	jVRuntimeImplClass jutil.Class
 )
@@ -46,9 +46,9 @@ func Init(env jutil.Env) error {
 
 //export Java_io_v_impl_google_services_syncbase_SyncbaseServer_nativeWithNewServer
 func Java_io_v_impl_google_services_syncbase_SyncbaseServer_nativeWithNewServer(jenv *C.JNIEnv, jSyncbaseServerClass C.jclass, jContext C.jobject, jSyncbaseServerParams C.jobject) C.jobject {
-	env := jutil.WrapEnv(jenv)
-	jCtx := jutil.WrapObject(jContext)
-	jParams := jutil.WrapObject(jSyncbaseServerParams)
+	env := jutil.WrapEnv(uintptr(unsafe.Pointer(jenv)))
+	jCtx := jutil.WrapObject(uintptr(unsafe.Pointer(jContext)))
+	jParams := jutil.WrapObject(uintptr(unsafe.Pointer(jSyncbaseServerParams)))
 
 	// Read and translate all of the server params.
 	jPerms, err := jutil.CallObjectMethod(env, jParams, "getPermissions", nil, permissionsSign)

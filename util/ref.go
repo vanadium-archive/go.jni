@@ -20,7 +20,7 @@ import "C"
 // obj argument.  The obj argument may be a global or local reference. Global
 // references must be explicitly disposed of by calling DeleteGlobalRef().
 func NewGlobalRef(env Env, obj Object) Object {
-	return WrapObject(C.NewGlobalRef(env.value(), obj.value()))
+	return WrapObject(uintptr(unsafe.Pointer(C.NewGlobalRef(env.value(), obj.value()))))
 }
 
 // DeleteGlobalRef deletes the global reference pointed to by obj.
@@ -32,7 +32,7 @@ func DeleteGlobalRef(env Env, obj Object) {
 // given obj may be a global or local reference. Returns null if ref refers
 // to null.
 func NewLocalRef(env Env, obj Object) Object {
-	return WrapObject(C.NewLocalRef(env.value(), obj.value()))
+	return WrapObject(uintptr(unsafe.Pointer(C.NewLocalRef(env.value(), obj.value()))))
 }
 
 // GoRef creates a new reference to the value addressed by the provided pointer.

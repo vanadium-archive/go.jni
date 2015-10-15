@@ -19,20 +19,20 @@ import (
 	"v.io/v23/security/access"
 	"v.io/x/ref/services/mounttable/mounttablelib"
 
+	"v.io/v23/options"
 	jrpc "v.io/x/jni/impl/google/rpc"
 	jutil "v.io/x/jni/util"
 	jcontext "v.io/x/jni/v23/context"
 	jaccess "v.io/x/jni/v23/security/access"
-	"v.io/v23/options"
 )
 
 // #include "jni.h"
 import "C"
 
 var (
-	permissionsSign           = jutil.ClassSign("io.v.v23.security.access.Permissions")
-	contextSign               = jutil.ClassSign("io.v.v23.context.VContext")
-	serverSign                = jutil.ClassSign("io.v.v23.rpc.Server")
+	permissionsSign = jutil.ClassSign("io.v.v23.security.access.Permissions")
+	contextSign     = jutil.ClassSign("io.v.v23.context.VContext")
+	serverSign      = jutil.ClassSign("io.v.v23.rpc.Server")
 
 	jVRuntimeImplClass jutil.Class
 )
@@ -51,9 +51,9 @@ func Init(env jutil.Env) error {
 
 //export Java_io_v_impl_google_services_mounttable_MountTableServer_nativeWithNewServer
 func Java_io_v_impl_google_services_mounttable_MountTableServer_nativeWithNewServer(jenv *C.JNIEnv, jMountTableServerClass C.jclass, jContext C.jobject, jMountTableServerParams C.jobject) C.jobject {
-	env := jutil.WrapEnv(jenv)
-	jCtx := jutil.WrapObject(jContext)
-	jParams := jutil.WrapObject(jMountTableServerParams)
+	env := jutil.WrapEnv(uintptr(unsafe.Pointer(jenv)))
+	jCtx := jutil.WrapObject(uintptr(unsafe.Pointer(jContext)))
+	jParams := jutil.WrapObject(uintptr(unsafe.Pointer(jMountTableServerParams)))
 
 	// Read and translate all of the server params.
 	mountName, err := jutil.CallStringMethod(env, jParams, "getName", nil)
