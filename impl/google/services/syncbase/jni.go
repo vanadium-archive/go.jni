@@ -110,6 +110,10 @@ func Java_io_v_impl_google_services_syncbase_SyncbaseServer_nativeWithNewServer(
 		jutil.JThrowV(env, err)
 		return nil
 	}
+	if err := service.AddNames(ctx, s); err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
 	jNewCtx, err := jcontext.JavaContext(env, newCtx)
 	if err != nil {
 		jutil.JThrowV(env, err)
