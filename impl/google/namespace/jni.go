@@ -15,6 +15,7 @@ import (
 	"v.io/v23/namespace"
 	"v.io/v23/naming"
 	"v.io/v23/security/access"
+	"v.io/v23/verror"
 	jchannel "v.io/x/jni/impl/google/channel"
 	jutil "v.io/x/jni/util"
 	jcontext "v.io/x/jni/v23/context"
@@ -82,6 +83,12 @@ func doGlob(env jutil.Env, n namespace.T, context *context.T, pattern string, op
 		defer freeFunc()
 
 		for globReply := range entryChan {
+			// Check for a canceled context error, we surface these as EOF.
+			if errorEntry, ok := globReply.(*naming.GlobReplyError); ok {
+				if verr, ok := errorEntry.Value.Error.(verror.E); ok && verr.ID == verror.ErrCanceled.ID {
+					break
+				}
+			}
 			jGlobReply, err := jutil.JVomCopy(env, globReply, jGlobReplyClass)
 			if err != nil {
 				log.Printf("Couldn't convert Go glob result %v to Java\n", globReply)
