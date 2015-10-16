@@ -51,6 +51,7 @@ jfieldID GetStaticFieldID(JNIEnv* env, jclass class, const char* name, const cha
 jobject GetObjectField(JNIEnv* env, jobject obj, jfieldID fieldID);
 jboolean GetBooleanField(JNIEnv* env, jobject obj, jfieldID fieldID);
 jint GetIntField(JNIEnv* env, jobject obj, jfieldID fieldID);
+jlong GetLongField(JNIEnv* env, jobject obj, jfieldID fieldID);
 jobject GetStaticObjectField(JNIEnv* env, jclass cls, jfieldID fieldID);
 
 // Constructs a new array holding objects of type jclass.

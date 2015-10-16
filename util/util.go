@@ -363,6 +363,16 @@ func JIntField(env Env, obj Object, field string) (int, error) {
 	return int(C.GetIntField(env.value(), obj.value(), fid)), nil
 }
 
+// JLongField returns the value of the provided Java object's long field, or
+// error if the field value couldn't be retrieved.
+func JLongField(env Env, obj Object, field string) (int64, error) {
+	fid, err := jFieldID(env, GetClass(env, obj), field, LongSign)
+	if err != nil {
+		return -1, err
+	}
+	return int64(C.GetLongField(env.value(), obj.value(), fid)), nil
+}
+
 // JStringField returns the value of the provided Java object's String field, or
 // error if the field value couldn't be retrieved.
 func JStringField(env Env, obj Object, field string) (string, error) {
