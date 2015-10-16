@@ -48,14 +48,14 @@ func JVomEncodeValue(env Env, vdlValue Object) ([]byte, error) {
 // JVomDecode VOM-decodes the provided data into a Java object of the
 // given class.
 func JVomDecode(env Env, data []byte, class Class) (Object, error) {
-	return JVomDecodeWithType(env, data, WrapObject(uintptr(unsafe.Pointer(class.value()))))
+	return JVomDecodeWithType(env, data, Object(uintptr(unsafe.Pointer(class.value()))))
 }
 
 // JVomDecodeWithType VOM-decodes the provided data into a Java object
 // of the given type.
 func JVomDecodeWithType(env Env, data []byte, typeObj Object) (Object, error) {
 	if typeObj.IsNull() {
-		typeObj = WrapObject(uintptr(unsafe.Pointer(jObjectClass.value())))
+		typeObj = Object(uintptr(unsafe.Pointer(jObjectClass.value())))
 	}
 	return CallStaticObjectMethod(env, jVomUtilClass, "decode", []Sign{ByteArraySign, TypeSign}, ObjectSign, data, typeObj)
 }
@@ -63,7 +63,7 @@ func JVomDecodeWithType(env Env, data []byte, typeObj Object) (Object, error) {
 // JVomCopy copies the provided Go value into a Java object of the given class,
 // by encoding/decoding it from VOM.
 func JVomCopy(env Env, val interface{}, class Class) (Object, error) {
-	return JVomCopyWithType(env, val, WrapObject(uintptr(unsafe.Pointer(class.value()))))
+	return JVomCopyWithType(env, val, Object(uintptr(unsafe.Pointer(class.value()))))
 }
 
 // JVomCopyWithType copies the provided Go value into a Java object of the
@@ -79,7 +79,7 @@ func JVomCopyWithType(env Env, val interface{}, typeObj Object) (Object, error) 
 // GoVomCopy copies the provided Java object into a provided Go value pointer by
 // encoding/decoding it from VOM.
 func GoVomCopy(env Env, obj Object, class Class, dstptr interface{}) error {
-	data, err := JVomEncode(env, obj, WrapObject(uintptr(unsafe.Pointer(class.value()))))
+	data, err := JVomEncode(env, obj, Object(uintptr(unsafe.Pointer(class.value()))))
 	if err != nil {
 		return err
 	}

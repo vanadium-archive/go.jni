@@ -41,20 +41,8 @@ const (
 	NullClass = Class(0)
 )
 
-// WrapEnv returns a new Env from a *C.JNIEnv value (possibly from
-// another package).
-func WrapEnv(env uintptr) Env {
-	return Env(env)
-}
-
 func (e Env) value() *C.JNIEnv {
 	return (*C.JNIEnv)(unsafe.Pointer(e))
-}
-
-// WrapObject returns a new Object from a C.jobject value (possibly from
-// another package).
-func WrapObject(obj uintptr) Object {
-	return Object(obj)
 }
 
 // IsNull returns true iff the Object holds a null C.jobject value.
@@ -64,12 +52,6 @@ func (o Object) IsNull() bool {
 
 func (o Object) value() C.jobject {
 	return C.jobject(unsafe.Pointer(o))
-}
-
-// WrapClass returns a new Class from a C.jclass value (possibly from
-// another package).
-func WrapClass(class uintptr) Class {
-	return Class(class)
 }
 
 // IsNull returns true iff the Object holds a null C.jobject value.

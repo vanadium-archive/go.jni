@@ -46,9 +46,9 @@ func Init(env jutil.Env) error {
 
 //export Java_io_v_impl_google_services_syncbase_SyncbaseServer_nativeWithNewServer
 func Java_io_v_impl_google_services_syncbase_SyncbaseServer_nativeWithNewServer(jenv *C.JNIEnv, jSyncbaseServerClass C.jclass, jContext C.jobject, jSyncbaseServerParams C.jobject) C.jobject {
-	env := jutil.WrapEnv(uintptr(unsafe.Pointer(jenv)))
-	jCtx := jutil.WrapObject(uintptr(unsafe.Pointer(jContext)))
-	jParams := jutil.WrapObject(uintptr(unsafe.Pointer(jSyncbaseServerParams)))
+	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
+	jCtx := jutil.Object(uintptr(unsafe.Pointer(jContext)))
+	jParams := jutil.Object(uintptr(unsafe.Pointer(jSyncbaseServerParams)))
 
 	// Read and translate all of the server params.
 	jPerms, err := jutil.CallObjectMethod(env, jParams, "getPermissions", nil, permissionsSign)

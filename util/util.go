@@ -187,7 +187,7 @@ func GoString(env Env, str Object) string {
 
 // GetClass returns the class of the given object.
 func GetClass(env Env, obj Object) Class {
-	return WrapClass(uintptr(unsafe.Pointer(C.GetObjectClass(env.value(), obj.value()))))
+	return Class(uintptr(unsafe.Pointer(C.GetObjectClass(env.value(), obj.value()))))
 }
 
 var envRefs = newSafeRefCounter()
@@ -214,7 +214,7 @@ func GetEnv() (env Env, free func()) {
 		// the thread so the next call to GetEnv on this thread will succeed.
 		C.AttachCurrentThreadAsDaemon(jVM, &jenv, nil)
 	}
-	env = WrapEnv(uintptr(unsafe.Pointer(jenv)))
+	env = Env(uintptr(unsafe.Pointer(jenv)))
 	//env := Env{jenv}
 	// GetEnv is called by Go code that wishes to call Java methods. In
 	// this case, JNI cannot automatically free unused local refererences.
@@ -255,7 +255,7 @@ func IsInstanceOf(env Env, obj Object, class Class) bool {
 func JString(env Env, str string) Object {
 	cString := C.CString(str)
 	defer C.free(unsafe.Pointer(cString))
-	return WrapObject(uintptr(unsafe.Pointer(C.NewStringUTF(env.value(), cString))))
+	return Object(uintptr(unsafe.Pointer(C.NewStringUTF(env.value(), cString))))
 }
 
 // JThrow throws a new Java exception of the provided type with the given message.
@@ -290,7 +290,7 @@ func JVException(env Env, err error) (Object, error) {
 // JExceptionMsg returns the exception message as a Go error, if an exception
 // occurred, or nil otherwise.
 func JExceptionMsg(env Env) error {
-	eObj := WrapObject(uintptr(unsafe.Pointer(C.ExceptionOccurred(env.value()))))
+	eObj := Object(uintptr(unsafe.Pointer(C.ExceptionOccurred(env.value()))))
 	if eObj.IsNull() { // no exception
 		return nil
 	}
@@ -310,7 +310,7 @@ func JExceptionMsg(env Env) error {
 			C.ExceptionClear(env.value())
 			return fmt.Errorf("error converting VException: exception during VomUtil.encode()")
 		}
-		data := GoByteArray(env, WrapObject(uintptr(unsafe.Pointer(dataObj))))
+		data := GoByteArray(env, Object(uintptr(unsafe.Pointer(dataObj))))
 		var verr error
 		if err := vom.Decode(data, &verr); err != nil {
 			return fmt.Errorf("error converting VException: " + err.Error())
@@ -330,7 +330,7 @@ func JExceptionMsg(env Env) error {
 		C.ExceptionClear(env.value())
 		return fmt.Errorf("error converting exception: exception during Throwable.getMessage()")
 	}
-	return errors.New(GoString(env, WrapObject(uintptr(unsafe.Pointer(strObj)))))
+	return errors.New(GoString(env, Object(uintptr(unsafe.Pointer(strObj)))))
 }
 
 // JObjectField returns the value of the provided Java object's Object field, or
@@ -340,7 +340,7 @@ func JObjectField(env Env, obj Object, field string, sign Sign) (Object, error) 
 	if err != nil {
 		return NullObject, err
 	}
-	return WrapObject(uintptr(unsafe.Pointer(C.GetObjectField(env.value(), obj.value(), fid)))), nil
+	return Object(uintptr(unsafe.Pointer(C.GetObjectField(env.value(), obj.value(), fid)))), nil
 }
 
 // JBoolField returns the value of the provided Java object's boolean field, or
@@ -418,7 +418,7 @@ func JStaticObjectField(env Env, class Class, field string, sign Sign) (Object, 
 	if err != nil {
 		return NullObject, err
 	}
-	return WrapObject(uintptr(unsafe.Pointer(C.GetStaticObjectField(env.value(), class.value(), fid)))), nil
+	return Object(uintptr(unsafe.Pointer(C.GetStaticObjectField(env.value(), class.value(), fid)))), nil
 }
 
 // JStaticStringField returns the value of the static String field of the
@@ -441,7 +441,7 @@ func JObjectArray(env Env, arr []Object, elemClass Class) (Object, error) {
 			return NullObject, err
 		}
 	}
-	return WrapObject(uintptr(unsafe.Pointer(arrObj))), nil
+	return Object(uintptr(unsafe.Pointer(arrObj))), nil
 }
 
 // GoObjectArray converts a Java object array to a Go slice of Java objects.
@@ -452,7 +452,7 @@ func GoObjectArray(env Env, arr Object) ([]Object, error) {
 	length := int(C.GetArrayLength(env.value(), C.jarray(arr.value())))
 	ret := make([]Object, length)
 	for i := 0; i < length; i++ {
-		ret[i] = WrapObject(uintptr(unsafe.Pointer(C.GetObjectArrayElement(env.value(), C.jobjectArray(arr.value()), C.jsize(i)))))
+		ret[i] = Object(uintptr(unsafe.Pointer(C.GetObjectArrayElement(env.value(), C.jobjectArray(arr.value()), C.jsize(i)))))
 		if err := JExceptionMsg(env); err != nil {
 			// Out-of-bounds index.
 			return nil, err
@@ -540,7 +540,7 @@ func JByteArray(env Env, bytes []byte) (Object, error) {
 			return NullObject, err
 		}
 	}
-	return WrapObject(uintptr(unsafe.Pointer(arr))), nil
+	return Object(uintptr(unsafe.Pointer(arr))), nil
 }
 
 // GoByteArray converts the provided Java byte array into a Go byte slice.
@@ -730,8 +730,8 @@ func JFindClass(env Env, name string) (Class, error) {
 	if err := JExceptionMsg(env); err != nil || class == nil {
 		return NullClass, fmt.Errorf("couldn't find class %s: %v", name, err)
 	}
-	obj := NewGlobalRef(env, WrapObject(uintptr(unsafe.Pointer(class))))
-	return WrapClass(uintptr(unsafe.Pointer(C.jclass(obj.value())))), nil
+	obj := NewGlobalRef(env, Object(uintptr(unsafe.Pointer(class))))
+	return Class(uintptr(unsafe.Pointer(C.jclass(obj.value())))), nil
 }
 
 // GoOptions converts a Java io.v.v23.Options instance into a slice of Go
@@ -821,9 +821,9 @@ func PushLocalFrame(env Env, capacity int) int {
 // previous frame, you may pass nil for the jFramePtr parameter.
 func PopLocalFrame(env Env, result Object) Object {
 	if result.IsNull() {
-		return WrapObject(uintptr(unsafe.Pointer(C.PopLocalFrame(env.value(), nil))))
+		return Object(uintptr(unsafe.Pointer(C.PopLocalFrame(env.value(), nil))))
 	}
-	return WrapObject(uintptr(unsafe.Pointer(C.PopLocalFrame(env.value(), result.value()))))
+	return Object(uintptr(unsafe.Pointer(C.PopLocalFrame(env.value(), result.value()))))
 }
 
 // jFieldID returns the Java field ID for the given object (i.e., non-static)

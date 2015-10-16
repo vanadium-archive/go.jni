@@ -44,9 +44,9 @@ func Init(env jutil.Env) error {
 
 //export Java_io_v_impl_google_services_groups_GroupServer_nativeWithNewServer
 func Java_io_v_impl_google_services_groups_GroupServer_nativeWithNewServer(jenv *C.JNIEnv, jGroupServerClass C.jclass, jContext C.jobject, jGroupServerParams C.jobject) C.jobject {
-	env := jutil.WrapEnv(uintptr(unsafe.Pointer(jenv)))
-	jCtx := jutil.WrapObject(uintptr(unsafe.Pointer(jContext)))
-	jParams := jutil.WrapObject(uintptr(unsafe.Pointer(jGroupServerParams)))
+	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
+	jCtx := jutil.Object(uintptr(unsafe.Pointer(jContext)))
+	jParams := jutil.Object(uintptr(unsafe.Pointer(jGroupServerParams)))
 
 	// Read and translate all of the server params.
 	name, err := jutil.CallStringMethod(env, jParams, "getName", nil)
