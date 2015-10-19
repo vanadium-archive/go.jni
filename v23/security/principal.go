@@ -168,11 +168,3 @@ func (p *principal) Roots() security.BlessingRoots {
 	}
 	return roots
 }
-
-func (p *principal) Encrypter() security.BlessingsBasedEncrypter {
-	return nil
-}
-
-func (p *principal) Decrypter() security.BlessingsBasedDecrypter {
-	return nil
-}
