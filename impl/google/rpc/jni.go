@@ -18,7 +18,6 @@ import (
 	"v.io/v23/vdl"
 	"v.io/v23/vom"
 
-	jchannel "v.io/x/jni/impl/google/channel"
 	jbt "v.io/x/jni/impl/google/rpc/protocols/bt"
 	jutil "v.io/x/jni/util"
 	jcontext "v.io/x/jni/v23/context"
@@ -66,8 +65,6 @@ var (
 	jMountStatusClass jutil.Class
 	// Global reference for io.v.v23.rpc.NetworkAddress class.
 	jNetworkAddressClass jutil.Class
-	// Global reference for io.v.v23.rpc.NetworkChange class.
-	jNetworkChangeClass jutil.Class
 	// Global reference for io.v.v23.rpc.ProxyStatus class.
 	jProxyStatusClass jutil.Class
 	// Global reference for io.v.v23.rpc.ReflectInvoker class.
@@ -154,10 +151,6 @@ func Init(env jutil.Env) error {
 	if err != nil {
 		return err
 	}
-	jNetworkChangeClass, err = jutil.JFindClass(env, "io/v/v23/rpc/NetworkChange")
-	if err != nil {
-		return err
-	}
 	jProxyStatusClass, err = jutil.JFindClass(env, "io/v/v23/rpc/ProxyStatus")
 	if err != nil {
 		return err
@@ -232,46 +225,6 @@ func Java_io_v_impl_google_rpc_ServerImpl_nativeGetStatus(jenv *C.JNIEnv, jServe
 		return nil
 	}
 	return C.jobject(unsafe.Pointer(jStatus))
-}
-
-//export Java_io_v_impl_google_rpc_ServerImpl_nativeWatchNetwork
-func Java_io_v_impl_google_rpc_ServerImpl_nativeWatchNetwork(jenv *C.JNIEnv, jServer C.jobject, goPtr C.jlong) C.jobject {
-	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	networkChan := make(chan rpc.NetworkChange, 100)
-	(*(*rpc.Server)(jutil.NativePtr(goPtr))).WatchNetwork(networkChan)
-	retChan := make(chan jutil.Object, 100)
-	go func() {
-		for change := range networkChan {
-			env, freeFunc := jutil.GetEnv()
-			jChange, err := JavaNetworkChange(env, change)
-			if err != nil {
-				freeFunc()
-				continue
-			}
-			jChange = jutil.NewGlobalRef(env, jChange)
-			freeFunc()
-			retChan <- jChange
-		}
-		close(retChan)
-	}()
-	jIterable, err := jchannel.JavaIterable(env, &retChan, &networkChan)
-	if err != nil {
-		jutil.JThrowV(env, err)
-		return nil
-	}
-	return C.jobject(unsafe.Pointer(jIterable))
-}
-
-//export Java_io_v_impl_google_rpc_ServerImpl_nativeUnwatchNetwork
-func Java_io_v_impl_google_rpc_ServerImpl_nativeUnwatchNetwork(jenv *C.JNIEnv, jServer C.jobject, goPtr C.jlong, jChannelIterable C.jobject) {
-	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	goNetworkChanPtr, err := jutil.CallLongMethod(env, jutil.Object(uintptr(unsafe.Pointer(jChannelIterable))), "getSourceNativePtr", nil)
-	if err != nil {
-		jutil.JThrowV(env, err)
-		return
-	}
-	networkChan := *(*chan rpc.NetworkChange)(unsafe.Pointer(uintptr(goNetworkChanPtr)))
-	(*(*rpc.Server)(jutil.NativePtr(goPtr))).UnwatchNetwork(networkChan)
 }
 
 //export Java_io_v_impl_google_rpc_ServerImpl_nativeStop

@@ -265,36 +265,6 @@ func GoListenAddrs(env jutil.Env, jAddrs jutil.Object) (rpc.ListenAddrs, error) 
 	return addrs, nil
 }
 
-// JavaNetworkChange converts the Go NetworkChange value into a Java NetworkChange object.
-func JavaNetworkChange(env jutil.Env, change rpc.NetworkChange) (jutil.Object, error) {
-	jTime, err := jutil.JTime(env, change.Time)
-	if err != nil {
-		return jutil.NullObject, err
-	}
-	jState, err := JavaServerState(env, change.State)
-	if err != nil {
-		return jutil.NullObject, err
-	}
-	jAddedAddrs, err := JavaNetworkAddressArray(env, change.AddedAddrs)
-	if err != nil {
-		return jutil.NullObject, err
-	}
-	jRemovedAddrs, err := JavaNetworkAddressArray(env, change.RemovedAddrs)
-	if err != nil {
-		return jutil.NullObject, err
-	}
-	changedEndpointStrs := make([]string, len(change.Changed))
-	for i, ep := range change.Changed {
-		changedEndpointStrs[i] = fmt.Sprintf("%v", ep)
-	}
-	addrSign := jutil.ClassSign("io.v.v23.rpc.NetworkAddress")
-	jNetworkChange, err := jutil.NewObject(env, jNetworkChangeClass, []jutil.Sign{jutil.DateTimeSign, serverStateSign, jutil.ArraySign(addrSign), jutil.ArraySign(addrSign), jutil.ArraySign(jutil.StringSign), jutil.VExceptionSign}, jTime, jState, jAddedAddrs, jRemovedAddrs, changedEndpointStrs, change.Error)
-	if err != nil {
-		return jutil.NullObject, err
-	}
-	return jNetworkChange, nil
-}
-
 // JavaServerCall converts a Go rpc.ServerCall into a Java ServerCall object.
 func JavaServerCall(env jutil.Env, serverCall rpc.ServerCall) (jutil.Object, error) {
 	jServerCall, err := jutil.NewObject(env, jServerCallImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&serverCall)))
