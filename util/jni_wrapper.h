@@ -106,6 +106,9 @@ jint ThrowNew(JNIEnv* env, jclass class, const char* msg);
 // Creates a new local reference to the object referred to by the obj argument.
 jobject NewLocalRef(JNIEnv* env, jobject obj);
 
+// Deletes the local reference pointed to by localRef.
+void DeleteLocalRef(JNIEnv* env, jobject localRef);
+
 // Creates a new global reference to the object referred to by the obj argument.
 jobject NewGlobalRef(JNIEnv* env, jobject obj);
 

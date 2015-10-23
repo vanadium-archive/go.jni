@@ -77,7 +77,7 @@ func doGlob(env jutil.Env, n namespace.T, context *context.T, pattern string, op
 		return jutil.NullObject, err
 	}
 
-	retChan := make(chan jutil.Object, 100)
+	retChan := make(chan jutil.Object, 5)
 	go func() {
 		env, freeFunc := jutil.GetEnv()
 		defer freeFunc()
@@ -97,6 +97,9 @@ func doGlob(env jutil.Env, n namespace.T, context *context.T, pattern string, op
 			// The other side of the channel is responsible for deleting this
 			// global reference.
 			retChan <- jutil.NewGlobalRef(env, jGlobReply)
+			// Free up the local reference as it'll be auto-freed only when
+			// freeFunc() gets executed, which can burn us for big globs.
+			jutil.DeleteLocalRef(env, jGlobReply)
 		}
 		close(retChan)
 	}()

@@ -154,12 +154,16 @@ jobject NewLocalRef(JNIEnv* env, jobject obj) {
   return (*env)->NewLocalRef(env, obj);
 }
 
+void DeleteLocalRef(JNIEnv* env, jobject localRef) {
+  (*env)->DeleteLocalRef(env, localRef);
+}
+
 jobject NewGlobalRef(JNIEnv* env, jobject obj) {
   return (*env)->NewGlobalRef(env, obj);
 }
 
 void DeleteGlobalRef(JNIEnv* env, jobject globalRef) {
-  return (*env)->DeleteGlobalRef(env, globalRef);
+  (*env)->DeleteGlobalRef(env, globalRef);
 }
 
 jint GetJavaVM(JNIEnv* env, JavaVM** vm) {

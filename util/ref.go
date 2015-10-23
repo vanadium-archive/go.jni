@@ -28,11 +28,16 @@ func DeleteGlobalRef(env Env, obj Object) {
 	C.DeleteGlobalRef(env.value(), obj.value())
 }
 
-// Creates a new local reference that refers to the same object as obj. The
-// given obj may be a global or local reference. Returns null if ref refers
-// to null.
+// NewLocalRef creates a new local reference that refers to the same object
+// as obj. The given obj may be a global or local reference. Returns null if
+// ref refers to null.
 func NewLocalRef(env Env, obj Object) Object {
 	return Object(uintptr(unsafe.Pointer(C.NewLocalRef(env.value(), obj.value()))))
+}
+
+// DeleteLocalRef deletes the local reference pointed to by obj.
+func DeleteLocalRef(env Env, obj Object) {
+	C.DeleteLocalRef(env.value(), obj.value())
 }
 
 // GoRef creates a new reference to the value addressed by the provided pointer.
