@@ -95,7 +95,7 @@ func Java_io_v_impl_google_services_syncbase_SyncbaseServer_nativeWithNewServer(
 	}
 
 	// Start the server.
-	service, err := server.NewService(ctx, nil, server.ServiceOptions{
+	service, err := server.NewService(ctx, server.ServiceOptions{
 		Perms:   perms,
 		RootDir: rootDir,
 		Engine:  engine,
