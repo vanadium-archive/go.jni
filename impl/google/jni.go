@@ -13,6 +13,7 @@ import (
 	jrt "v.io/x/jni/impl/google/rt"
 	jservices "v.io/x/jni/impl/google/services"
 	jutil "v.io/x/jni/util"
+	jdiscovery "v.io/x/jni/impl/google/discovery"
 )
 
 // #include "jni.h"
@@ -35,6 +36,10 @@ func Init(env jutil.Env) error {
 		return err
 	}
 	if err := jservices.Init(env); err != nil {
+		return err
+	}
+
+	if err := jdiscovery.Init(env); err != nil {
 		return err
 	}
 	return nil
