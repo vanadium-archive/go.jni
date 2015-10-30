@@ -72,44 +72,30 @@ func globArgs(env jutil.Env, jContext C.jobject, jPattern C.jstring, jOptions C.
 }
 
 func doGlob(env jutil.Env, n namespace.T, context *context.T, pattern string, opts []naming.NamespaceOpt) (jutil.Object, error) {
-	entryChan, err := n.Glob(context, pattern, opts...)
+	c, err := n.Glob(context, pattern, opts...)
 	if err != nil {
 		return jutil.NullObject, err
 	}
-
-	valChan := make(chan jutil.Object, 5)
-	errChan := make(chan error, 1)
+	valChan := make(chan interface{}, 100)
 	go func() {
-		env, freeFunc := jutil.GetEnv()
-		defer freeFunc()
-
-		for globReply := range entryChan {
-			// Check for a canceled context error, we surface these as EOF.
-			if errorEntry, ok := globReply.(*naming.GlobReplyError); ok {
-				if verr, ok := errorEntry.Value.Error.(verror.E); ok && verr.ID == verror.ErrCanceled.ID {
-					break
-				}
-			}
-			jGlobReply, err := jutil.JVomCopy(env, globReply, jGlobReplyClass)
-			if err != nil {
-				errChan <- fmt.Errorf("Couldn't convert Go glob result %v to Java: %v\n", globReply, err)
-				break
-			}
-			// The other side of the channel is responsible for deleting this
-			// global reference.
-			valChan <- jutil.NewGlobalRef(env, jGlobReply)
-			// Free up the local reference as it'll be auto-freed only when
-			// freeFunc() gets executed, which can burn us for big globs.
-			jutil.DeleteLocalRef(env, jGlobReply)
+		for val := range c {
+			valChan <- val
 		}
 		close(valChan)
-		close(errChan)
 	}()
-	jIterable, err := jchannel.JavaIterable(env, &valChan, &errChan, &entryChan)
-	if err != nil {
-		return jutil.NullObject, err
-	}
-	return jIterable, nil
+	return jchannel.JavaIterable(env, valChan, func(env jutil.Env, val interface{}) (jutil.Object, error) {
+		globReply, ok := val.(naming.GlobReply)
+		if !ok {
+			return jutil.NullObject, fmt.Errorf("Expected value of GlobReply type, got type %T: %v", val, val)
+		}
+		// Check for a canceled context error, we surface these as EOF.
+		if errorEntry, ok := globReply.(*naming.GlobReplyError); ok {
+			if verr, ok := errorEntry.Value.Error.(verror.E); ok && verr.ID == verror.ErrCanceled.ID {
+				return jutil.NullObject, verr
+			}
+		}
+		return jutil.JVomCopy(env, val, jGlobReplyClass)
+	})
 }
 
 //export Java_io_v_impl_google_namespace_NamespaceImpl_nativeGlob
