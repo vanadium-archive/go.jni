@@ -7,7 +7,7 @@
 package namespace
 
 import (
-	"log"
+	"fmt"
 	"time"
 	"unsafe"
 
@@ -77,7 +77,8 @@ func doGlob(env jutil.Env, n namespace.T, context *context.T, pattern string, op
 		return jutil.NullObject, err
 	}
 
-	retChan := make(chan jutil.Object, 5)
+	valChan := make(chan jutil.Object, 5)
+	errChan := make(chan error, 1)
 	go func() {
 		env, freeFunc := jutil.GetEnv()
 		defer freeFunc()
@@ -91,19 +92,20 @@ func doGlob(env jutil.Env, n namespace.T, context *context.T, pattern string, op
 			}
 			jGlobReply, err := jutil.JVomCopy(env, globReply, jGlobReplyClass)
 			if err != nil {
-				log.Printf("Couldn't convert Go glob result %v to Java\n", globReply)
-				continue
+				errChan <- fmt.Errorf("Couldn't convert Go glob result %v to Java: %v\n", globReply, err)
+				break
 			}
 			// The other side of the channel is responsible for deleting this
 			// global reference.
-			retChan <- jutil.NewGlobalRef(env, jGlobReply)
+			valChan <- jutil.NewGlobalRef(env, jGlobReply)
 			// Free up the local reference as it'll be auto-freed only when
 			// freeFunc() gets executed, which can burn us for big globs.
 			jutil.DeleteLocalRef(env, jGlobReply)
 		}
-		close(retChan)
+		close(valChan)
+		close(errChan)
 	}()
-	jIterable, err := jchannel.JavaIterable(env, &retChan, &entryChan)
+	jIterable, err := jchannel.JavaIterable(env, &valChan, &errChan, &entryChan)
 	if err != nil {
 		return jutil.NullObject, err
 	}

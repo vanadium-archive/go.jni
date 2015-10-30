@@ -46,22 +46,29 @@ func Init(env jutil.Env) error {
 }
 
 //export Java_io_v_impl_google_channel_ChannelIterable_nativeReadValue
-func Java_io_v_impl_google_channel_ChannelIterable_nativeReadValue(jenv *C.JNIEnv, jChannelIterable C.jobject, goChanPtr C.jlong) C.jobject {
+func Java_io_v_impl_google_channel_ChannelIterable_nativeReadValue(jenv *C.JNIEnv, jChannelIterable C.jobject, goValChanPtr C.jlong, goErrChanPtr C.jlong) C.jobject {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	ch := *(*chan jutil.Object)(jutil.NativePtr(goChanPtr))
-	jObj, ok := <-ch
-	if !ok {
-		jutil.JThrow(env, jEOFExceptionClass, "Channel closed.")
-		return nil
+	valCh := *(*chan jutil.Object)(jutil.NativePtr(goValChanPtr))
+	errCh := *(*chan error)(jutil.NativePtr(goErrChanPtr))
+	if jObj, ok := <-valCh; ok {
+		jObjLocal := jutil.NewLocalRef(env, jObj)
+		jutil.DeleteGlobalRef(env, jObj)
+		return C.jobject(unsafe.Pointer(jObjLocal))
 	}
-	jObjLocal := jutil.NewLocalRef(env, jObj)
-	jutil.DeleteGlobalRef(env, jObj)
-	return C.jobject(unsafe.Pointer(jObjLocal))
+	// No more results, figure out if gracefully or due to an error.
+	err, ok := <-errCh
+	if !ok {  // gracefully
+		jutil.JThrow(env, jEOFExceptionClass, "Channel closed.")
+	} else {  // error
+		jutil.JThrowV(env, err)
+	}
+	return nil
 }
 
 //export Java_io_v_impl_google_channel_ChannelIterable_nativeFinalize
-func Java_io_v_impl_google_channel_ChannelIterable_nativeFinalize(jenv *C.JNIEnv, jChannelIterable C.jobject, goChanPtr C.jlong, goSourceChanPtr C.jlong) {
-	jutil.GoUnref(jutil.NativePtr(goChanPtr))
+func Java_io_v_impl_google_channel_ChannelIterable_nativeFinalize(jenv *C.JNIEnv, jChannelIterable C.jobject, goValChanPtr C.jlong, goErrChanPtr C.jlong, goSourceChanPtr C.jlong) {
+	jutil.GoUnref(jutil.NativePtr(goValChanPtr))
+	jutil.GoUnref(jutil.NativePtr(goErrChanPtr))
 	jutil.GoUnref(jutil.NativePtr(goSourceChanPtr))
 }
 

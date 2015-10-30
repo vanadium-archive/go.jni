@@ -14,14 +14,15 @@ import (
 import "C"
 
 // JavaIterable converts the provided Go channel of jutil.Object values into a Java
-// Iterable object.
-func JavaIterable(env jutil.Env, chPtr interface{}, sourceChanPtr interface{}) (jutil.Object, error) {
-	jIterable, err := jutil.NewObject(env, jChannelIterableClass, []jutil.Sign{jutil.LongSign, jutil.LongSign}, int64(jutil.PtrValue(chPtr)), int64(jutil.PtrValue(sourceChanPtr)))
+// VIterable object.
+func JavaIterable(env jutil.Env, valChPtr, errChPtr, sourceChPtr interface{}) (jutil.Object, error) {
+	jIterable, err := jutil.NewObject(env, jChannelIterableClass, []jutil.Sign{jutil.LongSign, jutil.LongSign, jutil.LongSign}, int64(jutil.PtrValue(valChPtr)), int64(jutil.PtrValue(errChPtr)), int64(jutil.PtrValue(sourceChPtr)))
 	if err != nil {
 		return jutil.NullObject, err
 	}
-	jutil.GoRef(chPtr)         // Un-refed when ChannelIterable is finalized.
-	jutil.GoRef(sourceChanPtr) // Un-refed when ChannelIterable is finalized.
+	jutil.GoRef(valChPtr)     // Un-refed when ChannelIterable is finalized.
+	jutil.GoRef(errChPtr)     // Un-refed when ChannelIterable is finalized.
+	jutil.GoRef(sourceChPtr)  // Un-refed when ChannelIterable is finalized.
 	return jIterable, nil
 }
 
