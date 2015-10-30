@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"unsafe"
 
+	"v.io/v23/verror"
 	jutil "v.io/x/jni/util"
 )
 
@@ -46,30 +47,31 @@ func Init(env jutil.Env) error {
 }
 
 //export Java_io_v_impl_google_channel_ChannelIterable_nativeReadValue
-func Java_io_v_impl_google_channel_ChannelIterable_nativeReadValue(jenv *C.JNIEnv, jChannelIterable C.jobject, goValChanPtr C.jlong, goErrChanPtr C.jlong) C.jobject {
+func Java_io_v_impl_google_channel_ChannelIterable_nativeReadValue(jenv *C.JNIEnv, jChannelIterable C.jobject, goChanPtr C.jlong, goConvertPtr C.jlong) C.jobject {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	valCh := *(*chan jutil.Object)(jutil.NativePtr(goValChanPtr))
-	errCh := *(*chan error)(jutil.NativePtr(goErrChanPtr))
-	if jObj, ok := <-valCh; ok {
-		jObjLocal := jutil.NewLocalRef(env, jObj)
-		jutil.DeleteGlobalRef(env, jObj)
-		return C.jobject(unsafe.Pointer(jObjLocal))
+	c := *(*chan interface{})(jutil.NativePtr(goChanPtr))
+	convert := *(*func(jutil.Env, interface{})(jutil.Object, error))(jutil.NativePtr(goConvertPtr))
+	val, ok := <-c
+	if !ok {  // channel closed
+		jutil.JThrow(env, jEOFExceptionClass, "Reached end of input channel.")
+		return nil
 	}
-	// No more results, figure out if gracefully or due to an error.
-	err, ok := <-errCh
-	if !ok {  // gracefully
-		jutil.JThrow(env, jEOFExceptionClass, "Channel closed.")
-	} else {  // error
-		jutil.JThrowV(env, err)
+	jVal, err := convert(env, val)
+	if err == nil {
+		return C.jobject(unsafe.Pointer(jVal))
 	}
+	if verr, ok := err.(verror.E); ok && verr.ID == verror.ErrCanceled.ID {  // EOF
+		jutil.JThrow(env, jEOFExceptionClass, "User canceled the operation.")
+		return nil
+	}
+	jutil.JThrowV(env, err)
 	return nil
 }
 
 //export Java_io_v_impl_google_channel_ChannelIterable_nativeFinalize
-func Java_io_v_impl_google_channel_ChannelIterable_nativeFinalize(jenv *C.JNIEnv, jChannelIterable C.jobject, goValChanPtr C.jlong, goErrChanPtr C.jlong, goSourceChanPtr C.jlong) {
-	jutil.GoUnref(jutil.NativePtr(goValChanPtr))
-	jutil.GoUnref(jutil.NativePtr(goErrChanPtr))
-	jutil.GoUnref(jutil.NativePtr(goSourceChanPtr))
+func Java_io_v_impl_google_channel_ChannelIterable_nativeFinalize(jenv *C.JNIEnv, jChannelIterable C.jobject, goChanPtr C.jlong, goConvertPtr C.jlong) {
+	jutil.GoUnref(jutil.NativePtr(goChanPtr))
+	jutil.GoUnref(jutil.NativePtr(goConvertPtr))
 }
 
 //export Java_io_v_impl_google_channel_OutputChannelImpl_nativeWriteValue

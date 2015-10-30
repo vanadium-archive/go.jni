@@ -13,16 +13,15 @@ import (
 // #include "jni.h"
 import "C"
 
-// JavaIterable converts the provided Go channel of jutil.Object values into a Java
-// VIterable object.
-func JavaIterable(env jutil.Env, valChPtr, errChPtr, sourceChPtr interface{}) (jutil.Object, error) {
-	jIterable, err := jutil.NewObject(env, jChannelIterableClass, []jutil.Sign{jutil.LongSign, jutil.LongSign, jutil.LongSign}, int64(jutil.PtrValue(valChPtr)), int64(jutil.PtrValue(errChPtr)), int64(jutil.PtrValue(sourceChPtr)))
+// JavaIterable converts the provided Go channel into a Java VIterable object, using the
+// given convert function.
+func JavaIterable(env jutil.Env, ch chan interface{}, convert func(jutil.Env, interface{}) (jutil.Object, error)) (jutil.Object, error) {
+	jIterable, err := jutil.NewObject(env, jChannelIterableClass, []jutil.Sign{jutil.LongSign, jutil.LongSign}, int64(jutil.PtrValue(&ch)), int64(jutil.PtrValue(&convert)))
 	if err != nil {
 		return jutil.NullObject, err
 	}
-	jutil.GoRef(valChPtr)     // Un-refed when ChannelIterable is finalized.
-	jutil.GoRef(errChPtr)     // Un-refed when ChannelIterable is finalized.
-	jutil.GoRef(sourceChPtr)  // Un-refed when ChannelIterable is finalized.
+	jutil.GoRef(&ch)      // Un-refed when ChannelIterable is finalized.
+	jutil.GoRef(&convert) // Un-refed when ChannelIterable is finalized.
 	return jIterable, nil
 }
 
