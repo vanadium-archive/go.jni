@@ -31,6 +31,8 @@ import "C"
 type skipOptionType struct{}
 
 var (
+	// Global reference for io.v.v23.Options class.
+	jOptionsClass Class
 	// Global reference for io.v.v23.vom.VomUtil class.
 	jVomUtilClass Class
 	// Global reference for io.v.v23.verror.VException class.
@@ -57,6 +59,10 @@ var (
 	jSystemClass Class
 	// Global reference for java.lang.Object class.
 	jObjectClass Class
+	// Global reference for java.lang.Boolean class.
+	jBooleanClass Class
+	// Global reference for java.lang.Integer class.
+	jIntegerClass Class
 	// Global reference for java.lang.String class.
 	jStringClass Class
 	// Global reference for java.util.HashMap class.
@@ -83,6 +89,10 @@ func (skipOptionType) Error() string {
 // from the main Java thread (e.g., On_Load()).
 func Init(env Env) error {
 	var err error
+	jOptionsClass, err = JFindClass(env, "io/v/v23/Options")
+	if err != nil {
+		return err
+	}
 	jVomUtilClass, err = JFindClass(env, "io/v/v23/vom/VomUtil")
 	if err != nil {
 		return err
@@ -132,6 +142,14 @@ func Init(env Env) error {
 		return err
 	}
 	jObjectClass, err = JFindClass(env, "java/lang/Object")
+	if err != nil {
+		return err
+	}
+	jBooleanClass, err = JFindClass(env, "java/lang/Boolean")
+	if err != nil {
+		return err
+	}
+	jIntegerClass, err = JFindClass(env, "java/lang/Integer")
 	if err != nil {
 		return err
 	}
