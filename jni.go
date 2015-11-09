@@ -53,18 +53,13 @@ func Java_io_v_v23_V_nativeInitLogging(jenv *C.JNIEnv, jVClass C.jclass, jContex
 	jCtx := jutil.Object(uintptr(unsafe.Pointer(jContext)))
 	jOpts := jutil.Object(uintptr(unsafe.Pointer(jOptions)))
 
-	level, err := jutil.GetIntOption(env, jOpts, "io.v.v23.LOG_LEVEL")
-	if err != nil {
-		jutil.JThrowV(env, err)
-		return nil
-	}
-	logToStderr, err := jutil.GetBooleanOption(env, jOpts, "io.v.v23.LOG_TO_STDERR")
+	dir, toStderr, level, vmodule, err := loggingOpts(env, jOpts)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
 	}
 	logger := vlog.NewLogger("jlog")
-	logger.Configure(vlog.OverridePriorConfiguration(true), vlog.Level(level), vlog.LogToStderr(logToStderr))
+	logger.Configure(dir, toStderr, level, vmodule)
 	// Configure the vlog package to use the new logger.
 	vlog.Log = logger
 	// Attach the new logger to the context.
@@ -80,6 +75,34 @@ func Java_io_v_v23_V_nativeInitLogging(jenv *C.JNIEnv, jVClass C.jclass, jContex
 		return nil
 	}
 	return C.jobject(unsafe.Pointer(jNewCtx))
+}
+
+func loggingOpts(env jutil.Env, jOpts jutil.Object) (dir vlog.LogDir, toStderr vlog.LogToStderr, level vlog.Level, vmodule vlog.ModuleSpec, err error) {
+	var d string
+	d, err = jutil.GetStringOption(env, jOpts, "io.v.v23.LOG_DIR")
+	if err != nil {
+		return
+	}
+	dir = vlog.LogDir(d)
+	var s bool
+	s, err = jutil.GetBooleanOption(env, jOpts, "io.v.v23.LOG_TO_STDERR")
+	if err != nil {
+		return
+	}
+	toStderr = vlog.LogToStderr(s)
+	var l int
+	l, err = jutil.GetIntOption(env, jOpts, "io.v.v23.LOG_VLEVEL")
+	if err != nil {
+		return
+	}
+	level = vlog.Level(l)
+	var m string
+	m, err = jutil.GetStringOption(env, jOpts, "io.v.v23.LOG_VMODULE")
+	if err != nil {
+		return
+	}
+	err = vmodule.Set(m)
+	return
 }
 
 func main() {

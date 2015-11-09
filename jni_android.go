@@ -25,15 +25,17 @@ func Java_io_v_android_v23_V_nativeInitLogging(jenv *C.JNIEnv, jVClass C.jclass,
 	jCtx := jutil.Object(uintptr(unsafe.Pointer(jContext)))
 	jOpts := jutil.Object(uintptr(unsafe.Pointer(jOptions)))
 
-	level, err := jutil.GetIntOption(env, jOpts, "io.v.v23.LOG_LEVEL")
+	_, _, level, vmodule, err := loggingOpts(env, jOpts)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	// Send all vlog logs to stderr so that we don't crash on android trying to create a log file.
-	vlog.Log.Configure(vlog.OverridePriorConfiguration(true), vlog.LogToStderr(true), vlog.Level(level))
+	// Setup vlog logger.  We force the logToStderr option so that we don't crash on android trying
+	// to create a log file.
+	vlog.Log.Configure(vlog.OverridePriorConfiguration(true), vlog.LogToStderr(true), level, vmodule)
+
 	// Setup the android logger.
-	logger := NewLogger("alog", level)
+	logger := NewLogger("alog", int(level))
 	// Attach the new logger to the context.
 	ctx, err := jcontext.GoContext(env, jCtx)
 	if err != nil {
