@@ -11,19 +11,29 @@ import (
 
 	"v.io/v23/context"
 	"v.io/x/lib/vlog"
+	_ "v.io/x/ref/runtime/factories/android"
+	"v.io/x/ref/lib/discovery/factory"
 
 	jutil "v.io/x/jni/util"
 	jcontext "v.io/x/jni/v23/context"
+	jdiscovery "v.io/x/jni/libs/discovery"
 )
 
 // #include "jni.h"
 import "C"
 
-//export Java_io_v_android_v23_V_nativeInitLogging
-func Java_io_v_android_v23_V_nativeInitLogging(jenv *C.JNIEnv, jVClass C.jclass, jContext C.jobject, jOptions C.jobject) C.jobject {
+//export Java_io_v_android_v23_V_nativeInit
+func Java_io_v_android_v23_V_nativeInit(jenv *C.JNIEnv, jVClass C.jclass, jContext C.jobject, jAndroidContext C.jobject, jOptions C.jobject) C.jobject {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	jCtx := jutil.Object(uintptr(unsafe.Pointer(jContext)))
 	jOpts := jutil.Object(uintptr(unsafe.Pointer(jOptions)))
+
+	if err := jdiscovery.Init(env); err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+
+	factory.SetBleFactory(jdiscovery.NewBleCreator(env, jutil.Object(uintptr(unsafe.Pointer(jAndroidContext)))))
 
 	_, _, level, vmodule, err := loggingOpts(env, jOpts)
 	if err != nil {
