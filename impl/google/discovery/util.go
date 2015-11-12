@@ -18,8 +18,9 @@ import "C"
 // JavaDiscovery converts a Go discovery instance into a Java discovery instance.
 func JavaDiscovery(env jutil.Env, d discovery.T) (jutil.Object, error) {
 	trigger := idiscovery.NewTrigger()
-	// This reference will get unrefed when the jDiscovery object below is finalized.
+	// These reference will get unrefed when the jDiscovery object below is finalized.
 	jutil.GoRef(trigger)
+	jutil.GoRef(&d)
 
 	jDiscovery, err := jutil.NewObject(env, jVDiscoveryImplClass, []jutil.Sign{jutil.LongSign, jutil.LongSign}, int64(jutil.PtrValue(&d)), int64(jutil.PtrValue(trigger)))
 	if err != nil {
