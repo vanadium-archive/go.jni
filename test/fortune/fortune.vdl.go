@@ -37,23 +37,23 @@ func init() {
 }
 
 var (
-	ErrErrNoFortunes = verror.Register("v.io/x/jni/test/fortune.ErrNoFortunes", verror.NoRetry, "{1:}{2:} no fortunes added")
-	ErrErrComplex    = verror.Register("v.io/x/jni/test/fortune.ErrComplex", verror.NoRetry, "{1:}{2:} this is a complex error with params {3} {4} {5}")
+	ErrNoFortunes = verror.Register("v.io/x/jni/test/fortune.NoFortunes", verror.NoRetry, "{1:}{2:} no fortunes added")
+	ErrComplex    = verror.Register("v.io/x/jni/test/fortune.Complex", verror.NoRetry, "{1:}{2:} this is a complex error with params {3} {4} {5}")
 )
 
 func init() {
-	i18n.Cat().SetWithBase(i18n.LangID("en"), i18n.MsgID(ErrErrNoFortunes.ID), "{1:}{2:} no fortunes added")
-	i18n.Cat().SetWithBase(i18n.LangID("en"), i18n.MsgID(ErrErrComplex.ID), "{1:}{2:} this is a complex error with params {3} {4} {5}")
+	i18n.Cat().SetWithBase(i18n.LangID("en"), i18n.MsgID(ErrNoFortunes.ID), "{1:}{2:} no fortunes added")
+	i18n.Cat().SetWithBase(i18n.LangID("en"), i18n.MsgID(ErrComplex.ID), "{1:}{2:} this is a complex error with params {3} {4} {5}")
 }
 
-// NewErrErrNoFortunes returns an error with the ErrErrNoFortunes ID.
-func NewErrErrNoFortunes(ctx *context.T) error {
-	return verror.New(ErrErrNoFortunes, ctx)
+// NewErrNoFortunes returns an error with the ErrNoFortunes ID.
+func NewErrNoFortunes(ctx *context.T) error {
+	return verror.New(ErrNoFortunes, ctx)
 }
 
-// NewErrErrComplex returns an error with the ErrErrComplex ID.
-func NewErrErrComplex(ctx *context.T, first ComplexErrorParam, second string, third int32) error {
-	return verror.New(ErrErrComplex, ctx, first, second, third)
+// NewErrComplex returns an error with the ErrComplex ID.
+func NewErrComplex(ctx *context.T, first ComplexErrorParam, second string, third int32) error {
+	return verror.New(ErrComplex, ctx, first, second, third)
 }
 
 // FortuneClientMethods is the client interface
