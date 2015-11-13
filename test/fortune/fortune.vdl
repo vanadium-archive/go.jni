@@ -13,10 +13,10 @@ type ComplexErrorParam struct {
 }
 
 error (
-	ErrNoFortunes() {
+	NoFortunes() {
 		"en": "no fortunes added",
 	}
-	ErrComplex(first ComplexErrorParam, second string, third int32) {
+	Complex(first ComplexErrorParam, second string, third int32) {
 		"en": "this is a complex error with params {first} {second} {third}",
 	}
 )
