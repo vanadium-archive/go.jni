@@ -20,26 +20,25 @@ import (
 // #include "jni.h"
 import "C"
 
-//export Java_io_v_android_v23_V_nativeInit
-func Java_io_v_android_v23_V_nativeInit(jenv *C.JNIEnv, jVClass C.jclass, jContext C.jobject, jAndroidContext C.jobject, jOptions C.jobject) C.jobject {
+//export Java_io_v_android_v23_V_nativeInitAndroid
+func Java_io_v_android_v23_V_nativeInitAndroid(jenv *C.JNIEnv, jVClass C.jclass, jAndroidContext C.jobject, jOptions C.jobject) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	jOpts := jutil.Object(uintptr(unsafe.Pointer(jOptions)))
 
+	// Setup logging.
 	_, _, level, vmodule, err := loggingOpts(env, jOpts)
 	if err != nil {
 		jutil.JThrowV(env, err)
-		return nil
+		return
 	}
 	// Disable any logging to STDERR.
-	// This assumes that vlog.Log is the underlying logging system for
-	// jContext.
+	// This assumes that vlog.Log is the underlying logging system for.
 	vlog.Log.Configure(vlog.OverridePriorConfiguration(true), vlog.LogToStderr(false), vlog.AlsoLogToStderr(false), level, vmodule)
 
+	// Setup discovery.
 	if err := jdiscovery.Init(env); err != nil {
 		jutil.JThrowV(env, err)
-		return nil
+		return
 	}
 	factory.SetBleFactory(jdiscovery.NewBleCreator(env, jutil.Object(uintptr(unsafe.Pointer(jAndroidContext)))))
-
-	return jContext
 }

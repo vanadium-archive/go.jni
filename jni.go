@@ -20,13 +20,18 @@ import (
 // #include "jni.h"
 import "C"
 
-//export Java_io_v_v23_V_nativeInitLib
-func Java_io_v_v23_V_nativeInitLib(jenv *C.JNIEnv, jVClass C.jclass) {
+//export Java_io_v_v23_V_nativeInitGlobal
+func Java_io_v_v23_V_nativeInitGlobal(jenv *C.JNIEnv, jVClass C.jclass) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	// Ignore all args except for the first one.
 	if len(os.Args) > 1 {
 		os.Args = os.Args[:1]
 	}
+	// Send all vlog logs to stderr during the init so that we don't crash on android trying
+	// to create a log file.  These settings will be overwritten in
+	// nativeInitJava/nativeInitAndroid.
+	vlog.Log.Configure(vlog.OverridePriorConfiguration(true), vlog.LogToStderr(true))
+
 	if err := jutil.Init(env); err != nil {
 		jutil.JThrowV(env, err)
 		return
@@ -39,20 +44,6 @@ func Java_io_v_v23_V_nativeInitLib(jenv *C.JNIEnv, jVClass C.jclass) {
 		jutil.JThrowV(env, err)
 		return
 	}
-}
-
-//export Java_io_v_v23_V_nativeInitLogging
-func Java_io_v_v23_V_nativeInitLogging(jenv *C.JNIEnv, jVClass C.jclass, jContext C.jobject, jOptions C.jobject) C.jobject {
-	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	jOpts := jutil.Object(uintptr(unsafe.Pointer(jOptions)))
-
-	dir, toStderr, level, vmodule, err := loggingOpts(env, jOpts)
-	if err != nil {
-		jutil.JThrowV(env, err)
-		return nil
-	}
-	vlog.Log.Configure(vlog.OverridePriorConfiguration(true), dir, toStderr, level, vmodule)
-	return jContext
 }
 
 func loggingOpts(env jutil.Env, jOpts jutil.Object) (dir vlog.LogDir, toStderr vlog.LogToStderr, level vlog.Level, vmodule vlog.ModuleSpec, err error) {
