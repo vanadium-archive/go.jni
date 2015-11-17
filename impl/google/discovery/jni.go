@@ -26,7 +26,6 @@ import "C"
 var (
 	updateSign = jutil.ClassSign("io.v.v23.discovery.Update")
 
-
 	// Global reference for java.util.UUID class.
 	jUUIDClass jutil.Class
 
@@ -111,7 +110,6 @@ func Java_io_v_impl_google_lib_discovery_UUIDUtil_UUIDForAttributeKey(jenv *C.JN
 	return convertStringtoUUID(jenv, jclass, jName, converter)
 }
 
-
 //export Java_io_v_impl_google_lib_discovery_VDiscoveryImpl_nativeFinalize
 func Java_io_v_impl_google_lib_discovery_VDiscoveryImpl_nativeFinalize(jenv *C.JNIEnv, _ C.jobject, discovery C.jlong, trigger C.jlong) {
 	jutil.GoUnref(jutil.NativePtr(discovery))
@@ -119,7 +117,7 @@ func Java_io_v_impl_google_lib_discovery_VDiscoveryImpl_nativeFinalize(jenv *C.J
 }
 
 //export Java_io_v_impl_google_lib_discovery_VDiscoveryImpl_advertise
-func Java_io_v_impl_google_lib_discovery_VDiscoveryImpl_advertise(jenv *C.JNIEnv, jDiscoveryObj C.jobject, jContext C.jobject, jServiceObject C.jobject, jPerms C.jobject, jCallback C.jobject) {
+func Java_io_v_impl_google_lib_discovery_VDiscoveryImpl_advertise(jenv *C.JNIEnv, jDiscoveryObj C.jobject, jContext C.jobject, jServiceObject C.jobject, jVisibility C.jobject, jCallback C.jobject) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	ctx, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jContext))))
 	if err != nil {
@@ -132,14 +130,14 @@ func Java_io_v_impl_google_lib_discovery_VDiscoveryImpl_advertise(jenv *C.JNIEnv
 		return
 	}
 
-	permsArray, err := jutil.GoObjectList(env, jutil.Object(uintptr(unsafe.Pointer(jPerms))))
+	visibilityArray, err := jutil.GoObjectList(env, jutil.Object(uintptr(unsafe.Pointer(jVisibility))))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return
 	}
-	permsSlice := make([]security.BlessingPattern, len(permsArray))
-	for i, jPattern := range permsArray {
-		if err := jutil.GoVomCopy(env, jPattern, jBlessingPatternClass, &permsSlice[i]); err != nil {
+	visibilitySlice := make([]security.BlessingPattern, len(visibilityArray))
+	for i, jPattern := range visibilityArray {
+		if err := jutil.GoVomCopy(env, jPattern, jBlessingPatternClass, &visibilitySlice[i]); err != nil {
 			jutil.JThrowV(env, err)
 			return
 		}
@@ -154,7 +152,6 @@ func Java_io_v_impl_google_lib_discovery_VDiscoveryImpl_advertise(jenv *C.JNIEnv
 	ds := *(*discovery.T)(jutil.NativePtr(discoveryPtr))
 
 	triggerPtr, err := jutil.JLongField(env, jDiscovery, "nativeTrigger")
-
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return
@@ -162,9 +159,13 @@ func Java_io_v_impl_google_lib_discovery_VDiscoveryImpl_advertise(jenv *C.JNIEnv
 
 	trigger := (*idiscovery.Trigger)(jutil.NativePtr(triggerPtr))
 
-	done, err := ds.Advertise(ctx, service, permsSlice)
-
+	done, err := ds.Advertise(ctx, &service, visibilitySlice)
 	if err != nil {
+		jutil.JThrowV(env, err)
+		return
+	}
+	// Copy back service.InstanceId to jServiceObject since it's the only field that would be updated.
+	if err = jutil.CallVoidMethod(env, jutil.Object(uintptr(unsafe.Pointer(jServiceObject))), "setInstanceId", []jutil.Sign{jutil.StringSign}, jutil.JString(env, service.InstanceId)); err != nil {
 		jutil.JThrowV(env, err)
 		return
 	}
