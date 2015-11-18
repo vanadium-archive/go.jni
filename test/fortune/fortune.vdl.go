@@ -62,13 +62,13 @@ func NewErrComplex(ctx *context.T, first ComplexErrorParam, second string, third
 // Fortune allows clients to Get and Add fortune strings.
 type FortuneClientMethods interface {
 	// Add stores a fortune in the set used by Get.
-	Add(ctx *context.T, Fortune string, opts ...rpc.CallOpt) error
+	Add(_ *context.T, Fortune string, _ ...rpc.CallOpt) error
 	// Get returns a random fortune.
-	Get(*context.T, ...rpc.CallOpt) (Fortune string, err error)
+	Get(*context.T, ...rpc.CallOpt) (Fortune string, _ error)
 	// StreamingGet returns a stream that can be used to obtain fortunes.
 	StreamingGet(*context.T, ...rpc.CallOpt) (FortuneStreamingGetClientCall, error)
 	// MultipleGet returns the same fortune twice.
-	MultipleGet(*context.T, ...rpc.CallOpt) (Fortune string, Another string, err error)
+	MultipleGet(*context.T, ...rpc.CallOpt) (Fortune string, Another string, _ error)
 	// GetComplexError returns (always!) ErrComplex.
 	GetComplexError(*context.T, ...rpc.CallOpt) error
 	// NoTags is a method without tags.
@@ -178,7 +178,7 @@ type FortuneStreamingGetClientCall interface {
 	// Calling Finish is mandatory for releasing stream resources, unless the call
 	// has been canceled or any of the other methods return an error.  Finish should
 	// be called at most once.
-	Finish() (total int32, err error)
+	Finish() (total int32, _ error)
 }
 
 type implFortuneStreamingGetClientCall struct {
@@ -240,13 +240,13 @@ func (c *implFortuneStreamingGetClientCall) Finish() (o0 int32, err error) {
 // Fortune allows clients to Get and Add fortune strings.
 type FortuneServerMethods interface {
 	// Add stores a fortune in the set used by Get.
-	Add(ctx *context.T, call rpc.ServerCall, Fortune string) error
+	Add(_ *context.T, _ rpc.ServerCall, Fortune string) error
 	// Get returns a random fortune.
-	Get(*context.T, rpc.ServerCall) (Fortune string, err error)
+	Get(*context.T, rpc.ServerCall) (Fortune string, _ error)
 	// StreamingGet returns a stream that can be used to obtain fortunes.
-	StreamingGet(*context.T, FortuneStreamingGetServerCall) (total int32, err error)
+	StreamingGet(*context.T, FortuneStreamingGetServerCall) (total int32, _ error)
 	// MultipleGet returns the same fortune twice.
-	MultipleGet(*context.T, rpc.ServerCall) (Fortune string, Another string, err error)
+	MultipleGet(*context.T, rpc.ServerCall) (Fortune string, Another string, _ error)
 	// GetComplexError returns (always!) ErrComplex.
 	GetComplexError(*context.T, rpc.ServerCall) error
 	// NoTags is a method without tags.
@@ -262,13 +262,13 @@ type FortuneServerMethods interface {
 // is the streaming methods.
 type FortuneServerStubMethods interface {
 	// Add stores a fortune in the set used by Get.
-	Add(ctx *context.T, call rpc.ServerCall, Fortune string) error
+	Add(_ *context.T, _ rpc.ServerCall, Fortune string) error
 	// Get returns a random fortune.
-	Get(*context.T, rpc.ServerCall) (Fortune string, err error)
+	Get(*context.T, rpc.ServerCall) (Fortune string, _ error)
 	// StreamingGet returns a stream that can be used to obtain fortunes.
-	StreamingGet(*context.T, *FortuneStreamingGetServerCallStub) (total int32, err error)
+	StreamingGet(*context.T, *FortuneStreamingGetServerCallStub) (total int32, _ error)
 	// MultipleGet returns the same fortune twice.
-	MultipleGet(*context.T, rpc.ServerCall) (Fortune string, Another string, err error)
+	MultipleGet(*context.T, rpc.ServerCall) (Fortune string, Another string, _ error)
 	// GetComplexError returns (always!) ErrComplex.
 	GetComplexError(*context.T, rpc.ServerCall) error
 	// NoTags is a method without tags.
