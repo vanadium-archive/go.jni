@@ -434,19 +434,7 @@ func doFinish(env jutil.Env, goPtr C.jlong, numResults int) (jutil.Object, error
 }
 
 //export Java_io_v_impl_google_rpc_ClientCallImpl_nativeFinish
-func Java_io_v_impl_google_rpc_ClientCallImpl_nativeFinish(jenv *C.JNIEnv, jCall C.jobject, goPtr C.jlong, jNumResults C.jint) C.jobjectArray {
-	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	numResults := int(jNumResults)
-	result, err := doFinish(env, goPtr, numResults)
-	if err != nil {
-		jutil.JThrowV(env, err)
-		return nil
-	}
-	return C.jobjectArray(unsafe.Pointer(result))
-}
-
-//export Java_io_v_impl_google_rpc_ClientCallImpl_nativeFinishAsync
-func Java_io_v_impl_google_rpc_ClientCallImpl_nativeFinishAsync(jenv *C.JNIEnv, jCall C.jobject, goPtr C.jlong, jNumResults C.jint, jCallback C.jobject) {
+func Java_io_v_impl_google_rpc_ClientCallImpl_nativeFinish(jenv *C.JNIEnv, jCall C.jobject, goPtr C.jlong, jNumResults C.jint, jCallback C.jobject) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	numResults := int(jNumResults)
 	go func(jCallback jutil.Object) {
