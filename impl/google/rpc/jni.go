@@ -7,7 +7,6 @@
 package rpc
 
 import (
-	"fmt"
 	"io"
 	"unsafe"
 
@@ -299,18 +298,6 @@ func Java_io_v_impl_google_rpc_ClientImpl_nativeStartCall(jenv *C.JNIEnv, jClien
 	return C.jobject(unsafe.Pointer(result))
 }
 
-func callOnFailure(env jutil.Env, callback jutil.Object, err error) {
-	if err := jutil.CallVoidMethod(env, callback, "onFailure", []jutil.Sign{jutil.VExceptionSign}, err); err != nil {
-		panic(fmt.Sprintf("couldn't call Java onFailure method: %v", err))
-	}
-}
-
-func callOnSuccess(env jutil.Env, callback jutil.Object, jClientCall jutil.Object) {
-	if err := jutil.CallVoidMethod(env, callback, "onSuccess", []jutil.Sign{jutil.ObjectSign}, jClientCall); err != nil {
-		panic(fmt.Sprintf("couldn't call Java onSuccess method: %v", err))
-	}
-}
-
 //export Java_io_v_impl_google_rpc_ClientImpl_nativeStartCallAsync
 func Java_io_v_impl_google_rpc_ClientImpl_nativeStartCallAsync(jenv *C.JNIEnv, jClient C.jobject, goPtr C.jlong, jContext C.jobject, jName C.jstring, jMethod C.jstring, jVomArgs C.jobjectArray, jSkipServerAuth C.jboolean, jCallback C.jobject) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
@@ -333,9 +320,9 @@ func Java_io_v_impl_google_rpc_ClientImpl_nativeStartCallAsync(jenv *C.JNIEnv, j
 		defer freeFunc()
 		defer jutil.DeleteGlobalRef(env, jCallback)
 		if jCall, err := doStartCall(env, context, name, method, skipServerAuth, goPtr, args); err != nil {
-			callOnFailure(env, jCallback, err)
+			jutil.CallbackOnFailure(env, jCallback, err)
 		} else {
-			callOnSuccess(env, jCallback, jCall)
+			jutil.CallbackOnSuccess(env, jCallback, jCall)
 		}
 	}(jutil.NewGlobalRef(env, jutil.Object(uintptr(unsafe.Pointer(jCallback)))))
 }
@@ -442,9 +429,9 @@ func Java_io_v_impl_google_rpc_ClientCallImpl_nativeFinish(jenv *C.JNIEnv, jCall
 		defer freeFunc()
 		defer jutil.DeleteGlobalRef(env, jCallback)
 		if result, err := doFinish(env, goPtr, numResults); err != nil {
-			callOnFailure(env, jCallback, err)
+			jutil.CallbackOnFailure(env, jCallback, err)
 		} else {
-			callOnSuccess(env, jCallback, result)
+			jutil.CallbackOnSuccess(env, jCallback, result)
 		}
 	}(jutil.NewGlobalRef(env, jutil.Object(uintptr(unsafe.Pointer(jCallback)))))
 }

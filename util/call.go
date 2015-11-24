@@ -292,6 +292,55 @@ func CallStaticVoidMethod(env Env, class Class, name string, argSigns []Sign, ar
 	return JExceptionMsg(env)
 }
 
+// DoAsyncCall invokes the given fnToWrap in a goroutine. If fnToWrap returns an
+// error, the given callback's onFailure method is invoked with the error as a
+// parameter. If fnToWrap succeeds, its Object result is passed as a
+// parameter to the callback's onSuccess method.
+//
+// The caller of doAsyncCall must take care that no local JNI references are
+// used in fnToWrap's closure. For example:
+//
+// func myNativeCall(env Env, callback Object, someJObject C.jobject) {
+//     doAsyncCallback(env, callback, func(env Env) (Object, error) {
+//         callSomeMethodOn(someJObject)  // not OK, someJObject is a local JNI reference
+//                                        // in the caller's scope.
+//         ...
+//     }
+// }
+//
+// fnToWrap is run in on an arbitrary thread and local
+// JNI references are only valid in the scope of a particular thread. You are
+// free to capture any pure-Go variables and we recommend that you use that
+// approach to pass parameters through to fnToWrap.
+func DoAsyncCall(env Env, callback Object, fnToWrap func(env Env) (Object, error)) {
+	go func(callback Object) {
+		env, freeFunc := GetEnv()
+		defer freeFunc()
+		defer DeleteGlobalRef(env, callback)
+		if result, err := fnToWrap(env); err != nil {
+			CallbackOnFailure(env, callback, err)
+		} else {
+			CallbackOnSuccess(env, callback, result)
+		}
+	}(NewGlobalRef(env, callback))
+}
+
+// CallbackOnFailure calls the given callback's "onFailure" method with the given error and
+// panic-s if the method couldn't be invoked.
+func CallbackOnFailure(env Env, callback Object, err error) {
+	if err := CallVoidMethod(env, callback, "onFailure", []Sign{VExceptionSign}, err); err != nil {
+		panic(fmt.Sprintf("couldn't call Java onFailure method: %v", err))
+	}
+}
+
+// CalbackOnSuccess calls the given callback's "onSuccess" method with the given result
+// and panic-s if the method couldn't be invoked.
+func CallbackOnSuccess(env Env, callback Object, jClientCall Object) {
+	if err := CallVoidMethod(env, callback, "onSuccess", []Sign{ObjectSign}, jClientCall); err != nil {
+		panic(fmt.Sprintf("couldn't call Java onSuccess method: %v", err))
+	}
+}
+
 func handleError(name string, err error) {
 	if err != nil {
 		panic(fmt.Sprintf("error while calling jni method %q: %v", name, err))
