@@ -300,8 +300,8 @@ func CallStaticVoidMethod(env Env, class Class, name string, argSigns []Sign, ar
 // The caller of doAsyncCall must take care that no local JNI references are
 // used in fnToWrap's closure. For example:
 //
-// func myNativeCall(env Env, callback Object, someJObject C.jobject) {
-//     doAsyncCallback(env, callback, func(env Env) (Object, error) {
+// func myNativeCall(env Env, jCallback Object, someJObject C.jobject) {
+//     doAsyncCallback(env, jCallback, func(env Env) (Object, error) {
 //         callSomeMethodOn(someJObject)  // not OK, someJObject is a local JNI reference
 //                                        // in the caller's scope.
 //         ...
@@ -312,17 +312,17 @@ func CallStaticVoidMethod(env Env, class Class, name string, argSigns []Sign, ar
 // JNI references are only valid in the scope of a particular thread. You are
 // free to capture any pure-Go variables and we recommend that you use that
 // approach to pass parameters through to fnToWrap.
-func DoAsyncCall(env Env, callback Object, fnToWrap func(env Env) (Object, error)) {
-	go func(callback Object) {
+func DoAsyncCall(env Env, jCallback Object, fnToWrap func(env Env) (Object, error)) {
+	go func(jCallback Object) {
 		env, freeFunc := GetEnv()
 		defer freeFunc()
-		defer DeleteGlobalRef(env, callback)
+		defer DeleteGlobalRef(env, jCallback)
 		if result, err := fnToWrap(env); err != nil {
-			CallbackOnFailure(env, callback, err)
+			CallbackOnFailure(env, jCallback, err)
 		} else {
-			CallbackOnSuccess(env, callback, result)
+			CallbackOnSuccess(env, jCallback, result)
 		}
-	}(NewGlobalRef(env, callback))
+	}(NewGlobalRef(env, jCallback))
 }
 
 // CallbackOnFailure calls the given callback's "onFailure" method with the given error and

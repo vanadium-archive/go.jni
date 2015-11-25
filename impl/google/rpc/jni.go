@@ -277,54 +277,25 @@ func doStartCall(env jutil.Env, context *context.T, name, method string, skipSer
 }
 
 //export Java_io_v_impl_google_rpc_ClientImpl_nativeStartCall
-func Java_io_v_impl_google_rpc_ClientImpl_nativeStartCall(jenv *C.JNIEnv, jClient C.jobject, goPtr C.jlong, jContext C.jobject, jName C.jstring, jMethod C.jstring, jVomArgs C.jobjectArray, jSkipServerAuth C.jboolean) C.jobject {
+func Java_io_v_impl_google_rpc_ClientImpl_nativeStartCall(jenv *C.JNIEnv, jClient C.jobject, goPtr C.jlong, jContext C.jobject, jName C.jstring, jMethod C.jstring, jVomArgs C.jobjectArray, jSkipServerAuth C.jboolean, jCallbackObj C.jobject) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	name := jutil.GoString(env, jutil.Object(uintptr(unsafe.Pointer(jName))))
 	method := jutil.GoString(env, jutil.Object(uintptr(unsafe.Pointer(jMethod))))
+	jCallback := jutil.Object(uintptr(unsafe.Pointer(jCallbackObj)))
 	context, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jContext))))
 	if err != nil {
-		jutil.JThrowV(env, err)
-		return nil
-	}
-	args, err := decodeArgs(env, jVomArgs)
-	if err != nil {
-		jutil.JThrowV(env, err)
-		return nil
-	}
-	result, err := doStartCall(env, context, name, method, jSkipServerAuth == C.JNI_TRUE, goPtr, args)
-	if err != nil {
-		jutil.JThrowV(env, err)
-	}
-	return C.jobject(unsafe.Pointer(result))
-}
-
-//export Java_io_v_impl_google_rpc_ClientImpl_nativeStartCallAsync
-func Java_io_v_impl_google_rpc_ClientImpl_nativeStartCallAsync(jenv *C.JNIEnv, jClient C.jobject, goPtr C.jlong, jContext C.jobject, jName C.jstring, jMethod C.jstring, jVomArgs C.jobjectArray, jSkipServerAuth C.jboolean, jCallback C.jobject) {
-	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	name := jutil.GoString(env, jutil.Object(uintptr(unsafe.Pointer(jName))))
-	method := jutil.GoString(env, jutil.Object(uintptr(unsafe.Pointer(jMethod))))
-
-	context, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jContext))))
-	if err != nil {
-		jutil.JThrowV(env, err)
+		jutil.CallbackOnFailure(env, jCallback, err)
 		return
 	}
 	args, err := decodeArgs(env, jVomArgs)
 	if err != nil {
-		jutil.JThrowV(env, err)
+		jutil.CallbackOnFailure(env, jCallback, err)
 		return
 	}
 	skipServerAuth := jSkipServerAuth == C.JNI_TRUE
-	go func(jCallback jutil.Object) {
-		env, freeFunc := jutil.GetEnv()
-		defer freeFunc()
-		defer jutil.DeleteGlobalRef(env, jCallback)
-		if jCall, err := doStartCall(env, context, name, method, skipServerAuth, goPtr, args); err != nil {
-			jutil.CallbackOnFailure(env, jCallback, err)
-		} else {
-			jutil.CallbackOnSuccess(env, jCallback, jCall)
-		}
-	}(jutil.NewGlobalRef(env, jutil.Object(uintptr(unsafe.Pointer(jCallback)))))
+	jutil.DoAsyncCall(env, jCallback, func(env jutil.Env) (jutil.Object, error) {
+		return doStartCall(env, context, name, method, skipServerAuth, goPtr, args)
+	})
 }
 
 //export Java_io_v_impl_google_rpc_ClientImpl_nativeClose
@@ -421,19 +392,13 @@ func doFinish(env jutil.Env, goPtr C.jlong, numResults int) (jutil.Object, error
 }
 
 //export Java_io_v_impl_google_rpc_ClientCallImpl_nativeFinish
-func Java_io_v_impl_google_rpc_ClientCallImpl_nativeFinish(jenv *C.JNIEnv, jCall C.jobject, goPtr C.jlong, jNumResults C.jint, jCallback C.jobject) {
+func Java_io_v_impl_google_rpc_ClientCallImpl_nativeFinish(jenv *C.JNIEnv, jCall C.jobject, goPtr C.jlong, jNumResults C.jint, jCallbackObj C.jobject) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	numResults := int(jNumResults)
-	go func(jCallback jutil.Object) {
-		env, freeFunc := jutil.GetEnv()
-		defer freeFunc()
-		defer jutil.DeleteGlobalRef(env, jCallback)
-		if result, err := doFinish(env, goPtr, numResults); err != nil {
-			jutil.CallbackOnFailure(env, jCallback, err)
-		} else {
-			jutil.CallbackOnSuccess(env, jCallback, result)
-		}
-	}(jutil.NewGlobalRef(env, jutil.Object(uintptr(unsafe.Pointer(jCallback)))))
+	jCallback := jutil.Object(uintptr(unsafe.Pointer(jCallbackObj)))
+	jutil.DoAsyncCall(env, jCallback, func(env jutil.Env) (jutil.Object, error) {
+		return doFinish(env, goPtr, numResults)
+	})
 }
 
 //export Java_io_v_impl_google_rpc_ClientCallImpl_nativeFinalize
