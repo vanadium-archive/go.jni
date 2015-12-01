@@ -115,6 +115,10 @@ jobject NewGlobalRef(JNIEnv* env, jobject obj);
 // Deletes the global reference pointed to by globalRef.
 void DeleteGlobalRef(JNIEnv* env, jobject globalRef);
 
+// Returns the type of the object referred to by the obj argument.
+// The argument obj can either be a local, global or weak global reference.
+jobjectRefType GetObjectRefType(JNIEnv* env, jobject obj);
+
 // Returns the Java VM interface (used in the Invocation API) associated with
 // the current thread.
 jint GetJavaVM(JNIEnv* env, JavaVM** vm);

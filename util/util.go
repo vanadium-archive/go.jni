@@ -233,7 +233,6 @@ func GetEnv() (env Env, free func()) {
 		C.AttachCurrentThreadAsDaemon(jVM, &jenv, nil)
 	}
 	env = Env(uintptr(unsafe.Pointer(jenv)))
-	//env := Env{jenv}
 	// GetEnv is called by Go code that wishes to call Java methods. In
 	// this case, JNI cannot automatically free unused local refererences.
 	// We must do it manually by pushing a new local reference frame. The

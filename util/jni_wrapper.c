@@ -166,6 +166,10 @@ void DeleteGlobalRef(JNIEnv* env, jobject globalRef) {
   (*env)->DeleteGlobalRef(env, globalRef);
 }
 
+jobjectRefType GetObjectRefType(JNIEnv* env, jobject obj) {
+  return (*env)->GetObjectRefType(env, obj);
+}
+
 jint GetJavaVM(JNIEnv* env, JavaVM** vm) {
   return (*env)->GetJavaVM(env, vm);
 }

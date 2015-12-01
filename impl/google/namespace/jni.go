@@ -71,31 +71,39 @@ func globArgs(env jutil.Env, jContext C.jobject, jPattern C.jstring, jOptions C.
 	return
 }
 
-func doGlob(env jutil.Env, n namespace.T, context *context.T, pattern string, opts []naming.NamespaceOpt) (jutil.Object, error) {
+func doGlob(n namespace.T, context *context.T, pattern string, opts []naming.NamespaceOpt) (jutil.Object, error) {
 	c, err := n.Glob(context, pattern, opts...)
 	if err != nil {
 		return jutil.NullObject, err
 	}
-	valChan := make(chan interface{}, 100)
-	go func() {
-		for val := range c {
-			valChan <- val
+	env, freeFunc := jutil.GetEnv()
+	defer freeFunc()
+	jChannel, err := jchannel.JavaInputChannel(env, func() (jutil.Object, error) {
+		// This is a blocking call, so don't call GetEnv() before this line.
+		val, ok := <-c
+		if !ok {
+			return jutil.NullObject, verror.NewErrEndOfFile(context)
 		}
-		close(valChan)
-	}()
-	return jchannel.JavaIterable(env, valChan, func(env jutil.Env, val interface{}) (jutil.Object, error) {
 		globReply, ok := val.(naming.GlobReply)
 		if !ok {
 			return jutil.NullObject, fmt.Errorf("Expected value of GlobReply type, got type %T: %v", val, val)
 		}
-		// Check for a canceled context error, we surface these as EOF.
-		if errorEntry, ok := globReply.(*naming.GlobReplyError); ok {
-			if verr, ok := errorEntry.Value.Error.(verror.E); ok && verr.ID == verror.ErrCanceled.ID {
-				return jutil.NullObject, verr
-			}
+		env, freeFunc := jutil.GetEnv()
+		defer freeFunc()
+		jReply, err := jutil.JVomCopy(env, globReply, jGlobReplyClass)
+		if err != nil {
+			return jutil.NullObject, err
 		}
-		return jutil.JVomCopy(env, val, jGlobReplyClass)
+		// Must grab a global reference as we free up the env and all local references that come
+		// along with it.
+		return jutil.NewGlobalRef(env, jReply), nil  // Un-refed by InputChannelImpl_nativeRecv
 	})
+	if err != nil {
+		return jutil.NullObject, err
+	}
+	// Must grab a global reference as we free up the env and all local references that come along
+	// with it.
+	return jutil.NewGlobalRef(env, jChannel), nil  // Un-refed by DoAsyncCall
 }
 
 //export Java_io_v_impl_google_namespace_NamespaceImpl_nativeGlob
@@ -108,8 +116,8 @@ func Java_io_v_impl_google_namespace_NamespaceImpl_nativeGlob(jenv *C.JNIEnv, jN
 		jutil.CallbackOnFailure(env, jCallback, err)
 		return
 	}
-	jutil.DoAsyncCall(env, jCallback, func(env jutil.Env) (jutil.Object, error) {
-		return doGlob(env, n, context, pattern, opts)
+	jutil.DoAsyncCall(env, jCallback, func() (jutil.Object, error) {
+		return doGlob(n, context, pattern, opts)
 	})
 }
 
@@ -138,7 +146,7 @@ func Java_io_v_impl_google_namespace_NamespaceImpl_nativeMount(jenv *C.JNIEnv, j
 		jutil.CallbackOnFailure(env, jCallback, err)
 		return
 	}
-	jutil.DoAsyncCall(env, jCallback, func(env jutil.Env) (jutil.Object, error) {
+	jutil.DoAsyncCall(env, jCallback, func() (jutil.Object, error) {
 		return jutil.NullObject, n.Mount(context, name, server, duration, options...)
 	})
 }
@@ -164,7 +172,7 @@ func Java_io_v_impl_google_namespace_NamespaceImpl_nativeUnmount(jenv *C.JNIEnv,
 		jutil.CallbackOnFailure(env, jCallback, err)
 		return
 	}
-	jutil.DoAsyncCall(env, jCallback, func(env jutil.Env) (jutil.Object, error) {
+	jutil.DoAsyncCall(env, jCallback, func() (jutil.Object, error) {
 		return jutil.NullObject, n.Unmount(context, name, server, options...)
 	})
 }
@@ -193,7 +201,7 @@ func Java_io_v_impl_google_namespace_NamespaceImpl_nativeDelete(jenv *C.JNIEnv, 
 		jutil.CallbackOnFailure(env, jCallback, err)
 		return
 	}
-	jutil.DoAsyncCall(env, jCallback, func(env jutil.Env) (jutil.Object, error) {
+	jutil.DoAsyncCall(env, jCallback, func() (jutil.Object, error) {
 		return jutil.NullObject, n.Delete(context, name, deleteSubtree, options...)
 	})
 }
@@ -211,12 +219,20 @@ func resolveArgs(env jutil.Env, jName C.jstring, jContext, jOptions C.jobject) (
 	return
 }
 
-func doResolve(env jutil.Env, n namespace.T, context *context.T, name string, options []naming.NamespaceOpt) (jutil.Object, error) {
+func doResolve(n namespace.T, context *context.T, name string, options []naming.NamespaceOpt) (jutil.Object, error) {
 	entry, err := n.Resolve(context, name, options...)
 	if err != nil {
 		return jutil.NullObject, err
 	}
-	return jutil.JVomCopy(env, entry, jMountEntryClass)
+	env, freeFunc := jutil.GetEnv()
+	defer freeFunc()
+	jEntry, err := jutil.JVomCopy(env, entry, jMountEntryClass)
+	if err != nil {
+		return jutil.NullObject, err
+	}
+	// Must grab a global reference as we free up the env and all local references that come along
+	// with it.
+	return jutil.NewGlobalRef(env, jEntry), nil  // Un-refed in DoAsyncCall
 }
 
 //export Java_io_v_impl_google_namespace_NamespaceImpl_nativeResolve
@@ -229,8 +245,8 @@ func Java_io_v_impl_google_namespace_NamespaceImpl_nativeResolve(jenv *C.JNIEnv,
 		jutil.CallbackOnFailure(env, jCallback, err)
 		return
 	}
-	jutil.DoAsyncCall(env, jCallback, func(env jutil.Env) (jutil.Object, error) {
-		return doResolve(env, n, context, name, options)
+	jutil.DoAsyncCall(env, jCallback, func() (jutil.Object, error) {
+		return doResolve(n, context, name, options)
 	})
 }
 
@@ -247,12 +263,20 @@ func resolveToMountTableArgs(env jutil.Env, jContext, jOptions C.jobject, jName 
 	return
 }
 
-func doResolveToMountTable(env jutil.Env, n namespace.T, context *context.T, name string, options []naming.NamespaceOpt) (jutil.Object, error) {
+func doResolveToMountTable(n namespace.T, context *context.T, name string, options []naming.NamespaceOpt) (jutil.Object, error) {
 	entry, err := n.ResolveToMountTable(context, name, options...)
 	if err != nil {
 		return jutil.NullObject, err
 	}
-	return jutil.JVomCopy(env, entry, jMountEntryClass)
+	env, freeFunc := jutil.GetEnv()
+	defer freeFunc()
+	jEntry, err := jutil.JVomCopy(env, entry, jMountEntryClass)
+	if err != nil {
+		return jutil.NullObject, err
+	}
+	// Must grab a global reference as we free up the env and all local references that come along
+	// with it.
+	return jutil.NewGlobalRef(env, jEntry), nil  // Un-refed in DoAsyncCall
 }
 
 //export Java_io_v_impl_google_namespace_NamespaceImpl_nativeResolveToMountTable
@@ -265,8 +289,8 @@ func Java_io_v_impl_google_namespace_NamespaceImpl_nativeResolveToMountTable(jen
 		jutil.CallbackOnFailure(env, jCallback, err)
 		return
 	}
-	jutil.DoAsyncCall(env, jCallback, func(env jutil.Env) (jutil.Object, error) {
-		return doResolveToMountTable(env, n, context, name, options)
+	jutil.DoAsyncCall(env, jCallback, func() (jutil.Object, error) {
+		return doResolveToMountTable(n, context, name, options)
 	})
 }
 
@@ -327,7 +351,7 @@ func Java_io_v_impl_google_namespace_NamespaceImpl_nativeSetPermissions(jenv *C.
 		jutil.CallbackOnFailure(env, jCallback, err)
 		return
 	}
-	jutil.DoAsyncCall(env, jCallback, func(env jutil.Env) (jutil.Object, error) {
+	jutil.DoAsyncCall(env, jCallback, func() (jutil.Object, error) {
 		return jutil.NullObject, n.SetPermissions(context, name, permissions, version, options...)
 	})
 }
@@ -345,18 +369,26 @@ func getPermissionsArgs(env jutil.Env, jContext C.jobject, jName C.jstring, jOpt
 	return
 }
 
-func doGetPermissions(env jutil.Env, n namespace.T, context *context.T, name string, options []naming.NamespaceOpt) (jutil.Object, error) {
+func doGetPermissions(n namespace.T, context *context.T, name string, options []naming.NamespaceOpt) (jutil.Object, error) {
 	permissions, version, err := n.GetPermissions(context, name, options...)
 	if err != nil {
 		return jutil.NullObject, err
 	}
+	env, freeFunc := jutil.GetEnv()
+	defer freeFunc()
 	jPermissions, err := jutil.JVomCopy(env, permissions, jPermissionsClass)
 	if err != nil {
 		return jutil.NullObject, err
 	}
 	result := make(map[jutil.Object]jutil.Object)
 	result[jutil.JString(env, version)] = jPermissions
-	return jutil.JObjectMap(env, result)
+	jResult, err := jutil.JObjectMap(env, result)
+	if err != nil {
+		return jutil.NullObject, err
+	}
+	// Must grab a global reference as we free up the env and all local references that come along
+	// with it.
+	return jutil.NewGlobalRef(env, jResult), nil  // Un-refed in DoAsyncCall
 }
 
 //export Java_io_v_impl_google_namespace_NamespaceImpl_nativeGetPermissions
@@ -369,8 +401,8 @@ func Java_io_v_impl_google_namespace_NamespaceImpl_nativeGetPermissions(jenv *C.
 		jutil.CallbackOnFailure(env, jCallback, err)
 		return
 	}
-	jutil.DoAsyncCall(env, jCallback, func(env jutil.Env) (jutil.Object, error) {
-		return doGetPermissions(env, n, context, name, options)
+	jutil.DoAsyncCall(env, jCallback, func() (jutil.Object, error) {
+		return doGetPermissions(n, context, name, options)
 	})
 }
 

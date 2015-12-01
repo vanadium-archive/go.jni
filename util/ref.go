@@ -40,6 +40,16 @@ func DeleteLocalRef(env Env, obj Object) {
 	C.DeleteLocalRef(env.value(), obj.value())
 }
 
+// IsGlobalRef returns true iff the reference pointed to by obj is a global reference.
+func IsGlobalRef(env Env, obj Object) bool {
+	return C.GetObjectRefType(env.value(), obj.value()) == C.JNIGlobalRefType
+}
+
+// IsLocalRef returns true iff the reference pointed to by obj is a local reference.
+func IsLocalRef(env Env, obj Object) bool {
+	return C.GetObjectRefType(env.value(), obj.value()) == C.JNILocalRefType
+}
+
 // GoRef creates a new reference to the value addressed by the provided pointer.
 // The value will remain referenced until it is explicitly unreferenced using
 // goUnref().

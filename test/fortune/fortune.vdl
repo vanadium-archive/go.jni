@@ -29,11 +29,16 @@ type Fortune interface {
 	// Get returns a random fortune.
 	Get() (Fortune string | error) {access.Read}
 
-	// StreamingGet returns a stream that can be used to obtain fortunes.
+	// StreamingGet returns a stream that can be used to obtain fortunes, and returns the
+	// total number of items sent.
 	StreamingGet() stream<bool, string> (total int32 | error) {access.Read}
 
 	// MultipleGet returns the same fortune twice.
 	MultipleGet() (Fortune string, Another string | error) {access.Read}
+
+	// MultipleStreamingGet returns a stream that can be used to obtain fortunes, and returns
+	// the total number of items sent, twice.
+	MultipleStreamingGet() stream<bool, string> (total int32, another int32 | error) {access.Read}
 
 	// GetComplexError returns (always!) ErrComplex.
 	GetComplexError() error {access.Read}

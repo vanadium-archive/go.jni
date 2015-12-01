@@ -13,54 +13,30 @@ import (
 // #include "jni.h"
 import "C"
 
-// JavaIterable converts the provided Go channel into a Java VIterable object, using the
-// given convert function.
-func JavaIterable(env jutil.Env, ch chan interface{}, convert func(jutil.Env, interface{}) (jutil.Object, error)) (jutil.Object, error) {
-	jIterable, err := jutil.NewObject(env, jChannelIterableClass, []jutil.Sign{jutil.LongSign, jutil.LongSign}, int64(jutil.PtrValue(&ch)), int64(jutil.PtrValue(&convert)))
+// JavaInputChannel creates a new Java InputChannel object given the provided Go recv function.
+//
+// All objects returned by the recv function must be globally references.
+//
+// The recv function must return verror.ErrEndOfFile when there are no more elements
+// to receive.
+func JavaInputChannel(env jutil.Env, recv func() (jutil.Object, error)) (jutil.Object, error) {
+	jInputChannel, err := jutil.NewObject(env, jInputChannelImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&recv)))
 	if err != nil {
 		return jutil.NullObject, err
 	}
-	jutil.GoRef(&ch)      // Un-refed when ChannelIterable is finalized.
-	jutil.GoRef(&convert) // Un-refed when ChannelIterable is finalized.
-	return jIterable, nil
+	jutil.GoRef(&recv) // Un-refed when jInputChannel is finalized.
+	return jInputChannel, nil
 }
 
-// outputChannel represents the Go-side of a Java OutputChannel. Each time the
-// Java side writes an object, the ReadFunc will be called. If the ReadFunc
-// returns an error, an exception will be raised on the Java side.
-type outputChannel struct {
-	// ReadFunc is invoked when an object has been read from Java.
-	//
-	// The jutil.Object passed to this function is globally referenced. It is
-	// required that the ReadFunc implementation delete the global
-	// reference jutil.DeleteGlobalRef. Failure to do so will
-	// result in a reference leak.
-	//
-	// If the ReadFunc implementation returns an error, that error will be
-	// passed back to the Java writer in the form of a VException to the
-	// OutputChannel.writeValue() method.
-	ReadFunc func(jutil.Object) error
-
-	// CloseFunc is invoked when the Java side has closed its OutputChannel
-	// and no more values will be written.
-	//
-	// If CloseFunc returns an error, that error will be passed back to the
-	// Java side in the form of a VException OutputChannel.close() method.
-	CloseFunc func() error
-}
-
-// JavaOutputChannel converts the provided Go channel of jutil.Object values
-// into a Java OutputChannel object.
-func JavaOutputChannel(env jutil.Env, readFunc func(jutil.Object) error, closeFunc func() error) (jutil.Object, error) {
-	outCh := outputChannel{
-		ReadFunc:  readFunc,
-		CloseFunc: closeFunc,
-	}
-
-	jOutputChannel, err := jutil.NewObject(env, jOutputChannelImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&outCh)))
+// JavaOutputChannel creates a new Java OutputChannel object given the provided Go convert, send
+// and close functions. Send is invoked with the result of convert, which must be non-blocking.
+func JavaOutputChannel(env jutil.Env, convert func(jutil.Object) (interface{}, error), send func(interface{}) error, close func() error) (jutil.Object, error) {
+	jOutputChannel, err := jutil.NewObject(env, jOutputChannelImplClass, []jutil.Sign{jutil.LongSign, jutil.LongSign, jutil.LongSign}, int64(jutil.PtrValue(&convert)), int64(jutil.PtrValue(&send)), int64(jutil.PtrValue(&close)))
 	if err != nil {
 		return jutil.NullObject, err
 	}
-	jutil.GoRef(&outCh) // Un-refed when the OutputChannel is finalized.
+	jutil.GoRef(&convert) // Un-refed when jOutputChannel is finalized.
+	jutil.GoRef(&send)    // Un-refed when jOutputChannel is finalized.
+	jutil.GoRef(&close)   // Un-refed when jOutputChannel is finalized.
 	return jOutputChannel, nil
 }

@@ -22,6 +22,7 @@ import (
 	jcontext "v.io/x/jni/v23/context"
 	jnaming "v.io/x/jni/v23/naming"
 	jsecurity "v.io/x/jni/v23/security"
+	"v.io/v23/verror"
 )
 
 // #include "jni.h"
@@ -74,8 +75,6 @@ var (
 	jServerStateClass jutil.Class
 	// Global reference for io.v.v23.OptionDefs class.
 	jOptionDefsClass jutil.Class
-	// Global reference for java.io.EOFException class.
-	jEOFExceptionClass jutil.Class
 	// Global reference for io.v.v23.naming.Endpoint.
 	jEndpointClass jutil.Class
 	// Global reference for io.v.v23.vdlroot.signature.Interface class.
@@ -170,10 +169,6 @@ func Init(env jutil.Env) error {
 	if err != nil {
 		return err
 	}
-	jEOFExceptionClass, err = jutil.JFindClass(env, "java/io/EOFException")
-	if err != nil {
-		return err
-	}
 	jEndpointClass, err = jutil.JFindClass(env, "io/v/v23/naming/Endpoint")
 	if err != nil {
 		return err
@@ -257,7 +252,7 @@ func decodeArgs(env jutil.Env, jVomArgs C.jobjectArray) ([]interface{}, error) {
 	return args, nil
 }
 
-func doStartCall(env jutil.Env, context *context.T, name, method string, skipServerAuth bool, goPtr C.jlong, args []interface{}) (jutil.Object, error) {
+func doStartCall(context *context.T, name, method string, skipServerAuth bool, goPtr C.jlong, args []interface{}) (jutil.Object, error) {
 	var opts []rpc.CallOpt
 	if skipServerAuth {
 		opts = append(opts,
@@ -269,11 +264,15 @@ func doStartCall(env jutil.Env, context *context.T, name, method string, skipSer
 	if err != nil {
 		return jutil.NullObject, err
 	}
+	env, freeFunc := jutil.GetEnv()
+	defer freeFunc()
 	jCall, err := javaCall(env, call)
 	if err != nil {
 		return jutil.NullObject, err
 	}
-	return jCall, nil
+	// Must grab a global reference as we free up the env and all local references that come along
+	// with it.
+	return jutil.NewGlobalRef(env, jCall), nil  // Un-refed in DoAsyncCall
 }
 
 //export Java_io_v_impl_google_rpc_ClientImpl_nativeStartCall
@@ -293,8 +292,8 @@ func Java_io_v_impl_google_rpc_ClientImpl_nativeStartCall(jenv *C.JNIEnv, jClien
 		return
 	}
 	skipServerAuth := jSkipServerAuth == C.JNI_TRUE
-	jutil.DoAsyncCall(env, jCallback, func(env jutil.Env) (jutil.Object, error) {
-		return doStartCall(env, context, name, method, skipServerAuth, goPtr, args)
+	jutil.DoAsyncCall(env, jCallback, func() (jutil.Object, error) {
+		return doStartCall(context, name, method, skipServerAuth, goPtr, args)
 	})
 }
 
@@ -309,43 +308,46 @@ func Java_io_v_impl_google_rpc_ClientImpl_nativeFinalize(jenv *C.JNIEnv, jClient
 }
 
 //export Java_io_v_impl_google_rpc_StreamImpl_nativeSend
-func Java_io_v_impl_google_rpc_StreamImpl_nativeSend(jenv *C.JNIEnv, jStream C.jobject, goPtr C.jlong, jVomItem C.jbyteArray) {
+func Java_io_v_impl_google_rpc_StreamImpl_nativeSend(jenv *C.JNIEnv, jStream C.jobject, goPtr C.jlong, jVomItem C.jbyteArray, jCallbackObj C.jobject) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
+	jCallback := jutil.Object(uintptr(unsafe.Pointer(jCallbackObj)))
 	vomItem := jutil.GoByteArray(env, jutil.Object(uintptr(unsafe.Pointer(jVomItem))))
-	item, err := jutil.VomDecodeToValue(vomItem)
-	if err != nil {
-		jutil.JThrowV(env, err)
-		return
-	}
-	if err := (*(*rpc.Stream)(jutil.NativePtr(goPtr))).Send(item); err != nil {
-		jutil.JThrowV(env, err)
-		return
-	}
+	jutil.DoAsyncCall(env, jCallback, func() (jutil.Object, error) {
+		item, err := jutil.VomDecodeToValue(vomItem)
+		if err != nil {
+			return jutil.NullObject, err
+		}
+		return jutil.NullObject, (*(*rpc.Stream)(jutil.NativePtr(goPtr))).Send(item)
+	})
 }
 
 //export Java_io_v_impl_google_rpc_StreamImpl_nativeRecv
-func Java_io_v_impl_google_rpc_StreamImpl_nativeRecv(jenv *C.JNIEnv, jStream C.jobject, goPtr C.jlong) C.jbyteArray {
+func Java_io_v_impl_google_rpc_StreamImpl_nativeRecv(jenv *C.JNIEnv, jStream C.jobject, goPtr C.jlong, jCallbackObj C.jobject) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
+	jCallback := jutil.Object(uintptr(unsafe.Pointer(jCallbackObj)))
 	result := new(vdl.Value)
-	if err := (*(*rpc.Stream)(jutil.NativePtr(goPtr))).Recv(&result); err != nil {
-		if err == io.EOF {
-			jutil.JThrow(env, jEOFExceptionClass, err.Error())
-			return nil
+	jutil.DoAsyncCall(env, jCallback, func() (jutil.Object, error) {
+		if err := (*(*rpc.Stream)(jutil.NativePtr(goPtr))).Recv(&result); err != nil {
+			if err == io.EOF {
+				// Java uses EndOfFile error to detect EOF.
+				err = verror.NewErrEndOfFile(nil)
+			}
+			return jutil.NullObject, err
 		}
-		jutil.JThrowV(env, err)
-		return nil
-	}
-	vomResult, err := vom.Encode(result)
-	if err != nil {
-		jutil.JThrowV(env, err)
-		return nil
-	}
-	jArr, err := jutil.JByteArray(env, vomResult)
-	if err != nil {
-		jutil.JThrowV(env, err)
-		return nil
-	}
-	return C.jbyteArray(unsafe.Pointer(jArr))
+		vomResult, err := vom.Encode(result)
+		if err != nil {
+			return jutil.NullObject, err
+		}
+		env, freeFunc := jutil.GetEnv()
+		defer freeFunc()
+		jResult, err := jutil.JByteArray(env, vomResult)
+		if err != nil {
+			return jutil.NullObject, err
+		}
+		// Must grab a global reference as we free up the env and all local references that come along
+		// with it.
+		return jutil.NewGlobalRef(env, jResult), nil  // Un-refed in DoAsyncCall
+	})
 }
 
 //export Java_io_v_impl_google_rpc_StreamImpl_nativeFinalize
@@ -354,15 +356,15 @@ func Java_io_v_impl_google_rpc_StreamImpl_nativeFinalize(jenv *C.JNIEnv, jStream
 }
 
 //export Java_io_v_impl_google_rpc_ClientCallImpl_nativeCloseSend
-func Java_io_v_impl_google_rpc_ClientCallImpl_nativeCloseSend(jenv *C.JNIEnv, jCall C.jobject, goPtr C.jlong) {
+func Java_io_v_impl_google_rpc_ClientCallImpl_nativeCloseSend(jenv *C.JNIEnv, jCall C.jobject, goPtr C.jlong, jCallbackObj C.jobject) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	if err := (*(*rpc.ClientCall)(jutil.NativePtr(goPtr))).CloseSend(); err != nil {
-		jutil.JThrowV(env, err)
-		return
-	}
+	jCallback := jutil.Object(uintptr(unsafe.Pointer(jCallbackObj)))
+	jutil.DoAsyncCall(env, jCallback, func() (jutil.Object, error) {
+		return jutil.NullObject, (*(*rpc.ClientCall)(jutil.NativePtr(goPtr))).CloseSend()
+	})
 }
 
-func doFinish(env jutil.Env, goPtr C.jlong, numResults int) (jutil.Object, error) {
+func doFinish(goPtr C.jlong, numResults int) (jutil.Object, error) {
 	// Have all the results be decoded into *vdl.Value.
 	resultPtrs := make([]interface{}, numResults)
 	for i := 0; i < numResults; i++ {
@@ -384,11 +386,15 @@ func doFinish(env jutil.Env, goPtr C.jlong, numResults int) (jutil.Object, error
 			return jutil.NullObject, err
 		}
 	}
+	env, freeFunc := jutil.GetEnv()
+	defer freeFunc()
 	jArr, err := jutil.JByteArrayArray(env, vomResults)
 	if err != nil {
 		return jutil.NullObject, err
 	}
-	return jArr, nil
+	// Must grab a global reference as we free up the env and all local references that come along
+	// with it.
+	return jutil.NewGlobalRef(env, jArr), nil  // Un-refed in DoAsyncCall
 }
 
 //export Java_io_v_impl_google_rpc_ClientCallImpl_nativeFinish
@@ -396,8 +402,8 @@ func Java_io_v_impl_google_rpc_ClientCallImpl_nativeFinish(jenv *C.JNIEnv, jCall
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	numResults := int(jNumResults)
 	jCallback := jutil.Object(uintptr(unsafe.Pointer(jCallbackObj)))
-	jutil.DoAsyncCall(env, jCallback, func(env jutil.Env) (jutil.Object, error) {
-		return doFinish(env, goPtr, numResults)
+	jutil.DoAsyncCall(env, jCallback, func() (jutil.Object, error) {
+		return doFinish(goPtr, numResults)
 	})
 }
 

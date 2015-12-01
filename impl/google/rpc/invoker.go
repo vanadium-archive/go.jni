@@ -201,24 +201,26 @@ func (j javaGlobber) Glob__(ctx *context.T, call rpc.GlobServerCall, g *glob.Glo
 		return err
 	}
 
-	readFunc := func(input jutil.Object) error {
+	convert := func(input jutil.Object) (interface{}, error) {
 		env, freeFunc := jutil.GetEnv()
-		defer jutil.DeleteGlobalRef(env, input)
+		defer freeFunc()
 		var reply naming.GlobReply
-		err := jutil.GoVomCopy(env, input, jGlobReplyClass, &reply)
-		if err != nil {
-			freeFunc()
-			return err
+		if err := jutil.GoVomCopy(env, input, jGlobReplyClass, &reply); err != nil {
+			return nil, err
 		}
-		freeFunc()
-		call.SendStream().Send(reply)
+		return reply, nil
+	}
+	send := func(item interface{}) error {
+		reply, ok := item.(naming.GlobReply)
+		if !ok {
+			return fmt.Errorf("Expected item of type naming.GlobReply, got: %T", reply)
+		}
+		return call.SendStream().Send(reply)
+	}
+	close := func() error {
 		return nil
 	}
-	closeFunc := func() error {
-		return nil
-	}
-
-	jOutputChannel, err := jchannel.JavaOutputChannel(env, readFunc, closeFunc)
+	jOutputChannel, err := jchannel.JavaOutputChannel(env, convert, send, close)
 	if err != nil {
 		return err
 	}

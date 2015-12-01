@@ -7,10 +7,8 @@
 package channel
 
 import (
-	"fmt"
 	"unsafe"
 
-	"v.io/v23/verror"
 	jutil "v.io/x/jni/util"
 )
 
@@ -18,12 +16,10 @@ import (
 import "C"
 
 var (
-	// Global reference for io.v.impl.google.channel.ChannelIterable class.
-	jChannelIterableClass jutil.Class
+	// Global reference for io.v.impl.google.channel.InputChannelImpl class.
+	jInputChannelImplClass jutil.Class
 	// Global reference for io.v.impl.google.channel.OutputChannelImpl class.
 	jOutputChannelImplClass jutil.Class
-	// Global reference for java.io.EOFException class.
-	jEOFExceptionClass jutil.Class
 )
 
 // Init initializes the JNI code with the given Java environment.  This method
@@ -31,7 +27,7 @@ var (
 // from the main Java thread (e.g., On_Load()).
 func Init(env jutil.Env) error {
 	var err error
-	jChannelIterableClass, err = jutil.JFindClass(env, "io/v/impl/google/channel/ChannelIterable")
+	jInputChannelImplClass, err = jutil.JFindClass(env, "io/v/impl/google/channel/InputChannelImpl")
 	if err != nil {
 		return err
 	}
@@ -39,63 +35,54 @@ func Init(env jutil.Env) error {
 	if err != nil {
 		return err
 	}
-	jEOFExceptionClass, err = jutil.JFindClass(env, "java/io/EOFException")
+	return nil
+}
+
+//export Java_io_v_impl_google_channel_InputChannelImpl_nativeRecv
+func Java_io_v_impl_google_channel_InputChannelImpl_nativeRecv(jenv *C.JNIEnv, jInputChannelImpl C.jobject, goRecvPtr C.jlong, jCallbackObj C.jobject) {
+	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
+	recv := *(*func() (jutil.Object, error))(jutil.NativePtr(goRecvPtr))
+	jCallback := jutil.Object(uintptr(unsafe.Pointer(jCallbackObj)))
+	jutil.DoAsyncCall(env, jCallback, recv)
+}
+
+//export Java_io_v_impl_google_channel_InputChannelImpl_nativeFinalize
+func Java_io_v_impl_google_channel_InputChannelImpl_nativeFinalize(jenv *C.JNIEnv, jInputChannelImpl C.jobject, goRecvPtr C.jlong) {
+	jutil.GoUnref(jutil.NativePtr(goRecvPtr))
+}
+
+//export Java_io_v_impl_google_channel_OutputChannelImpl_nativeSend
+func Java_io_v_impl_google_channel_OutputChannelImpl_nativeSend(jenv *C.JNIEnv, jOutputChannelClass C.jclass, goConvertPtr C.jlong, goSendPtr C.jlong, jItemObj C.jobject, jCallbackObj C.jobject) {
+	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
+	convert := *(*func(jutil.Object) (interface{}, error))(jutil.NativePtr(goConvertPtr))
+	send := *(*func(interface{}) error)(jutil.NativePtr(goSendPtr))
+	jItem := jutil.Object(uintptr(unsafe.Pointer(jItemObj)))
+	jCallback := jutil.Object(uintptr(unsafe.Pointer(jCallbackObj)))
+	// NOTE(spetrovic): Conversion must be done outside of DoAsyncCall as it references a Java
+	// object.
+	item, err := convert(jItem)
 	if err != nil {
-		return err
+		jutil.CallbackOnFailure(env, jCallback, err)
+		return
 	}
-	return nil
-}
-
-//export Java_io_v_impl_google_channel_ChannelIterable_nativeReadValue
-func Java_io_v_impl_google_channel_ChannelIterable_nativeReadValue(jenv *C.JNIEnv, jChannelIterable C.jobject, goChanPtr C.jlong, goConvertPtr C.jlong) C.jobject {
-	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	c := *(*chan interface{})(jutil.NativePtr(goChanPtr))
-	convert := *(*func(jutil.Env, interface{})(jutil.Object, error))(jutil.NativePtr(goConvertPtr))
-	val, ok := <-c
-	if !ok {  // channel closed
-		jutil.JThrow(env, jEOFExceptionClass, "Reached end of input channel.")
-		return nil
-	}
-	jVal, err := convert(env, val)
-	if err == nil {
-		return C.jobject(unsafe.Pointer(jVal))
-	}
-	if verr, ok := err.(verror.E); ok && verr.ID == verror.ErrCanceled.ID {  // EOF
-		jutil.JThrow(env, jEOFExceptionClass, "User canceled the operation.")
-		return nil
-	}
-	jutil.JThrowV(env, err)
-	return nil
-}
-
-//export Java_io_v_impl_google_channel_ChannelIterable_nativeFinalize
-func Java_io_v_impl_google_channel_ChannelIterable_nativeFinalize(jenv *C.JNIEnv, jChannelIterable C.jobject, goChanPtr C.jlong, goConvertPtr C.jlong) {
-	jutil.GoUnref(jutil.NativePtr(goChanPtr))
-	jutil.GoUnref(jutil.NativePtr(goConvertPtr))
-}
-
-//export Java_io_v_impl_google_channel_OutputChannelImpl_nativeWriteValue
-func Java_io_v_impl_google_channel_OutputChannelImpl_nativeWriteValue(jenv *C.JNIEnv, jOutputChannelClass C.jclass, goChanPtr C.jlong, jObject C.jobject) {
-	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	outCh := *(*outputChannel)(jutil.NativePtr(goChanPtr))
-	// The other side of the channel is responsible for deleting this
-	// global reference.
-	if err := outCh.ReadFunc(jutil.NewGlobalRef(env, jutil.Object(uintptr(unsafe.Pointer(jObject))))); err != nil {
-		jutil.JThrowV(env, fmt.Errorf("Exception while writing to OutputChannel: %+v", err))
-	}
+	jutil.DoAsyncCall(env, jCallback, func() (jutil.Object, error) {
+		return jutil.NullObject, send(item)
+	})
 }
 
 //export Java_io_v_impl_google_channel_OutputChannelImpl_nativeClose
-func Java_io_v_impl_google_channel_OutputChannelImpl_nativeClose(jenv *C.JNIEnv, jOutputChannelClass C.jclass, goChanPtr C.jlong) {
+func Java_io_v_impl_google_channel_OutputChannelImpl_nativeClose(jenv *C.JNIEnv, jOutputChannelClass C.jclass, goClosePtr C.jlong, jCallbackObj C.jobject) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	outCh := *(*outputChannel)(jutil.NativePtr(goChanPtr))
-
-	if err := outCh.CloseFunc(); err != nil {
-		jutil.JThrowV(env, fmt.Errorf("Exception while closing OutputChannel: %+v", err))
-	}
+	close := *(*func() error)(jutil.NativePtr(goClosePtr))
+	jCallback := jutil.Object(uintptr(unsafe.Pointer(jCallbackObj)))
+	jutil.DoAsyncCall(env, jCallback, func() (jutil.Object, error) {
+		return jutil.NullObject, close()
+	})
 }
 
 //export Java_io_v_impl_google_channel_OutputChannelImpl_nativeFinalize
-func Java_io_v_impl_google_channel_OutputChannelImpl_nativeFinalize(jenv *C.JNIEnv, jOutputChannelClass C.jclass, goChanPtr C.jlong) {
-	jutil.GoUnref(jutil.NativePtr(goChanPtr))
+func Java_io_v_impl_google_channel_OutputChannelImpl_nativeFinalize(jenv *C.JNIEnv, jOutputChannelClass C.jclass, goConvertPtr C.jlong, goSendPtr C.jlong, goClosePtr C.jlong) {
+	jutil.GoUnref(jutil.NativePtr(goConvertPtr))
+	jutil.GoUnref(jutil.NativePtr(goSendPtr))
+	jutil.GoUnref(jutil.NativePtr(goClosePtr))
 }
