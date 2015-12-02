@@ -65,10 +65,14 @@ type FortuneClientMethods interface {
 	Add(_ *context.T, Fortune string, _ ...rpc.CallOpt) error
 	// Get returns a random fortune.
 	Get(*context.T, ...rpc.CallOpt) (Fortune string, _ error)
-	// StreamingGet returns a stream that can be used to obtain fortunes.
+	// StreamingGet returns a stream that can be used to obtain fortunes, and returns the
+	// total number of items sent.
 	StreamingGet(*context.T, ...rpc.CallOpt) (FortuneStreamingGetClientCall, error)
 	// MultipleGet returns the same fortune twice.
 	MultipleGet(*context.T, ...rpc.CallOpt) (Fortune string, Another string, _ error)
+	// MultipleStreamingGet returns a stream that can be used to obtain fortunes, and returns
+	// the total number of items sent, twice.
+	MultipleStreamingGet(*context.T, ...rpc.CallOpt) (FortuneMultipleStreamingGetClientCall, error)
 	// GetComplexError returns (always!) ErrComplex.
 	GetComplexError(*context.T, ...rpc.CallOpt) error
 	// NoTags is a method without tags.
@@ -114,6 +118,15 @@ func (c implFortuneClientStub) StreamingGet(ctx *context.T, opts ...rpc.CallOpt)
 
 func (c implFortuneClientStub) MultipleGet(ctx *context.T, opts ...rpc.CallOpt) (o0 string, o1 string, err error) {
 	err = v23.GetClient(ctx).Call(ctx, c.name, "MultipleGet", nil, []interface{}{&o0, &o1}, opts...)
+	return
+}
+
+func (c implFortuneClientStub) MultipleStreamingGet(ctx *context.T, opts ...rpc.CallOpt) (ocall FortuneMultipleStreamingGetClientCall, err error) {
+	var call rpc.ClientCall
+	if call, err = v23.GetClient(ctx).StartCall(ctx, c.name, "MultipleStreamingGet", nil, opts...); err != nil {
+		return
+	}
+	ocall = &implFortuneMultipleStreamingGetClientCall{ClientCall: call}
 	return
 }
 
@@ -234,6 +247,108 @@ func (c *implFortuneStreamingGetClientCall) Finish() (o0 int32, err error) {
 	return
 }
 
+// FortuneMultipleStreamingGetClientStream is the client stream for Fortune.MultipleStreamingGet.
+type FortuneMultipleStreamingGetClientStream interface {
+	// RecvStream returns the receiver side of the Fortune.MultipleStreamingGet client stream.
+	RecvStream() interface {
+		// Advance stages an item so that it may be retrieved via Value.  Returns
+		// true iff there is an item to retrieve.  Advance must be called before
+		// Value is called.  May block if an item is not available.
+		Advance() bool
+		// Value returns the item that was staged by Advance.  May panic if Advance
+		// returned false or was not called.  Never blocks.
+		Value() string
+		// Err returns any error encountered by Advance.  Never blocks.
+		Err() error
+	}
+	// SendStream returns the send side of the Fortune.MultipleStreamingGet client stream.
+	SendStream() interface {
+		// Send places the item onto the output stream.  Returns errors
+		// encountered while sending, or if Send is called after Close or
+		// the stream has been canceled.  Blocks if there is no buffer
+		// space; will unblock when buffer space is available or after
+		// the stream has been canceled.
+		Send(item bool) error
+		// Close indicates to the server that no more items will be sent;
+		// server Recv calls will receive io.EOF after all sent items.
+		// This is an optional call - e.g. a client might call Close if it
+		// needs to continue receiving items from the server after it's
+		// done sending.  Returns errors encountered while closing, or if
+		// Close is called after the stream has been canceled.  Like Send,
+		// blocks if there is no buffer space available.
+		Close() error
+	}
+}
+
+// FortuneMultipleStreamingGetClientCall represents the call returned from Fortune.MultipleStreamingGet.
+type FortuneMultipleStreamingGetClientCall interface {
+	FortuneMultipleStreamingGetClientStream
+	// Finish performs the equivalent of SendStream().Close, then blocks until
+	// the server is done, and returns the positional return values for the call.
+	//
+	// Finish returns immediately if the call has been canceled; depending on the
+	// timing the output could either be an error signaling cancelation, or the
+	// valid positional return values from the server.
+	//
+	// Calling Finish is mandatory for releasing stream resources, unless the call
+	// has been canceled or any of the other methods return an error.  Finish should
+	// be called at most once.
+	Finish() (total int32, another int32, _ error)
+}
+
+type implFortuneMultipleStreamingGetClientCall struct {
+	rpc.ClientCall
+	valRecv string
+	errRecv error
+}
+
+func (c *implFortuneMultipleStreamingGetClientCall) RecvStream() interface {
+	Advance() bool
+	Value() string
+	Err() error
+} {
+	return implFortuneMultipleStreamingGetClientCallRecv{c}
+}
+
+type implFortuneMultipleStreamingGetClientCallRecv struct {
+	c *implFortuneMultipleStreamingGetClientCall
+}
+
+func (c implFortuneMultipleStreamingGetClientCallRecv) Advance() bool {
+	c.c.errRecv = c.c.Recv(&c.c.valRecv)
+	return c.c.errRecv == nil
+}
+func (c implFortuneMultipleStreamingGetClientCallRecv) Value() string {
+	return c.c.valRecv
+}
+func (c implFortuneMultipleStreamingGetClientCallRecv) Err() error {
+	if c.c.errRecv == io.EOF {
+		return nil
+	}
+	return c.c.errRecv
+}
+func (c *implFortuneMultipleStreamingGetClientCall) SendStream() interface {
+	Send(item bool) error
+	Close() error
+} {
+	return implFortuneMultipleStreamingGetClientCallSend{c}
+}
+
+type implFortuneMultipleStreamingGetClientCallSend struct {
+	c *implFortuneMultipleStreamingGetClientCall
+}
+
+func (c implFortuneMultipleStreamingGetClientCallSend) Send(item bool) error {
+	return c.c.Send(item)
+}
+func (c implFortuneMultipleStreamingGetClientCallSend) Close() error {
+	return c.c.CloseSend()
+}
+func (c *implFortuneMultipleStreamingGetClientCall) Finish() (o0 int32, o1 int32, err error) {
+	err = c.ClientCall.Finish(&o0, &o1)
+	return
+}
+
 // FortuneServerMethods is the interface a server writer
 // implements for Fortune.
 //
@@ -243,10 +358,14 @@ type FortuneServerMethods interface {
 	Add(_ *context.T, _ rpc.ServerCall, Fortune string) error
 	// Get returns a random fortune.
 	Get(*context.T, rpc.ServerCall) (Fortune string, _ error)
-	// StreamingGet returns a stream that can be used to obtain fortunes.
+	// StreamingGet returns a stream that can be used to obtain fortunes, and returns the
+	// total number of items sent.
 	StreamingGet(*context.T, FortuneStreamingGetServerCall) (total int32, _ error)
 	// MultipleGet returns the same fortune twice.
 	MultipleGet(*context.T, rpc.ServerCall) (Fortune string, Another string, _ error)
+	// MultipleStreamingGet returns a stream that can be used to obtain fortunes, and returns
+	// the total number of items sent, twice.
+	MultipleStreamingGet(*context.T, FortuneMultipleStreamingGetServerCall) (total int32, another int32, _ error)
 	// GetComplexError returns (always!) ErrComplex.
 	GetComplexError(*context.T, rpc.ServerCall) error
 	// NoTags is a method without tags.
@@ -265,10 +384,14 @@ type FortuneServerStubMethods interface {
 	Add(_ *context.T, _ rpc.ServerCall, Fortune string) error
 	// Get returns a random fortune.
 	Get(*context.T, rpc.ServerCall) (Fortune string, _ error)
-	// StreamingGet returns a stream that can be used to obtain fortunes.
+	// StreamingGet returns a stream that can be used to obtain fortunes, and returns the
+	// total number of items sent.
 	StreamingGet(*context.T, *FortuneStreamingGetServerCallStub) (total int32, _ error)
 	// MultipleGet returns the same fortune twice.
 	MultipleGet(*context.T, rpc.ServerCall) (Fortune string, Another string, _ error)
+	// MultipleStreamingGet returns a stream that can be used to obtain fortunes, and returns
+	// the total number of items sent, twice.
+	MultipleStreamingGet(*context.T, *FortuneMultipleStreamingGetServerCallStub) (total int32, another int32, _ error)
 	// GetComplexError returns (always!) ErrComplex.
 	GetComplexError(*context.T, rpc.ServerCall) error
 	// NoTags is a method without tags.
@@ -323,6 +446,10 @@ func (s implFortuneServerStub) MultipleGet(ctx *context.T, call rpc.ServerCall) 
 	return s.impl.MultipleGet(ctx, call)
 }
 
+func (s implFortuneServerStub) MultipleStreamingGet(ctx *context.T, call *FortuneMultipleStreamingGetServerCallStub) (int32, int32, error) {
+	return s.impl.MultipleStreamingGet(ctx, call)
+}
+
 func (s implFortuneServerStub) GetComplexError(ctx *context.T, call rpc.ServerCall) error {
 	return s.impl.GetComplexError(ctx, call)
 }
@@ -370,7 +497,7 @@ var descFortune = rpc.InterfaceDesc{
 		},
 		{
 			Name: "StreamingGet",
-			Doc:  "// StreamingGet returns a stream that can be used to obtain fortunes.",
+			Doc:  "// StreamingGet returns a stream that can be used to obtain fortunes, and returns the\n// total number of items sent.",
 			OutArgs: []rpc.ArgDesc{
 				{"total", ``}, // int32
 			},
@@ -382,6 +509,15 @@ var descFortune = rpc.InterfaceDesc{
 			OutArgs: []rpc.ArgDesc{
 				{"Fortune", ``}, // string
 				{"Another", ``}, // string
+			},
+			Tags: []*vdl.Value{vdl.ValueOf(access.Tag("Read"))},
+		},
+		{
+			Name: "MultipleStreamingGet",
+			Doc:  "// MultipleStreamingGet returns a stream that can be used to obtain fortunes, and returns\n// the total number of items sent, twice.",
+			OutArgs: []rpc.ArgDesc{
+				{"total", ``},   // int32
+				{"another", ``}, // int32
 			},
 			Tags: []*vdl.Value{vdl.ValueOf(access.Tag("Read"))},
 		},
@@ -483,5 +619,89 @@ type implFortuneStreamingGetServerCallSend struct {
 }
 
 func (s implFortuneStreamingGetServerCallSend) Send(item string) error {
+	return s.s.Send(item)
+}
+
+// FortuneMultipleStreamingGetServerStream is the server stream for Fortune.MultipleStreamingGet.
+type FortuneMultipleStreamingGetServerStream interface {
+	// RecvStream returns the receiver side of the Fortune.MultipleStreamingGet server stream.
+	RecvStream() interface {
+		// Advance stages an item so that it may be retrieved via Value.  Returns
+		// true iff there is an item to retrieve.  Advance must be called before
+		// Value is called.  May block if an item is not available.
+		Advance() bool
+		// Value returns the item that was staged by Advance.  May panic if Advance
+		// returned false or was not called.  Never blocks.
+		Value() bool
+		// Err returns any error encountered by Advance.  Never blocks.
+		Err() error
+	}
+	// SendStream returns the send side of the Fortune.MultipleStreamingGet server stream.
+	SendStream() interface {
+		// Send places the item onto the output stream.  Returns errors encountered
+		// while sending.  Blocks if there is no buffer space; will unblock when
+		// buffer space is available.
+		Send(item string) error
+	}
+}
+
+// FortuneMultipleStreamingGetServerCall represents the context passed to Fortune.MultipleStreamingGet.
+type FortuneMultipleStreamingGetServerCall interface {
+	rpc.ServerCall
+	FortuneMultipleStreamingGetServerStream
+}
+
+// FortuneMultipleStreamingGetServerCallStub is a wrapper that converts rpc.StreamServerCall into
+// a typesafe stub that implements FortuneMultipleStreamingGetServerCall.
+type FortuneMultipleStreamingGetServerCallStub struct {
+	rpc.StreamServerCall
+	valRecv bool
+	errRecv error
+}
+
+// Init initializes FortuneMultipleStreamingGetServerCallStub from rpc.StreamServerCall.
+func (s *FortuneMultipleStreamingGetServerCallStub) Init(call rpc.StreamServerCall) {
+	s.StreamServerCall = call
+}
+
+// RecvStream returns the receiver side of the Fortune.MultipleStreamingGet server stream.
+func (s *FortuneMultipleStreamingGetServerCallStub) RecvStream() interface {
+	Advance() bool
+	Value() bool
+	Err() error
+} {
+	return implFortuneMultipleStreamingGetServerCallRecv{s}
+}
+
+type implFortuneMultipleStreamingGetServerCallRecv struct {
+	s *FortuneMultipleStreamingGetServerCallStub
+}
+
+func (s implFortuneMultipleStreamingGetServerCallRecv) Advance() bool {
+	s.s.errRecv = s.s.Recv(&s.s.valRecv)
+	return s.s.errRecv == nil
+}
+func (s implFortuneMultipleStreamingGetServerCallRecv) Value() bool {
+	return s.s.valRecv
+}
+func (s implFortuneMultipleStreamingGetServerCallRecv) Err() error {
+	if s.s.errRecv == io.EOF {
+		return nil
+	}
+	return s.s.errRecv
+}
+
+// SendStream returns the send side of the Fortune.MultipleStreamingGet server stream.
+func (s *FortuneMultipleStreamingGetServerCallStub) SendStream() interface {
+	Send(item string) error
+} {
+	return implFortuneMultipleStreamingGetServerCallSend{s}
+}
+
+type implFortuneMultipleStreamingGetServerCallSend struct {
+	s *FortuneMultipleStreamingGetServerCallStub
+}
+
+func (s implFortuneMultipleStreamingGetServerCallSend) Send(item string) error {
 	return s.s.Send(item)
 }
