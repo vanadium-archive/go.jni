@@ -165,7 +165,7 @@ func Java_io_v_impl_google_lib_discovery_VDiscoveryImpl_advertise(jenv *C.JNIEnv
 		return
 	}
 	// Copy back service.InstanceId to jServiceObject since it's the only field that would be updated.
-	if err = jutil.CallVoidMethod(env, jutil.Object(uintptr(unsafe.Pointer(jServiceObject))), "setInstanceId", []jutil.Sign{jutil.StringSign}, jutil.JString(env, service.InstanceId)); err != nil {
+	if err = jutil.CallVoidMethod(env, jutil.Object(uintptr(unsafe.Pointer(jServiceObject))), "setInstanceId", []jutil.Sign{jutil.StringSign}, service.InstanceId); err != nil {
 		jutil.JThrowV(env, err)
 		return
 	}
