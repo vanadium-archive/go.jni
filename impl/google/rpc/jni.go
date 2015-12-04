@@ -29,7 +29,10 @@ import (
 import "C"
 
 var (
+	executorSign         = jutil.ClassSign("java.util.concurrent.Executor")
 	contextSign          = jutil.ClassSign("io.v.v23.context.VContext")
+	callbackSign         = jutil.ClassSign("io.v.v23.rpc.Callback")
+	dispatcherSign       = jutil.ClassSign("io.v.v23.rpc.Dispatcher")
 	invokerSign          = jutil.ClassSign("io.v.v23.rpc.Invoker")
 	clientCallSign       = jutil.ClassSign("io.v.v23.rpc.ClientCall")
 	serverCallSign       = jutil.ClassSign("io.v.v23.rpc.ServerCall")
@@ -53,8 +56,8 @@ var (
 	jServerCallImplClass jutil.Class
 	// Global reference for io.v.impl.google.rpc.StreamImpl class.
 	jStreamImplClass jutil.Class
-	// Global reference for io.v.impl.google.rpc.Util class.
-	jUtilClass jutil.Class
+	// Global reference for io.v.impl.google.rpc.ServerRPCHelper class.
+	jServerRPCHelperClass jutil.Class
 	// Global reference for io.v.v23.rpc.Invoker class.
 	jInvokerClass jutil.Class
 	// Global reference for io.v.v23.rpc.ListenSpec class.
@@ -125,7 +128,7 @@ func Init(env jutil.Env) error {
 	if err != nil {
 		return err
 	}
-	jUtilClass, err = jutil.JFindClass(env, "io/v/impl/google/rpc/Util")
+	jServerRPCHelperClass, err = jutil.JFindClass(env, "io/v/impl/google/rpc/ServerRPCHelper")
 	if err != nil {
 		return err
 	}
@@ -517,10 +520,10 @@ func Java_io_v_impl_google_rpc_AddressChooserImpl_nativeFinalize(jenv *C.JNIEnv,
 	jutil.GoUnref(jutil.NativePtr(goPtr))
 }
 
-//export Java_io_v_impl_google_rpc_Util_nativeGoInvoker
-func Java_io_v_impl_google_rpc_Util_nativeGoInvoker(jenv *C.JNIEnv, jUtil C.jclass, jServiceObject C.jobject) C.jlong {
+//export Java_io_v_impl_google_rpc_ServerRPCHelper_nativeGoInvoker
+func Java_io_v_impl_google_rpc_ServerRPCHelper_nativeGoInvoker(jenv *C.JNIEnv, jServerRPCHelper C.jclass, jServiceObject C.jobject, jExecutor C.jobject) C.jlong {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	invoker, err := goInvoker(env, jutil.Object(uintptr(unsafe.Pointer(jServiceObject))))
+	invoker, err := goInvoker(env, jutil.Object(uintptr(unsafe.Pointer(jServiceObject))), jutil.Object(uintptr(unsafe.Pointer(jExecutor))))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return C.jlong(0)
@@ -529,8 +532,8 @@ func Java_io_v_impl_google_rpc_Util_nativeGoInvoker(jenv *C.JNIEnv, jUtil C.jcla
 	return C.jlong(jutil.PtrValue(&invoker))
 }
 
-//export Java_io_v_impl_google_rpc_Util_nativeGoAuthorizer
-func Java_io_v_impl_google_rpc_Util_nativeGoAuthorizer(jenv *C.JNIEnv, jUtil C.jclass, jAuthorizer C.jobject) C.jlong {
+//export Java_io_v_impl_google_rpc_ServerRPCHelper_nativeGoAuthorizer
+func Java_io_v_impl_google_rpc_ServerRPCHelper_nativeGoAuthorizer(jenv *C.JNIEnv, jServerRPCHelper C.jclass, jAuthorizer C.jobject) C.jlong {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	auth, err := jsecurity.GoAuthorizer(env, jutil.Object(uintptr(unsafe.Pointer(jAuthorizer))))
 	if err != nil {

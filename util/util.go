@@ -307,17 +307,25 @@ func JVException(env Env, err error) (Object, error) {
 // JExceptionMsg returns the exception message as a Go error, if an exception
 // occurred, or nil otherwise.
 func JExceptionMsg(env Env) error {
-	eObj := Object(uintptr(unsafe.Pointer(C.ExceptionOccurred(env.value()))))
-	if eObj.IsNull() { // no exception
+	jException := Object(uintptr(unsafe.Pointer(C.ExceptionOccurred(env.value()))))
+	if jException.IsNull() { // no exception
 		return nil
 	}
 	C.ExceptionClear(env.value())
+	return GoError(env, jException)
+}
 
-	if IsInstanceOf(env, eObj, jVExceptionClass) {
+// GoError converts the provided Java Exception into a Go error, converting VException into
+// verror.T and all other exceptions into a Go error.
+func GoError(env Env, jException Object) error {
+	if jException.IsNull() {
+		return nil
+	}
+	if IsInstanceOf(env, jException, jVExceptionClass) {
 		// VException: convert it into a verror.
 		// Note that we can't use CallStaticObjectMethod below as it may lead to
 		// an infinite loop.
-		jmid, jArgArr, freeFunc, err := setupStaticMethodCall(env, jVomUtilClass, "encode", []Sign{ObjectSign, TypeSign}, ByteArraySign, eObj, jVExceptionClass)
+		jmid, jArgArr, freeFunc, err := setupStaticMethodCall(env, jVomUtilClass, "encode", []Sign{ObjectSign, TypeSign}, ByteArraySign, jException, jVExceptionClass)
 		if err != nil {
 			return fmt.Errorf("error converting VException: " + err.Error())
 		}
@@ -337,12 +345,12 @@ func JExceptionMsg(env Env) error {
 	// Not a VException: convert it into a Go error.
 	// Note that we can't use CallObjectMethod below, as it may lead to an
 	// infinite loop.
-	jmid, jArgArr, freeFunc, err := setupMethodCall(env, eObj, "getMessage", nil, StringSign)
+	jmid, jArgArr, freeFunc, err := setupMethodCall(env, jException, "getMessage", nil, StringSign)
 	if err != nil {
 		return fmt.Errorf("error converting exception: " + err.Error())
 	}
 	defer freeFunc()
-	strObj := C.CallObjectMethodA(env.value(), eObj.value(), jmid, jArgArr)
+	strObj := C.CallObjectMethodA(env.value(), jException.value(), jmid, jArgArr)
 	if e := C.ExceptionOccurred(env.value()); e != nil {
 		C.ExceptionClear(env.value())
 		return fmt.Errorf("error converting exception: exception during Throwable.getMessage()")

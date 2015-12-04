@@ -80,6 +80,8 @@ func jValue(env Env, v interface{}, sign Sign) (C.jvalue, bool) {
 		return jByteArrayValue(env, v)
 	case ArraySign(StringSign):
 		return jStringArrayValue(env, v)
+	case ArraySign(ArraySign(ByteSign)):
+		return jByteArrayArrayValue(env, v)
 	default:
 		return jObjectValue(v)
 	}
@@ -202,6 +204,18 @@ func jStringArrayValue(env Env, v interface{}) (C.jvalue, bool) {
 		return errJValue, false
 	}
 	jArr, err := JStringArray(env, arr)
+	if err != nil {
+		return errJValue, false
+	}
+	return jObjectValue(jArr)
+}
+
+func jByteArrayArrayValue(env Env, v interface{}) (C.jvalue, bool) {
+	arr, ok := v.([][]byte)
+	if !ok {
+		return errJValue, false
+	}
+	jArr, err := JByteArrayArray(env, arr)
 	if err != nil {
 		return errJValue, false
 	}

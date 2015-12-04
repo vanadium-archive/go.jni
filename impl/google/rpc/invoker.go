@@ -18,6 +18,7 @@ import (
 	"v.io/v23/vdlroot/signature"
 	"v.io/v23/vom"
 
+	jrpc "v.io/x/jni/v23/rpc"
 	jchannel "v.io/x/jni/impl/google/channel"
 	jutil "v.io/x/jni/util"
 	jcontext "v.io/x/jni/v23/context"
@@ -26,7 +27,7 @@ import (
 // #include "jni.h"
 import "C"
 
-func goInvoker(env jutil.Env, obj jutil.Object) (rpc.Invoker, error) {
+func goInvoker(env jutil.Env, obj jutil.Object, jExecutor jutil.Object) (rpc.Invoker, error) {
 	// See if the Java object is an invoker.
 	var jInvoker jutil.Object
 	if jutil.IsInstanceOf(env, obj, jInvokerClass) {
@@ -40,23 +41,26 @@ func goInvoker(env jutil.Env, obj jutil.Object) (rpc.Invoker, error) {
 		jInvoker = jReflectInvoker
 	}
 
-	// Reference Java invoker; it will be de-referenced when the go invoker
+	// Reference Java invoker and executor; they will be de-referenced when the go invoker
 	// created below is garbage-collected (through the finalizer callback we
 	// setup just below).
 	jInvoker = jutil.NewGlobalRef(env, jInvoker)
+	jExecutor = jutil.NewGlobalRef(env, jExecutor)
 	i := &invoker{
 		jInvoker: jInvoker,
+		jExecutor: jExecutor,
 	}
 	runtime.SetFinalizer(i, func(i *invoker) {
 		env, freeFunc := jutil.GetEnv()
 		defer freeFunc()
 		jutil.DeleteGlobalRef(env, i.jInvoker)
+		jutil.DeleteGlobalRef(env, i.jExecutor)
 	})
 	return i, nil
 }
 
 type invoker struct {
-	jInvoker jutil.Object
+	jInvoker, jExecutor jutil.Object
 }
 
 func (i *invoker) Prepare(ctx *context.T, method string, numArgs int) (argptrs []interface{}, tags []*vdl.Value, err error) {
@@ -69,7 +73,7 @@ func (i *invoker) Prepare(ctx *context.T, method string, numArgs int) (argptrs [
 		value := new(vdl.Value)
 		argptrs[i] = &value
 	}
-	jVomTags, err := jutil.CallStaticObjectMethod(env, jUtilClass, "getMethodTags", []jutil.Sign{invokerSign, jutil.StringSign}, jutil.ArraySign(jutil.ByteArraySign), i.jInvoker, jutil.CamelCase(method))
+	jVomTags, err := jutil.CallStaticObjectMethod(env, jServerRPCHelperClass, "getMethodTags", []jutil.Sign{invokerSign, jutil.StringSign}, jutil.ArraySign(jutil.ByteArraySign), i.jInvoker, jutil.CamelCase(method))
 	if err != nil {
 		return nil, nil, err
 	}
@@ -89,14 +93,15 @@ func (i *invoker) Prepare(ctx *context.T, method string, numArgs int) (argptrs [
 
 func (i *invoker) Invoke(ctx *context.T, call rpc.StreamServerCall, method string, argptrs []interface{}) (results []interface{}, err error) {
 	env, freeFunc := jutil.GetEnv()
-	defer freeFunc()
 
 	jContext, err := jcontext.JavaContext(env, ctx)
 	if err != nil {
+		freeFunc()
 		return nil, err
 	}
 	jStreamServerCall, err := javaStreamServerCall(env, call)
 	if err != nil {
+		freeFunc()
 		return nil, err
 	}
 	vomArgs := make([][]byte, len(argptrs))
@@ -104,29 +109,51 @@ func (i *invoker) Invoke(ctx *context.T, call rpc.StreamServerCall, method strin
 		arg := interface{}(jutil.DerefOrDie(argptr))
 		var err error
 		if vomArgs[i], err = vom.Encode(arg); err != nil {
+			freeFunc()
 			return nil, err
 		}
 	}
-	jVomArgs, err := jutil.JByteArrayArray(env, vomArgs)
-	if err != nil {
-		return nil, err
-	}
-	jVomResults, err := jutil.CallStaticObjectMethod(env, jUtilClass, "invoke", []jutil.Sign{invokerSign, contextSign, streamServerCallSign, jutil.StringSign, jutil.ArraySign(jutil.ByteArraySign)}, jutil.ArraySign(jutil.ByteArraySign), i.jInvoker, jContext, jStreamServerCall, jutil.CamelCase(method), jVomArgs)
-	if err != nil {
-		return nil, err
-	}
-	vomResults, err := jutil.GoByteArrayArray(env, jVomResults)
-	if err != nil {
-		return nil, err
-	}
-	results = make([]interface{}, len(vomResults))
-	for i, vomResult := range vomResults {
-		var err error
-		if results[i], err = jutil.VomDecodeToValue(vomResult); err != nil {
-			return nil, err
+	errCh := make(chan error)
+	succCh := make(chan []interface{})
+	success := func(jResult jutil.Object) {
+		env, freeFunc := jutil.GetEnv()
+		defer freeFunc()
+		vomResults, err := jutil.GoByteArrayArray(env, jResult)
+		if err != nil {
+			errCh <- err
+			return
 		}
+		results = make([]interface{}, len(vomResults))
+		for i, vomResult := range vomResults {
+			var err error
+			if results[i], err = jutil.VomDecodeToValue(vomResult); err != nil {
+				errCh <- err
+				return
+			}
+		}
+		succCh <- results
 	}
-	return
+	failure := func(err error) {
+		errCh <- err
+	}
+	jCallback, err := jrpc.JavaNativeCallback(env, success, failure)
+	if err != nil {
+		freeFunc()
+		return nil, err
+	}
+	err = jutil.CallStaticVoidMethod(env, jServerRPCHelperClass, "invoke", []jutil.Sign{invokerSign, contextSign, streamServerCallSign, jutil.StringSign, jutil.ArraySign(jutil.ArraySign(jutil.ByteSign)), callbackSign, executorSign}, i.jInvoker, jContext, jStreamServerCall, jutil.CamelCase(method), vomArgs, jCallback, i.jExecutor)
+	if err != nil {
+		freeFunc()
+		return nil, err
+	}
+	// We're blocking, so have to explicitly release the env here.
+	freeFunc()
+	select {
+	case results := <- succCh:
+		return results, nil
+	case err := <- errCh:
+		return nil, err
+	}
 }
 
 func (i *invoker) Signature(ctx *context.T, call rpc.ServerCall) ([]signature.Interface, error) {
