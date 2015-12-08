@@ -30,7 +30,7 @@ func GoDispatcher(env jutil.Env, jDispatcher jutil.Object, jExecutor jutil.Objec
 	jExecutor = jutil.NewGlobalRef(env, jExecutor)
 	d := &dispatcher{
 		jDispatcher: jDispatcher,
-		jExecutor: jExecutor,
+		jExecutor:   jExecutor,
 	}
 	runtime.SetFinalizer(d, func(d *dispatcher) {
 		env, freeFunc := jutil.GetEnv()

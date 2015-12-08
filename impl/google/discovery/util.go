@@ -12,6 +12,7 @@ import (
 	"v.io/v23/discovery"
 	idiscovery "v.io/x/ref/lib/discovery"
 )
+
 // #include "jni.h"
 import "C"
 

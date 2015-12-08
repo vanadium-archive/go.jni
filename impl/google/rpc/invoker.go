@@ -18,10 +18,10 @@ import (
 	"v.io/v23/vdlroot/signature"
 	"v.io/v23/vom"
 
-	jrpc "v.io/x/jni/v23/rpc"
 	jchannel "v.io/x/jni/impl/google/channel"
 	jutil "v.io/x/jni/util"
 	jcontext "v.io/x/jni/v23/context"
+	jrpc "v.io/x/jni/v23/rpc"
 )
 
 // #include "jni.h"
@@ -47,7 +47,7 @@ func goInvoker(env jutil.Env, obj jutil.Object, jExecutor jutil.Object) (rpc.Inv
 	jInvoker = jutil.NewGlobalRef(env, jInvoker)
 	jExecutor = jutil.NewGlobalRef(env, jExecutor)
 	i := &invoker{
-		jInvoker: jInvoker,
+		jInvoker:  jInvoker,
 		jExecutor: jExecutor,
 	}
 	runtime.SetFinalizer(i, func(i *invoker) {
@@ -149,9 +149,9 @@ func (i *invoker) Invoke(ctx *context.T, call rpc.StreamServerCall, method strin
 	// We're blocking, so have to explicitly release the env here.
 	freeFunc()
 	select {
-	case results := <- succCh:
+	case results := <-succCh:
 		return results, nil
-	case err := <- errCh:
+	case err := <-errCh:
 		return nil, err
 	}
 }

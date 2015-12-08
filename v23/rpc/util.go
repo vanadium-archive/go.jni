@@ -17,7 +17,7 @@ func JavaNativeCallback(env jutil.Env, success func(jResult jutil.Object), failu
 	if err != nil {
 		return jutil.NullObject, err
 	}
-	jutil.GoRef(&success)  // Un-refed when jCallback is finalized
-	jutil.GoRef(&failure)  // Un-refed when jCallback is finalized
+	jutil.GoRef(&success) // Un-refed when jCallback is finalized
+	jutil.GoRef(&failure) // Un-refed when jCallback is finalized
 	return jCallback, nil
 }

@@ -12,14 +12,16 @@ import (
 	jutil "v.io/x/jni/util"
 	"v.io/x/ref/lib/discovery"
 )
+
 // #include "jni.h"
 import "C"
+
 var (
 	androidContextSign = jutil.ClassSign("android.content.Context")
-	contextSign = jutil.ClassSign("io.v.v23.context.VContext")
-	advertisementSign = jutil.ClassSign("io.v.x.ref.lib.discovery.Advertisement")
-	uuidSign = jutil.ClassSign("java.util.UUID")
-	scanHandlerSign = jutil.ClassSign("io.v.impl.google.lib.discovery.ScanHandler")
+	contextSign        = jutil.ClassSign("io.v.v23.context.VContext")
+	advertisementSign  = jutil.ClassSign("io.v.x.ref.lib.discovery.Advertisement")
+	uuidSign           = jutil.ClassSign("java.util.UUID")
+	scanHandlerSign    = jutil.ClassSign("io.v.impl.google.lib.discovery.ScanHandler")
 
 	// Global reference for io.v.android.libs.discovery.ble.BlePlugin
 	jBlePluginClass jutil.Class
@@ -54,9 +56,9 @@ func Init(env jutil.Env) error {
 }
 
 //export Java_io_v_android_libs_discovery_ble_NativeScanHandler_nativeHandleUpdate
-func Java_io_v_android_libs_discovery_ble_NativeScanHandler_nativeHandleUpdate(jenv *C.JNIEnv, _ C.jobject, jAdvObj C.jobject, goPtr C.jlong)  {
+func Java_io_v_android_libs_discovery_ble_NativeScanHandler_nativeHandleUpdate(jenv *C.JNIEnv, _ C.jobject, jAdvObj C.jobject, goPtr C.jlong) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	ch := (*(*chan <-discovery.Advertisement)(jutil.NativePtr(goPtr)))
+	ch := (*(*chan<- discovery.Advertisement)(jutil.NativePtr(goPtr)))
 
 	jAdv := jutil.Object(uintptr(unsafe.Pointer(jAdvObj)))
 	var adv discovery.Advertisement
@@ -64,7 +66,7 @@ func Java_io_v_android_libs_discovery_ble_NativeScanHandler_nativeHandleUpdate(j
 		jutil.JThrowV(env, err)
 		return
 	}
-	ch <-adv
+	ch <- adv
 }
 
 //export Java_io_v_android_libs_discovery_ble_NativeScanHandler_nativeFinalize

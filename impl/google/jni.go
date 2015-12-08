@@ -8,12 +8,12 @@ package google
 
 import (
 	jchannel "v.io/x/jni/impl/google/channel"
+	jdiscovery "v.io/x/jni/impl/google/discovery"
 	jns "v.io/x/jni/impl/google/namespace"
 	jrpc "v.io/x/jni/impl/google/rpc"
 	jrt "v.io/x/jni/impl/google/rt"
 	jservices "v.io/x/jni/impl/google/services"
 	jutil "v.io/x/jni/util"
-	jdiscovery "v.io/x/jni/impl/google/discovery"
 )
 
 // #include "jni.h"

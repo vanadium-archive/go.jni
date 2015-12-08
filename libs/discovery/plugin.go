@@ -5,6 +5,7 @@
 // +build android
 
 package discovery
+
 import (
 	"bytes"
 	"encoding/binary"
@@ -14,8 +15,8 @@ import (
 
 	"v.io/x/ref/lib/discovery"
 
-	jcontext "v.io/x/jni/v23/context"
 	jutil "v.io/x/jni/util"
+	jcontext "v.io/x/jni/v23/context"
 )
 
 // #include "jni.h"
@@ -91,7 +92,6 @@ func (p *plugin) Scan(ctx *context.T, serviceUuid discovery.Uuid, ch chan<- disc
 		return err
 	}
 
-
 	jutil.GoRef(&ch)
 	jNativeScanHandler, err := jutil.NewObject(env, jNativeScanHandlerClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&ch)))
 	if err != nil {
@@ -107,7 +107,6 @@ func (p *plugin) Scan(ctx *context.T, serviceUuid discovery.Uuid, ch chan<- disc
 	p.trigger.Add(done, ctx.Done())
 	return nil
 }
-
 
 // JavaUUID converts a Go UUID type to a Java UUID object.
 func JavaUUID(env jutil.Env, uuid discovery.Uuid) (jutil.Object, error) {

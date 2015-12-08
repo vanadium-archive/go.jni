@@ -11,10 +11,13 @@ import (
 	"encoding/binary"
 	"unsafe"
 
+	"v.io/v23/context"
 	"v.io/v23/discovery"
 	"v.io/v23/security"
+	"v.io/v23/verror"
 	idiscovery "v.io/x/ref/lib/discovery"
 
+	jchannel "v.io/x/jni/impl/google/channel"
 	jutil "v.io/x/jni/util"
 	jcontext "v.io/x/jni/v23/context"
 )
@@ -110,119 +113,123 @@ func Java_io_v_impl_google_lib_discovery_UUIDUtil_UUIDForAttributeKey(jenv *C.JN
 	return convertStringtoUUID(jenv, jclass, jName, converter)
 }
 
-//export Java_io_v_impl_google_lib_discovery_VDiscoveryImpl_nativeFinalize
-func Java_io_v_impl_google_lib_discovery_VDiscoveryImpl_nativeFinalize(jenv *C.JNIEnv, _ C.jobject, discovery C.jlong, trigger C.jlong) {
-	jutil.GoUnref(jutil.NativePtr(discovery))
-	jutil.GoUnref(jutil.NativePtr(trigger))
-}
-
-//export Java_io_v_impl_google_lib_discovery_VDiscoveryImpl_advertise
-func Java_io_v_impl_google_lib_discovery_VDiscoveryImpl_advertise(jenv *C.JNIEnv, jDiscoveryObj C.jobject, jContext C.jobject, jServiceObject C.jobject, jVisibility C.jobject, jCallback C.jobject) {
-	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	ctx, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jContext))))
+func doAdvertise(ctx *context.T, ds discovery.T, trigger *idiscovery.Trigger, service discovery.Service, visibility []security.BlessingPattern, jService jutil.Object, jDoneCallback jutil.Object) (jutil.Object, error) {
+	// Blocking call, so don't call GetEnv() beforehand.
+	done, err := ds.Advertise(ctx, &service, visibility)
+	env, freeFunc := jutil.GetEnv()
+	defer freeFunc()
+	defer jutil.DeleteGlobalRef(env, jService)
 	if err != nil {
-		return
+		jutil.DeleteGlobalRef(env, jDoneCallback)
+		return jutil.NullObject, err
 	}
-	jService := jutil.Object(uintptr(unsafe.Pointer(jServiceObject)))
-	var service discovery.Service
-	if err := jutil.GoVomCopy(env, jService, jServiceClass, &service); err != nil {
-		jutil.JThrowV(env, err)
-		return
+	// Copy back service.InstanceId to jService since it's the only field that would be updated.
+	if err = jutil.CallVoidMethod(env, jService, "setInstanceId", []jutil.Sign{jutil.StringSign}, service.InstanceId); err != nil {
+		jutil.DeleteGlobalRef(env, jDoneCallback)
+		return jutil.NullObject, err
 	}
-
-	visibilityArray, err := jutil.GoObjectList(env, jutil.Object(uintptr(unsafe.Pointer(jVisibility))))
+	listenableFutureSign := jutil.ClassSign("com.google.common.util.concurrent.ListenableFuture")
+	jDoneFuture, err := jutil.CallObjectMethod(env, jDoneCallback, "getFuture", nil, listenableFutureSign)
 	if err != nil {
-		jutil.JThrowV(env, err)
-		return
+		jutil.DeleteGlobalRef(env, jDoneCallback)
+		return jutil.NullObject, err
 	}
-	visibilitySlice := make([]security.BlessingPattern, len(visibilityArray))
-	for i, jPattern := range visibilityArray {
-		if err := jutil.GoVomCopy(env, jPattern, jBlessingPatternClass, &visibilitySlice[i]); err != nil {
-			jutil.JThrowV(env, err)
-			return
-		}
-	}
-	jDiscovery := jutil.Object(uintptr(unsafe.Pointer(jDiscoveryObj)))
-	discoveryPtr, err := jutil.JLongField(env, jDiscovery, "nativeDiscovery")
-	if err != nil {
-		jutil.JThrowV(env, err)
-		return
-	}
-
-	ds := *(*discovery.T)(jutil.NativePtr(discoveryPtr))
-
-	triggerPtr, err := jutil.JLongField(env, jDiscovery, "nativeTrigger")
-	if err != nil {
-		jutil.JThrowV(env, err)
-		return
-	}
-
-	trigger := (*idiscovery.Trigger)(jutil.NativePtr(triggerPtr))
-
-	done, err := ds.Advertise(ctx, &service, visibilitySlice)
-	if err != nil {
-		jutil.JThrowV(env, err)
-		return
-	}
-	// Copy back service.InstanceId to jServiceObject since it's the only field that would be updated.
-	if err = jutil.CallVoidMethod(env, jutil.Object(uintptr(unsafe.Pointer(jServiceObject))), "setInstanceId", []jutil.Sign{jutil.StringSign}, service.InstanceId); err != nil {
-		jutil.JThrowV(env, err)
-		return
-	}
-	cb := jutil.Object(uintptr(unsafe.Pointer(jCallback)))
-	cb = jutil.NewGlobalRef(env, cb)
 	trigger.Add(func() {
 		env, freeFunc := jutil.GetEnv()
 		defer freeFunc()
-		// TODO(bjornick): What should we do on errors?
-		if err := jutil.CallVoidMethod(env, cb, "done", nil); err != nil {
-			ctx.Errorf("failed to call done:", err)
-		}
-		jutil.DeleteGlobalRef(env, cb)
+		jutil.CallbackOnSuccess(env, jDoneCallback, jutil.NullObject)
+		jutil.DeleteGlobalRef(env, jDoneCallback)
 	}, done)
+	// Must grab a global reference as we free up the env and all local references that come along
+	// with it.
+	return jutil.NewGlobalRef(env, jDoneFuture), nil // Un-refed in DoAsyncCall
 }
 
-//export Java_io_v_impl_google_lib_discovery_VDiscoveryImpl_scan
-func Java_io_v_impl_google_lib_discovery_VDiscoveryImpl_scan(jenv *C.JNIEnv, jDiscoveryObj C.jobject, jContext C.jobject, jQuery C.jstring, jCallback C.jobject) {
+//export Java_io_v_impl_google_lib_discovery_VDiscoveryImpl_nativeAdvertise
+func Java_io_v_impl_google_lib_discovery_VDiscoveryImpl_nativeAdvertise(jenv *C.JNIEnv, jDiscovery C.jobject, goDiscoveryPtr C.jlong, goTriggerPtr C.jlong, jContext C.jobject, jServiceObj C.jobject, jVisibilityObj C.jobject, jStartCallbackObj C.jobject, jDoneCallbackObj C.jobject) {
+	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
+	jService := jutil.Object(uintptr(unsafe.Pointer(jServiceObj)))
+	jVisibility := jutil.Object(uintptr(unsafe.Pointer(jVisibilityObj)))
+	jStartCallback := jutil.Object(uintptr(unsafe.Pointer(jStartCallbackObj)))
+	jDoneCallback := jutil.Object(uintptr(unsafe.Pointer(jDoneCallbackObj)))
+	ctx, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jContext))))
+	if err != nil {
+		jutil.CallbackOnFailure(env, jStartCallback, err)
+		return
+	}
+	var service discovery.Service
+	if err := jutil.GoVomCopy(env, jService, jServiceClass, &service); err != nil {
+		jutil.CallbackOnFailure(env, jStartCallback, err)
+		return
+	}
+	varr, err := jutil.GoObjectList(env, jVisibility)
+	if err != nil {
+		jutil.CallbackOnFailure(env, jStartCallback, err)
+		return
+	}
+	visibility := make([]security.BlessingPattern, len(varr))
+	for i, jPattern := range varr {
+		if err := jutil.GoVomCopy(env, jPattern, jBlessingPatternClass, &visibility[i]); err != nil {
+			jutil.CallbackOnFailure(env, jStartCallback, err)
+			return
+		}
+	}
+	ds := *(*discovery.T)(jutil.NativePtr(goDiscoveryPtr))
+	trigger := (*idiscovery.Trigger)(jutil.NativePtr(goTriggerPtr))
+	jService = jutil.NewGlobalRef(env, jService)           // Un-refed in doAdvertise
+	jDoneCallback = jutil.NewGlobalRef(env, jDoneCallback) // Un-refed in doAdvertise
+	jutil.DoAsyncCall(env, jStartCallback, func() (jutil.Object, error) {
+		return doAdvertise(ctx, ds, trigger, service, visibility, jService, jDoneCallback)
+	})
+}
+
+//export Java_io_v_impl_google_lib_discovery_VDiscoveryImpl_nativeScan
+func Java_io_v_impl_google_lib_discovery_VDiscoveryImpl_nativeScan(jenv *C.JNIEnv, jDiscovery C.jobject, goDiscoveryPtr C.jlong, jContext C.jobject, jQuery C.jstring) C.jobject {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	ctx, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jContext))))
 	if err != nil {
-		return
+		jutil.JThrowV(env, err)
+		return nil
 	}
 	query := jutil.GoString(env, jutil.Object(uintptr(unsafe.Pointer(jQuery))))
+	ds := *(*discovery.T)(jutil.NativePtr(goDiscoveryPtr))
 
-	jDiscovery := jutil.Object(uintptr(unsafe.Pointer(jDiscoveryObj)))
-	discoveryPtr, err := jutil.JLongField(env, jDiscovery, "nativeDiscovery")
-	if err != nil {
-		jutil.JThrowV(env, err)
-		return
-	}
-	ds := *(*discovery.T)(jutil.NativePtr(discoveryPtr))
-
-	updates, err := ds.Scan(ctx, query)
-
-	jutil.NewGlobalRef(env, jutil.Object(uintptr(unsafe.Pointer(jCallback))))
-	if err != nil {
-		jutil.JThrowV(env, err)
-		return
-	}
-	cb := jutil.Object(uintptr(unsafe.Pointer(jCallback)))
-	cb = jutil.NewGlobalRef(env, cb)
+	var scanChannel <-chan discovery.Update
+	var scanError error
+	scanDone := make(chan bool)
 	go func() {
+		scanChannel, scanError = ds.Scan(ctx, query)
+		close(scanDone)
+	}()
+	jChannel, err := jchannel.JavaInputChannel(env, func() (jutil.Object, error) {
+		// A few blocking calls below - don't call GetEnv() before they complete.
+		<-scanDone
+		if scanError != nil {
+			return jutil.NullObject, scanError
+		}
+		update, ok := <-scanChannel
+		if !ok {
+			return jutil.NullObject, verror.NewErrEndOfFile(ctx)
+		}
 		env, freeFunc := jutil.GetEnv()
 		defer freeFunc()
-		for v := range updates {
-			jUpdate, err := jutil.JVomCopy(env, v, jUpdateClass)
-			if err != nil {
-				ctx.Errorf("Failed to convert update: %v", err)
-				continue
-			}
-			err = jutil.CallVoidMethod(env, cb, "handleUpdate", []jutil.Sign{updateSign}, jUpdate)
-			if err != nil {
-				ctx.Errorf("Failed to call handler: %v", err)
-				continue
-			}
+		jUpdate, err := jutil.JVomCopy(env, update, jUpdateClass)
+		if err != nil {
+			return jutil.NullObject, err
 		}
-		jutil.DeleteGlobalRef(env, cb)
-	}()
+		// Must grab a global reference as we free up the env and all local references that come
+		// along with it.
+		return jutil.NewGlobalRef(env, jUpdate), nil // Un-refed by InputChannelImpl_nativeRecv
+	})
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	return C.jobject(unsafe.Pointer(jChannel))
+}
+
+//export Java_io_v_impl_google_lib_discovery_VDiscoveryImpl_nativeFinalize
+func Java_io_v_impl_google_lib_discovery_VDiscoveryImpl_nativeFinalize(jenv *C.JNIEnv, jDiscovery C.jobject, goDiscoveryPtr C.jlong, goTriggerPtr C.jlong) {
+	jutil.GoUnref(jutil.NativePtr(goDiscoveryPtr))
+	jutil.GoUnref(jutil.NativePtr(goTriggerPtr))
 }

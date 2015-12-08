@@ -12,11 +12,11 @@ import (
 	"v.io/v23"
 	"v.io/v23/context"
 
+	jdiscovery "v.io/x/jni/impl/google/discovery"
 	jns "v.io/x/jni/impl/google/namespace"
 	jrpc "v.io/x/jni/impl/google/rpc"
 	jutil "v.io/x/jni/util"
 	jcontext "v.io/x/jni/v23/context"
-	jdiscovery "v.io/x/jni/impl/google/discovery"
 	jsecurity "v.io/x/jni/v23/security"
 )
 
@@ -280,13 +280,13 @@ func Java_io_v_impl_google_rt_VRuntimeImpl_nativeGetDiscovery(jenv *C.JNIEnv, jR
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	ctx, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jContext))))
 	if err != nil {
-		jutil.JThrowV(env, err);
+		jutil.JThrowV(env, err)
 		return nil
 	}
 
 	jDiscovery, err := jdiscovery.JavaDiscovery(env, v23.GetDiscovery(ctx))
 	if err != nil {
-		jutil.JThrowV(env, err);
+		jutil.JThrowV(env, err)
 		return nil
 	}
 	return C.jobject(unsafe.Pointer(jDiscovery))

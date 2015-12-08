@@ -35,14 +35,14 @@ func Init(env jutil.Env) error {
 //export Java_io_v_v23_rpc_NativeCallback_nativeOnSuccess
 func Java_io_v_v23_rpc_NativeCallback_nativeOnSuccess(jenv *C.JNIEnv, jNativeCallback C.jobject, goSuccessPtr C.jlong, jResultObj C.jobject) {
 	jResult := jutil.Object(uintptr(unsafe.Pointer(jResultObj)))
-	(*(*func (jutil.Object))(jutil.NativePtr(goSuccessPtr)))(jResult)
+	(*(*func(jutil.Object))(jutil.NativePtr(goSuccessPtr)))(jResult)
 }
 
 //export Java_io_v_v23_rpc_NativeCallback_nativeOnFailure
 func Java_io_v_v23_rpc_NativeCallback_nativeOnFailure(jenv *C.JNIEnv, jNativeCallback C.jobject, goFailurePtr C.jlong, jVException C.jobject) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	err := jutil.GoError(env, jutil.Object(uintptr(unsafe.Pointer(jVException))))
-	(*(*func (error))(jutil.NativePtr(goFailurePtr)))(err)
+	(*(*func(error))(jutil.NativePtr(goFailurePtr)))(err)
 }
 
 //export Java_io_v_v23_rpc_NativeCallback_nativeFinalize

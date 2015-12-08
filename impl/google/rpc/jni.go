@@ -17,12 +17,12 @@ import (
 	"v.io/v23/vdl"
 	"v.io/v23/vom"
 
+	"v.io/v23/verror"
 	jbt "v.io/x/jni/impl/google/rpc/protocols/bt"
 	jutil "v.io/x/jni/util"
 	jcontext "v.io/x/jni/v23/context"
 	jnaming "v.io/x/jni/v23/naming"
 	jsecurity "v.io/x/jni/v23/security"
-	"v.io/v23/verror"
 )
 
 // #include "jni.h"
@@ -275,7 +275,7 @@ func doStartCall(context *context.T, name, method string, skipServerAuth bool, g
 	}
 	// Must grab a global reference as we free up the env and all local references that come along
 	// with it.
-	return jutil.NewGlobalRef(env, jCall), nil  // Un-refed in DoAsyncCall
+	return jutil.NewGlobalRef(env, jCall), nil // Un-refed in DoAsyncCall
 }
 
 //export Java_io_v_impl_google_rpc_ClientImpl_nativeStartCall
@@ -349,7 +349,7 @@ func Java_io_v_impl_google_rpc_StreamImpl_nativeRecv(jenv *C.JNIEnv, jStream C.j
 		}
 		// Must grab a global reference as we free up the env and all local references that come along
 		// with it.
-		return jutil.NewGlobalRef(env, jResult), nil  // Un-refed in DoAsyncCall
+		return jutil.NewGlobalRef(env, jResult), nil // Un-refed in DoAsyncCall
 	})
 }
 
@@ -397,7 +397,7 @@ func doFinish(goPtr C.jlong, numResults int) (jutil.Object, error) {
 	}
 	// Must grab a global reference as we free up the env and all local references that come along
 	// with it.
-	return jutil.NewGlobalRef(env, jArr), nil  // Un-refed in DoAsyncCall
+	return jutil.NewGlobalRef(env, jArr), nil // Un-refed in DoAsyncCall
 }
 
 //export Java_io_v_impl_google_rpc_ClientCallImpl_nativeFinish

@@ -315,7 +315,7 @@ func CallStaticVoidMethod(env Env, class Class, name string, argSigns []Sign, ar
 // approach to pass parameters through to fnToWrap.
 func DoAsyncCall(env Env, jCallback Object, fnToWrap func() (Object, error)) {
 	go func(jCallback Object) {
-		jResult, err := fnToWrap()  // probably blocking, so don't call GetEnv() before this line
+		jResult, err := fnToWrap() // probably blocking, so don't call GetEnv() before this line
 		env, freeFunc := GetEnv()
 		defer freeFunc()
 		defer DeleteGlobalRef(env, jCallback)
