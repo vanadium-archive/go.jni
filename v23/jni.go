@@ -15,6 +15,7 @@ import (
 	jsecurity "v.io/x/jni/v23/security"
 	jaccess "v.io/x/jni/v23/security/access"
 	jgroups "v.io/x/jni/v23/services/groups"
+	jnosql "v.io/x/jni/v23/syncbase/nosql"
 )
 
 // #include "jni.h"
@@ -43,6 +44,9 @@ func Init(env jutil.Env) error {
 		return err
 	}
 	if err := jgroups.Init(env); err != nil {
+		return err
+	}
+	if err := jnosql.Init(env); err != nil {
 		return err
 	}
 	return nil
