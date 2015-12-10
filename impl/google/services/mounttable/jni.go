@@ -95,7 +95,7 @@ func Java_io_v_impl_google_services_mounttable_MountTableServer_nativeWithNewSer
 		return nil
 
 	}
-	permsFile, err := ioutil.TempFile(os.TempDir(), "jni_permissions")
+	permsFile, err := ioutil.TempFile(rootDir, "jni_permissions")
 	if err != nil {
 		jutil.JThrowV(env, fmt.Errorf("Couldn't create permissions file: %v", err))
 		return nil
