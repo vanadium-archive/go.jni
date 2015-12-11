@@ -122,23 +122,39 @@ func JavaServerStatus(env jutil.Env, status rpc.ServerStatus) (jutil.Object, err
 		eps[i] = ep.String()
 	}
 
-	// Create Java array of proxies.
-	proxarr := make([]jutil.Object, len(status.Proxies))
-	for i, proxy := range status.Proxies {
-		var err error
-		if proxarr[i], err = JavaProxyStatus(env, proxy); err != nil {
+	lnErrors := make(map[jutil.Object]jutil.Object)
+	for addr, lerr := range status.ListenErrors {
+		jAddr, err := JavaListenAddr(env, addr.Protocol, addr.Address)
+		if err != nil {
 			return jutil.NullObject, err
 		}
+		jVExp, err := jutil.JVException(env, lerr)
+		if err != nil {
+			return jutil.NullObject, err
+		}
+		lnErrors[jAddr] = jVExp
 	}
-	jProxies, err := jutil.JObjectArray(env, proxarr, jProxyStatusClass)
+	jLnErrors, err := jutil.JObjectMap(env, lnErrors)
+	if err != nil {
+		return jutil.NullObject, err
+	}
+
+	proxyErrors := make(map[jutil.Object]jutil.Object)
+	for s, perr := range status.ProxyErrors {
+		jVExp, err := jutil.JVException(env, perr)
+		if err != nil {
+			return jutil.NullObject, err
+		}
+		proxyErrors[jutil.JString(env, s)] = jVExp
+	}
+	jProxyErrors, err := jutil.JObjectMap(env, proxyErrors)
 	if err != nil {
 		return jutil.NullObject, err
 	}
 
 	// Create final server status.
 	mountStatusSign := jutil.ClassSign("io.v.v23.rpc.MountStatus")
-	proxyStatusSign := jutil.ClassSign("io.v.v23.rpc.ProxyStatus")
-	jServerStatus, err := jutil.NewObject(env, jServerStatusClass, []jutil.Sign{serverStateSign, jutil.BoolSign, jutil.ArraySign(mountStatusSign), jutil.ArraySign(jutil.StringSign), jutil.ArraySign(proxyStatusSign)}, jState, status.ServesMountTable, jMounts, eps, jProxies)
+	jServerStatus, err := jutil.NewObject(env, jServerStatusClass, []jutil.Sign{serverStateSign, jutil.BoolSign, jutil.ArraySign(mountStatusSign), jutil.ArraySign(jutil.StringSign), jutil.MapSign, jutil.MapSign}, jState, status.ServesMountTable, jMounts, eps, jLnErrors, jProxyErrors)
 	if err != nil {
 		return jutil.NullObject, err
 	}
@@ -170,16 +186,6 @@ func JavaServerState(env jutil.Env, state rpc.ServerState) (jutil.Object, error)
 // MountStatus object.
 func JavaMountStatus(env jutil.Env, status rpc.MountStatus) (jutil.Object, error) {
 	jStatus, err := jutil.NewObject(env, jMountStatusClass, []jutil.Sign{jutil.StringSign, jutil.StringSign, jutil.DateTimeSign, jutil.VExceptionSign, jutil.DurationSign, jutil.DateTimeSign, jutil.VExceptionSign}, status.Name, status.Server, status.LastMount, status.LastMountErr, status.TTL, status.LastUnmount, status.LastUnmountErr)
-	if err != nil {
-		return jutil.NullObject, err
-	}
-	return jStatus, nil
-}
-
-// JavaProxyStatus converts the provided rpc.ProxyStatus value into a Java
-// ProxyStatus object.
-func JavaProxyStatus(env jutil.Env, status rpc.ProxyStatus) (jutil.Object, error) {
-	jStatus, err := jutil.NewObject(env, jProxyStatusClass, []jutil.Sign{jutil.StringSign, jutil.StringSign, jutil.VExceptionSign}, status.Proxy, status.Endpoint.String(), status.Error)
 	if err != nil {
 		return jutil.NullObject, err
 	}
@@ -230,13 +236,17 @@ func JavaListenSpec(env jutil.Env, spec rpc.ListenSpec) (jutil.Object, error) {
 	return jSpec, nil
 }
 
+func JavaListenAddr(env jutil.Env, protocol, address string) (jutil.Object, error) {
+	return jutil.NewObject(env, jListenSpecAddressClass, []jutil.Sign{jutil.StringSign, jutil.StringSign}, protocol, address)
+}
+
 // JavaListenAddrArray converts Go rpc.ListenAddrs into a Java
 // ListenSpec$Address array.
 func JavaListenAddrArray(env jutil.Env, addrs rpc.ListenAddrs) (jutil.Object, error) {
 	addrarr := make([]jutil.Object, len(addrs))
 	for i, addr := range addrs {
 		var err error
-		if addrarr[i], err = jutil.NewObject(env, jListenSpecAddressClass, []jutil.Sign{jutil.StringSign, jutil.StringSign}, addr.Protocol, addr.Address); err != nil {
+		if addrarr[i], err = JavaListenAddr(env, addr.Protocol, addr.Address); err != nil {
 			return jutil.NullObject, err
 		}
 	}
