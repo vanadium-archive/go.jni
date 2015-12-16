@@ -9,6 +9,7 @@ package security
 import (
 	"log"
 	"runtime"
+	"time"
 
 	"v.io/v23/security"
 	jutil "v.io/x/jni/util"
@@ -214,30 +215,31 @@ func (s *blessingStore) ClearDischarges(discharges ...security.Discharge) {
 	}
 }
 
-func (s *blessingStore) Discharge(caveat security.Caveat, impetus security.DischargeImpetus) security.Discharge {
+// TODO(sjr): support cachedTime in Java
+func (s *blessingStore) Discharge(caveat security.Caveat, impetus security.DischargeImpetus) (security.Discharge, time.Time) {
 	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
 	jCaveat, err := JavaCaveat(env, caveat)
 	if err != nil {
 		log.Printf("Couldn't get Java caveat: %v", err)
-		return security.Discharge{}
+		return security.Discharge{}, time.Time{}
 	}
 	jImpetus, err := jutil.JVomCopy(env, impetus, jDischargeImpetusClass)
 	if err != nil {
 		log.Printf("Couldn't get Java DischargeImpetus: %v", err)
-		return security.Discharge{}
+		return security.Discharge{}, time.Time{}
 	}
 	jDischarge, err := jutil.CallObjectMethod(env, s.jBlessingStore, "discharge", []jutil.Sign{caveatSign, dischargeImpetusSign}, dischargeSign, jCaveat, jImpetus)
 	if err != nil {
 		log.Printf("Couldn't call Java discharge method: %v", err)
-		return security.Discharge{}
+		return security.Discharge{}, time.Time{}
 	}
 	discharge, err := GoDischarge(env, jDischarge)
 	if err != nil {
 		log.Printf("Couldn't convert Java discharge to Go: %v", err)
-		return security.Discharge{}
+		return security.Discharge{}, time.Time{}
 	}
-	return discharge
+	return discharge, time.Time{}
 }
 
 func (r *blessingStore) DebugString() string {

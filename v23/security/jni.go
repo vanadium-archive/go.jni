@@ -824,7 +824,8 @@ func Java_io_v_v23_security_BlessingStoreImpl_nativeDischarge(jenv *C.JNIEnv, jB
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	discharge := blessingStore.Discharge(caveat, impetus)
+	// TODO(sjr): support cachedTime in Java
+	discharge, _ := blessingStore.Discharge(caveat, impetus)
 	jDischarge, err := JavaDischarge(env, discharge)
 	if err != nil {
 		jutil.JThrowV(env, err)
