@@ -7,13 +7,12 @@
 package bt
 
 import (
-	"fmt"
 	"net"
 	"runtime"
 	"time"
 
 	"v.io/v23/context"
-	"v.io/v23/rpc"
+	"v.io/v23/flow"
 
 	jutil "v.io/x/jni/util"
 )
@@ -37,11 +36,13 @@ func Init(env jutil.Env) error {
 	if err != nil {
 		return err
 	}
-	rpc.RegisterProtocol("bt", dialFunc, resolveFunc, listenFunc)
+	flow.RegisterProtocol("bt", btProtocol{})
 	return nil
 }
 
-func dialFunc(ctx *context.T, protocol, address string, timeout time.Duration) (net.Conn, error) {
+type btProtocol struct{}
+
+func (btProtocol) Dial(ctx *context.T, protocol, address string, timeout time.Duration) (flow.Conn, error) {
 	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
 	jConnection, err := jutil.CallStaticObjectMethod(env, jBluetoothClass, "dial", []jutil.Sign{jutil.StringSign, jutil.DurationSign}, connectionSign, address, timeout)
@@ -51,11 +52,11 @@ func dialFunc(ctx *context.T, protocol, address string, timeout time.Duration) (
 	return newConnection(env, jConnection), nil
 }
 
-func resolveFunc(ctx *context.T, protocol, address string) (string, string, error) {
+func (btProtocol) Resolve(ctx *context.T, protocol, address string) (string, string, error) {
 	return protocol, address, nil
 }
 
-func listenFunc(ctx *context.T, protocol, address string) (net.Listener, error) {
+func (btProtocol) Listen(ctx *context.T, protocol, address string) (flow.Listener, error) {
 	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
 	jListener, err := jutil.CallStaticObjectMethod(env, jBluetoothClass, "listen", []jutil.Sign{jutil.StringSign}, listenerSign, address)
@@ -65,8 +66,8 @@ func listenFunc(ctx *context.T, protocol, address string) (net.Listener, error) 
 	return newListener(env, jListener), nil
 }
 
-func newListener(env jutil.Env, jListener jutil.Object) net.Listener {
-	// Reference Java Listener; it will be de-referenced when the Go net.Listener
+func newListener(env jutil.Env, jListener jutil.Object) flow.Listener {
+	// Reference Java Listener; it will be de-referenced when the Go Listener
 	// created below is garbage-collected (through the finalizer callback we
 	// setup just below).
 	jListener = jutil.NewGlobalRef(env, jListener)
@@ -83,7 +84,7 @@ type btListener struct {
 	jListener jutil.Object
 }
 
-func (l *btListener) Accept() (net.Conn, error) {
+func (l *btListener) Accept(ctx *context.T) (flow.Conn, error) {
 	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
 	jConn, err := jutil.CallObjectMethod(env, l.jListener, "accept", nil, connectionSign)
@@ -109,8 +110,8 @@ func (l *btListener) Close() error {
 	return jutil.CallVoidMethod(env, l.jListener, "close", nil)
 }
 
-func newConnection(env jutil.Env, jConnection jutil.Object) net.Conn {
-	// Reference Java Connection; it will be de-referenced when the Go net.Conn
+func newConnection(env jutil.Env, jConnection jutil.Object) flow.Conn {
+	// Reference Java Connection; it will be de-referenced when the Go Conn
 	// created below is garbage-collected (through the finalizer callback we
 	// setup just below).
 	jConnection = jutil.NewGlobalRef(env, jConnection)
@@ -127,23 +128,23 @@ type btConn struct {
 	jConnection jutil.Object
 }
 
-func (c *btConn) Read(b []byte) (n int, err error) {
+func (c *btConn) ReadMsg() ([]byte, error) {
 	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
-	data, err := jutil.CallByteArrayMethod(env, c.jConnection, "read", []jutil.Sign{jutil.IntSign}, len(b))
-	if err != nil {
-		return 0, err
-	}
-	return copy(b, data), nil
+	return jutil.CallByteArrayMethod(env, c.jConnection, "read", nil)
 }
 
-func (c *btConn) Write(b []byte) (n int, err error) {
+func (c *btConn) WriteMsg(bs ...[]byte) (n int, err error) {
 	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
-	if err := jutil.CallVoidMethod(env, c.jConnection, "write", []jutil.Sign{jutil.ByteArraySign}, b); err != nil {
-		return 0, err
+	total := 0
+	for _, b := range bs {
+		if err := jutil.CallVoidMethod(env, c.jConnection, "write", []jutil.Sign{jutil.ByteArraySign}, b); err != nil {
+			return 0, err
+		}
+		total += len(b)
 	}
-	return len(b), nil
+	return total, nil
 }
 
 func (c *btConn) Close() error {
@@ -160,28 +161,6 @@ func (c *btConn) LocalAddr() net.Addr {
 		return &btAddr{""}
 	}
 	return &btAddr{addr}
-}
-
-func (c *btConn) RemoteAddr() net.Addr {
-	env, freeFunc := jutil.GetEnv()
-	defer freeFunc()
-	addr, err := jutil.CallStringMethod(env, c.jConnection, "localAddress", nil)
-	if err != nil {
-		return &btAddr{""}
-	}
-	return &btAddr{addr}
-}
-
-func (*btConn) SetDeadline(t time.Time) error {
-	return fmt.Errorf("SetDeadline() not implemented for bluetooth connections.")
-}
-
-func (*btConn) SetReadDeadline(t time.Time) error {
-	return fmt.Errorf("SetReadDeadline() not implemented for bluetooth connections.")
-}
-
-func (*btConn) SetWriteDeadline(t time.Time) error {
-	return fmt.Errorf("SetWriteDeadline() not implemented for bluetooth connections.")
 }
 
 type btAddr struct {
