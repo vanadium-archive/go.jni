@@ -20,30 +20,26 @@ import (
 // #include "jni.h"
 import "C"
 
-// GoDispatcher creates a new rpc.Dispatcher given the Java Dispatcher object and the Java
-// thread executor on which to run server methods.
-func GoDispatcher(env jutil.Env, jDispatcher jutil.Object, jExecutor jutil.Object) (rpc.Dispatcher, error) {
-	// Reference Java dispatcher and executor; they will be de-referenced when the go
+// GoDispatcher creates a new rpc.Dispatcher given the Java Dispatcher object.
+func GoDispatcher(env jutil.Env, jDispatcher jutil.Object) (rpc.Dispatcher, error) {
+	// Reference Java dispatcher; it will be de-referenced when the go
 	// dispatcher created below is garbage-collected (through the finalizer
 	// callback we setup below).
 	jDispatcher = jutil.NewGlobalRef(env, jDispatcher)
-	jExecutor = jutil.NewGlobalRef(env, jExecutor)
 	d := &dispatcher{
 		jDispatcher: jDispatcher,
-		jExecutor:   jExecutor,
 	}
 	runtime.SetFinalizer(d, func(d *dispatcher) {
 		env, freeFunc := jutil.GetEnv()
 		defer freeFunc()
 		jutil.DeleteGlobalRef(env, d.jDispatcher)
-		jutil.DeleteGlobalRef(env, d.jExecutor)
 	})
 
 	return d, nil
 }
 
 type dispatcher struct {
-	jDispatcher, jExecutor jutil.Object
+	jDispatcher jutil.Object
 }
 
 func (d *dispatcher) Lookup(ctx *context.T, suffix string) (interface{}, security.Authorizer, error) {
@@ -51,7 +47,7 @@ func (d *dispatcher) Lookup(ctx *context.T, suffix string) (interface{}, securit
 	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
 
-	result, err := jutil.CallStaticLongArrayMethod(env, jServerRPCHelperClass, "lookup", []jutil.Sign{dispatcherSign, jutil.StringSign, executorSign}, d.jDispatcher, suffix, d.jExecutor)
+	result, err := jutil.CallStaticLongArrayMethod(env, jServerRPCHelperClass, "lookup", []jutil.Sign{dispatcherSign, jutil.StringSign}, d.jDispatcher, suffix)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error invoking Java dispatcher's lookup() method: %v", err)
 	}

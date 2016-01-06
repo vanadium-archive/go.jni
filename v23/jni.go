@@ -11,7 +11,6 @@ import (
 	jcontext "v.io/x/jni/v23/context"
 	ji18n "v.io/x/jni/v23/i18n"
 	jnaming "v.io/x/jni/v23/naming"
-	jrpc "v.io/x/jni/v23/rpc"
 	jsecurity "v.io/x/jni/v23/security"
 	jaccess "v.io/x/jni/v23/security/access"
 	jgroups "v.io/x/jni/v23/services/groups"
@@ -32,9 +31,6 @@ func Init(env jutil.Env) error {
 		return err
 	}
 	if err := jnaming.Init(env); err != nil {
-		return err
-	}
-	if err := jrpc.Init(env); err != nil {
 		return err
 	}
 	if err := jsecurity.Init(env); err != nil {

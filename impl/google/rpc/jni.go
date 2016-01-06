@@ -29,19 +29,16 @@ import (
 import "C"
 
 var (
-	executorSign         = jutil.ClassSign("java.util.concurrent.Executor")
 	contextSign          = jutil.ClassSign("io.v.v23.context.VContext")
-	callbackSign         = jutil.ClassSign("io.v.v23.rpc.Callback")
 	dispatcherSign       = jutil.ClassSign("io.v.v23.rpc.Dispatcher")
 	invokerSign          = jutil.ClassSign("io.v.v23.rpc.Invoker")
-	clientCallSign       = jutil.ClassSign("io.v.v23.rpc.ClientCall")
 	serverCallSign       = jutil.ClassSign("io.v.v23.rpc.ServerCall")
 	streamServerCallSign = jutil.ClassSign("io.v.v23.rpc.StreamServerCall")
 	listenAddrSign       = jutil.ClassSign("io.v.v23.rpc.ListenSpec$Address")
 	addressChooserSign   = jutil.ClassSign("io.v.v23.rpc.AddressChooser")
 	serverStateSign      = jutil.ClassSign("io.v.v23.rpc.ServerState")
 	streamSign           = jutil.ClassSign("io.v.v23.rpc.Stream")
-	optionsSign          = jutil.ClassSign("io.v.v23.Options")
+
 	// Global reference for io.v.impl.google.rpc.AddressChooserImpl class.
 	jAddressChooserImplClass jutil.Class
 	// Global reference for io.v.impl.google.rpc.ServerImpl class.
@@ -521,9 +518,9 @@ func Java_io_v_impl_google_rpc_AddressChooserImpl_nativeFinalize(jenv *C.JNIEnv,
 }
 
 //export Java_io_v_impl_google_rpc_ServerRPCHelper_nativeGoInvoker
-func Java_io_v_impl_google_rpc_ServerRPCHelper_nativeGoInvoker(jenv *C.JNIEnv, jServerRPCHelper C.jclass, jServiceObject C.jobject, jExecutor C.jobject) C.jlong {
+func Java_io_v_impl_google_rpc_ServerRPCHelper_nativeGoInvoker(jenv *C.JNIEnv, jServerRPCHelper C.jclass, jServiceObject C.jobject) C.jlong {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	invoker, err := goInvoker(env, jutil.Object(uintptr(unsafe.Pointer(jServiceObject))), jutil.Object(uintptr(unsafe.Pointer(jExecutor))))
+	invoker, err := goInvoker(env, jutil.Object(uintptr(unsafe.Pointer(jServiceObject))))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return C.jlong(0)

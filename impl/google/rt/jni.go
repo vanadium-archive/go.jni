@@ -113,7 +113,7 @@ func Java_io_v_impl_google_rt_VRuntimeImpl_nativeGetClient(jenv *C.JNIEnv, jRunt
 }
 
 //export Java_io_v_impl_google_rt_VRuntimeImpl_nativeWithNewServer
-func Java_io_v_impl_google_rt_VRuntimeImpl_nativeWithNewServer(jenv *C.JNIEnv, jRuntime C.jclass, jContext C.jobject, jName C.jstring, jDispatcher C.jobject, jExecutor C.jobject, jLameDuck C.jobject) C.jobject {
+func Java_io_v_impl_google_rt_VRuntimeImpl_nativeWithNewServer(jenv *C.JNIEnv, jRuntime C.jclass, jContext C.jobject, jName C.jstring, jDispatcher C.jobject, jLameDuck C.jobject) C.jobject {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	ctx, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jContext))))
 	if err != nil {
@@ -121,7 +121,7 @@ func Java_io_v_impl_google_rt_VRuntimeImpl_nativeWithNewServer(jenv *C.JNIEnv, j
 		return nil
 	}
 	name := jutil.GoString(env, jutil.Object(uintptr(unsafe.Pointer(jName))))
-	d, err := jrpc.GoDispatcher(env, jutil.Object(uintptr(unsafe.Pointer(jDispatcher))), jutil.Object(uintptr(unsafe.Pointer(jExecutor))))
+	d, err := jrpc.GoDispatcher(env, jutil.Object(uintptr(unsafe.Pointer(jDispatcher))))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil

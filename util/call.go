@@ -292,6 +292,96 @@ func CallStaticVoidMethod(env Env, class Class, name string, argSigns []Sign, ar
 	return JExceptionMsg(env)
 }
 
+// CallCallbackMethod invokes a Java static method whose last argument is a
+// Java Callback.  This method will wait for the callback to complete and return the
+// result/error to the caller.  The returned result Object, if not-null, is guaranteed
+// to be globally referenced and this reference must be deleted.
+//
+// The invoked Java method must return "void" and have
+// its last argument be a Java Callback.  The provided list of argument signs and
+// arguments should include all arguments except the Callback.
+//
+// The provided freeFunc is guaranteed to be invoked, regardless on whether the method
+// succeeds or fails.  Hence, the caller should get a new JNI environment after this
+// method returns.
+func CallCallbackMethod(env Env, freeFunc func(), obj Object, name string, argSigns []Sign, args ...interface{}) (Object, error) {
+	jCallback, succCh, errCh, err := setupJavaCallback(env)
+	if err != nil {
+		freeFunc()
+		return NullObject, err
+	}
+	if err := CallVoidMethod(env, obj, name, append(argSigns, callbackSign), append(args, jCallback)...); err != nil {
+		freeFunc()
+		return NullObject, err
+	}
+	// Blocking below, so must free the env.
+	freeFunc()
+	return blockOnJavaCallback(succCh, errCh)
+}
+
+// CallStaticCallbackMethod invokes a Java static method whose last argument is a
+// Java Callback.  This method will wait for the callback to complete and return the
+// result/error to the caller.  The returned result Object, if not-null, is guaranteed
+// to be globally referenced and this reference must be deleted.
+//
+// The invoked Java method must return "void" and have
+// its last argument be a Java Callback.  The provided list of argument signs and
+// arguments should include all arguments except the Callback.
+//
+// The provided freeFunc is guaranteed to be invoked, regardless on whether the method
+// succeeds or fails.  Hence, the caller should get a new JNI environment after this
+// method returns.
+func CallStaticCallbackMethod(env Env, freeFunc func(), class Class, name string, argSigns []Sign, args ...interface{}) (Object, error) {
+	jCallback, succCh, errCh, err := setupJavaCallback(env)
+	if err != nil {
+		freeFunc()
+		return NullObject, err
+	}
+	if err := CallStaticVoidMethod(env, class, name, append(argSigns, callbackSign), append(args, jCallback)...); err != nil {
+		freeFunc()
+		return NullObject, err
+	}
+	// Blocking below, so must free the env.
+	freeFunc()
+	return blockOnJavaCallback(succCh, errCh)
+}
+
+func setupJavaCallback(env Env) (jCallback Object, succCh chan Object, errCh chan error, err error) {
+	succCh = make(chan Object)
+	errCh = make(chan error)
+	success := func(jResult Object) {
+		env, freeFunc := GetEnv()
+		defer freeFunc()
+		succCh <- NewGlobalRef(env, jResult) // Un-refed by the callers of the callback methods above
+	}
+	failure := func(err error) {
+		errCh <- err
+	}
+	jCallback, err = JavaNativeCallback(env, success, failure)
+	return
+}
+
+func blockOnJavaCallback(succCh chan Object, errCh chan error) (Object, error) {
+	select {
+	case jResult := <-succCh:
+		return jResult, nil
+	case err := <-errCh:
+		return NullObject, err
+	}
+}
+
+// JavaNativeCallback creates a new Java Callback object that calls the provided Go functions
+// on success/failures.
+func JavaNativeCallback(env Env, success func(jResult Object), failure func(err error)) (Object, error) {
+	jCallback, err := NewObject(env, jNativeCallbackClass, []Sign{LongSign, LongSign}, int64(PtrValue(&success)), int64(PtrValue(&failure)))
+	if err != nil {
+		return NullObject, err
+	}
+	GoRef(&success) // Un-refed when jCallback is finalized
+	GoRef(&failure) // Un-refed when jCallback is finalized
+	return jCallback, nil
+}
+
 // DoAsyncCall invokes the given fnToWrap in a goroutine. If fnToWrap returns an
 // error, the given callback's onFailure method is invoked with the error as a
 // parameter. If fnToWrap succeeds, its Object result is passed as a

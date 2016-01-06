@@ -13,13 +13,16 @@ import (
 
 	"v.io/v23/context"
 	"v.io/v23/flow"
+	"v.io/x/ref/runtime/protocols/lib/framer"
 
 	jutil "v.io/x/jni/util"
+	jcontext "v.io/x/jni/v23/context"
 )
 
 var (
-	connectionSign = jutil.ClassSign("io.v.android.impl.google.rpc.protocols.bt.Bluetooth$Connection")
-	listenerSign   = jutil.ClassSign("io.v.android.impl.google.rpc.protocols.bt.Bluetooth$Listener")
+	contextSign  = jutil.ClassSign("io.v.v23.context.VContext")
+	streamSign   = jutil.ClassSign("io.v.android.impl.google.rpc.protocols.bt.Bluetooth$Stream")
+	listenerSign = jutil.ClassSign("io.v.android.impl.google.rpc.protocols.bt.Bluetooth$Listener")
 
 	// Global reference for io.v.impl.google.rpc.protocols.bt.Bluetooth class.
 	jBluetoothClass jutil.Class
@@ -44,12 +47,19 @@ type btProtocol struct{}
 
 func (btProtocol) Dial(ctx *context.T, protocol, address string, timeout time.Duration) (flow.Conn, error) {
 	env, freeFunc := jutil.GetEnv()
-	defer freeFunc()
-	jConnection, err := jutil.CallStaticObjectMethod(env, jBluetoothClass, "dial", []jutil.Sign{jutil.StringSign, jutil.DurationSign}, connectionSign, address, timeout)
+	jContext, err := jcontext.JavaContext(env, ctx)
+	if err != nil {
+		freeFunc()
+		return nil, err
+	}
+	// This method will invoke the freeFunc().
+	jStream, err := jutil.CallStaticCallbackMethod(env, freeFunc, jBluetoothClass, "dial", []jutil.Sign{contextSign, jutil.StringSign, jutil.DurationSign}, jContext, address, timeout)
 	if err != nil {
 		return nil, err
 	}
-	return newConnection(env, jConnection), nil
+	env, freeFunc = jutil.GetEnv()
+	defer freeFunc()
+	return newConnection(env, jStream), nil
 }
 
 func (btProtocol) Resolve(ctx *context.T, protocol, address string) (string, string, error) {
@@ -59,7 +69,11 @@ func (btProtocol) Resolve(ctx *context.T, protocol, address string) (string, str
 func (btProtocol) Listen(ctx *context.T, protocol, address string) (flow.Listener, error) {
 	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
-	jListener, err := jutil.CallStaticObjectMethod(env, jBluetoothClass, "listen", []jutil.Sign{jutil.StringSign}, listenerSign, address)
+	jContext, err := jcontext.JavaContext(env, ctx)
+	if err != nil {
+		return nil, err
+	}
+	jListener, err := jutil.CallStaticObjectMethod(env, jBluetoothClass, "listen", []jutil.Sign{contextSign, jutil.StringSign}, listenerSign, jContext, address)
 	if err != nil {
 		return nil, err
 	}
@@ -86,12 +100,14 @@ type btListener struct {
 
 func (l *btListener) Accept(ctx *context.T) (flow.Conn, error) {
 	env, freeFunc := jutil.GetEnv()
-	defer freeFunc()
-	jConn, err := jutil.CallObjectMethod(env, l.jListener, "accept", nil, connectionSign)
+	// This method will invoke the freeFunc().
+	jStream, err := jutil.CallCallbackMethod(env, freeFunc, l.jListener, "accept", nil)
 	if err != nil {
 		return nil, err
 	}
-	return newConnection(env, jConn), nil
+	env, freeFunc = jutil.GetEnv()
+	defer freeFunc()
+	return newConnection(env, jStream), nil
 }
 
 func (l *btListener) Addr() net.Addr {
@@ -110,57 +126,60 @@ func (l *btListener) Close() error {
 	return jutil.CallVoidMethod(env, l.jListener, "close", nil)
 }
 
-func newConnection(env jutil.Env, jConnection jutil.Object) flow.Conn {
-	// Reference Java Connection; it will be de-referenced when the Go Conn
-	// created below is garbage-collected (through the finalizer callback we
-	// setup just below).
-	jConnection = jutil.NewGlobalRef(env, jConnection)
-	c := &btConn{jConnection}
-	runtime.SetFinalizer(c, func(c *btConn) {
+// newConnection creates a new Go connection.  The passed-in Java Stream object
+// is assumed to hold a global reference.
+func newConnection(env jutil.Env, jStream jutil.Object) flow.Conn {
+	c := &btReadWriteCloser{jStream}
+	runtime.SetFinalizer(c, func(c *btReadWriteCloser) {
 		env, freeFunc := jutil.GetEnv()
 		defer freeFunc()
-		jutil.DeleteGlobalRef(env, c.jConnection)
+		jutil.DeleteGlobalRef(env, c.jStream)
 	})
-	return c
+	addrStr, _ := jutil.CallStringMethod(env, jStream, "localAddress", nil)
+	localAddr := &btAddr{addrStr}
+	return btConn{framer.New(c), localAddr}
 }
 
 type btConn struct {
-	jConnection jutil.Object
+	flow.MsgReadWriteCloser
+	localAddr net.Addr
 }
 
-func (c *btConn) ReadMsg() ([]byte, error) {
-	env, freeFunc := jutil.GetEnv()
-	defer freeFunc()
-	return jutil.CallByteArrayMethod(env, c.jConnection, "read", nil)
+func (c btConn) LocalAddr() net.Addr {
+	return c.localAddr
 }
 
-func (c *btConn) WriteMsg(bs ...[]byte) (n int, err error) {
-	env, freeFunc := jutil.GetEnv()
-	defer freeFunc()
-	total := 0
-	for _, b := range bs {
-		if err := jutil.CallVoidMethod(env, c.jConnection, "write", []jutil.Sign{jutil.ByteArraySign}, b); err != nil {
-			return 0, err
-		}
-		total += len(b)
-	}
-	return total, nil
+type btReadWriteCloser struct {
+	jStream jutil.Object
 }
 
-func (c *btConn) Close() error {
+func (c *btReadWriteCloser) Read(b []byte) (n int, err error) {
 	env, freeFunc := jutil.GetEnv()
-	defer freeFunc()
-	return jutil.CallVoidMethod(env, c.jConnection, "close", nil)
-}
-
-func (c *btConn) LocalAddr() net.Addr {
-	env, freeFunc := jutil.GetEnv()
-	defer freeFunc()
-	addr, err := jutil.CallStringMethod(env, c.jConnection, "localAddress", nil)
+	// This method will invoke the freeFunc().
+	jResult, err := jutil.CallCallbackMethod(env, freeFunc, c.jStream, "read", []jutil.Sign{jutil.IntSign}, len(b))
 	if err != nil {
-		return &btAddr{""}
+		return 0, err
 	}
-	return &btAddr{addr}
+	env, freeFunc = jutil.GetEnv()
+	defer freeFunc()
+	defer jutil.DeleteGlobalRef(env, jResult)
+	data := jutil.GoByteArray(env, jResult)
+	return copy(b, data), nil
+}
+
+func (c *btReadWriteCloser) Write(b []byte) (n int, err error) {
+	env, freeFunc := jutil.GetEnv()
+	// This method will invoke the freeFunc().
+	if _, err := jutil.CallCallbackMethod(env, freeFunc, c.jStream, "write", []jutil.Sign{jutil.ByteArraySign}, b); err != nil {
+		return 0, err
+	}
+	return len(b), nil
+}
+
+func (c *btReadWriteCloser) Close() error {
+	env, freeFunc := jutil.GetEnv()
+	defer freeFunc()
+	return jutil.CallVoidMethod(env, c.jStream, "close", nil)
 }
 
 type btAddr struct {

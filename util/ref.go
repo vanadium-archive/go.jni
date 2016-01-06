@@ -20,34 +20,43 @@ import "C"
 // obj argument.  The obj argument may be a global or local reference. Global
 // references must be explicitly disposed of by calling DeleteGlobalRef().
 func NewGlobalRef(env Env, obj Object) Object {
+	if obj.IsNull() {
+		return obj
+	}
 	return Object(uintptr(unsafe.Pointer(C.NewGlobalRef(env.value(), obj.value()))))
 }
 
 // DeleteGlobalRef deletes the global reference pointed to by obj.
 func DeleteGlobalRef(env Env, obj Object) {
-	C.DeleteGlobalRef(env.value(), obj.value())
+	if !obj.IsNull() {
+		C.DeleteGlobalRef(env.value(), obj.value())
+	}
 }
 
 // NewLocalRef creates a new local reference that refers to the same object
-// as obj. The given obj may be a global or local reference. Returns null if
-// ref refers to null.
+// as obj. The given obj may be a global or local reference.
 func NewLocalRef(env Env, obj Object) Object {
+	if obj.IsNull() {
+		return obj
+	}
 	return Object(uintptr(unsafe.Pointer(C.NewLocalRef(env.value(), obj.value()))))
 }
 
 // DeleteLocalRef deletes the local reference pointed to by obj.
 func DeleteLocalRef(env Env, obj Object) {
-	C.DeleteLocalRef(env.value(), obj.value())
+	if !obj.IsNull() {
+		C.DeleteLocalRef(env.value(), obj.value())
+	}
 }
 
 // IsGlobalRef returns true iff the reference pointed to by obj is a global reference.
 func IsGlobalRef(env Env, obj Object) bool {
-	return C.GetObjectRefType(env.value(), obj.value()) == C.JNIGlobalRefType
+	return !obj.IsNull() && C.GetObjectRefType(env.value(), obj.value()) == C.JNIGlobalRefType
 }
 
 // IsLocalRef returns true iff the reference pointed to by obj is a local reference.
 func IsLocalRef(env Env, obj Object) bool {
-	return C.GetObjectRefType(env.value(), obj.value()) == C.JNILocalRefType
+	return obj.IsNull() || C.GetObjectRefType(env.value(), obj.value()) == C.JNILocalRefType
 }
 
 // GoRef creates a new reference to the value addressed by the provided pointer.

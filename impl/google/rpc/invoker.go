@@ -21,13 +21,12 @@ import (
 	jchannel "v.io/x/jni/impl/google/channel"
 	jutil "v.io/x/jni/util"
 	jcontext "v.io/x/jni/v23/context"
-	jrpc "v.io/x/jni/v23/rpc"
 )
 
 // #include "jni.h"
 import "C"
 
-func goInvoker(env jutil.Env, obj jutil.Object, jExecutor jutil.Object) (rpc.Invoker, error) {
+func goInvoker(env jutil.Env, obj jutil.Object) (rpc.Invoker, error) {
 	// See if the Java object is an invoker.
 	var jInvoker jutil.Object
 	if jutil.IsInstanceOf(env, obj, jInvokerClass) {
@@ -41,26 +40,23 @@ func goInvoker(env jutil.Env, obj jutil.Object, jExecutor jutil.Object) (rpc.Inv
 		jInvoker = jReflectInvoker
 	}
 
-	// Reference Java invoker and executor; they will be de-referenced when the go invoker
+	// Reference Java invoker; it will be de-referenced when the go invoker
 	// created below is garbage-collected (through the finalizer callback we
 	// setup just below).
 	jInvoker = jutil.NewGlobalRef(env, jInvoker)
-	jExecutor = jutil.NewGlobalRef(env, jExecutor)
 	i := &invoker{
-		jInvoker:  jInvoker,
-		jExecutor: jExecutor,
+		jInvoker: jInvoker,
 	}
 	runtime.SetFinalizer(i, func(i *invoker) {
 		env, freeFunc := jutil.GetEnv()
 		defer freeFunc()
 		jutil.DeleteGlobalRef(env, i.jInvoker)
-		jutil.DeleteGlobalRef(env, i.jExecutor)
 	})
 	return i, nil
 }
 
 type invoker struct {
-	jInvoker, jExecutor jutil.Object
+	jInvoker jutil.Object
 }
 
 func (i *invoker) Prepare(ctx *context.T, method string, numArgs int) (argptrs []interface{}, tags []*vdl.Value, err error) {
@@ -93,7 +89,6 @@ func (i *invoker) Prepare(ctx *context.T, method string, numArgs int) (argptrs [
 
 func (i *invoker) Invoke(ctx *context.T, call rpc.StreamServerCall, method string, argptrs []interface{}) (results []interface{}, err error) {
 	env, freeFunc := jutil.GetEnv()
-
 	jContext, err := jcontext.JavaContext(env, ctx)
 	if err != nil {
 		freeFunc()
@@ -113,47 +108,27 @@ func (i *invoker) Invoke(ctx *context.T, call rpc.StreamServerCall, method strin
 			return nil, err
 		}
 	}
-	errCh := make(chan error)
-	succCh := make(chan []interface{})
-	success := func(jResult jutil.Object) {
-		env, freeFunc := jutil.GetEnv()
-		defer freeFunc()
-		vomResults, err := jutil.GoByteArrayArray(env, jResult)
-		if err != nil {
-			errCh <- err
-			return
-		}
-		results = make([]interface{}, len(vomResults))
-		for i, vomResult := range vomResults {
-			var err error
-			if results[i], err = jutil.VomDecodeToValue(vomResult); err != nil {
-				errCh <- err
-				return
-			}
-		}
-		succCh <- results
-	}
-	failure := func(err error) {
-		errCh <- err
-	}
-	jCallback, err := jrpc.JavaNativeCallback(env, success, failure)
+	// This method will invoke the freeFunc().
+	jResult, err := jutil.CallStaticCallbackMethod(env, freeFunc, jServerRPCHelperClass, "invoke", []jutil.Sign{invokerSign, contextSign, streamServerCallSign, jutil.StringSign, jutil.ArraySign(jutil.ArraySign(jutil.ByteSign))}, i.jInvoker, jContext, jStreamServerCall, jutil.CamelCase(method), vomArgs)
 	if err != nil {
-		freeFunc()
 		return nil, err
 	}
-	err = jutil.CallStaticVoidMethod(env, jServerRPCHelperClass, "invoke", []jutil.Sign{invokerSign, contextSign, streamServerCallSign, jutil.StringSign, jutil.ArraySign(jutil.ArraySign(jutil.ByteSign)), callbackSign, executorSign}, i.jInvoker, jContext, jStreamServerCall, jutil.CamelCase(method), vomArgs, jCallback, i.jExecutor)
+	env, freeFunc = jutil.GetEnv()
+	defer freeFunc()
+	jResultLocal := jutil.NewLocalRef(env, jResult)
+	jutil.DeleteGlobalRef(env, jResult)
+	vomResults, err := jutil.GoByteArrayArray(env, jResultLocal)
 	if err != nil {
-		freeFunc()
 		return nil, err
 	}
-	// We're blocking, so have to explicitly release the env here.
-	freeFunc()
-	select {
-	case results := <-succCh:
-		return results, nil
-	case err := <-errCh:
-		return nil, err
+	results = make([]interface{}, len(vomResults))
+	for i, vomResult := range vomResults {
+		var err error
+		if results[i], err = jutil.VomDecodeToValue(vomResult); err != nil {
+			return nil, err
+		}
 	}
+	return results, nil
 }
 
 func (i *invoker) Signature(ctx *context.T, call rpc.ServerCall) ([]signature.Interface, error) {
