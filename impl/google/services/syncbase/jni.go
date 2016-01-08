@@ -88,7 +88,7 @@ func Java_io_v_impl_google_services_syncbase_SyncbaseServer_nativeWithNewServer(
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	ctx, err := jcontext.GoContext(env, jCtx)
+	ctx, cancel, err := jcontext.GoContext(env, jCtx)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -114,7 +114,7 @@ func Java_io_v_impl_google_services_syncbase_SyncbaseServer_nativeWithNewServer(
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	jNewCtx, err := jcontext.JavaContext(env, newCtx)
+	jNewCtx, err := jcontext.JavaContext(env, newCtx, cancel)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil

@@ -221,16 +221,6 @@ func Java_io_v_impl_google_rpc_ServerImpl_nativeGetStatus(jenv *C.JNIEnv, jServe
 	return C.jobject(unsafe.Pointer(jStatus))
 }
 
-//export Java_io_v_impl_google_rpc_ServerImpl_nativeStop
-func Java_io_v_impl_google_rpc_ServerImpl_nativeStop(jenv *C.JNIEnv, jServer C.jobject, goPtr C.jlong) {
-	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	s := (*rpc.Server)(jutil.NativePtr(goPtr))
-	if err := (*s).Stop(); err != nil {
-		jutil.JThrowV(env, err)
-		return
-	}
-}
-
 //export Java_io_v_impl_google_rpc_ServerImpl_nativeFinalize
 func Java_io_v_impl_google_rpc_ServerImpl_nativeFinalize(jenv *C.JNIEnv, jServer C.jobject, goPtr C.jlong) {
 	jutil.GoUnref(jutil.NativePtr(goPtr))
@@ -281,7 +271,7 @@ func Java_io_v_impl_google_rpc_ClientImpl_nativeStartCall(jenv *C.JNIEnv, jClien
 	name := jutil.GoString(env, jutil.Object(uintptr(unsafe.Pointer(jName))))
 	method := jutil.GoString(env, jutil.Object(uintptr(unsafe.Pointer(jMethod))))
 	jCallback := jutil.Object(uintptr(unsafe.Pointer(jCallbackObj)))
-	context, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jContext))))
+	context, _, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jContext))))
 	if err != nil {
 		jutil.CallbackOnFailure(env, jCallback, err)
 		return

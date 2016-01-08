@@ -92,7 +92,7 @@ func Java_io_v_v23_syncbase_nosql_DatabaseImpl_nativeBeginBatch(jenv *C.JNIEnv, 
 		jutil.CallbackOnFailure(env, jCallback, err)
 		return
 	}
-	ctx, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jContext))))
+	ctx, _, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jContext))))
 	if err != nil {
 		jutil.CallbackOnFailure(env, jCallback, err)
 		return
@@ -119,7 +119,7 @@ func Java_io_v_v23_syncbase_nosql_DatabaseImpl_nativeEnforceSchema(jenv *C.JNIEn
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	jCallback := jutil.Object(uintptr(unsafe.Pointer(jCallbackObj)))
 	jdb := (*jniDatabase)(jutil.NativePtr(goPtr))
-	ctx, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jContext))))
+	ctx, _, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jContext))))
 	if err != nil {
 		jutil.CallbackOnFailure(env, jCallback, err)
 		return

@@ -20,8 +20,8 @@ import (
 // #include "jni.h"
 import "C"
 
-//export Java_io_v_v23_V_nativeInitGlobal
-func Java_io_v_v23_V_nativeInitGlobal(jenv *C.JNIEnv, jVClass C.jclass) {
+//export Java_io_v_v23_V_nativeInitGlobalShared
+func Java_io_v_v23_V_nativeInitGlobalShared(jenv *C.JNIEnv, jVClass C.jclass) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	// Ignore all args except for the first one.
 	if len(os.Args) > 1 {

@@ -62,7 +62,7 @@ type plugin struct {
 func (p *plugin) Advertise(ctx *context.T, ad discovery.Advertisement, done func()) error {
 	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
-	jContext, err := jcontext.JavaContext(env, ctx)
+	jContext, err := jcontext.JavaContext(env, ctx, nil)
 	if err != nil {
 		return err
 	}
@@ -81,7 +81,7 @@ func (p *plugin) Advertise(ctx *context.T, ad discovery.Advertisement, done func
 func (p *plugin) Scan(ctx *context.T, serviceUuid discovery.Uuid, ch chan<- discovery.Advertisement, done func()) error {
 	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
-	jContext, err := jcontext.JavaContext(env, ctx)
+	jContext, err := jcontext.JavaContext(env, ctx, nil)
 	if err != nil {
 		return err
 	}

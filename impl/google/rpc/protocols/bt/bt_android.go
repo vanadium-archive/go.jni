@@ -47,7 +47,7 @@ type btProtocol struct{}
 
 func (btProtocol) Dial(ctx *context.T, protocol, address string, timeout time.Duration) (flow.Conn, error) {
 	env, freeFunc := jutil.GetEnv()
-	jContext, err := jcontext.JavaContext(env, ctx)
+	jContext, err := jcontext.JavaContext(env, ctx, nil)
 	if err != nil {
 		freeFunc()
 		return nil, err
@@ -69,7 +69,7 @@ func (btProtocol) Resolve(ctx *context.T, protocol, address string) (string, str
 func (btProtocol) Listen(ctx *context.T, protocol, address string) (flow.Listener, error) {
 	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
-	jContext, err := jcontext.JavaContext(env, ctx)
+	jContext, err := jcontext.JavaContext(env, ctx, nil)
 	if err != nil {
 		return nil, err
 	}

@@ -51,7 +51,7 @@ func Java_io_v_v23_services_groups_PermissionsAuthorizer_nativeCreate(jenv *C.JN
 //export Java_io_v_v23_services_groups_PermissionsAuthorizer_nativeAuthorize
 func Java_io_v_v23_services_groups_PermissionsAuthorizer_nativeAuthorize(jenv *C.JNIEnv, jPermissionsAuthorizer C.jobject, goPtr C.jlong, jContext C.jobject, jCall C.jobject) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	ctx, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jContext))))
+	ctx, _, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jContext))))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return

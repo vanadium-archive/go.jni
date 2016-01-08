@@ -29,7 +29,7 @@ var systemCaveats = map[uniqueid.Id]bool{
 func caveatValidator(context *context.T, call security.Call, sets [][]security.Caveat) []error {
 	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
-	jContext, err := jcontext.JavaContext(env, context)
+	jContext, err := jcontext.JavaContext(env, context, nil)
 	if err != nil {
 		return errors(err, len(sets))
 	}

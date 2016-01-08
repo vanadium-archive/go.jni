@@ -89,7 +89,7 @@ func (i *invoker) Prepare(ctx *context.T, method string, numArgs int) (argptrs [
 
 func (i *invoker) Invoke(ctx *context.T, call rpc.StreamServerCall, method string, argptrs []interface{}) (results []interface{}, err error) {
 	env, freeFunc := jutil.GetEnv()
-	jContext, err := jcontext.JavaContext(env, ctx)
+	jContext, err := jcontext.JavaContext(env, ctx, nil)
 	if err != nil {
 		freeFunc()
 		return nil, err
@@ -135,7 +135,7 @@ func (i *invoker) Signature(ctx *context.T, call rpc.ServerCall) ([]signature.In
 	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
 
-	jContext, err := jcontext.JavaContext(env, ctx)
+	jContext, err := jcontext.JavaContext(env, ctx, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +163,7 @@ func (i *invoker) MethodSignature(ctx *context.T, call rpc.ServerCall, method st
 	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
 
-	jContext, err := jcontext.JavaContext(env, ctx)
+	jContext, err := jcontext.JavaContext(env, ctx, nil)
 	if err != nil {
 		return signature.Method{}, err
 	}

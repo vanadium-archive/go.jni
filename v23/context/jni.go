@@ -7,6 +7,7 @@
 package context
 
 import (
+	"errors"
 	"unsafe"
 
 	"v.io/v23/context"
@@ -21,10 +22,6 @@ var (
 	classSign = jutil.ClassSign("java.lang.Class")
 	// Global reference for io.v.v23.context.VContext class.
 	jVContextClass jutil.Class
-	// Global reference for io.v.v23.context.CancelableVContext class.
-	jCancelableVContextClass jutil.Class
-	// Global reference for java.jutil.concurrent.CountDownLatch class.
-	jCountDownLatchClass jutil.Class
 )
 
 // Init initializes the JNI code with the given Java environment. This method
@@ -38,14 +35,6 @@ func Init(env jutil.Env) error {
 	if err != nil {
 		return err
 	}
-	jCancelableVContextClass, err = jutil.JFindClass(env, "io/v/v23/context/CancelableVContext")
-	if err != nil {
-		return err
-	}
-	jCountDownLatchClass, err = jutil.JFindClass(env, "java/util/concurrent/CountDownLatch")
-	if err != nil {
-		return err
-	}
 	return nil
 }
 
@@ -53,12 +42,25 @@ func Init(env jutil.Env) error {
 func Java_io_v_v23_context_VContext_nativeCreate(jenv *C.JNIEnv, jVContext C.jclass) C.jobject {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	ctx, _ := context.RootContext()
-	jContext, err := JavaContext(env, ctx)
+	jContext, err := JavaContext(env, ctx, nil)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
 	}
 	return C.jobject(unsafe.Pointer(jContext))
+}
+
+//export Java_io_v_v23_context_VContext_nativeCancel
+func Java_io_v_v23_context_VContext_nativeCancel(jenv *C.JNIEnv, jVContext C.jobject, goCancelPtr C.jlong) {
+	(*(*context.CancelFunc)(jutil.NativePtr(goCancelPtr)))()
+}
+
+//export Java_io_v_v23_context_VContext_nativeIsCanceled
+func Java_io_v_v23_context_VContext_nativeIsCanceled(jenv *C.JNIEnv, jVContext C.jobject, goPtr C.jlong) C.jboolean {
+	if (*(*context.T)(jutil.NativePtr(goPtr))).Err() == nil {
+		return C.JNI_FALSE
+	}
+	return C.JNI_TRUE
 }
 
 //export Java_io_v_v23_context_VContext_nativeDeadline
@@ -77,15 +79,18 @@ func Java_io_v_v23_context_VContext_nativeDeadline(jenv *C.JNIEnv, jVContext C.j
 }
 
 //export Java_io_v_v23_context_VContext_nativeDone
-func Java_io_v_v23_context_VContext_nativeDone(jenv *C.JNIEnv, jVContext C.jobject, goPtr C.jlong) C.jobject {
+func Java_io_v_v23_context_VContext_nativeDone(jenv *C.JNIEnv, jVContext C.jobject, goPtr C.jlong, jCallbackObj C.jobject) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
+	jCallback := jutil.Object(uintptr(unsafe.Pointer(jCallbackObj)))
 	c := (*(*context.T)(jutil.NativePtr(goPtr))).Done()
-	jCounter, err := JavaCountDownLatch(env, c)
-	if err != nil {
-		jutil.JThrowV(env, err)
-		return nil
+	if c == nil {
+		jutil.CallbackOnFailure(env, jCallback, errors.New("Context isn't cancelable"))
+		return
 	}
-	return C.jobject(unsafe.Pointer(jCounter))
+	jutil.DoAsyncCall(env, jCallback, func() (jutil.Object, error) {
+		<-c
+		return jutil.NullObject, nil
+	})
 }
 
 //export Java_io_v_v23_context_VContext_nativeValue
@@ -105,7 +110,7 @@ func Java_io_v_v23_context_VContext_nativeValue(jenv *C.JNIEnv, jVContext C.jobj
 func Java_io_v_v23_context_VContext_nativeWithCancel(jenv *C.JNIEnv, jVContext C.jobject, goPtr C.jlong) C.jobject {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	ctx, cancelFunc := context.WithCancel((*context.T)(jutil.NativePtr(goPtr)))
-	jCtx, err := JavaCancelableContext(env, ctx, cancelFunc)
+	jCtx, err := JavaContext(env, ctx, cancelFunc)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -122,7 +127,7 @@ func Java_io_v_v23_context_VContext_nativeWithDeadline(jenv *C.JNIEnv, jVContext
 		return nil
 	}
 	ctx, cancelFunc := context.WithDeadline((*context.T)(jutil.NativePtr(goPtr)), deadline)
-	jCtx, err := JavaCancelableContext(env, ctx, cancelFunc)
+	jCtx, err := JavaContext(env, ctx, cancelFunc)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -139,7 +144,7 @@ func Java_io_v_v23_context_VContext_nativeWithTimeout(jenv *C.JNIEnv, jVContext 
 		return nil
 	}
 	ctx, cancelFunc := context.WithTimeout((*context.T)(jutil.NativePtr(goPtr)), timeout)
-	jCtx, err := JavaCancelableContext(env, ctx, cancelFunc)
+	jCtx, err := JavaContext(env, ctx, cancelFunc)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -148,7 +153,7 @@ func Java_io_v_v23_context_VContext_nativeWithTimeout(jenv *C.JNIEnv, jVContext 
 }
 
 //export Java_io_v_v23_context_VContext_nativeWithValue
-func Java_io_v_v23_context_VContext_nativeWithValue(jenv *C.JNIEnv, jVContext C.jobject, goPtr C.jlong, jKey C.jobject, jValue C.jobject) C.jobject {
+func Java_io_v_v23_context_VContext_nativeWithValue(jenv *C.JNIEnv, jVContext C.jobject, goPtr C.jlong, goCancelPtr C.jlong, jKey C.jobject, jValue C.jobject) C.jobject {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	key, err := GoContextKey(env, jutil.Object(uintptr(unsafe.Pointer(jKey))))
 	if err != nil {
@@ -161,7 +166,11 @@ func Java_io_v_v23_context_VContext_nativeWithValue(jenv *C.JNIEnv, jVContext C.
 		return nil
 	}
 	ctx := context.WithValue((*context.T)(jutil.NativePtr(goPtr)), key, value)
-	jCtx, err := JavaContext(env, ctx)
+	var cancel context.CancelFunc
+	if goCancelPtr != 0 {
+		cancel = (*(*context.CancelFunc)(jutil.NativePtr(goCancelPtr)))
+	}
+	jCtx, err := JavaContext(env, ctx, cancel)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -170,18 +179,10 @@ func Java_io_v_v23_context_VContext_nativeWithValue(jenv *C.JNIEnv, jVContext C.
 }
 
 //export Java_io_v_v23_context_VContext_nativeFinalize
-func Java_io_v_v23_context_VContext_nativeFinalize(jenv *C.JNIEnv, jVContext C.jobject, goPtr C.jlong) {
+func Java_io_v_v23_context_VContext_nativeFinalize(jenv *C.JNIEnv, jVContext C.jobject, goPtr C.jlong, goCancelPtr C.jlong) {
 	jutil.GoUnref(jutil.NativePtr(goPtr))
-}
-
-//export Java_io_v_v23_context_CancelableVContext_nativeCancel
-func Java_io_v_v23_context_CancelableVContext_nativeCancel(jenv *C.JNIEnv, jCancelableVContext C.jobject, goCancelPtr C.jlong) {
 	if goCancelPtr != 0 {
-		(*(*context.CancelFunc)(jutil.NativePtr(goCancelPtr)))()
+		jutil.GoUnref(jutil.NativePtr(goCancelPtr))
 	}
-}
 
-//export Java_io_v_v23_context_CancelableVContext_nativeFinalize
-func Java_io_v_v23_context_CancelableVContext_nativeFinalize(jenv *C.JNIEnv, jCancelableVContext C.jobject, goCancelPtr C.jlong) {
-	jutil.GoUnref(jutil.NativePtr(goCancelPtr))
 }

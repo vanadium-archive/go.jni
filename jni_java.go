@@ -18,8 +18,8 @@ import (
 // #include "jni.h"
 import "C"
 
-//export Java_io_v_v23_V_nativeInitJava
-func Java_io_v_v23_V_nativeInitJava(jenv *C.JNIEnv, jVClass C.jclass, jOptions C.jobject) {
+//export Java_io_v_v23_V_nativeInitGlobalJava
+func Java_io_v_v23_V_nativeInitGlobalJava(jenv *C.JNIEnv, jVClass C.jclass, jOptions C.jobject) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	jOpts := jutil.Object(uintptr(unsafe.Pointer(jOptions)))
 

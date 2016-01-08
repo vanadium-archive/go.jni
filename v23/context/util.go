@@ -8,7 +8,6 @@ package context
 
 import (
 	"fmt"
-	"log"
 	"runtime"
 
 	"v.io/v23/context"
@@ -25,65 +24,43 @@ type goContextValue struct {
 }
 
 // JavaContext converts the provided Go Context into a Java VContext.
-func JavaContext(env jutil.Env, ctx *context.T) (jutil.Object, error) {
-	jCtx, err := jutil.NewObject(env, jVContextClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(ctx)))
+// If the provided cancel function is nil, Java VContext won't be
+// cancelable.
+func JavaContext(env jutil.Env, ctx *context.T, cancel context.CancelFunc) (jutil.Object, error) {
+	var cancelPtr int64
+	if cancel != nil {
+		cancelPtr = int64(jutil.PtrValue(&cancel))
+	}
+	jCtx, err := jutil.NewObject(env, jVContextClass, []jutil.Sign{jutil.LongSign, jutil.LongSign}, int64(jutil.PtrValue(ctx)), cancelPtr)
 	if err != nil {
 		return jutil.NullObject, err
 	}
 	jutil.GoRef(ctx) // Un-refed when the Java context object is finalized.
+	if cancel != nil {
+		jutil.GoRef(&cancel)
+	}
 	return jCtx, err
 }
 
-// JavaCancelableContext converts the provided Go Context and its associated cancel function
-// into a Java CancelableVContext.
-func JavaCancelableContext(env jutil.Env, ctx *context.T, cancel context.CancelFunc) (jutil.Object, error) {
-	if cancel == nil {
-		return jutil.NullObject, fmt.Errorf("Cannot create CancelableVContext with nil cancel function")
-	}
-	jCtx, err := jutil.NewObject(env, jCancelableVContextClass, []jutil.Sign{jutil.LongSign, jutil.LongSign}, int64(jutil.PtrValue(ctx)), int64(jutil.PtrValue(&cancel)))
-	if err != nil {
-		return jutil.NullObject, err
-	}
-	jutil.GoRef(ctx)     // Un-refed when the Java context object is finalized.
-	jutil.GoRef(&cancel) // Un-refed when the Java context object is finalized.
-	return jCtx, err
-}
-
-// GoContext converts the provided Java VContext into a Go context.
-func GoContext(env jutil.Env, jContext jutil.Object) (*context.T, error) {
+// GoContext converts the provided Java VContext into a Go context and
+// a cancel function (if any) that can be used to cancel the context.
+func GoContext(env jutil.Env, jContext jutil.Object) (*context.T, context.CancelFunc, error) {
 	if jContext.IsNull() {
-		return nil, nil
+		return nil, nil, nil
 	}
 	goCtxPtr, err := jutil.CallLongMethod(env, jContext, "nativePtr", nil)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return (*context.T)(jutil.NativePtr(goCtxPtr)), nil
-}
-
-// JavaCountDownLatch creates a Java CountDownLatch object with an initial count
-// of one that counts down (to zero) the moment the value is sent on the
-// provided Go channel or if the channel gets closed.
-func JavaCountDownLatch(env jutil.Env, c <-chan struct{}) (jutil.Object, error) {
-	if c == nil {
-		return jutil.NullObject, nil
-	}
-	jLatch, err := jutil.NewObject(env, jCountDownLatchClass, []jutil.Sign{jutil.IntSign}, int(1))
+	goCancelPtr, err := jutil.CallLongMethod(env, jContext, "nativeCancelPtr", nil)
 	if err != nil {
-		return jutil.NullObject, err
+		return nil, nil, err
 	}
-	// Reference Java CountDownLatch; it will be de-referenced when the goroutine below exits.
-	jLatchGlobal := jutil.NewGlobalRef(env, jLatch)
-	go func() {
-		<-c
-		env, freeFunc := jutil.GetEnv()
-		defer freeFunc()
-		if err := jutil.CallVoidMethod(env, jLatchGlobal, "countDown", nil); err != nil {
-			log.Printf("Error decrementing CountDownLatch: %v", err)
-		}
-		jutil.DeleteGlobalRef(env, jLatchGlobal)
-	}()
-	return jLatch, nil
+	var cancel context.CancelFunc
+	if goCancelPtr != 0 {
+		cancel = *(*context.CancelFunc)(jutil.NativePtr(goCancelPtr))
+	}
+	return (*context.T)(jutil.NativePtr(goCtxPtr)), cancel, nil
 }
 
 // GoContextKey creates a Go Context key given the Java Context key.  The

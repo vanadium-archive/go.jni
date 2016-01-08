@@ -43,7 +43,7 @@ type jniResolver struct {
 func (r *jniResolver) OnConflict(ctx *context.T, conflict *nosql.Conflict) nosql.Resolution {
 	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
-	jContext, err := jcontext.JavaContext(env, ctx)
+	jContext, err := jcontext.JavaContext(env, ctx, nil)
 	if err != nil {
 		panic("Couldn't create Java context: " + err.Error())
 	}

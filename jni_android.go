@@ -20,8 +20,8 @@ import (
 // #include "jni.h"
 import "C"
 
-//export Java_io_v_android_v23_V_nativeInitAndroid
-func Java_io_v_android_v23_V_nativeInitAndroid(jenv *C.JNIEnv, jVClass C.jclass, jAndroidContext C.jobject, jOptions C.jobject) {
+//export Java_io_v_android_v23_V_nativeInitGlobalAndroid
+func Java_io_v_android_v23_V_nativeInitGlobalAndroid(jenv *C.JNIEnv, jVClass C.jclass, jAndroidContext C.jobject, jOptions C.jobject) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	jOpts := jutil.Object(uintptr(unsafe.Pointer(jOptions)))
 

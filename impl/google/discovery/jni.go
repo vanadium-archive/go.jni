@@ -152,7 +152,7 @@ func Java_io_v_impl_google_lib_discovery_VDiscoveryImpl_nativeAdvertise(jenv *C.
 	jVisibility := jutil.Object(uintptr(unsafe.Pointer(jVisibilityObj)))
 	jStartCallback := jutil.Object(uintptr(unsafe.Pointer(jStartCallbackObj)))
 	jDoneCallback := jutil.Object(uintptr(unsafe.Pointer(jDoneCallbackObj)))
-	ctx, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jContext))))
+	ctx, _, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jContext))))
 	if err != nil {
 		jutil.CallbackOnFailure(env, jStartCallback, err)
 		return
@@ -186,7 +186,7 @@ func Java_io_v_impl_google_lib_discovery_VDiscoveryImpl_nativeAdvertise(jenv *C.
 //export Java_io_v_impl_google_lib_discovery_VDiscoveryImpl_nativeScan
 func Java_io_v_impl_google_lib_discovery_VDiscoveryImpl_nativeScan(jenv *C.JNIEnv, jDiscovery C.jobject, goDiscoveryPtr C.jlong, jContext C.jobject, jQuery C.jstring) C.jobject {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	ctx, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jContext))))
+	ctx, _, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jContext))))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil

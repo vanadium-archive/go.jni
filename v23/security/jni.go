@@ -913,7 +913,7 @@ func Java_io_v_v23_security_PublicKeyThirdPartyCaveatValidator_nativeValidate(je
 		jutil.JThrowV(env, err)
 		return
 	}
-	ctx, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jContext))))
+	ctx, _, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jContext))))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return
@@ -937,7 +937,7 @@ func Java_io_v_v23_security_PublicKeyThirdPartyCaveatValidator_nativeValidate(je
 //export Java_io_v_v23_security_VSecurity_nativeGetRemoteBlessingNames
 func Java_io_v_v23_security_VSecurity_nativeGetRemoteBlessingNames(jenv *C.JNIEnv, jVSecurityClass C.jclass, jCtx C.jobject, jCall C.jobject) C.jobjectArray {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	ctx, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jCtx))))
+	ctx, _, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jCtx))))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -959,7 +959,7 @@ func Java_io_v_v23_security_VSecurity_nativeGetRemoteBlessingNames(jenv *C.JNIEn
 //export Java_io_v_v23_security_VSecurity_nativeGetSigningBlessingNames
 func Java_io_v_v23_security_VSecurity_nativeGetSigningBlessingNames(jenv *C.JNIEnv, jVSecurityClass C.jclass, jCtx C.jobject, jPrincipal C.jobject, jBlessings C.jobject) C.jobjectArray {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	ctx, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jCtx))))
+	ctx, _, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jCtx))))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -986,7 +986,7 @@ func Java_io_v_v23_security_VSecurity_nativeGetSigningBlessingNames(jenv *C.JNIE
 //export Java_io_v_v23_security_VSecurity_nativeGetLocalBlessingNames
 func Java_io_v_v23_security_VSecurity_nativeGetLocalBlessingNames(jenv *C.JNIEnv, jVSecurityClass C.jclass, jCtx C.jobject, jCall C.jobject) C.jobjectArray {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	ctx, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jCtx))))
+	ctx, _, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jCtx))))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
