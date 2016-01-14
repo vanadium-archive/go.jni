@@ -19,9 +19,12 @@ import (
 import "C"
 
 var (
-	classSign = jutil.ClassSign("java.lang.Class")
+	classSign      = jutil.ClassSign("java.lang.Class")
+	doneReasonSign = jutil.ClassSign("io.v.v23.context.VContext$DoneReason")
 	// Global reference for io.v.v23.context.VContext class.
 	jVContextClass jutil.Class
+	// Global reference for io.v.v23.context.VContext$DoneReason
+	jDoneReasonClass jutil.Class
 )
 
 // Init initializes the JNI code with the given Java environment. This method
@@ -32,6 +35,10 @@ func Init(env jutil.Env) error {
 	// thread, so we aren't able to invoke FindClass in other threads.
 	var err error
 	jVContextClass, err = jutil.JFindClass(env, "io/v/v23/context/VContext")
+	if err != nil {
+		return err
+	}
+	jDoneReasonClass, err = jutil.JFindClass(env, "io/v/v23/context/VContext$DoneReason")
 	if err != nil {
 		return err
 	}
@@ -78,18 +85,27 @@ func Java_io_v_v23_context_VContext_nativeDeadline(jenv *C.JNIEnv, jVContext C.j
 	return C.jobject(unsafe.Pointer(jDeadline))
 }
 
-//export Java_io_v_v23_context_VContext_nativeDone
-func Java_io_v_v23_context_VContext_nativeDone(jenv *C.JNIEnv, jVContext C.jobject, goPtr C.jlong, jCallbackObj C.jobject) {
+//export Java_io_v_v23_context_VContext_nativeOnDone
+func Java_io_v_v23_context_VContext_nativeOnDone(jenv *C.JNIEnv, jVContext C.jobject, goPtr C.jlong, jCallbackObj C.jobject) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	jCallback := jutil.Object(uintptr(unsafe.Pointer(jCallbackObj)))
-	c := (*(*context.T)(jutil.NativePtr(goPtr))).Done()
+	ctx := (*(*context.T)(jutil.NativePtr(goPtr)))
+	c := ctx.Done()
 	if c == nil {
 		jutil.CallbackOnFailure(env, jCallback, errors.New("Context isn't cancelable"))
 		return
 	}
 	jutil.DoAsyncCall(env, jCallback, func() (jutil.Object, error) {
 		<-c
-		return jutil.NullObject, nil
+		env, freeFunc := jutil.GetEnv()
+		defer freeFunc()
+		jReason, err := JavaContextDoneReason(env, ctx.Err())
+		if err != nil {
+			return jutil.NullObject, err
+		}
+		// Must grab a global reference as we free up the env and all local references that come along
+		// with it.
+		return jutil.NewGlobalRef(env, jReason), nil // Un-refed in DoAsyncCall
 	})
 }
 

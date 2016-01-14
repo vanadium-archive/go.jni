@@ -61,16 +61,22 @@ func Java_io_v_impl_google_rt_VRuntimeImpl_nativeInit(jenv *C.JNIEnv, jRuntime C
 }
 
 //export Java_io_v_impl_google_rt_VRuntimeImpl_nativeShutdown
-func Java_io_v_impl_google_rt_VRuntimeImpl_nativeShutdown(jenv *C.JNIEnv, jRuntime C.jclass, jContext C.jobject) {
+func Java_io_v_impl_google_rt_VRuntimeImpl_nativeShutdown(jenv *C.JNIEnv, jRuntime C.jclass, jContext C.jobject, jCallbackObj C.jobject) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
+	jCallback := jutil.Object(uintptr(unsafe.Pointer(jCallbackObj)))
 	ctx, _, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jContext))))
 	if err != nil {
 		jutil.JThrowV(env, err)
 	}
 	value := ctx.Value(shutdownKey{})
-	if shutdownFunc, ok := value.(v23.Shutdown); ok {
-		shutdownFunc()
+	shutdownFunc, ok := value.(v23.Shutdown)
+	if !ok {
+		panic("shutdown function not found")
 	}
+	jutil.DoAsyncCall(env, jCallback, func() (jutil.Object, error) {
+		shutdownFunc()
+		return jutil.NullObject, nil
+	})
 }
 
 //export Java_io_v_impl_google_rt_VRuntimeImpl_nativeWithNewClient

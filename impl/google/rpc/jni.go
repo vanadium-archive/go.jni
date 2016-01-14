@@ -242,7 +242,7 @@ func decodeArgs(env jutil.Env, jVomArgs C.jobjectArray) ([]interface{}, error) {
 	return args, nil
 }
 
-func doStartCall(context *context.T, name, method string, skipServerAuth bool, goPtr C.jlong, args []interface{}) (jutil.Object, error) {
+func doStartCall(ctx *context.T, cancel func(), name, method string, skipServerAuth bool, goPtr C.jlong, args []interface{}) (jutil.Object, error) {
 	var opts []rpc.CallOpt
 	if skipServerAuth {
 		opts = append(opts,
@@ -250,13 +250,17 @@ func doStartCall(context *context.T, name, method string, skipServerAuth bool, g
 			options.ServerAuthorizer{security.AllowEveryone()})
 	}
 	// Invoke StartCall
-	call, err := (*(*rpc.Client)(jutil.NativePtr(goPtr))).StartCall(context, name, method, args, opts...)
+	call, err := (*(*rpc.Client)(jutil.NativePtr(goPtr))).StartCall(ctx, name, method, args, opts...)
 	if err != nil {
 		return jutil.NullObject, err
 	}
 	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
-	jCall, err := javaCall(env, call)
+	jContext, err := jcontext.JavaContext(env, ctx, cancel)
+	if err != nil {
+		return jutil.NullObject, err
+	}
+	jCall, err := javaCall(env, jContext, call)
 	if err != nil {
 		return jutil.NullObject, err
 	}
@@ -271,7 +275,7 @@ func Java_io_v_impl_google_rpc_ClientImpl_nativeStartCall(jenv *C.JNIEnv, jClien
 	name := jutil.GoString(env, jutil.Object(uintptr(unsafe.Pointer(jName))))
 	method := jutil.GoString(env, jutil.Object(uintptr(unsafe.Pointer(jMethod))))
 	jCallback := jutil.Object(uintptr(unsafe.Pointer(jCallbackObj)))
-	context, _, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jContext))))
+	ctx, cancel, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jContext))))
 	if err != nil {
 		jutil.CallbackOnFailure(env, jCallback, err)
 		return
@@ -283,7 +287,7 @@ func Java_io_v_impl_google_rpc_ClientImpl_nativeStartCall(jenv *C.JNIEnv, jClien
 	}
 	skipServerAuth := jSkipServerAuth == C.JNI_TRUE
 	jutil.DoAsyncCall(env, jCallback, func() (jutil.Object, error) {
-		return doStartCall(context, name, method, skipServerAuth, goPtr, args)
+		return doStartCall(ctx, cancel, name, method, skipServerAuth, goPtr, args)
 	})
 }
 

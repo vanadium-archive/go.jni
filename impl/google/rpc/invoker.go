@@ -94,7 +94,7 @@ func (i *invoker) Invoke(ctx *context.T, call rpc.StreamServerCall, method strin
 		freeFunc()
 		return nil, err
 	}
-	jStreamServerCall, err := javaStreamServerCall(env, call)
+	jStreamServerCall, err := javaStreamServerCall(env, jContext, call)
 	if err != nil {
 		freeFunc()
 		return nil, err
@@ -222,7 +222,7 @@ func (j javaGlobber) Glob__(ctx *context.T, call rpc.GlobServerCall, g *glob.Glo
 	close := func() error {
 		return nil
 	}
-	jOutputChannel, err := jchannel.JavaOutputChannel(env, convert, send, close)
+	jOutputChannel, err := jchannel.JavaOutputChannel(env, ctx, nil, convert, send, close)
 	if err != nil {
 		return err
 	}

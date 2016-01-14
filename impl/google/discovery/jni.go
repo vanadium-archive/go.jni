@@ -186,7 +186,7 @@ func Java_io_v_impl_google_lib_discovery_VDiscoveryImpl_nativeAdvertise(jenv *C.
 //export Java_io_v_impl_google_lib_discovery_VDiscoveryImpl_nativeScan
 func Java_io_v_impl_google_lib_discovery_VDiscoveryImpl_nativeScan(jenv *C.JNIEnv, jDiscovery C.jobject, goDiscoveryPtr C.jlong, jContext C.jobject, jQuery C.jstring) C.jobject {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	ctx, _, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jContext))))
+	ctx, cancel, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jContext))))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -201,7 +201,7 @@ func Java_io_v_impl_google_lib_discovery_VDiscoveryImpl_nativeScan(jenv *C.JNIEn
 		scanChannel, scanError = ds.Scan(ctx, query)
 		close(scanDone)
 	}()
-	jChannel, err := jchannel.JavaInputChannel(env, func() (jutil.Object, error) {
+	jChannel, err := jchannel.JavaInputChannel(env, ctx, cancel, func() (jutil.Object, error) {
 		// A few blocking calls below - don't call GetEnv() before they complete.
 		<-scanDone
 		if scanError != nil {

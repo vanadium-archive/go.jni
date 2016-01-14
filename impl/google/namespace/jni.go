@@ -58,8 +58,8 @@ func Init(env jutil.Env) error {
 	return nil
 }
 
-func globArgs(env jutil.Env, jContext C.jobject, jPattern C.jstring, jOptions C.jobject) (context *context.T, pattern string, opts []naming.NamespaceOpt, err error) {
-	context, _, err = jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jContext))))
+func globArgs(env jutil.Env, jContext C.jobject, jPattern C.jstring, jOptions C.jobject) (context *context.T, cancel func(), pattern string, opts []naming.NamespaceOpt, err error) {
+	context, cancel, err = jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jContext))))
 	if err != nil {
 		return
 	}
@@ -75,7 +75,7 @@ func globArgs(env jutil.Env, jContext C.jobject, jPattern C.jstring, jOptions C.
 func Java_io_v_impl_google_namespace_NamespaceImpl_nativeGlob(jenv *C.JNIEnv, jNamespaceClass C.jclass, goNamespacePtr C.jlong, jContext C.jobject, jPattern C.jstring, jOptions C.jobject) C.jobject {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	n := *(*namespace.T)(jutil.NativePtr(goNamespacePtr))
-	context, pattern, opts, err := globArgs(env, jContext, jPattern, jOptions)
+	ctx, cancel, pattern, opts, err := globArgs(env, jContext, jPattern, jOptions)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -84,10 +84,10 @@ func Java_io_v_impl_google_namespace_NamespaceImpl_nativeGlob(jenv *C.JNIEnv, jN
 	var globError error
 	globDone := make(chan bool)
 	go func() {
-		globChannel, globError = n.Glob(context, pattern, opts...)
+		globChannel, globError = n.Glob(ctx, pattern, opts...)
 		close(globDone)
 	}()
-	jChannel, err := jchannel.JavaInputChannel(env, func() (jutil.Object, error) {
+	jChannel, err := jchannel.JavaInputChannel(env, ctx, cancel, func() (jutil.Object, error) {
 		// A few blocking calls below - don't call GetEnv() before they complete.
 		<-globDone
 		if globError != nil {
@@ -95,7 +95,7 @@ func Java_io_v_impl_google_namespace_NamespaceImpl_nativeGlob(jenv *C.JNIEnv, jN
 		}
 		globReply, ok := <-globChannel
 		if !ok {
-			return jutil.NullObject, verror.NewErrEndOfFile(context)
+			return jutil.NullObject, verror.NewErrEndOfFile(ctx)
 		}
 		env, freeFunc := jutil.GetEnv()
 		defer freeFunc()

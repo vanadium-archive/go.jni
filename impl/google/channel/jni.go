@@ -16,6 +16,7 @@ import (
 import "C"
 
 var (
+	contextSign = jutil.ClassSign("io.v.v23.context.VContext")
 	// Global reference for io.v.impl.google.channel.InputChannelImpl class.
 	jInputChannelImplClass jutil.Class
 	// Global reference for io.v.impl.google.channel.OutputChannelImpl class.

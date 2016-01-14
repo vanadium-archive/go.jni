@@ -12,6 +12,7 @@ import (
 	"runtime"
 
 	"v.io/v23/rpc"
+
 	jutil "v.io/x/jni/util"
 )
 
@@ -46,11 +47,11 @@ func JavaClient(env jutil.Env, client rpc.Client) (jutil.Object, error) {
 
 // javaStreamServerCall converts the provided Go serverCall into a Java StreamServerCall
 // object.
-func javaStreamServerCall(env jutil.Env, call rpc.StreamServerCall) (jutil.Object, error) {
+func javaStreamServerCall(env jutil.Env, jContext jutil.Object, call rpc.StreamServerCall) (jutil.Object, error) {
 	if call == nil {
 		return jutil.NullObject, fmt.Errorf("Go StreamServerCall value cannot be nil")
 	}
-	jStream, err := javaStream(env, call)
+	jStream, err := javaStream(env, jContext, call)
 	if err != nil {
 		return jutil.NullObject, err
 	}
@@ -68,15 +69,15 @@ func javaStreamServerCall(env jutil.Env, call rpc.StreamServerCall) (jutil.Objec
 }
 
 // javaCall converts the provided Go Call value into a Java Call object.
-func javaCall(env jutil.Env, call rpc.ClientCall) (jutil.Object, error) {
+func javaCall(env jutil.Env, jContext jutil.Object, call rpc.ClientCall) (jutil.Object, error) {
 	if call == nil {
 		return jutil.NullObject, fmt.Errorf("Go Call value cannot be nil")
 	}
-	jStream, err := javaStream(env, call)
+	jStream, err := javaStream(env, jContext, call)
 	if err != nil {
 		return jutil.NullObject, err
 	}
-	jCall, err := jutil.NewObject(env, jClientCallImplClass, []jutil.Sign{jutil.LongSign, streamSign}, int64(jutil.PtrValue(&call)), jStream)
+	jCall, err := jutil.NewObject(env, jClientCallImplClass, []jutil.Sign{contextSign, jutil.LongSign, streamSign}, jContext, int64(jutil.PtrValue(&call)), jStream)
 	if err != nil {
 		return jutil.NullObject, err
 	}
@@ -85,8 +86,8 @@ func javaCall(env jutil.Env, call rpc.ClientCall) (jutil.Object, error) {
 }
 
 // javaStream converts the provided Go stream into a Java Stream object.
-func javaStream(env jutil.Env, stream rpc.Stream) (jutil.Object, error) {
-	jStream, err := jutil.NewObject(env, jStreamImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&stream)))
+func javaStream(env jutil.Env, jContext jutil.Object, stream rpc.Stream) (jutil.Object, error) {
+	jStream, err := jutil.NewObject(env, jStreamImplClass, []jutil.Sign{contextSign, jutil.LongSign}, jContext, int64(jutil.PtrValue(&stream)))
 	if err != nil {
 		return jutil.NullObject, err
 	}
@@ -175,11 +176,7 @@ func JavaServerState(env jutil.Env, state rpc.ServerState) (jutil.Object, error)
 	default:
 		return jutil.NullObject, fmt.Errorf("Unrecognized state: %d", state)
 	}
-	jState, err := jutil.CallStaticObjectMethod(env, jServerStateClass, "valueOf", []jutil.Sign{jutil.StringSign}, serverStateSign, name)
-	if err != nil {
-		return jutil.NullObject, err
-	}
-	return jState, nil
+	return jutil.CallStaticObjectMethod(env, jServerStateClass, "valueOf", []jutil.Sign{jutil.StringSign}, serverStateSign, name)
 }
 
 // JavaMountStatus converts the provided rpc.MountStatus value into a Java

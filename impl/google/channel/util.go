@@ -7,7 +7,10 @@
 package channel
 
 import (
+	"v.io/v23/context"
+
 	jutil "v.io/x/jni/util"
+	jcontext "v.io/x/jni/v23/context"
 )
 
 // #include "jni.h"
@@ -19,8 +22,12 @@ import "C"
 //
 // The recv function must return verror.ErrEndOfFile when there are no more elements
 // to receive.
-func JavaInputChannel(env jutil.Env, recv func() (jutil.Object, error)) (jutil.Object, error) {
-	jInputChannel, err := jutil.NewObject(env, jInputChannelImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&recv)))
+func JavaInputChannel(env jutil.Env, ctx *context.T, ctxCancel func(), recv func() (jutil.Object, error)) (jutil.Object, error) {
+	jContext, err := jcontext.JavaContext(env, ctx, ctxCancel)
+	if err != nil {
+		return jutil.NullObject, err
+	}
+	jInputChannel, err := jutil.NewObject(env, jInputChannelImplClass, []jutil.Sign{contextSign, jutil.LongSign}, jContext, int64(jutil.PtrValue(&recv)))
 	if err != nil {
 		return jutil.NullObject, err
 	}
@@ -30,8 +37,12 @@ func JavaInputChannel(env jutil.Env, recv func() (jutil.Object, error)) (jutil.O
 
 // JavaOutputChannel creates a new Java OutputChannel object given the provided Go convert, send
 // and close functions. Send is invoked with the result of convert, which must be non-blocking.
-func JavaOutputChannel(env jutil.Env, convert func(jutil.Object) (interface{}, error), send func(interface{}) error, close func() error) (jutil.Object, error) {
-	jOutputChannel, err := jutil.NewObject(env, jOutputChannelImplClass, []jutil.Sign{jutil.LongSign, jutil.LongSign, jutil.LongSign}, int64(jutil.PtrValue(&convert)), int64(jutil.PtrValue(&send)), int64(jutil.PtrValue(&close)))
+func JavaOutputChannel(env jutil.Env, ctx *context.T, ctxCancel func(), convert func(jutil.Object) (interface{}, error), send func(interface{}) error, close func() error) (jutil.Object, error) {
+	jContext, err := jcontext.JavaContext(env, ctx, ctxCancel)
+	if err != nil {
+		return jutil.NullObject, err
+	}
+	jOutputChannel, err := jutil.NewObject(env, jOutputChannelImplClass, []jutil.Sign{contextSign, jutil.LongSign, jutil.LongSign, jutil.LongSign}, jContext, int64(jutil.PtrValue(&convert)), int64(jutil.PtrValue(&send)), int64(jutil.PtrValue(&close)))
 	if err != nil {
 		return jutil.NullObject, err
 	}

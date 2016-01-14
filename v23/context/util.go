@@ -111,3 +111,18 @@ func JavaContextValue(env jutil.Env, value interface{}) (jutil.Object, error) {
 	}
 	return val.jObj, nil
 }
+
+// JavaContextDoneReason return the Java DoneReason given the Go error returned
+// by ctx.Error().
+func JavaContextDoneReason(env jutil.Env, err error) (jutil.Object, error) {
+	var name string
+	switch err {
+	case context.Canceled:
+		name = "CANCELED"
+	case context.DeadlineExceeded:
+		name = "DEADLINE_EXCEEDED"
+	default:
+		return jutil.NullObject, fmt.Errorf("Unrecognized context done reason: %v", err)
+	}
+	return jutil.CallStaticObjectMethod(env, jDoneReasonClass, "valueOf", []jutil.Sign{jutil.StringSign}, doneReasonSign, name)
+}
