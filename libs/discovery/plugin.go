@@ -7,8 +7,6 @@
 package discovery
 
 import (
-	"bytes"
-	"encoding/binary"
 	"runtime"
 
 	"v.io/v23/context"
@@ -78,16 +76,10 @@ func (p *plugin) Advertise(ctx *context.T, ad discovery.Advertisement, done func
 	return err
 }
 
-func (p *plugin) Scan(ctx *context.T, serviceUuid discovery.Uuid, ch chan<- discovery.Advertisement, done func()) error {
+func (p *plugin) Scan(ctx *context.T, interfaceName string, ch chan<- discovery.Advertisement, done func()) error {
 	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
 	jContext, err := jcontext.JavaContext(env, ctx, nil)
-	if err != nil {
-		return err
-	}
-
-	jUuid, err := JavaUUID(env, serviceUuid)
-
 	if err != nil {
 		return err
 	}
@@ -98,21 +90,10 @@ func (p *plugin) Scan(ctx *context.T, serviceUuid discovery.Uuid, ch chan<- disc
 		return err
 	}
 
-	err = jutil.CallVoidMethod(env, p.jPlugin, "addScanner", []jutil.Sign{contextSign, uuidSign, scanHandlerSign},
-		jContext, jUuid, jNativeScanHandler)
-
+	err = jutil.CallVoidMethod(env, p.jPlugin, "addScanner", []jutil.Sign{contextSign, jutil.StringSign, scanHandlerSign}, jContext, interfaceName, jNativeScanHandler)
 	if err != nil {
 		return err
 	}
 	p.trigger.Add(done, ctx.Done())
 	return nil
-}
-
-// JavaUUID converts a Go UUID type to a Java UUID object.
-func JavaUUID(env jutil.Env, uuid discovery.Uuid) (jutil.Object, error) {
-	buf := bytes.NewBuffer(uuid)
-	var high, low int64
-	binary.Read(buf, binary.BigEndian, &high)
-	binary.Read(buf, binary.BigEndian, &low)
-	return jutil.NewObject(env, jUUIDClass, []jutil.Sign{jutil.LongSign, jutil.LongSign}, high, low)
 }

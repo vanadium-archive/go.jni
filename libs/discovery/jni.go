@@ -20,15 +20,12 @@ var (
 	androidContextSign = jutil.ClassSign("android.content.Context")
 	contextSign        = jutil.ClassSign("io.v.v23.context.VContext")
 	advertisementSign  = jutil.ClassSign("io.v.x.ref.lib.discovery.Advertisement")
-	uuidSign           = jutil.ClassSign("java.util.UUID")
 	scanHandlerSign    = jutil.ClassSign("io.v.impl.google.lib.discovery.ScanHandler")
 
-	// Global reference for io.v.android.libs.discovery.ble.BlePlugin
-	jBlePluginClass jutil.Class
 	// Global reference for io.v.x.ref.lib.discovery.Advertisement
 	jAdvertisementClass jutil.Class
-	// Global reference for java.util.UUID
-	jUUIDClass jutil.Class
+	// Global reference for io.v.android.libs.discovery.ble.BlePlugin
+	jBlePluginClass jutil.Class
 	// Global reference for io.v.android.libs.discovery.ble.NativeScanHandler
 	jNativeScanHandlerClass jutil.Class
 )
@@ -36,22 +33,15 @@ var (
 func Init(env jutil.Env) error {
 	var err error
 
-	jUUIDClass, err = jutil.JFindClass(env, "java/util/UUID")
+	jAdvertisementClass, err = jutil.JFindClass(env, "io/v/x/ref/lib/discovery/Advertisement")
 	if err != nil {
 		return err
 	}
-
-	jNativeScanHandlerClass, err = jutil.JFindClass(env, "io/v/android/libs/discovery/ble/NativeScanHandler")
-	if err != nil {
-		return err
-	}
-
 	jBlePluginClass, err = jutil.JFindClass(env, "io/v/android/libs/discovery/ble/BlePlugin")
 	if err != nil {
 		return err
 	}
-
-	jAdvertisementClass, err = jutil.JFindClass(env, "io/v/x/ref/lib/discovery/Advertisement")
+	jNativeScanHandlerClass, err = jutil.JFindClass(env, "io/v/android/libs/discovery/ble/NativeScanHandler")
 	return err
 }
 
