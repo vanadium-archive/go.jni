@@ -292,7 +292,41 @@ func CallStaticVoidMethod(env Env, class Class, name string, argSigns []Sign, ar
 	return JExceptionMsg(env)
 }
 
-// CallCallbackMethod invokes a Java static method whose last argument is a
+// CallFutureMethod invokes a Java method that returns a ListenableFuture.
+// This method will wait for the future to complete and return the
+// result/error to the caller.  The returned result Object, if not-null, is guaranteed
+// to be globally referenced and this reference must be deleted.
+//
+// The provided freeFunc is guaranteed to be invoked, regardless on whether the method
+// succeeds or fails.  Hence, the caller should get a new JNI environment after this
+// method returns.
+func CallFutureMethod(env Env, freeFunc func(), obj Object, name string, argSigns []Sign, args ...interface{}) (Object, error) {
+	jFuture, err := CallObjectMethod(env, obj, name, argSigns, futureSign, args...)
+	if err != nil {
+		freeFunc()
+		return NullObject, err
+	}
+	return CallStaticCallbackMethod(env, freeFunc, jUtilClass, "asCallback", []Sign{futureSign}, jFuture)
+}
+
+// CallStaticFutureMethod invokes a Java static method that returns a ListenableFuture.
+// This method will wait for the future to complete and return the
+// result/error to the caller.  The returned result Object, if not-null, is guaranteed
+// to be globally referenced and this reference must be deleted.
+//
+// The provided freeFunc is guaranteed to be invoked, regardless on whether the method
+// succeeds or fails.  Hence, the caller should get a new JNI environment after this
+// method returns.
+func CallStaticFutureMethod(env Env, freeFunc func(), class Class, name string, argSigns []Sign, args ...interface{}) (Object, error) {
+	jFuture, err := CallStaticObjectMethod(env, class, name, argSigns, futureSign, args...)
+	if err != nil {
+		freeFunc()
+		return NullObject, err
+	}
+	return CallStaticCallbackMethod(env, freeFunc, jUtilClass, "asCallback", []Sign{futureSign}, jFuture)
+}
+
+// CallCallbackMethod invokes a Java method whose last argument is a
 // Java Callback.  This method will wait for the callback to complete and return the
 // result/error to the caller.  The returned result Object, if not-null, is guaranteed
 // to be globally referenced and this reference must be deleted.
@@ -347,8 +381,8 @@ func CallStaticCallbackMethod(env Env, freeFunc func(), class Class, name string
 }
 
 func setupJavaCallback(env Env) (jCallback Object, succCh chan Object, errCh chan error, err error) {
-	succCh = make(chan Object)
-	errCh = make(chan error)
+	succCh = make(chan Object, 1)
+	errCh = make(chan error, 1)
 	success := func(jResult Object) {
 		env, freeFunc := GetEnv()
 		defer freeFunc()

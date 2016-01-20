@@ -16,6 +16,9 @@ import "C"
 
 var (
 	callbackSign = ClassSign("io.v.v23.rpc.Callback")
+	futureSign   = ClassSign("com.google.common.util.concurrent.ListenableFuture")
+	// Global reference for io.v.util.Util class.
+	jUtilClass Class
 	// Global reference for io.v.v23.Options class.
 	jOptionsClass Class
 	// Global reference for io.v.v23.vom.VomUtil class.
@@ -67,6 +70,10 @@ var (
 // from the main Java thread (e.g., On_Load()).
 func Init(env Env) error {
 	var err error
+	jUtilClass, err = JFindClass(env, "io/v/util/Util")
+	if err != nil {
+		return err
+	}
 	jOptionsClass, err = JFindClass(env, "io/v/v23/Options")
 	if err != nil {
 		return err

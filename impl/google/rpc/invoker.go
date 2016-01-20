@@ -61,19 +61,27 @@ type invoker struct {
 
 func (i *invoker) Prepare(ctx *context.T, method string, numArgs int) (argptrs []interface{}, tags []*vdl.Value, err error) {
 	env, freeFunc := jutil.GetEnv()
-	defer freeFunc()
-
+	jContext, err := jcontext.JavaContext(env, ctx, nil)
+	if err != nil {
+		freeFunc()
+		return nil, nil, err
+	}
 	// Have all input arguments be decoded into *vdl.Value.
 	argptrs = make([]interface{}, numArgs)
 	for i := 0; i < numArgs; i++ {
 		value := new(vdl.Value)
 		argptrs[i] = &value
 	}
-	jVomTags, err := jutil.CallStaticObjectMethod(env, jServerRPCHelperClass, "getMethodTags", []jutil.Sign{invokerSign, jutil.StringSign}, jutil.ArraySign(jutil.ByteArraySign), i.jInvoker, jutil.CamelCase(method))
+	// This method will invoke the freeFunc().
+	jVomTags, err := jutil.CallStaticFutureMethod(env, freeFunc, jServerRPCHelperClass, "prepare", []jutil.Sign{invokerSign, contextSign, jutil.StringSign}, i.jInvoker, jContext, jutil.CamelCase(method))
 	if err != nil {
 		return nil, nil, err
 	}
-	vomTags, err := jutil.GoByteArrayArray(env, jVomTags)
+	env, freeFunc = jutil.GetEnv()
+	defer freeFunc()
+	jVomTagsLocal := jutil.NewLocalRef(env, jVomTags)
+	jutil.DeleteGlobalRef(env, jVomTags)
+	vomTags, err := jutil.GoByteArrayArray(env, jVomTagsLocal)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -109,7 +117,7 @@ func (i *invoker) Invoke(ctx *context.T, call rpc.StreamServerCall, method strin
 		}
 	}
 	// This method will invoke the freeFunc().
-	jResult, err := jutil.CallStaticCallbackMethod(env, freeFunc, jServerRPCHelperClass, "invoke", []jutil.Sign{invokerSign, contextSign, streamServerCallSign, jutil.StringSign, jutil.ArraySign(jutil.ArraySign(jutil.ByteSign))}, i.jInvoker, jContext, jStreamServerCall, jutil.CamelCase(method), vomArgs)
+	jResult, err := jutil.CallStaticFutureMethod(env, freeFunc, jServerRPCHelperClass, "invoke", []jutil.Sign{invokerSign, contextSign, streamServerCallSign, jutil.StringSign, jutil.ArraySign(jutil.ArraySign(jutil.ByteSign))}, i.jInvoker, jContext, jStreamServerCall, jutil.CamelCase(method), vomArgs)
 	if err != nil {
 		return nil, err
 	}
@@ -133,22 +141,22 @@ func (i *invoker) Invoke(ctx *context.T, call rpc.StreamServerCall, method strin
 
 func (i *invoker) Signature(ctx *context.T, call rpc.ServerCall) ([]signature.Interface, error) {
 	env, freeFunc := jutil.GetEnv()
-	defer freeFunc()
-
 	jContext, err := jcontext.JavaContext(env, ctx, nil)
 	if err != nil {
+		freeFunc()
 		return nil, err
 	}
-	jServerCall, err := JavaServerCall(env, call)
+	// This method will invoke the freeFunc().
+	jInterfaces, err := jutil.CallFutureMethod(env, freeFunc, i.jInvoker, "getSignature", []jutil.Sign{contextSign}, jContext)
 	if err != nil {
 		return nil, err
 	}
-	ifaceSign := jutil.ClassSign("io.v.v23.vdlroot.signature.Interface")
-	interfacesArr, err := jutil.CallObjectArrayMethod(env, i.jInvoker, "getSignature", []jutil.Sign{contextSign, serverCallSign}, ifaceSign, jContext, jServerCall)
+	env, freeFunc = jutil.GetEnv()
+	defer freeFunc()
+	interfacesArr, err := jutil.GoObjectArray(env, jInterfaces)
 	if err != nil {
 		return nil, err
 	}
-
 	result := make([]signature.Interface, len(interfacesArr))
 	for i, jInterface := range interfacesArr {
 		err = jutil.GoVomCopy(env, jInterface, jInterfaceClass, &result[i])
@@ -161,22 +169,18 @@ func (i *invoker) Signature(ctx *context.T, call rpc.ServerCall) ([]signature.In
 
 func (i *invoker) MethodSignature(ctx *context.T, call rpc.ServerCall, method string) (signature.Method, error) {
 	env, freeFunc := jutil.GetEnv()
-	defer freeFunc()
-
 	jContext, err := jcontext.JavaContext(env, ctx, nil)
 	if err != nil {
+		freeFunc()
 		return signature.Method{}, err
 	}
-	jServerCall, err := JavaServerCall(env, call)
+	// This method will invoke the freeFunc().
+	jMethod, err := jutil.CallFutureMethod(env, freeFunc, i.jInvoker, "getMethodSignature", []jutil.Sign{contextSign, jutil.StringSign}, jContext, method)
 	if err != nil {
 		return signature.Method{}, err
 	}
-	methodSign := jutil.ClassSign("io.v.v23.vdlroot.signature.Method")
-	jMethod, err := jutil.CallObjectMethod(env, i.jInvoker, "getMethodSignature", []jutil.Sign{contextSign, serverCallSign, jutil.StringSign}, methodSign, jContext, jServerCall, method)
-	if err != nil {
-		return signature.Method{}, err
-	}
-
+	env, freeFunc = jutil.GetEnv()
+	defer freeFunc()
 	var result signature.Method
 	err = jutil.GoVomCopy(env, jMethod, jMethodClass, &result)
 	if err != nil {

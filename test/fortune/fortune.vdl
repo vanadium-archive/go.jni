@@ -26,8 +26,12 @@ type Fortune interface {
 	// Add stores a fortune in the set used by Get.
 	Add(Fortune string) error {access.Write}
 
-	// Get returns a random fortune.
+	// Get returns the last-added fortune.
 	Get() (Fortune string | error) {access.Read}
+
+	// ParameterizedGet returns the last-added fortune as a map (which is a parameterized
+	// type in Java).
+	ParameterizedGet() (map[string]string | error) {access.Read}
 
 	// StreamingGet returns a stream that can be used to obtain fortunes, and returns the
 	// total number of items sent.
@@ -49,4 +53,7 @@ type Fortune interface {
 	// TestServerCall is a method used for testing that the server receives a
 	// correct ServerCall.
 	TestServerCall() error {access.Read}
+
+	// GetServerThread returns a name of the server thread that executes this method.
+	GetServerThread() (string | error) {access.Read}
 }

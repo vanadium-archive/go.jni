@@ -63,8 +63,11 @@ func NewErrComplex(ctx *context.T, first ComplexErrorParam, second string, third
 type FortuneClientMethods interface {
 	// Add stores a fortune in the set used by Get.
 	Add(_ *context.T, Fortune string, _ ...rpc.CallOpt) error
-	// Get returns a random fortune.
+	// Get returns the last-added fortune.
 	Get(*context.T, ...rpc.CallOpt) (Fortune string, _ error)
+	// ParameterizedGet returns the last-added fortune as a map (which is a parameterized
+	// type in Java).
+	ParameterizedGet(*context.T, ...rpc.CallOpt) (map[string]string, error)
 	// StreamingGet returns a stream that can be used to obtain fortunes, and returns the
 	// total number of items sent.
 	StreamingGet(*context.T, ...rpc.CallOpt) (FortuneStreamingGetClientCall, error)
@@ -80,6 +83,8 @@ type FortuneClientMethods interface {
 	// TestServerCall is a method used for testing that the server receives a
 	// correct ServerCall.
 	TestServerCall(*context.T, ...rpc.CallOpt) error
+	// GetServerThread returns a name of the server thread that executes this method.
+	GetServerThread(*context.T, ...rpc.CallOpt) (string, error)
 }
 
 // FortuneClientStub adds universal methods to FortuneClientMethods.
@@ -104,6 +109,11 @@ func (c implFortuneClientStub) Add(ctx *context.T, i0 string, opts ...rpc.CallOp
 
 func (c implFortuneClientStub) Get(ctx *context.T, opts ...rpc.CallOpt) (o0 string, err error) {
 	err = v23.GetClient(ctx).Call(ctx, c.name, "Get", nil, []interface{}{&o0}, opts...)
+	return
+}
+
+func (c implFortuneClientStub) ParameterizedGet(ctx *context.T, opts ...rpc.CallOpt) (o0 map[string]string, err error) {
+	err = v23.GetClient(ctx).Call(ctx, c.name, "ParameterizedGet", nil, []interface{}{&o0}, opts...)
 	return
 }
 
@@ -142,6 +152,11 @@ func (c implFortuneClientStub) NoTags(ctx *context.T, opts ...rpc.CallOpt) (err 
 
 func (c implFortuneClientStub) TestServerCall(ctx *context.T, opts ...rpc.CallOpt) (err error) {
 	err = v23.GetClient(ctx).Call(ctx, c.name, "TestServerCall", nil, nil, opts...)
+	return
+}
+
+func (c implFortuneClientStub) GetServerThread(ctx *context.T, opts ...rpc.CallOpt) (o0 string, err error) {
+	err = v23.GetClient(ctx).Call(ctx, c.name, "GetServerThread", nil, []interface{}{&o0}, opts...)
 	return
 }
 
@@ -356,8 +371,11 @@ func (c *implFortuneMultipleStreamingGetClientCall) Finish() (o0 int32, o1 int32
 type FortuneServerMethods interface {
 	// Add stores a fortune in the set used by Get.
 	Add(_ *context.T, _ rpc.ServerCall, Fortune string) error
-	// Get returns a random fortune.
+	// Get returns the last-added fortune.
 	Get(*context.T, rpc.ServerCall) (Fortune string, _ error)
+	// ParameterizedGet returns the last-added fortune as a map (which is a parameterized
+	// type in Java).
+	ParameterizedGet(*context.T, rpc.ServerCall) (map[string]string, error)
 	// StreamingGet returns a stream that can be used to obtain fortunes, and returns the
 	// total number of items sent.
 	StreamingGet(*context.T, FortuneStreamingGetServerCall) (total int32, _ error)
@@ -373,6 +391,8 @@ type FortuneServerMethods interface {
 	// TestServerCall is a method used for testing that the server receives a
 	// correct ServerCall.
 	TestServerCall(*context.T, rpc.ServerCall) error
+	// GetServerThread returns a name of the server thread that executes this method.
+	GetServerThread(*context.T, rpc.ServerCall) (string, error)
 }
 
 // FortuneServerStubMethods is the server interface containing
@@ -382,8 +402,11 @@ type FortuneServerMethods interface {
 type FortuneServerStubMethods interface {
 	// Add stores a fortune in the set used by Get.
 	Add(_ *context.T, _ rpc.ServerCall, Fortune string) error
-	// Get returns a random fortune.
+	// Get returns the last-added fortune.
 	Get(*context.T, rpc.ServerCall) (Fortune string, _ error)
+	// ParameterizedGet returns the last-added fortune as a map (which is a parameterized
+	// type in Java).
+	ParameterizedGet(*context.T, rpc.ServerCall) (map[string]string, error)
 	// StreamingGet returns a stream that can be used to obtain fortunes, and returns the
 	// total number of items sent.
 	StreamingGet(*context.T, *FortuneStreamingGetServerCallStub) (total int32, _ error)
@@ -399,6 +422,8 @@ type FortuneServerStubMethods interface {
 	// TestServerCall is a method used for testing that the server receives a
 	// correct ServerCall.
 	TestServerCall(*context.T, rpc.ServerCall) error
+	// GetServerThread returns a name of the server thread that executes this method.
+	GetServerThread(*context.T, rpc.ServerCall) (string, error)
 }
 
 // FortuneServerStub adds universal methods to FortuneServerStubMethods.
@@ -438,6 +463,10 @@ func (s implFortuneServerStub) Get(ctx *context.T, call rpc.ServerCall) (string,
 	return s.impl.Get(ctx, call)
 }
 
+func (s implFortuneServerStub) ParameterizedGet(ctx *context.T, call rpc.ServerCall) (map[string]string, error) {
+	return s.impl.ParameterizedGet(ctx, call)
+}
+
 func (s implFortuneServerStub) StreamingGet(ctx *context.T, call *FortuneStreamingGetServerCallStub) (int32, error) {
 	return s.impl.StreamingGet(ctx, call)
 }
@@ -460,6 +489,10 @@ func (s implFortuneServerStub) NoTags(ctx *context.T, call rpc.ServerCall) error
 
 func (s implFortuneServerStub) TestServerCall(ctx *context.T, call rpc.ServerCall) error {
 	return s.impl.TestServerCall(ctx, call)
+}
+
+func (s implFortuneServerStub) GetServerThread(ctx *context.T, call rpc.ServerCall) (string, error) {
+	return s.impl.GetServerThread(ctx, call)
 }
 
 func (s implFortuneServerStub) Globber() *rpc.GlobState {
@@ -489,9 +522,17 @@ var descFortune = rpc.InterfaceDesc{
 		},
 		{
 			Name: "Get",
-			Doc:  "// Get returns a random fortune.",
+			Doc:  "// Get returns the last-added fortune.",
 			OutArgs: []rpc.ArgDesc{
 				{"Fortune", ``}, // string
+			},
+			Tags: []*vdl.Value{vdl.ValueOf(access.Tag("Read"))},
+		},
+		{
+			Name: "ParameterizedGet",
+			Doc:  "// ParameterizedGet returns the last-added fortune as a map (which is a parameterized\n// type in Java).",
+			OutArgs: []rpc.ArgDesc{
+				{"", ``}, // map[string]string
 			},
 			Tags: []*vdl.Value{vdl.ValueOf(access.Tag("Read"))},
 		},
@@ -533,6 +574,14 @@ var descFortune = rpc.InterfaceDesc{
 		{
 			Name: "TestServerCall",
 			Doc:  "// TestServerCall is a method used for testing that the server receives a\n// correct ServerCall.",
+			Tags: []*vdl.Value{vdl.ValueOf(access.Tag("Read"))},
+		},
+		{
+			Name: "GetServerThread",
+			Doc:  "// GetServerThread returns a name of the server thread that executes this method.",
+			OutArgs: []rpc.ArgDesc{
+				{"", ``}, // string
+			},
 			Tags: []*vdl.Value{vdl.ValueOf(access.Tag("Read"))},
 		},
 	},
