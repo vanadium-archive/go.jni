@@ -200,13 +200,16 @@ type javaGlobber struct {
 func (j javaGlobber) Glob__(ctx *context.T, call rpc.GlobServerCall, g *glob.Glob) error {
 	// TODO(sjr,rthellend): Update the Java API to match the new GO API.
 	env, freeFunc := jutil.GetEnv()
-	defer freeFunc()
-
-	jServerCall, err := JavaServerCall(env, call)
+	jContext, err := jcontext.JavaContext(env, ctx, nil)
 	if err != nil {
+		freeFunc()
 		return err
 	}
-
+	jServerCall, err := JavaServerCall(env, call)
+	if err != nil {
+		freeFunc()
+		return err
+	}
 	convert := func(input jutil.Object) (interface{}, error) {
 		env, freeFunc := jutil.GetEnv()
 		defer freeFunc()
@@ -228,17 +231,11 @@ func (j javaGlobber) Glob__(ctx *context.T, call rpc.GlobServerCall, g *glob.Glo
 	}
 	jOutputChannel, err := jchannel.JavaOutputChannel(env, ctx, nil, convert, send, close)
 	if err != nil {
+		freeFunc()
 		return err
 	}
-
-	callSign := jutil.ClassSign("io.v.v23.rpc.ServerCall")
 	channelSign := jutil.ClassSign("io.v.v23.OutputChannel")
-
-	jServerCall = jutil.NewGlobalRef(env, jServerCall)
-	jOutputChannel = jutil.NewGlobalRef(env, jOutputChannel)
-	// Calls Java invoker's glob method.
-	jutil.CallVoidMethod(env, j.i.jInvoker, "glob", []jutil.Sign{callSign, jutil.StringSign, channelSign}, jServerCall, g.String(), jOutputChannel)
-	jutil.DeleteGlobalRef(env, jServerCall)
-	jutil.DeleteGlobalRef(env, jOutputChannel)
-	return nil
+	// This method will invoke the freeFunc().
+	_, err = jutil.CallStaticFutureMethod(env, freeFunc, jServerRPCHelperClass, "glob", []jutil.Sign{invokerSign, contextSign, serverCallSign, jutil.StringSign, channelSign}, j.i.jInvoker, jContext, jServerCall, g.String(), jOutputChannel)
+	return err
 }
