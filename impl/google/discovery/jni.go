@@ -27,7 +27,8 @@ import (
 import "C"
 
 var (
-	updateSign = jutil.ClassSign("io.v.v23.discovery.Update")
+	updateSign  = jutil.ClassSign("io.v.v23.discovery.Update")
+	contextSign = jutil.ClassSign("io.v.v23.context.VContext")
 
 	// Global reference for java.util.UUID class.
 	jUUIDClass jutil.Class
@@ -128,8 +129,12 @@ func doAdvertise(ctx *context.T, ds discovery.T, trigger *idiscovery.Trigger, se
 		jutil.DeleteGlobalRef(env, jDoneCallback)
 		return jutil.NullObject, err
 	}
+	jContext, err := jcontext.JavaContext(env, ctx, nil)
+	if err != nil {
+		return jutil.NullObject, err
+	}
 	listenableFutureSign := jutil.ClassSign("com.google.common.util.concurrent.ListenableFuture")
-	jDoneFuture, err := jutil.CallObjectMethod(env, jDoneCallback, "getFuture", nil, listenableFutureSign)
+	jDoneFuture, err := jutil.CallObjectMethod(env, jDoneCallback, "getFuture", []jutil.Sign{contextSign}, listenableFutureSign, jContext)
 	if err != nil {
 		jutil.DeleteGlobalRef(env, jDoneCallback)
 		return jutil.NullObject, err
