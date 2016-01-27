@@ -287,8 +287,8 @@ func Java_io_v_impl_google_rt_VRuntimeImpl_nativeGetListenSpec(jenv *C.JNIEnv, j
 	return C.jobject(unsafe.Pointer(jSpec))
 }
 
-//export Java_io_v_impl_google_rt_VRuntimeImpl_nativeGetDiscovery
-func Java_io_v_impl_google_rt_VRuntimeImpl_nativeGetDiscovery(jenv *C.JNIEnv, jRuntime C.jclass, jContext C.jobject) C.jobject {
+//export Java_io_v_impl_google_rt_VRuntimeImpl_nativeNewDiscovery
+func Java_io_v_impl_google_rt_VRuntimeImpl_nativeNewDiscovery(jenv *C.JNIEnv, jRuntime C.jclass, jContext C.jobject) C.jobject {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	ctx, _, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jContext))))
 	if err != nil {
@@ -296,7 +296,12 @@ func Java_io_v_impl_google_rt_VRuntimeImpl_nativeGetDiscovery(jenv *C.JNIEnv, jR
 		return nil
 	}
 
-	jDiscovery, err := jdiscovery.JavaDiscovery(env, v23.GetDiscovery(ctx))
+	discovery, err := v23.NewDiscovery(ctx)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	jDiscovery, err := jdiscovery.JavaDiscovery(env, discovery)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
