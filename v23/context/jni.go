@@ -110,9 +110,9 @@ func Java_io_v_v23_context_VContext_nativeOnDone(jenv *C.JNIEnv, jVContext C.job
 }
 
 //export Java_io_v_v23_context_VContext_nativeValue
-func Java_io_v_v23_context_VContext_nativeValue(jenv *C.JNIEnv, jVContext C.jobject, goPtr C.jlong, jKey C.jobject) C.jobject {
+func Java_io_v_v23_context_VContext_nativeValue(jenv *C.JNIEnv, jVContext C.jobject, goPtr C.jlong, jKeySign C.jstring) C.jobject {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	key, err := GoContextKey(env, jutil.Object(uintptr(unsafe.Pointer(jKey))))
+	key := goContextKey(jutil.GoString(env, jutil.Object(uintptr(unsafe.Pointer(jKeySign)))))
 	value := (*(*context.T)(jutil.NativePtr(goPtr))).Value(key)
 	jValue, err := JavaContextValue(env, value)
 	if err != nil {
@@ -169,13 +169,9 @@ func Java_io_v_v23_context_VContext_nativeWithTimeout(jenv *C.JNIEnv, jVContext 
 }
 
 //export Java_io_v_v23_context_VContext_nativeWithValue
-func Java_io_v_v23_context_VContext_nativeWithValue(jenv *C.JNIEnv, jVContext C.jobject, goPtr C.jlong, goCancelPtr C.jlong, jKey C.jobject, jValue C.jobject) C.jobject {
+func Java_io_v_v23_context_VContext_nativeWithValue(jenv *C.JNIEnv, jVContext C.jobject, goPtr C.jlong, goCancelPtr C.jlong, jKeySign C.jstring, jValue C.jobject) C.jobject {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	key, err := GoContextKey(env, jutil.Object(uintptr(unsafe.Pointer(jKey))))
-	if err != nil {
-		jutil.JThrowV(env, err)
-		return nil
-	}
+	key := goContextKey(jutil.GoString(env, jutil.Object(uintptr(unsafe.Pointer(jKeySign)))))
 	value, err := GoContextValue(env, jutil.Object(uintptr(unsafe.Pointer(jValue))))
 	if err != nil {
 		jutil.JThrowV(env, err)

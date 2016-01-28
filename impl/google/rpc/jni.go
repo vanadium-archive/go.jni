@@ -512,9 +512,9 @@ func Java_io_v_impl_google_rpc_AddressChooserImpl_nativeFinalize(jenv *C.JNIEnv,
 }
 
 //export Java_io_v_impl_google_rpc_ServerRPCHelper_nativeGoInvoker
-func Java_io_v_impl_google_rpc_ServerRPCHelper_nativeGoInvoker(jenv *C.JNIEnv, jServerRPCHelper C.jclass, jServiceObject C.jobject) C.jlong {
+func Java_io_v_impl_google_rpc_ServerRPCHelper_nativeGoInvoker(jenv *C.JNIEnv, jServerRPCHelper C.jclass, jInvoker C.jobject) C.jlong {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	invoker, err := goInvoker(env, jutil.Object(uintptr(unsafe.Pointer(jServiceObject))))
+	invoker, err := goInvoker(env, jutil.Object(uintptr(unsafe.Pointer(jInvoker))))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return C.jlong(0)

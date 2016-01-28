@@ -26,20 +26,7 @@ import (
 // #include "jni.h"
 import "C"
 
-func goInvoker(env jutil.Env, obj jutil.Object) (rpc.Invoker, error) {
-	// See if the Java object is an invoker.
-	var jInvoker jutil.Object
-	if jutil.IsInstanceOf(env, obj, jInvokerClass) {
-		jInvoker = obj
-	} else {
-		// Create a new Java ReflectInvoker object.
-		jReflectInvoker, err := jutil.NewObject(env, jReflectInvokerClass, []jutil.Sign{jutil.ObjectSign}, obj)
-		if err != nil {
-			return nil, fmt.Errorf("error creating Java ReflectInvoker object: %v", err)
-		}
-		jInvoker = jReflectInvoker
-	}
-
+func goInvoker(env jutil.Env, jInvoker jutil.Object) (rpc.Invoker, error) {
 	// Reference Java invoker; it will be de-referenced when the go invoker
 	// created below is garbage-collected (through the finalizer callback we
 	// setup just below).

@@ -63,26 +63,6 @@ func GoContext(env jutil.Env, jContext jutil.Object) (*context.T, context.Cancel
 	return (*context.T)(jutil.NativePtr(goCtxPtr)), cancel, nil
 }
 
-// GoContextKey creates a Go Context key given the Java Context key.  The
-// returned key guarantees that the two Java keys will be equal iff (1) they
-// belong to the same class, and (2) they have the same hashCode().
-func GoContextKey(env jutil.Env, jKey jutil.Object) (interface{}, error) {
-	// Create a lookup key we use to map Java context keys to Go context keys.
-	hashCode, err := jutil.CallIntMethod(env, jKey, "hashCode", nil)
-	if err != nil {
-		return nil, err
-	}
-	jClass, err := jutil.CallObjectMethod(env, jKey, "getClass", nil, classSign)
-	if err != nil {
-		return nil, err
-	}
-	className, err := jutil.CallStringMethod(env, jClass, "getName", nil)
-	if err != nil {
-		return nil, err
-	}
-	return goContextKey(fmt.Sprintf("%s:%d", className, hashCode)), nil
-}
-
 // GoContextValue returns the Go Context value given the Java Context value.
 func GoContextValue(env jutil.Env, jValue jutil.Object) (interface{}, error) {
 	// Reference Java object; it will be de-referenced when the Go wrapper
