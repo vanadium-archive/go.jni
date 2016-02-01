@@ -23,6 +23,13 @@ func GoAuthorizer(env jutil.Env, jAuth jutil.Object) (security.Authorizer, error
 	if jAuth.IsNull() {
 		return nil, nil
 	}
+	if jutil.IsInstanceOf(env, jAuth, jPermissionsAuthorizerClass) {
+		ptr, err := jutil.JLongField(env, jAuth, "nativePtr")
+		if err != nil {
+			return nil, err
+		}
+		return *(*security.Authorizer)(jutil.NativePtr(ptr)), nil
+	}
 	// Reference Java dispatcher; it will be de-referenced when the go
 	// dispatcher created below is garbage-collected (through the finalizer
 	// callback we setup below).

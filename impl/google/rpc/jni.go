@@ -13,7 +13,6 @@ import (
 	"v.io/v23/context"
 	"v.io/v23/options"
 	"v.io/v23/rpc"
-	"v.io/v23/security"
 	"v.io/v23/vdl"
 	"v.io/v23/vom"
 
@@ -242,21 +241,15 @@ func decodeArgs(env jutil.Env, jVomArgs C.jobjectArray) ([]interface{}, error) {
 	return args, nil
 }
 
-func doStartCall(ctx *context.T, cancel func(), name, method string, skipServerAuth bool, goPtr C.jlong, args []interface{}) (jutil.Object, error) {
-	var opts []rpc.CallOpt
-	if skipServerAuth {
-		opts = append(opts,
-			options.NameResolutionAuthorizer{security.AllowEveryone()},
-			options.ServerAuthorizer{security.AllowEveryone()})
-	}
+func doStartCall(context *context.T, cancel func(), name, method string, opts []rpc.CallOpt, goPtr C.jlong, args []interface{}) (jutil.Object, error) {
 	// Invoke StartCall
-	call, err := (*(*rpc.Client)(jutil.NativePtr(goPtr))).StartCall(ctx, name, method, args, opts...)
+	call, err := (*(*rpc.Client)(jutil.NativePtr(goPtr))).StartCall(context, name, method, args, opts...)
 	if err != nil {
 		return jutil.NullObject, err
 	}
 	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
-	jContext, err := jcontext.JavaContext(env, ctx, cancel)
+	jContext, err := jcontext.JavaContext(env, context, cancel)
 	if err != nil {
 		return jutil.NullObject, err
 	}
@@ -270,7 +263,7 @@ func doStartCall(ctx *context.T, cancel func(), name, method string, skipServerA
 }
 
 //export Java_io_v_impl_google_rpc_ClientImpl_nativeStartCall
-func Java_io_v_impl_google_rpc_ClientImpl_nativeStartCall(jenv *C.JNIEnv, jClient C.jobject, goPtr C.jlong, jContext C.jobject, jName C.jstring, jMethod C.jstring, jVomArgs C.jobjectArray, jSkipServerAuth C.jboolean, jCallbackObj C.jobject) {
+func Java_io_v_impl_google_rpc_ClientImpl_nativeStartCall(jenv *C.JNIEnv, jClient C.jobject, goPtr C.jlong, jContext C.jobject, jName C.jstring, jMethod C.jstring, jVomArgs C.jobjectArray, jNameResolutionAuthorizerObj, jServerAuthorizerObj C.jobject, jCallbackObj C.jobject) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	name := jutil.GoString(env, jutil.Object(uintptr(unsafe.Pointer(jName))))
 	method := jutil.GoString(env, jutil.Object(uintptr(unsafe.Pointer(jMethod))))
@@ -285,9 +278,27 @@ func Java_io_v_impl_google_rpc_ClientImpl_nativeStartCall(jenv *C.JNIEnv, jClien
 		jutil.CallbackOnFailure(env, jCallback, err)
 		return
 	}
-	skipServerAuth := jSkipServerAuth == C.JNI_TRUE
+	var opts []rpc.CallOpt
+	jNameResolutionAuthorizer := jutil.Object(uintptr(unsafe.Pointer(jNameResolutionAuthorizerObj)))
+	if !jNameResolutionAuthorizer.IsNull() {
+		auth, err := jsecurity.GoAuthorizer(env, jNameResolutionAuthorizer)
+		if err != nil {
+			jutil.CallbackOnFailure(env, jCallback, err)
+			return
+		}
+		opts = append(opts, options.NameResolutionAuthorizer{auth})
+	}
+	jServerAuthorizer := jutil.Object(uintptr(unsafe.Pointer(jServerAuthorizerObj)))
+	if !jServerAuthorizer.IsNull() {
+		auth, err := jsecurity.GoAuthorizer(env, jServerAuthorizer)
+		if err != nil {
+			jutil.CallbackOnFailure(env, jCallback, err)
+			return
+		}
+		opts = append(opts, options.ServerAuthorizer{auth})
+	}
 	jutil.DoAsyncCall(env, jCallback, func() (jutil.Object, error) {
-		return doStartCall(ctx, cancel, name, method, skipServerAuth, goPtr, args)
+		return doStartCall(ctx, cancel, name, method, opts, goPtr, args)
 	})
 }
 

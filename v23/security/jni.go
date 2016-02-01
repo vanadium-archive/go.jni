@@ -63,6 +63,8 @@ var (
 	jDischargeClass jutil.Class
 	// Global reference for io.v.v23.security.DischargeImpetus class.
 	jDischargeImpetusClass jutil.Class
+	// Global reference for io.v.v23.security.access.PermissionsAuthorizer class.
+	jPermissionsAuthorizerClass jutil.Class
 	// Global reference for io.v.v23.uniqueid.Id class.
 	jIdClass jutil.Class
 	// Global reference for java.lang.Object class.
@@ -127,6 +129,10 @@ func Init(env jutil.Env) error {
 		return err
 	}
 	jDischargeImpetusClass, err = jutil.JFindClass(env, "io/v/v23/security/DischargeImpetus")
+	if err != nil {
+		return err
+	}
+	jPermissionsAuthorizerClass, err = jutil.JFindClass(env, "io/v/v23/security/access/PermissionsAuthorizer")
 	if err != nil {
 		return err
 	}
@@ -1041,4 +1047,34 @@ func Java_io_v_v23_security_VSecurity_nativeAddToRoots(jenv *C.JNIEnv, jVSecurit
 	if err := security.AddToRoots(principal, blessings); err != nil {
 		jutil.JThrowV(env, err)
 	}
+}
+
+//export Java_io_v_v23_security_VSecurity_nativeCreateAuthorizer
+func Java_io_v_v23_security_VSecurity_nativeCreateAuthorizer(jenv *C.JNIEnv, jVSecurityClass C.jclass, kind C.jint, jKey C.jobject) C.jobject {
+	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
+	var auth security.Authorizer
+	switch kind {
+	case 0:
+		auth = security.AllowEveryone()
+	case 1:
+		auth = security.EndpointAuthorizer()
+	case 2:
+		auth = security.DefaultAuthorizer()
+	case 3:
+		key, err := GoPublicKey(env, jutil.Object(uintptr(unsafe.Pointer(jKey))))
+		if err != nil {
+			jutil.JThrowV(env, err)
+			return nil
+		}
+		auth = security.PublicKeyAuthorizer(key)
+	default:
+		return nil
+	}
+	jutil.GoRef(&auth) // Un-refed when the Java PermissionsAuthorizer is finalized
+	jAuthorizer, err := jutil.NewObject(env, jutil.Class(uintptr(unsafe.Pointer(jPermissionsAuthorizerClass))), []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&auth)))
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	return C.jobject(unsafe.Pointer(jAuthorizer))
 }
