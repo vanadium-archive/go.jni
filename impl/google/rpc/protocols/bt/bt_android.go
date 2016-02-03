@@ -62,8 +62,8 @@ func (btProtocol) Dial(ctx *context.T, protocol, address string, timeout time.Du
 	return newConnection(env, jStream), nil
 }
 
-func (btProtocol) Resolve(ctx *context.T, protocol, address string) (string, string, error) {
-	return protocol, address, nil
+func (btProtocol) Resolve(ctx *context.T, protocol, address string) (string, []string, error) {
+	return protocol, []string{address}, nil
 }
 
 func (btProtocol) Listen(ctx *context.T, protocol, address string) (flow.Listener, error) {
