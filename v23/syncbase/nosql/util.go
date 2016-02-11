@@ -70,12 +70,6 @@ func GoSchema(env jutil.Env, jSchema jutil.Object) (*nosql.Schema, error) {
 	if err := jutil.GoVomCopy(env, jMetadata, jSchemaMetadataClass, &metadata); err != nil {
 		return nil, err
 	}
-	upgraderSign := jutil.ClassSign("io.v.v23.syncbase.nosql.SchemaUpgrader")
-	jUpgrader, err := jutil.CallObjectMethod(env, jSchema, "getUpgrader", nil, upgraderSign)
-	if err != nil {
-		return nil, err
-	}
-	upgrader := GoUpgrader(env, jUpgrader)
 	resolverSign := jutil.ClassSign("io.v.v23.syncbase.nosql.ConflictResolver")
 	jResolver, err := jutil.CallObjectMethod(env, jSchema, "getResolver", nil, resolverSign)
 	if err != nil {
@@ -84,7 +78,6 @@ func GoSchema(env jutil.Env, jSchema jutil.Object) (*nosql.Schema, error) {
 	resolver := GoResolver(env, jResolver)
 	return &nosql.Schema{
 		Metadata: metadata,
-		Upgrader: upgrader,
 		Resolver: resolver,
 	}, nil
 }
