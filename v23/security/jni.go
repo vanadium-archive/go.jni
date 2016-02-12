@@ -724,7 +724,7 @@ func Java_io_v_v23_security_BlessingStoreImpl_nativeSetDefaultBlessings(jenv *C.
 //export Java_io_v_v23_security_BlessingStoreImpl_nativeDefaultBlessings
 func Java_io_v_v23_security_BlessingStoreImpl_nativeDefaultBlessings(jenv *C.JNIEnv, jBlessingStoreImpl C.jobject, goPtr C.jlong) C.jobject {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	blessings := (*(*security.BlessingStore)(jutil.NativePtr(goPtr))).Default()
+	blessings, _ := (*(*security.BlessingStore)(jutil.NativePtr(goPtr))).Default()
 	jBlessings, err := JavaBlessings(env, blessings)
 	if err != nil {
 		jutil.JThrowV(env, err)

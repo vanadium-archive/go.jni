@@ -106,20 +106,21 @@ func (s *blessingStore) SetDefault(blessings security.Blessings) error {
 	return jutil.CallVoidMethod(env, s.jBlessingStore, "setDefaultBlessings", []jutil.Sign{blessingsSign}, jBlessings)
 }
 
-func (s *blessingStore) Default() security.Blessings {
+func (s *blessingStore) Default() (security.Blessings, <-chan struct{}) {
 	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
+	// TODO(ashankar,spetrovic): Figure out notification API in Java
 	jBlessings, err := jutil.CallObjectMethod(env, s.jBlessingStore, "defaultBlessings", nil, blessingsSign)
 	if err != nil {
 		log.Printf("Couldn't call Java defaultBlessings method: %v", err)
-		return security.Blessings{}
+		return security.Blessings{}, nil
 	}
 	blessings, err := GoBlessings(env, jBlessings)
 	if err != nil {
 		log.Printf("Couldn't convert Java Blessings to Go Blessings: %v", err)
-		return security.Blessings{}
+		return security.Blessings{}, nil
 	}
-	return blessings
+	return blessings, nil
 }
 
 func (s *blessingStore) PublicKey() security.PublicKey {
