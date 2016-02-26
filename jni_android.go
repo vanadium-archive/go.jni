@@ -10,10 +10,10 @@ import (
 	"unsafe"
 
 	"v.io/x/lib/vlog"
-	"v.io/x/ref/lib/discovery/factory"
+	dfactory "v.io/x/ref/lib/discovery/factory"
 	_ "v.io/x/ref/runtime/factories/android"
 
-	jdiscovery "v.io/x/jni/libs/discovery"
+	jdplugins "v.io/x/jni/impl/google/discovery/plugins"
 	jutil "v.io/x/jni/util"
 )
 
@@ -35,10 +35,10 @@ func Java_io_v_android_v23_V_nativeInitGlobalAndroid(jenv *C.JNIEnv, jVClass C.j
 	// This assumes that vlog.Log is the underlying logging system for.
 	vlog.Log.Configure(vlog.OverridePriorConfiguration(true), vlog.LogToStderr(false), vlog.AlsoLogToStderr(false), level, vmodule)
 
-	// Setup discovery.
-	if err := jdiscovery.Init(env); err != nil {
+	// Setup discovery plugins.
+	if err := jdplugins.Init(env); err != nil {
 		jutil.JThrowV(env, err)
 		return
 	}
-	factory.SetBleFactory(jdiscovery.NewBleCreator(env, jutil.Object(uintptr(unsafe.Pointer(jAndroidContext)))))
+	dfactory.SetBleFactory(jdplugins.NewBlePluginFactory(env, jutil.Object(uintptr(unsafe.Pointer(jAndroidContext)))))
 }
