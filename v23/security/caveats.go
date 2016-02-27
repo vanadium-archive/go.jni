@@ -9,6 +9,7 @@ package security
 import (
 	"v.io/v23/context"
 	"v.io/v23/security"
+	"v.io/v23/security/access"
 	"v.io/v23/uniqueid"
 
 	jutil "v.io/x/jni/util"
@@ -24,6 +25,7 @@ var systemCaveats = map[uniqueid.Id]bool{
 	security.MethodCaveat.Id:              true,
 	security.PeerBlessingsCaveat.Id:       true,
 	security.PublicKeyThirdPartyCaveat.Id: true,
+	access.AccessTagCaveat.Id:             true,
 }
 
 func caveatValidator(context *context.T, call security.Call, sets [][]security.Caveat) []error {
