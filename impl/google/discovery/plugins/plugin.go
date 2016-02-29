@@ -111,10 +111,10 @@ func newPluginFactory(env jutil.Env, jAndroidContext jutil.Object, jPluginClass 
 		})
 		return p, nil
 	}
-	runtime.SetFinalizer(factory, func(func(string) (idiscovery.Plugin, error)) {
+	runtime.SetFinalizer(&factory, func(*func(string) (idiscovery.Plugin, error)) {
 		env, freeFunc := jutil.GetEnv()
+		defer freeFunc()
 		jutil.DeleteGlobalRef(env, jAndroidContext)
-		freeFunc()
 	})
 	return factory
 }
