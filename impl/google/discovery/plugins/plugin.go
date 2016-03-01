@@ -93,8 +93,7 @@ func newPluginFactory(env jutil.Env, jAndroidContext jutil.Object, jPluginClass 
 		env, freeFunc := jutil.GetEnv()
 		defer freeFunc()
 
-		jHost := jutil.JString(env, host)
-		jPlugin, err := jutil.NewObject(env, jPluginClass, []jutil.Sign{jutil.StringSign, androidContextSign}, jHost, jAndroidContext)
+		jPlugin, err := jutil.NewObject(env, jPluginClass, []jutil.Sign{androidContextSign, jutil.StringSign}, jAndroidContext, host)
 		if err != nil {
 			return nil, err
 		}

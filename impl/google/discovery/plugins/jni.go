@@ -20,7 +20,7 @@ import "C"
 var (
 	androidContextSign = jutil.ClassSign("android.content.Context")
 	adInfoSign         = jutil.ClassSign("io.v.x.ref.lib.discovery.AdInfo")
-	scanHandlerSign    = jutil.ClassSign("io.v.impl.google.lib.discovery.Plugin.ScanHandler")
+	scanHandlerSign    = jutil.ClassSign("io.v.impl.google.lib.discovery.Plugin$ScanHandler")
 
 	jAdInfoClass            jutil.Class // io.v.x.ref.lib.discovery.AdInfo
 	jNativeScanHandlerClass jutil.Class // io.v.android.impl.google.discovery.plugins.NativeScanHandler
