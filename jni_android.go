@@ -10,7 +10,6 @@ import (
 	"unsafe"
 
 	"v.io/x/lib/vlog"
-	dfactory "v.io/x/ref/lib/discovery/factory"
 	_ "v.io/x/ref/runtime/factories/android"
 
 	jdplugins "v.io/x/jni/impl/google/discovery/plugins"
@@ -21,7 +20,7 @@ import (
 import "C"
 
 //export Java_io_v_android_v23_V_nativeInitGlobalAndroid
-func Java_io_v_android_v23_V_nativeInitGlobalAndroid(jenv *C.JNIEnv, jVClass C.jclass, jAndroidContext C.jobject, jOptions C.jobject) {
+func Java_io_v_android_v23_V_nativeInitGlobalAndroid(jenv *C.JNIEnv, jVClass C.jclass, jContext C.jobject, jOptions C.jobject) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	jOpts := jutil.Object(uintptr(unsafe.Pointer(jOptions)))
 
@@ -36,9 +35,9 @@ func Java_io_v_android_v23_V_nativeInitGlobalAndroid(jenv *C.JNIEnv, jVClass C.j
 	vlog.Log.Configure(vlog.OverridePriorConfiguration(true), vlog.LogToStderr(false), vlog.AlsoLogToStderr(false), level, vmodule)
 
 	// Setup discovery plugins.
-	if err := jdplugins.Init(env); err != nil {
+	jCtx := jutil.Object(uintptr(unsafe.Pointer(jContext)))
+	if err := jdplugins.Init(env, jCtx); err != nil {
 		jutil.JThrowV(env, err)
 		return
 	}
-	dfactory.SetBleFactory(jdplugins.NewBlePluginFactory(env, jutil.Object(uintptr(unsafe.Pointer(jAndroidContext)))))
 }

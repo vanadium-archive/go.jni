@@ -18,16 +18,15 @@ import (
 import "C"
 
 var (
-	androidContextSign = jutil.ClassSign("android.content.Context")
-	adInfoSign         = jutil.ClassSign("io.v.x.ref.lib.discovery.AdInfo")
-	scanHandlerSign    = jutil.ClassSign("io.v.impl.google.lib.discovery.Plugin$ScanHandler")
+	contextSign     = jutil.ClassSign("io.v.v23.context.VContext")
+	adInfoSign      = jutil.ClassSign("io.v.x.ref.lib.discovery.AdInfo")
+	scanHandlerSign = jutil.ClassSign("io.v.impl.google.lib.discovery.Plugin$ScanHandler")
 
 	jAdInfoClass            jutil.Class // io.v.x.ref.lib.discovery.AdInfo
 	jNativeScanHandlerClass jutil.Class // io.v.android.impl.google.discovery.plugins.NativeScanHandler
-	jBlePluginClass         jutil.Class // io.v.android.impl.google.discovery.plugins.ble.BlePlugin
 )
 
-func Init(env jutil.Env) error {
+func Init(env jutil.Env, jCtx jutil.Object) error {
 	var err error
 	jAdInfoClass, err = jutil.JFindClass(env, "io/v/x/ref/lib/discovery/AdInfo")
 	if err != nil {
@@ -37,11 +36,8 @@ func Init(env jutil.Env) error {
 	if err != nil {
 		return err
 	}
-	jBlePluginClass, err = jutil.JFindClass(env, "io/v/android/impl/google/discovery/plugins/ble/BlePlugin")
-	if err != nil {
-		return err
-	}
-	return nil
+
+	return initPluginFactories(env, jCtx)
 }
 
 //export Java_io_v_android_impl_google_discovery_plugins_NativeScanHandler_nativeHandleUpdate
