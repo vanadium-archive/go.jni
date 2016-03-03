@@ -15,6 +15,7 @@ import (
 	dfactory "v.io/x/ref/lib/discovery/factory"
 
 	jutil "v.io/x/jni/util"
+	jcontext "v.io/x/jni/v23/context"
 )
 
 // #include "jni.h"
@@ -82,13 +83,17 @@ func (p *plugin) Scan(ctx *context.T, interfaceName string, ch chan<- *idiscover
 	return nil
 }
 
-func newPluginFactory(env jutil.Env, jCtx jutil.Object, jPluginClass jutil.Class) func(*context.T, string) (idiscovery.Plugin, error) {
-	return func(_ *context.T, host string) (idiscovery.Plugin, error) {
+func newPluginFactory(env jutil.Env, jPluginClass jutil.Class) func(*context.T, string) (idiscovery.Plugin, error) {
+	return func(ctx *context.T, host string) (idiscovery.Plugin, error) {
 		env, freeFunc := jutil.GetEnv()
 		defer freeFunc()
 
 		// We pass the global context of the android vanadium runtime, since the context of the discovery
 		// factory does not have an Android context.
+		jCtx, err := jcontext.JavaContext(env, ctx, nil)
+		if err != nil {
+			return nil, err
+		}
 		jPlugin, err := jutil.NewObject(env, jPluginClass, []jutil.Sign{contextSign, jutil.StringSign}, jCtx, host)
 		if err != nil {
 			return nil, err
@@ -108,15 +113,11 @@ func newPluginFactory(env jutil.Env, jCtx jutil.Object, jPluginClass jutil.Class
 	}
 }
 
-func initPluginFactories(env jutil.Env, jCtx jutil.Object) error {
-	// We need to keep the reference to the context during the lifetime
-	// of the runtime since plugin factories can be called anytime.
-	jCtx = jutil.NewGlobalRef(env, jCtx)
-
+func initPluginFactories(env jutil.Env) error {
 	jPluginClass, err := jutil.JFindClass(env, "io/v/android/impl/google/discovery/plugins/ble/BlePlugin")
 	if err != nil {
 		return err
 	}
-	dfactory.SetBlePluginFactory(newPluginFactory(env, jCtx, jPluginClass))
+	dfactory.SetPluginFactory("ble", newPluginFactory(env, jPluginClass))
 	return nil
 }

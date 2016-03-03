@@ -26,7 +26,7 @@ var (
 	jNativeScanHandlerClass jutil.Class // io.v.android.impl.google.discovery.plugins.NativeScanHandler
 )
 
-func Init(env jutil.Env, jCtx jutil.Object) error {
+func Init(env jutil.Env) error {
 	var err error
 	jAdInfoClass, err = jutil.JFindClass(env, "io/v/x/ref/lib/discovery/AdInfo")
 	if err != nil {
@@ -37,7 +37,7 @@ func Init(env jutil.Env, jCtx jutil.Object) error {
 		return err
 	}
 
-	return initPluginFactories(env, jCtx)
+	return initPluginFactories(env)
 }
 
 //export Java_io_v_android_impl_google_discovery_plugins_NativeScanHandler_nativeHandleUpdate
