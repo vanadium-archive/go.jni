@@ -16,6 +16,9 @@ import (
 	"v.io/v23/uniqueid"
 )
 
+func __VDLEnsureNativeBuilt_caveats() {
+}
+
 // TestCaveat is a caveat that's used in various security tests.
 var TestCaveat = security.CaveatDescriptor{
 	Id: uniqueid.Id{

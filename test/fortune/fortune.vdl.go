@@ -32,8 +32,115 @@ func (ComplexErrorParam) __VDLReflect(struct {
 }) {
 }
 
+func (m *ComplexErrorParam) FillVDLTarget(t vdl.Target, tt *vdl.Type) error {
+
+	if __VDLType_fortune_v_io_x_jni_test_fortune_ComplexErrorParam == nil || __VDLTypefortune0 == nil {
+		panic("Initialization order error: types generated for FillVDLTarget not initialized. Consider moving caller to an init() block.")
+	}
+	fieldsTarget1, err := t.StartFields(tt)
+	if err != nil {
+		return err
+	}
+
+	var2 := (m.Str == "")
+	if !var2 {
+		keyTarget3, fieldTarget4, err := fieldsTarget1.StartField("Str")
+		if err != vdl.ErrFieldNoExist && err != nil {
+			return err
+		}
+		if err != vdl.ErrFieldNoExist {
+			if err := fieldTarget4.FromString(string(m.Str), vdl.StringType); err != nil {
+				return err
+			}
+			if err := fieldsTarget1.FinishField(keyTarget3, fieldTarget4); err != nil {
+				return err
+			}
+		}
+	}
+	var5 := (m.Num == int32(0))
+	if !var5 {
+		keyTarget6, fieldTarget7, err := fieldsTarget1.StartField("Num")
+		if err != vdl.ErrFieldNoExist && err != nil {
+			return err
+		}
+		if err != vdl.ErrFieldNoExist {
+			if err := fieldTarget7.FromInt(int64(m.Num), vdl.Int32Type); err != nil {
+				return err
+			}
+			if err := fieldsTarget1.FinishField(keyTarget6, fieldTarget7); err != nil {
+				return err
+			}
+		}
+	}
+	var var8 bool
+	if len(m.List) == 0 {
+		var8 = true
+	}
+	if !var8 {
+		keyTarget9, fieldTarget10, err := fieldsTarget1.StartField("List")
+		if err != vdl.ErrFieldNoExist && err != nil {
+			return err
+		}
+		if err != vdl.ErrFieldNoExist {
+
+			listTarget11, err := fieldTarget10.StartList(__VDLTypefortune1, len(m.List))
+			if err != nil {
+				return err
+			}
+			for i, elem13 := range m.List {
+				elemTarget12, err := listTarget11.StartElem(i)
+				if err != nil {
+					return err
+				}
+				if err := elemTarget12.FromUint(uint64(elem13), vdl.Uint32Type); err != nil {
+					return err
+				}
+				if err := listTarget11.FinishElem(elemTarget12); err != nil {
+					return err
+				}
+			}
+			if err := fieldTarget10.FinishList(listTarget11); err != nil {
+				return err
+			}
+			if err := fieldsTarget1.FinishField(keyTarget9, fieldTarget10); err != nil {
+				return err
+			}
+		}
+	}
+	if err := t.FinishFields(fieldsTarget1); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *ComplexErrorParam) MakeVDLTarget() vdl.Target {
+	return nil
+}
+
+func (m *ComplexErrorParam) IsZero() bool {
+
+	var1 := true
+	var2 := (m.Str == "")
+	var1 = var1 && var2
+	var3 := (m.Num == int32(0))
+	var1 = var1 && var3
+	var var4 bool
+	if len(m.List) == 0 {
+		var4 = true
+	}
+	var1 = var1 && var4
+	return var1
+}
+
 func init() {
 	vdl.Register((*ComplexErrorParam)(nil))
+}
+
+var __VDLTypefortune0 *vdl.Type = vdl.TypeOf((*ComplexErrorParam)(nil))
+var __VDLTypefortune1 *vdl.Type = vdl.TypeOf([]uint32(nil))
+var __VDLType_fortune_v_io_x_jni_test_fortune_ComplexErrorParam *vdl.Type = vdl.TypeOf(ComplexErrorParam{})
+
+func __VDLEnsureNativeBuilt_fortune() {
 }
 
 var (
