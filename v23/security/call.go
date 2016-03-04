@@ -26,11 +26,12 @@ import "C"
 
 // JavaCall converts the provided Go (security) Call into a Java Call object.
 func JavaCall(env jutil.Env, call security.Call) (jutil.Object, error) {
-	jCall, err := jutil.NewObject(env, jCallImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&call)))
+	ref := jutil.GoNewRef(&call) // Un-refed when the Java CallImpl object is finalized.
+	jCall, err := jutil.NewObject(env, jCallImplClass, []jutil.Sign{jutil.LongSign}, int64(ref))
 	if err != nil {
+		jutil.GoDecRef(ref)
 		return jutil.NullObject, err
 	}
-	jutil.GoRef(&call) // Un-refed when the Java CallImpl object is finalized.
 	return jCall, nil
 }
 
@@ -41,12 +42,12 @@ func GoCall(env jutil.Env, jCall jutil.Object) (security.Call, error) {
 		return nil, nil
 	}
 	if jutil.IsInstanceOf(env, jCall, jCallImplClass) {
-		// Called with our implementation of Call, which maintains a Go pointer - use it.
-		goPtr, err := jutil.CallLongMethod(env, jCall, "nativePtr", nil)
+		// Called with our implementation of Call, which maintains a Go reference - use it.
+		ref, err := jutil.CallLongMethod(env, jCall, "nativeRef", nil)
 		if err != nil {
 			return nil, err
 		}
-		return (*(*security.Call)(jutil.NativePtr(goPtr))), nil
+		return (*(*security.Call)(jutil.GoRefValue(jutil.Ref(ref)))), nil
 	}
 	// Reference Java call; it will be de-referenced when the go call
 	// created below is garbage-collected (through the finalizer callback we

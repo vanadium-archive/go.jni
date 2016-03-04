@@ -148,9 +148,9 @@ func Init(env jutil.Env) error {
 }
 
 //export Java_io_v_v23_security_CallImpl_nativeTimestamp
-func Java_io_v_v23_security_CallImpl_nativeTimestamp(jenv *C.JNIEnv, jCall C.jobject, goPtr C.jlong) C.jobject {
+func Java_io_v_v23_security_CallImpl_nativeTimestamp(jenv *C.JNIEnv, jCall C.jobject, goRef C.jlong) C.jobject {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	t := (*(*security.Call)(jutil.NativePtr(goPtr))).Timestamp()
+	t := (*(*security.Call)(jutil.GoRefValue(jutil.Ref(goRef)))).Timestamp()
 	jTime, err := jutil.JTime(env, t)
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -160,17 +160,17 @@ func Java_io_v_v23_security_CallImpl_nativeTimestamp(jenv *C.JNIEnv, jCall C.job
 }
 
 //export Java_io_v_v23_security_CallImpl_nativeMethod
-func Java_io_v_v23_security_CallImpl_nativeMethod(jenv *C.JNIEnv, jCall C.jobject, goPtr C.jlong) C.jstring {
+func Java_io_v_v23_security_CallImpl_nativeMethod(jenv *C.JNIEnv, jCall C.jobject, goRef C.jlong) C.jstring {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	method := (*(*security.Call)(jutil.NativePtr(goPtr))).Method()
+	method := (*(*security.Call)(jutil.GoRefValue(jutil.Ref(goRef)))).Method()
 	jMethod := jutil.JString(env, jutil.CamelCase(method))
 	return C.jstring(unsafe.Pointer(jMethod))
 }
 
 //export Java_io_v_v23_security_CallImpl_nativeMethodTags
-func Java_io_v_v23_security_CallImpl_nativeMethodTags(jenv *C.JNIEnv, jCall C.jobject, goPtr C.jlong) C.jobjectArray {
+func Java_io_v_v23_security_CallImpl_nativeMethodTags(jenv *C.JNIEnv, jCall C.jobject, goRef C.jlong) C.jobjectArray {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	tags := (*(*security.Call)(jutil.NativePtr(goPtr))).MethodTags()
+	tags := (*(*security.Call)(jutil.GoRefValue(jutil.Ref(goRef)))).MethodTags()
 	jTags, err := jutil.JVDLValueArray(env, tags)
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -180,16 +180,16 @@ func Java_io_v_v23_security_CallImpl_nativeMethodTags(jenv *C.JNIEnv, jCall C.jo
 }
 
 //export Java_io_v_v23_security_CallImpl_nativeSuffix
-func Java_io_v_v23_security_CallImpl_nativeSuffix(jenv *C.JNIEnv, jCall C.jobject, goPtr C.jlong) C.jstring {
+func Java_io_v_v23_security_CallImpl_nativeSuffix(jenv *C.JNIEnv, jCall C.jobject, goRef C.jlong) C.jstring {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	jSuffix := jutil.JString(env, (*(*security.Call)(jutil.NativePtr(goPtr))).Suffix())
+	jSuffix := jutil.JString(env, (*(*security.Call)(jutil.GoRefValue(jutil.Ref(goRef)))).Suffix())
 	return C.jstring(unsafe.Pointer(jSuffix))
 }
 
 //export Java_io_v_v23_security_CallImpl_nativeRemoteDischarges
-func Java_io_v_v23_security_CallImpl_nativeRemoteDischarges(jenv *C.JNIEnv, jCall C.jobject, goPtr C.jlong) C.jobject {
+func Java_io_v_v23_security_CallImpl_nativeRemoteDischarges(jenv *C.JNIEnv, jCall C.jobject, goRef C.jlong) C.jobject {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	remoteDischarges := (*(*security.Call)(jutil.NativePtr(goPtr))).RemoteDischarges()
+	remoteDischarges := (*(*security.Call)(jutil.GoRefValue(jutil.Ref(goRef)))).RemoteDischarges()
 	jObjectMap, err := javaDischargeMap(env, remoteDischarges)
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -199,9 +199,9 @@ func Java_io_v_v23_security_CallImpl_nativeRemoteDischarges(jenv *C.JNIEnv, jCal
 }
 
 //export Java_io_v_v23_security_CallImpl_nativeLocalDischarges
-func Java_io_v_v23_security_CallImpl_nativeLocalDischarges(jenv *C.JNIEnv, jCall C.jobject, goPtr C.jlong) C.jobject {
+func Java_io_v_v23_security_CallImpl_nativeLocalDischarges(jenv *C.JNIEnv, jCall C.jobject, goRef C.jlong) C.jobject {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	localDischarges := (*(*security.Call)(jutil.NativePtr(goPtr))).LocalDischarges()
+	localDischarges := (*(*security.Call)(jutil.GoRefValue(jutil.Ref(goRef)))).LocalDischarges()
 	jObjectMap, err := javaDischargeMap(env, localDischarges)
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -211,24 +211,24 @@ func Java_io_v_v23_security_CallImpl_nativeLocalDischarges(jenv *C.JNIEnv, jCall
 }
 
 //export Java_io_v_v23_security_CallImpl_nativeLocalEndpoint
-func Java_io_v_v23_security_CallImpl_nativeLocalEndpoint(jenv *C.JNIEnv, jCall C.jobject, goPtr C.jlong) C.jstring {
+func Java_io_v_v23_security_CallImpl_nativeLocalEndpoint(jenv *C.JNIEnv, jCall C.jobject, goRef C.jlong) C.jstring {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	jEndpoint := jutil.JString(env, (*(*security.Call)(jutil.NativePtr(goPtr))).LocalEndpoint().String())
+	jEndpoint := jutil.JString(env, (*(*security.Call)(jutil.GoRefValue(jutil.Ref(goRef)))).LocalEndpoint().String())
 	return C.jstring(unsafe.Pointer(jEndpoint))
 }
 
 //export Java_io_v_v23_security_CallImpl_nativeRemoteEndpoint
-func Java_io_v_v23_security_CallImpl_nativeRemoteEndpoint(jenv *C.JNIEnv, jCall C.jobject, goPtr C.jlong) C.jstring {
+func Java_io_v_v23_security_CallImpl_nativeRemoteEndpoint(jenv *C.JNIEnv, jCall C.jobject, goRef C.jlong) C.jstring {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	jEndpoint := jutil.JString(env, (*(*security.Call)(jutil.NativePtr(goPtr))).RemoteEndpoint().String())
+	jEndpoint := jutil.JString(env, (*(*security.Call)(jutil.GoRefValue(jutil.Ref(goRef)))).RemoteEndpoint().String())
 	return C.jstring(unsafe.Pointer(jEndpoint))
 
 }
 
 //export Java_io_v_v23_security_CallImpl_nativeLocalPrincipal
-func Java_io_v_v23_security_CallImpl_nativeLocalPrincipal(jenv *C.JNIEnv, jCall C.jobject, goPtr C.jlong) C.jobject {
+func Java_io_v_v23_security_CallImpl_nativeLocalPrincipal(jenv *C.JNIEnv, jCall C.jobject, goRef C.jlong) C.jobject {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	principal := (*(*security.Call)(jutil.NativePtr(goPtr))).LocalPrincipal()
+	principal := (*(*security.Call)(jutil.GoRefValue(jutil.Ref(goRef)))).LocalPrincipal()
 	jPrincipal, err := JavaPrincipal(env, principal)
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -238,9 +238,9 @@ func Java_io_v_v23_security_CallImpl_nativeLocalPrincipal(jenv *C.JNIEnv, jCall 
 }
 
 //export Java_io_v_v23_security_CallImpl_nativeLocalBlessings
-func Java_io_v_v23_security_CallImpl_nativeLocalBlessings(jenv *C.JNIEnv, jCall C.jobject, goPtr C.jlong) C.jobject {
+func Java_io_v_v23_security_CallImpl_nativeLocalBlessings(jenv *C.JNIEnv, jCall C.jobject, goRef C.jlong) C.jobject {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	blessings := (*(*security.Call)(jutil.NativePtr(goPtr))).LocalBlessings()
+	blessings := (*(*security.Call)(jutil.GoRefValue(jutil.Ref(goRef)))).LocalBlessings()
 	jBlessings, err := JavaBlessings(env, blessings)
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -250,9 +250,9 @@ func Java_io_v_v23_security_CallImpl_nativeLocalBlessings(jenv *C.JNIEnv, jCall 
 }
 
 //export Java_io_v_v23_security_CallImpl_nativeRemoteBlessings
-func Java_io_v_v23_security_CallImpl_nativeRemoteBlessings(jenv *C.JNIEnv, jCall C.jobject, goPtr C.jlong) C.jobject {
+func Java_io_v_v23_security_CallImpl_nativeRemoteBlessings(jenv *C.JNIEnv, jCall C.jobject, goRef C.jlong) C.jobject {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	blessings := (*(*security.Call)(jutil.NativePtr(goPtr))).RemoteBlessings()
+	blessings := (*(*security.Call)(jutil.GoRefValue(jutil.Ref(goRef)))).RemoteBlessings()
 	jBlessings, err := JavaBlessings(env, blessings)
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -262,8 +262,8 @@ func Java_io_v_v23_security_CallImpl_nativeRemoteBlessings(jenv *C.JNIEnv, jCall
 }
 
 //export Java_io_v_v23_security_CallImpl_nativeFinalize
-func Java_io_v_v23_security_CallImpl_nativeFinalize(jenv *C.JNIEnv, jCall C.jobject, goPtr C.jlong) {
-	jutil.GoUnref(jutil.NativePtr(goPtr))
+func Java_io_v_v23_security_CallImpl_nativeFinalize(jenv *C.JNIEnv, jCall C.jobject, goRef C.jlong) {
+	jutil.GoDecRef(jutil.Ref(goRef))
 }
 
 //export Java_io_v_v23_security_VPrincipalImpl_nativeCreate
@@ -296,12 +296,13 @@ func Java_io_v_v23_security_VPrincipalImpl_nativeCreateForSigner(jenv *C.JNIEnv,
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	jPrincipal, err := jutil.NewObject(env, jVPrincipalImplClass, []jutil.Sign{jutil.LongSign, signerSign, blessingStoreSign, blessingRootsSign}, int64(jutil.PtrValue(&principal)), signerObj, jutil.NullObject, jutil.NullObject)
+	ref := jutil.GoNewRef(&principal) // Un-refed when the Java VPrincipalImpl is finalized.
+	jPrincipal, err := jutil.NewObject(env, jVPrincipalImplClass, []jutil.Sign{jutil.LongSign, signerSign, blessingStoreSign, blessingRootsSign}, int64(ref), signerObj, jutil.NullObject, jutil.NullObject)
 	if err != nil {
+		jutil.GoDecRef(ref)
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	jutil.GoRef(&principal) // Un-refed when the Java VPrincipalImpl is finalized.
 	return C.jobject(unsafe.Pointer(jPrincipal))
 }
 
@@ -333,12 +334,13 @@ func Java_io_v_v23_security_VPrincipalImpl_nativeCreateForAll(jenv *C.JNIEnv, jc
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	jPrincipal, err := jutil.NewObject(env, jVPrincipalImplClass, []jutil.Sign{jutil.LongSign, signerSign, blessingStoreSign, blessingRootsSign}, int64(jutil.PtrValue(&principal)), signerObj, storeObj, rootsObj)
+	ref := jutil.GoNewRef(&principal) // Un-refed when the Java VPrincipalImpl is finalized.
+	jPrincipal, err := jutil.NewObject(env, jVPrincipalImplClass, []jutil.Sign{jutil.LongSign, signerSign, blessingStoreSign, blessingRootsSign}, int64(ref), signerObj, storeObj, rootsObj)
 	if err != nil {
+		jutil.GoDecRef(ref)
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	jutil.GoRef(&principal) // Un-refed when the Java VPrincipalImpl is finalized.
 	return C.jobject(unsafe.Pointer(jPrincipal))
 }
 
@@ -382,17 +384,18 @@ func Java_io_v_v23_security_VPrincipalImpl_nativeCreatePersistentForSigner(jenv 
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	jPrincipal, err := jutil.NewObject(env, jVPrincipalImplClass, []jutil.Sign{jutil.LongSign, signerSign, blessingStoreSign, blessingRootsSign}, int64(jutil.PtrValue(&principal)), signerObj, jutil.NullObject, jutil.NullObject)
+	ref := jutil.GoNewRef(&principal) // Un-refed when the Java VPrincipalImpl is finalized.
+	jPrincipal, err := jutil.NewObject(env, jVPrincipalImplClass, []jutil.Sign{jutil.LongSign, signerSign, blessingStoreSign, blessingRootsSign}, int64(ref), signerObj, jutil.NullObject, jutil.NullObject)
 	if err != nil {
+		jutil.GoDecRef(ref)
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	jutil.GoRef(&principal) // Un-refed when the Java VPrincipalImpl is finalized.
 	return C.jobject(unsafe.Pointer(jPrincipal))
 }
 
 //export Java_io_v_v23_security_VPrincipalImpl_nativeBless
-func Java_io_v_v23_security_VPrincipalImpl_nativeBless(jenv *C.JNIEnv, jVPrincipalImpl C.jobject, goPtr C.jlong, jKey C.jobject, jWith C.jobject, jExtension C.jstring, jCaveat C.jobject, jAdditionalCaveats C.jobjectArray) C.jobject {
+func Java_io_v_v23_security_VPrincipalImpl_nativeBless(jenv *C.JNIEnv, jVPrincipalImpl C.jobject, goRef C.jlong, jKey C.jobject, jWith C.jobject, jExtension C.jstring, jCaveat C.jobject, jAdditionalCaveats C.jobjectArray) C.jobject {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	key, err := GoPublicKey(env, jutil.Object(uintptr(unsafe.Pointer(jKey))))
 	if err != nil {
@@ -415,7 +418,7 @@ func Java_io_v_v23_security_VPrincipalImpl_nativeBless(jenv *C.JNIEnv, jVPrincip
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	blessings, err := (*(*security.Principal)(jutil.NativePtr(goPtr))).Bless(key, with, extension, caveat, additionalCaveats...)
+	blessings, err := (*(*security.Principal)(jutil.GoRefValue(jutil.Ref(goRef)))).Bless(key, with, extension, caveat, additionalCaveats...)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -429,7 +432,7 @@ func Java_io_v_v23_security_VPrincipalImpl_nativeBless(jenv *C.JNIEnv, jVPrincip
 }
 
 //export Java_io_v_v23_security_VPrincipalImpl_nativeBlessSelf
-func Java_io_v_v23_security_VPrincipalImpl_nativeBlessSelf(jenv *C.JNIEnv, jVPrincipalImpl C.jobject, goPtr C.jlong, jName C.jstring, jCaveats C.jobjectArray) C.jobject {
+func Java_io_v_v23_security_VPrincipalImpl_nativeBlessSelf(jenv *C.JNIEnv, jVPrincipalImpl C.jobject, goRef C.jlong, jName C.jstring, jCaveats C.jobjectArray) C.jobject {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	name := jutil.GoString(env, jutil.Object(uintptr(unsafe.Pointer(jName))))
 	caveats, err := GoCaveats(env, jutil.Object(uintptr(unsafe.Pointer(jCaveats))))
@@ -437,7 +440,7 @@ func Java_io_v_v23_security_VPrincipalImpl_nativeBlessSelf(jenv *C.JNIEnv, jVPri
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	blessings, err := (*(*security.Principal)(jutil.NativePtr(goPtr))).BlessSelf(name, caveats...)
+	blessings, err := (*(*security.Principal)(jutil.GoRefValue(jutil.Ref(goRef)))).BlessSelf(name, caveats...)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -451,10 +454,10 @@ func Java_io_v_v23_security_VPrincipalImpl_nativeBlessSelf(jenv *C.JNIEnv, jVPri
 }
 
 //export Java_io_v_v23_security_VPrincipalImpl_nativeSign
-func Java_io_v_v23_security_VPrincipalImpl_nativeSign(jenv *C.JNIEnv, jVPrincipalImpl C.jobject, goPtr C.jlong, jMessage C.jbyteArray) C.jobject {
+func Java_io_v_v23_security_VPrincipalImpl_nativeSign(jenv *C.JNIEnv, jVPrincipalImpl C.jobject, goRef C.jlong, jMessage C.jbyteArray) C.jobject {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	message := jutil.GoByteArray(env, jutil.Object(uintptr(unsafe.Pointer(jMessage))))
-	sig, err := (*(*security.Principal)(jutil.NativePtr(goPtr))).Sign(message)
+	sig, err := (*(*security.Principal)(jutil.GoRefValue(jutil.Ref(goRef)))).Sign(message)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -468,9 +471,9 @@ func Java_io_v_v23_security_VPrincipalImpl_nativeSign(jenv *C.JNIEnv, jVPrincipa
 }
 
 //export Java_io_v_v23_security_VPrincipalImpl_nativePublicKey
-func Java_io_v_v23_security_VPrincipalImpl_nativePublicKey(jenv *C.JNIEnv, jVPrincipalImpl C.jobject, goPtr C.jlong) C.jobject {
+func Java_io_v_v23_security_VPrincipalImpl_nativePublicKey(jenv *C.JNIEnv, jVPrincipalImpl C.jobject, goRef C.jlong) C.jobject {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	key := (*(*security.Principal)(jutil.NativePtr(goPtr))).PublicKey()
+	key := (*(*security.Principal)(jutil.GoRefValue(jutil.Ref(goRef)))).PublicKey()
 	jKey, err := JavaPublicKey(env, key)
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -480,9 +483,9 @@ func Java_io_v_v23_security_VPrincipalImpl_nativePublicKey(jenv *C.JNIEnv, jVPri
 }
 
 //export Java_io_v_v23_security_VPrincipalImpl_nativeBlessingStore
-func Java_io_v_v23_security_VPrincipalImpl_nativeBlessingStore(jenv *C.JNIEnv, jVPrincipalImpl C.jobject, goPtr C.jlong) C.jobject {
+func Java_io_v_v23_security_VPrincipalImpl_nativeBlessingStore(jenv *C.JNIEnv, jVPrincipalImpl C.jobject, goRef C.jlong) C.jobject {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	store := (*(*security.Principal)(jutil.NativePtr(goPtr))).BlessingStore()
+	store := (*(*security.Principal)(jutil.GoRefValue(jutil.Ref(goRef)))).BlessingStore()
 	jStore, err := JavaBlessingStore(env, store)
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -492,9 +495,9 @@ func Java_io_v_v23_security_VPrincipalImpl_nativeBlessingStore(jenv *C.JNIEnv, j
 }
 
 //export Java_io_v_v23_security_VPrincipalImpl_nativeRoots
-func Java_io_v_v23_security_VPrincipalImpl_nativeRoots(jenv *C.JNIEnv, jVPrincipalImpl C.jobject, goPtr C.jlong) C.jobject {
+func Java_io_v_v23_security_VPrincipalImpl_nativeRoots(jenv *C.JNIEnv, jVPrincipalImpl C.jobject, goRef C.jlong) C.jobject {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	roots := (*(*security.Principal)(jutil.NativePtr(goPtr))).Roots()
+	roots := (*(*security.Principal)(jutil.GoRefValue(jutil.Ref(goRef)))).Roots()
 	jRoots, err := JavaBlessingRoots(env, roots)
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -504,8 +507,8 @@ func Java_io_v_v23_security_VPrincipalImpl_nativeRoots(jenv *C.JNIEnv, jVPrincip
 }
 
 //export Java_io_v_v23_security_VPrincipalImpl_nativeFinalize
-func Java_io_v_v23_security_VPrincipalImpl_nativeFinalize(jenv *C.JNIEnv, jVPrincipalImpl C.jobject, goPtr C.jlong) {
-	jutil.GoUnref(jutil.NativePtr(goPtr))
+func Java_io_v_v23_security_VPrincipalImpl_nativeFinalize(jenv *C.JNIEnv, jVPrincipalImpl C.jobject, goRef C.jlong) {
+	jutil.GoDecRef(jutil.Ref(goRef))
 }
 
 //export Java_io_v_v23_security_Blessings_nativeCreate
@@ -516,8 +519,8 @@ func Java_io_v_v23_security_Blessings_nativeCreate(jenv *C.JNIEnv, jBlessingsCla
 		jutil.JThrowV(env, err)
 		return C.jlong(0)
 	}
-	jutil.GoRef(&blessings) // Un-refed when the Java Blessings object is finalized.
-	return C.jlong(jutil.PtrValue(&blessings))
+	ref := jutil.GoNewRef(&blessings) // Un-refed when the Java Blessings object is finalized.
+	return C.jlong(ref)
 }
 
 //export Java_io_v_v23_security_Blessings_nativeCreateUnion
@@ -542,9 +545,9 @@ func Java_io_v_v23_security_Blessings_nativeCreateUnion(jenv *C.JNIEnv, jBlessin
 }
 
 //export Java_io_v_v23_security_Blessings_nativePublicKey
-func Java_io_v_v23_security_Blessings_nativePublicKey(jenv *C.JNIEnv, jBlessings C.jobject, goPtr C.jlong) C.jobject {
+func Java_io_v_v23_security_Blessings_nativePublicKey(jenv *C.JNIEnv, jBlessings C.jobject, goRef C.jlong) C.jobject {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	key := (*(*security.Blessings)(jutil.NativePtr(goPtr))).PublicKey()
+	key := (*(*security.Blessings)(jutil.GoRefValue(jutil.Ref(goRef)))).PublicKey()
 	jPublicKey, err := JavaPublicKey(env, key)
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -554,9 +557,9 @@ func Java_io_v_v23_security_Blessings_nativePublicKey(jenv *C.JNIEnv, jBlessings
 }
 
 //export Java_io_v_v23_security_Blessings_nativeSigningBlessings
-func Java_io_v_v23_security_Blessings_nativeSigningBlessings(jenv *C.JNIEnv, jBlessings C.jobject, goPtr C.jlong) C.jobject {
+func Java_io_v_v23_security_Blessings_nativeSigningBlessings(jenv *C.JNIEnv, jBlessings C.jobject, goRef C.jlong) C.jobject {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	blessings := security.SigningBlessings(*(*security.Blessings)(jutil.NativePtr(goPtr)))
+	blessings := security.SigningBlessings(*(*security.Blessings)(jutil.GoRefValue(jutil.Ref(goRef))))
 	jSigningBlessings, err := JavaBlessings(env, blessings)
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -566,9 +569,9 @@ func Java_io_v_v23_security_Blessings_nativeSigningBlessings(jenv *C.JNIEnv, jBl
 }
 
 //export Java_io_v_v23_security_Blessings_nativeWireFormat
-func Java_io_v_v23_security_Blessings_nativeWireFormat(jenv *C.JNIEnv, jBlessings C.jobject, goPtr C.jlong) C.jobject {
+func Java_io_v_v23_security_Blessings_nativeWireFormat(jenv *C.JNIEnv, jBlessings C.jobject, goRef C.jlong) C.jobject {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	wire := security.MarshalBlessings(*(*security.Blessings)(jutil.NativePtr(goPtr)))
+	wire := security.MarshalBlessings(*(*security.Blessings)(jutil.GoRefValue(jutil.Ref(goRef))))
 	jWire, err := JavaWireBlessings(env, wire)
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -578,12 +581,12 @@ func Java_io_v_v23_security_Blessings_nativeWireFormat(jenv *C.JNIEnv, jBlessing
 }
 
 //export Java_io_v_v23_security_Blessings_nativeFinalize
-func Java_io_v_v23_security_Blessings_nativeFinalize(jenv *C.JNIEnv, jBlessings C.jobject, goPtr C.jlong) {
-	jutil.GoUnref(jutil.NativePtr(goPtr))
+func Java_io_v_v23_security_Blessings_nativeFinalize(jenv *C.JNIEnv, jBlessings C.jobject, goRef C.jlong) {
+	jutil.GoDecRef(jutil.Ref(goRef))
 }
 
 //export Java_io_v_v23_security_BlessingRootsImpl_nativeAdd
-func Java_io_v_v23_security_BlessingRootsImpl_nativeAdd(jenv *C.JNIEnv, jBlessingRootsImpl C.jobject, goPtr C.jlong, jRoot C.jobject, jPattern C.jobject) {
+func Java_io_v_v23_security_BlessingRootsImpl_nativeAdd(jenv *C.JNIEnv, jBlessingRootsImpl C.jobject, goRef C.jlong, jRoot C.jobject, jPattern C.jobject) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	root, err := JavaPublicKeyToDER(env, jutil.Object(uintptr(unsafe.Pointer(jRoot))))
 	if err != nil {
@@ -595,14 +598,14 @@ func Java_io_v_v23_security_BlessingRootsImpl_nativeAdd(jenv *C.JNIEnv, jBlessin
 		jutil.JThrowV(env, err)
 		return
 	}
-	if err := (*(*security.BlessingRoots)(jutil.NativePtr(goPtr))).Add(root, pattern); err != nil {
+	if err := (*(*security.BlessingRoots)(jutil.GoRefValue(jutil.Ref(goRef)))).Add(root, pattern); err != nil {
 		jutil.JThrowV(env, err)
 		return
 	}
 }
 
 //export Java_io_v_v23_security_BlessingRootsImpl_nativeRecognized
-func Java_io_v_v23_security_BlessingRootsImpl_nativeRecognized(jenv *C.JNIEnv, jBlessingRootsImpl C.jobject, goPtr C.jlong, jRoot C.jobject, jBlessing C.jstring) {
+func Java_io_v_v23_security_BlessingRootsImpl_nativeRecognized(jenv *C.JNIEnv, jBlessingRootsImpl C.jobject, goRef C.jlong, jRoot C.jobject, jBlessing C.jstring) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	root, err := JavaPublicKeyToDER(env, jutil.Object(uintptr(unsafe.Pointer(jRoot))))
 	if err != nil {
@@ -610,31 +613,31 @@ func Java_io_v_v23_security_BlessingRootsImpl_nativeRecognized(jenv *C.JNIEnv, j
 		return
 	}
 	blessing := jutil.GoString(env, jutil.Object(uintptr(unsafe.Pointer(jBlessing))))
-	if err := (*(*security.BlessingRoots)(jutil.NativePtr(goPtr))).Recognized(root, blessing); err != nil {
+	if err := (*(*security.BlessingRoots)(jutil.GoRefValue(jutil.Ref(goRef)))).Recognized(root, blessing); err != nil {
 		jutil.JThrowV(env, err)
 	}
 }
 
 //export Java_io_v_v23_security_BlessingRootsImpl_nativeDebugString
-func Java_io_v_v23_security_BlessingRootsImpl_nativeDebugString(jenv *C.JNIEnv, jBlessingRootsImpl C.jobject, goPtr C.jlong) C.jstring {
+func Java_io_v_v23_security_BlessingRootsImpl_nativeDebugString(jenv *C.JNIEnv, jBlessingRootsImpl C.jobject, goRef C.jlong) C.jstring {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	debug := (*(*security.BlessingRoots)(jutil.NativePtr(goPtr))).DebugString()
+	debug := (*(*security.BlessingRoots)(jutil.GoRefValue(jutil.Ref(goRef)))).DebugString()
 	jDebug := jutil.JString(env, debug)
 	return C.jstring(unsafe.Pointer(jDebug))
 }
 
 //export Java_io_v_v23_security_BlessingRootsImpl_nativeToString
-func Java_io_v_v23_security_BlessingRootsImpl_nativeToString(jenv *C.JNIEnv, jBlessingRootsImpl C.jobject, goPtr C.jlong) C.jstring {
+func Java_io_v_v23_security_BlessingRootsImpl_nativeToString(jenv *C.JNIEnv, jBlessingRootsImpl C.jobject, goRef C.jlong) C.jstring {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	str := fmt.Sprintf("%v", (*(*security.BlessingRoots)(jutil.NativePtr(goPtr))))
+	str := fmt.Sprintf("%v", (*(*security.BlessingRoots)(jutil.GoRefValue(jutil.Ref(goRef)))))
 	jStr := jutil.JString(env, str)
 	return C.jstring(unsafe.Pointer(jStr))
 }
 
 //export Java_io_v_v23_security_BlessingRootsImpl_nativeDump
-func Java_io_v_v23_security_BlessingRootsImpl_nativeDump(jenv *C.JNIEnv, jBlessingRootsImpl C.jobject, goPtr C.jlong) C.jobject {
+func Java_io_v_v23_security_BlessingRootsImpl_nativeDump(jenv *C.JNIEnv, jBlessingRootsImpl C.jobject, goRef C.jlong) C.jobject {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	dump := (*(*security.BlessingRoots)(jutil.NativePtr(goPtr))).Dump()
+	dump := (*(*security.BlessingRoots)(jutil.GoRefValue(jutil.Ref(goRef)))).Dump()
 	result := make(map[jutil.Object][]jutil.Object)
 	for pattern, keys := range dump {
 		jBlessingPattern, err := JavaBlessingPattern(env, pattern)
@@ -661,12 +664,12 @@ func Java_io_v_v23_security_BlessingRootsImpl_nativeDump(jenv *C.JNIEnv, jBlessi
 }
 
 //export Java_io_v_v23_security_BlessingRootsImpl_nativeFinalize
-func Java_io_v_v23_security_BlessingRootsImpl_nativeFinalize(jenv *C.JNIEnv, jBlessingRootsImpl C.jobject, goPtr C.jlong) {
-	jutil.GoUnref(jutil.NativePtr(goPtr))
+func Java_io_v_v23_security_BlessingRootsImpl_nativeFinalize(jenv *C.JNIEnv, jBlessingRootsImpl C.jobject, goRef C.jlong) {
+	jutil.GoDecRef(jutil.Ref(goRef))
 }
 
 //export Java_io_v_v23_security_BlessingStoreImpl_nativeSet
-func Java_io_v_v23_security_BlessingStoreImpl_nativeSet(jenv *C.JNIEnv, jBlessingStoreImpl C.jobject, goPtr C.jlong, jBlessings C.jobject, jForPeers C.jobject) C.jobject {
+func Java_io_v_v23_security_BlessingStoreImpl_nativeSet(jenv *C.JNIEnv, jBlessingStoreImpl C.jobject, goRef C.jlong, jBlessings C.jobject, jForPeers C.jobject) C.jobject {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	blessings, err := GoBlessings(env, jutil.Object(uintptr(unsafe.Pointer(jBlessings))))
 	if err != nil {
@@ -678,7 +681,7 @@ func Java_io_v_v23_security_BlessingStoreImpl_nativeSet(jenv *C.JNIEnv, jBlessin
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	oldBlessings, err := (*(*security.BlessingStore)(jutil.NativePtr(goPtr))).Set(blessings, forPeers)
+	oldBlessings, err := (*(*security.BlessingStore)(jutil.GoRefValue(jutil.Ref(goRef)))).Set(blessings, forPeers)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
@@ -692,14 +695,14 @@ func Java_io_v_v23_security_BlessingStoreImpl_nativeSet(jenv *C.JNIEnv, jBlessin
 }
 
 //export Java_io_v_v23_security_BlessingStoreImpl_nativeForPeer
-func Java_io_v_v23_security_BlessingStoreImpl_nativeForPeer(jenv *C.JNIEnv, jBlessingStoreImpl C.jobject, goPtr C.jlong, jPeerBlessings C.jobjectArray) C.jobject {
+func Java_io_v_v23_security_BlessingStoreImpl_nativeForPeer(jenv *C.JNIEnv, jBlessingStoreImpl C.jobject, goRef C.jlong, jPeerBlessings C.jobjectArray) C.jobject {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	peerBlessings, err := jutil.GoStringArray(env, jutil.Object(uintptr(unsafe.Pointer(jPeerBlessings))))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	blessings := (*(*security.BlessingStore)(jutil.NativePtr(goPtr))).ForPeer(peerBlessings...)
+	blessings := (*(*security.BlessingStore)(jutil.GoRefValue(jutil.Ref(goRef)))).ForPeer(peerBlessings...)
 	jBlessings, err := JavaBlessings(env, blessings)
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -709,22 +712,22 @@ func Java_io_v_v23_security_BlessingStoreImpl_nativeForPeer(jenv *C.JNIEnv, jBle
 }
 
 //export Java_io_v_v23_security_BlessingStoreImpl_nativeSetDefaultBlessings
-func Java_io_v_v23_security_BlessingStoreImpl_nativeSetDefaultBlessings(jenv *C.JNIEnv, jBlessingStoreImpl C.jobject, goPtr C.jlong, jBlessings C.jobject) {
+func Java_io_v_v23_security_BlessingStoreImpl_nativeSetDefaultBlessings(jenv *C.JNIEnv, jBlessingStoreImpl C.jobject, goRef C.jlong, jBlessings C.jobject) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	blessings, err := GoBlessings(env, jutil.Object(uintptr(unsafe.Pointer(jBlessings))))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return
 	}
-	if err := (*(*security.BlessingStore)(jutil.NativePtr(goPtr))).SetDefault(blessings); err != nil {
+	if err := (*(*security.BlessingStore)(jutil.GoRefValue(jutil.Ref(goRef)))).SetDefault(blessings); err != nil {
 		jutil.JThrowV(env, err)
 	}
 }
 
 //export Java_io_v_v23_security_BlessingStoreImpl_nativeDefaultBlessings
-func Java_io_v_v23_security_BlessingStoreImpl_nativeDefaultBlessings(jenv *C.JNIEnv, jBlessingStoreImpl C.jobject, goPtr C.jlong) C.jobject {
+func Java_io_v_v23_security_BlessingStoreImpl_nativeDefaultBlessings(jenv *C.JNIEnv, jBlessingStoreImpl C.jobject, goRef C.jlong) C.jobject {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	blessings, _ := (*(*security.BlessingStore)(jutil.NativePtr(goPtr))).Default()
+	blessings, _ := (*(*security.BlessingStore)(jutil.GoRefValue(jutil.Ref(goRef)))).Default()
 	jBlessings, err := JavaBlessings(env, blessings)
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -734,9 +737,9 @@ func Java_io_v_v23_security_BlessingStoreImpl_nativeDefaultBlessings(jenv *C.JNI
 }
 
 //export Java_io_v_v23_security_BlessingStoreImpl_nativePublicKey
-func Java_io_v_v23_security_BlessingStoreImpl_nativePublicKey(jenv *C.JNIEnv, jBlessingStoreImpl C.jobject, goPtr C.jlong) C.jobject {
+func Java_io_v_v23_security_BlessingStoreImpl_nativePublicKey(jenv *C.JNIEnv, jBlessingStoreImpl C.jobject, goRef C.jlong) C.jobject {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	key := (*(*security.BlessingStore)(jutil.NativePtr(goPtr))).PublicKey()
+	key := (*(*security.BlessingStore)(jutil.GoRefValue(jutil.Ref(goRef)))).PublicKey()
 	jKey, err := JavaPublicKey(env, key)
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -746,9 +749,9 @@ func Java_io_v_v23_security_BlessingStoreImpl_nativePublicKey(jenv *C.JNIEnv, jB
 }
 
 //export Java_io_v_v23_security_BlessingStoreImpl_nativePeerBlessings
-func Java_io_v_v23_security_BlessingStoreImpl_nativePeerBlessings(jenv *C.JNIEnv, jBlessingStoreImpl C.jobject, goPtr C.jlong) C.jobject {
+func Java_io_v_v23_security_BlessingStoreImpl_nativePeerBlessings(jenv *C.JNIEnv, jBlessingStoreImpl C.jobject, goRef C.jlong) C.jobject {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	blessingsMap := (*(*security.BlessingStore)(jutil.NativePtr(goPtr))).PeerBlessings()
+	blessingsMap := (*(*security.BlessingStore)(jutil.GoRefValue(jutil.Ref(goRef)))).PeerBlessings()
 	bmap := make(map[jutil.Object]jutil.Object)
 	for pattern, blessings := range blessingsMap {
 		jPattern, err := JavaBlessingPattern(env, pattern)
@@ -772,9 +775,9 @@ func Java_io_v_v23_security_BlessingStoreImpl_nativePeerBlessings(jenv *C.JNIEnv
 }
 
 //export Java_io_v_v23_security_BlessingStoreImpl_nativeCacheDischarge
-func Java_io_v_v23_security_BlessingStoreImpl_nativeCacheDischarge(jenv *C.JNIEnv, jBlessingStoreImpl C.jobject, goPtr C.jlong, jDischarge C.jobject, jCaveat C.jobject, jImpetus C.jobject) {
+func Java_io_v_v23_security_BlessingStoreImpl_nativeCacheDischarge(jenv *C.JNIEnv, jBlessingStoreImpl C.jobject, goRef C.jlong, jDischarge C.jobject, jCaveat C.jobject, jImpetus C.jobject) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	blessingStore := *(*security.BlessingStore)(jutil.NativePtr(goPtr))
+	blessingStore := *(*security.BlessingStore)(jutil.GoRefValue(jutil.Ref(goRef)))
 	discharge, err := GoDischarge(env, jutil.Object(uintptr(unsafe.Pointer(jDischarge))))
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -795,9 +798,9 @@ func Java_io_v_v23_security_BlessingStoreImpl_nativeCacheDischarge(jenv *C.JNIEn
 }
 
 //export Java_io_v_v23_security_BlessingStoreImpl_nativeClearDischarges
-func Java_io_v_v23_security_BlessingStoreImpl_nativeClearDischarges(jenv *C.JNIEnv, jBlessingStoreImpl C.jobject, goPtr C.jlong, jDischarges C.jobject) {
+func Java_io_v_v23_security_BlessingStoreImpl_nativeClearDischarges(jenv *C.JNIEnv, jBlessingStoreImpl C.jobject, goRef C.jlong, jDischarges C.jobject) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	blessingStore := *(*security.BlessingStore)(jutil.NativePtr(goPtr))
+	blessingStore := *(*security.BlessingStore)(jutil.GoRefValue(jutil.Ref(goRef)))
 	arr, err := jutil.GoObjectArray(env, jutil.Object(uintptr(unsafe.Pointer(jDischarges))))
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -816,9 +819,9 @@ func Java_io_v_v23_security_BlessingStoreImpl_nativeClearDischarges(jenv *C.JNIE
 }
 
 //export Java_io_v_v23_security_BlessingStoreImpl_nativeDischarge
-func Java_io_v_v23_security_BlessingStoreImpl_nativeDischarge(jenv *C.JNIEnv, jBlessingStoreImpl C.jobject, goPtr C.jlong, jCaveat C.jobject, jImpetus C.jobject) C.jobject {
+func Java_io_v_v23_security_BlessingStoreImpl_nativeDischarge(jenv *C.JNIEnv, jBlessingStoreImpl C.jobject, goRef C.jlong, jCaveat C.jobject, jImpetus C.jobject) C.jobject {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	blessingStore := *(*security.BlessingStore)(jutil.NativePtr(goPtr))
+	blessingStore := *(*security.BlessingStore)(jutil.GoRefValue(jutil.Ref(goRef)))
 	caveat, err := GoCaveat(env, jutil.Object(uintptr(unsafe.Pointer(jCaveat))))
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -841,36 +844,36 @@ func Java_io_v_v23_security_BlessingStoreImpl_nativeDischarge(jenv *C.JNIEnv, jB
 }
 
 //export Java_io_v_v23_security_BlessingStoreImpl_nativeDebugString
-func Java_io_v_v23_security_BlessingStoreImpl_nativeDebugString(jenv *C.JNIEnv, jBlessingStoreImpl C.jobject, goPtr C.jlong) C.jstring {
+func Java_io_v_v23_security_BlessingStoreImpl_nativeDebugString(jenv *C.JNIEnv, jBlessingStoreImpl C.jobject, goRef C.jlong) C.jstring {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	debug := (*(*security.BlessingStore)(jutil.NativePtr(goPtr))).DebugString()
+	debug := (*(*security.BlessingStore)(jutil.GoRefValue(jutil.Ref(goRef)))).DebugString()
 	jDebug := jutil.JString(env, debug)
 	return C.jstring(unsafe.Pointer(jDebug))
 }
 
 //export Java_io_v_v23_security_BlessingStoreImpl_nativeToString
-func Java_io_v_v23_security_BlessingStoreImpl_nativeToString(jenv *C.JNIEnv, jBlessingStoreImpl C.jobject, goPtr C.jlong) C.jstring {
+func Java_io_v_v23_security_BlessingStoreImpl_nativeToString(jenv *C.JNIEnv, jBlessingStoreImpl C.jobject, goRef C.jlong) C.jstring {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	str := fmt.Sprintf("%s", (*(*security.BlessingStore)(jutil.NativePtr(goPtr))))
+	str := fmt.Sprintf("%s", (*(*security.BlessingStore)(jutil.GoRefValue(jutil.Ref(goRef)))))
 	jStr := jutil.JString(env, str)
 	return C.jstring(unsafe.Pointer(jStr))
 }
 
 //export Java_io_v_v23_security_BlessingStoreImpl_nativeFinalize
-func Java_io_v_v23_security_BlessingStoreImpl_nativeFinalize(jenv *C.JNIEnv, jBlessingStoreImpl C.jobject, goPtr C.jlong) {
-	jutil.GoUnref(jutil.NativePtr(goPtr))
+func Java_io_v_v23_security_BlessingStoreImpl_nativeFinalize(jenv *C.JNIEnv, jBlessingStoreImpl C.jobject, goRef C.jlong) {
+	jutil.GoDecRef(jutil.Ref(goRef))
 }
 
 //export Java_io_v_v23_security_BlessingPattern_nativeCreate
 func Java_io_v_v23_security_BlessingPattern_nativeCreate(jenv *C.JNIEnv, jBlessingPatternClass C.jclass, jValue C.jstring) C.jlong {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	pattern := security.BlessingPattern(jutil.GoString(env, jutil.Object(uintptr(unsafe.Pointer(jValue)))))
-	jutil.GoRef(&pattern) // Un-refed when the BlessingPattern object is finalized.
-	return C.jlong(jutil.PtrValue(&pattern))
+	ref := jutil.GoNewRef(&pattern) // Un-refed when the BlessingPattern object is finalized.
+	return C.jlong(ref)
 }
 
 //export Java_io_v_v23_security_BlessingPattern_nativeIsMatchedBy
-func Java_io_v_v23_security_BlessingPattern_nativeIsMatchedBy(jenv *C.JNIEnv, jBlessingPattern C.jobject, goPtr C.jlong, jBlessings C.jobjectArray) C.jboolean {
+func Java_io_v_v23_security_BlessingPattern_nativeIsMatchedBy(jenv *C.JNIEnv, jBlessingPattern C.jobject, goRef C.jlong, jBlessings C.jobjectArray) C.jboolean {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	blessings, err := jutil.GoStringArray(env, jutil.Object(uintptr(unsafe.Pointer(jBlessings))))
 	if err != nil {
@@ -878,7 +881,7 @@ func Java_io_v_v23_security_BlessingPattern_nativeIsMatchedBy(jenv *C.JNIEnv, jB
 		return C.JNI_FALSE
 	}
 
-	matched := (*(*security.BlessingPattern)(jutil.NativePtr(goPtr))).MatchedBy(blessings...)
+	matched := (*(*security.BlessingPattern)(jutil.GoRefValue(jutil.Ref(goRef)))).MatchedBy(blessings...)
 	if matched {
 		return C.JNI_TRUE
 	}
@@ -886,8 +889,8 @@ func Java_io_v_v23_security_BlessingPattern_nativeIsMatchedBy(jenv *C.JNIEnv, jB
 }
 
 //export Java_io_v_v23_security_BlessingPattern_nativeIsValid
-func Java_io_v_v23_security_BlessingPattern_nativeIsValid(jenv *C.JNIEnv, jBlessingPattern C.jobject, goPtr C.jlong) C.jboolean {
-	valid := (*(*security.BlessingPattern)(jutil.NativePtr(goPtr))).IsValid()
+func Java_io_v_v23_security_BlessingPattern_nativeIsValid(jenv *C.JNIEnv, jBlessingPattern C.jobject, goRef C.jlong) C.jboolean {
+	valid := (*(*security.BlessingPattern)(jutil.GoRefValue(jutil.Ref(goRef)))).IsValid()
 	if valid {
 		return C.JNI_TRUE
 	}
@@ -895,9 +898,9 @@ func Java_io_v_v23_security_BlessingPattern_nativeIsValid(jenv *C.JNIEnv, jBless
 }
 
 //export Java_io_v_v23_security_BlessingPattern_nativeMakeNonExtendable
-func Java_io_v_v23_security_BlessingPattern_nativeMakeNonExtendable(jenv *C.JNIEnv, jBlessingPattern C.jobject, goPtr C.jlong) C.jobject {
+func Java_io_v_v23_security_BlessingPattern_nativeMakeNonExtendable(jenv *C.JNIEnv, jBlessingPattern C.jobject, goRef C.jlong) C.jobject {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	pattern := (*(*security.BlessingPattern)(jutil.NativePtr(goPtr))).MakeNonExtendable()
+	pattern := (*(*security.BlessingPattern)(jutil.GoRefValue(jutil.Ref(goRef)))).MakeNonExtendable()
 	jPattern, err := JavaBlessingPattern(env, pattern)
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -907,8 +910,8 @@ func Java_io_v_v23_security_BlessingPattern_nativeMakeNonExtendable(jenv *C.JNIE
 }
 
 //export Java_io_v_v23_security_BlessingPattern_nativeFinalize
-func Java_io_v_v23_security_BlessingPattern_nativeFinalize(jenv *C.JNIEnv, jBlessingPattern C.jobject, goPtr C.jlong) {
-	jutil.GoUnref(jutil.NativePtr(goPtr))
+func Java_io_v_v23_security_BlessingPattern_nativeFinalize(jenv *C.JNIEnv, jBlessingPattern C.jobject, goRef C.jlong) {
+	jutil.GoDecRef(jutil.Ref(goRef))
 }
 
 //export Java_io_v_v23_security_PublicKeyThirdPartyCaveatValidator_nativeValidate
@@ -1070,9 +1073,10 @@ func Java_io_v_v23_security_VSecurity_nativeCreateAuthorizer(jenv *C.JNIEnv, jVS
 	default:
 		return nil
 	}
-	jutil.GoRef(&auth) // Un-refed when the Java PermissionsAuthorizer is finalized
-	jAuthorizer, err := jutil.NewObject(env, jutil.Class(uintptr(unsafe.Pointer(jPermissionsAuthorizerClass))), []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&auth)))
+	ref := jutil.GoNewRef(&auth) // Un-refed when the Java PermissionsAuthorizer is finalized
+	jAuthorizer, err := jutil.NewObject(env, jutil.Class(uintptr(unsafe.Pointer(jPermissionsAuthorizerClass))), []jutil.Sign{jutil.LongSign}, int64(ref))
 	if err != nil {
+		jutil.GoDecRef(ref)
 		jutil.JThrowV(env, err)
 		return nil
 	}

@@ -82,11 +82,11 @@ func Java_io_v_v23_syncbase_nosql_DatabaseImpl_nativeCreate(jenv *C.JNIEnv, jDat
 }
 
 //export Java_io_v_v23_syncbase_nosql_DatabaseImpl_nativeBeginBatch
-func Java_io_v_v23_syncbase_nosql_DatabaseImpl_nativeBeginBatch(jenv *C.JNIEnv, jDatabaseImpl C.jobject, goPtr C.jlong, jContext C.jobject, jBatchOptsObj C.jobject, jCallbackObj C.jobject) {
+func Java_io_v_v23_syncbase_nosql_DatabaseImpl_nativeBeginBatch(jenv *C.JNIEnv, jDatabaseImpl C.jobject, goRef C.jlong, jContext C.jobject, jBatchOptsObj C.jobject, jCallbackObj C.jobject) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	jCallback := jutil.Object(uintptr(unsafe.Pointer(jCallbackObj)))
 	jBatchOpts := jutil.Object(uintptr(unsafe.Pointer(jBatchOptsObj)))
-	jdb := (*jniDatabase)(jutil.NativePtr(goPtr))
+	jdb := (*jniDatabase)(jutil.GoRefValue(jutil.Ref(goRef)))
 	var batchOpts wire.BatchOptions
 	if err := jutil.GoVomCopy(env, jBatchOpts, jBatchOptionsClass, &batchOpts); err != nil {
 		jutil.CallbackOnFailure(env, jCallback, err)
@@ -115,10 +115,10 @@ func Java_io_v_v23_syncbase_nosql_DatabaseImpl_nativeBeginBatch(jenv *C.JNIEnv, 
 }
 
 //export Java_io_v_v23_syncbase_nosql_DatabaseImpl_nativeEnforceSchema
-func Java_io_v_v23_syncbase_nosql_DatabaseImpl_nativeEnforceSchema(jenv *C.JNIEnv, jDatabaseImpl C.jobject, goPtr C.jlong, jContext C.jobject, jCallbackObj C.jobject) {
+func Java_io_v_v23_syncbase_nosql_DatabaseImpl_nativeEnforceSchema(jenv *C.JNIEnv, jDatabaseImpl C.jobject, goRef C.jlong, jContext C.jobject, jCallbackObj C.jobject) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	jCallback := jutil.Object(uintptr(unsafe.Pointer(jCallbackObj)))
-	jdb := (*jniDatabase)(jutil.NativePtr(goPtr))
+	jdb := (*jniDatabase)(jutil.GoRefValue(jutil.Ref(goRef)))
 	ctx, _, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jContext))))
 	if err != nil {
 		jutil.CallbackOnFailure(env, jCallback, err)
@@ -130,6 +130,6 @@ func Java_io_v_v23_syncbase_nosql_DatabaseImpl_nativeEnforceSchema(jenv *C.JNIEn
 }
 
 //export Java_io_v_v23_syncbase_nosql_DatabaseImpl_nativeFinalize
-func Java_io_v_v23_syncbase_nosql_DatabaseImpl_nativeFinalize(jenv *C.JNIEnv, jDatabaseImpl C.jobject, goPtr C.jlong) {
-	jutil.GoUnref(jutil.NativePtr(goPtr))
+func Java_io_v_v23_syncbase_nosql_DatabaseImpl_nativeFinalize(jenv *C.JNIEnv, jDatabaseImpl C.jobject, goRef C.jlong) {
+	jutil.GoDecRef(jutil.Ref(goRef))
 }

@@ -72,9 +72,9 @@ func globArgs(env jutil.Env, jContext C.jobject, jPattern C.jstring, jOptions C.
 }
 
 //export Java_io_v_impl_google_namespace_NamespaceImpl_nativeGlob
-func Java_io_v_impl_google_namespace_NamespaceImpl_nativeGlob(jenv *C.JNIEnv, jNamespaceClass C.jclass, goNamespacePtr C.jlong, jContext C.jobject, jPattern C.jstring, jOptions C.jobject) C.jobject {
+func Java_io_v_impl_google_namespace_NamespaceImpl_nativeGlob(jenv *C.JNIEnv, jNamespaceClass C.jclass, goRef C.jlong, jContext C.jobject, jPattern C.jstring, jOptions C.jobject) C.jobject {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	n := *(*namespace.T)(jutil.NativePtr(goNamespacePtr))
+	n := *(*namespace.T)(jutil.GoRefValue(jutil.Ref(goRef)))
 	ctx, cancel, pattern, opts, err := globArgs(env, jContext, jPattern, jOptions)
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -130,9 +130,9 @@ func mountArgs(env jutil.Env, jContext C.jobject, jName, jServer C.jstring, jDur
 }
 
 //export Java_io_v_impl_google_namespace_NamespaceImpl_nativeMount
-func Java_io_v_impl_google_namespace_NamespaceImpl_nativeMount(jenv *C.JNIEnv, jNamespaceClass C.jclass, goNamespacePtr C.jlong, jContext C.jobject, jName C.jstring, jServer C.jstring, jDuration C.jobject, jOptions C.jobject, jCallbackObj C.jobject) {
+func Java_io_v_impl_google_namespace_NamespaceImpl_nativeMount(jenv *C.JNIEnv, jNamespaceClass C.jclass, goRef C.jlong, jContext C.jobject, jName C.jstring, jServer C.jstring, jDuration C.jobject, jOptions C.jobject, jCallbackObj C.jobject) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	n := *(*namespace.T)(jutil.NativePtr(goNamespacePtr))
+	n := *(*namespace.T)(jutil.GoRefValue(jutil.Ref(goRef)))
 	jCallback := jutil.Object(uintptr(unsafe.Pointer(jCallbackObj)))
 	context, name, server, duration, options, err := mountArgs(env, jContext, jName, jServer, jDuration, jOptions)
 	if err != nil {
@@ -156,9 +156,9 @@ func unmountArgs(env jutil.Env, jName, jServer C.jstring, jContext, jOptions C.j
 }
 
 //export Java_io_v_impl_google_namespace_NamespaceImpl_nativeUnmount
-func Java_io_v_impl_google_namespace_NamespaceImpl_nativeUnmount(jenv *C.JNIEnv, jNamespaceClass C.jclass, goNamespacePtr C.jlong, jContext C.jobject, jName C.jstring, jServer C.jstring, jOptions C.jobject, jCallbackObj C.jobject) {
+func Java_io_v_impl_google_namespace_NamespaceImpl_nativeUnmount(jenv *C.JNIEnv, jNamespaceClass C.jclass, goRef C.jlong, jContext C.jobject, jName C.jstring, jServer C.jstring, jOptions C.jobject, jCallbackObj C.jobject) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	n := *(*namespace.T)(jutil.NativePtr(goNamespacePtr))
+	n := *(*namespace.T)(jutil.GoRefValue(jutil.Ref(goRef)))
 	jCallback := jutil.Object(uintptr(unsafe.Pointer(jCallbackObj)))
 	name, server, context, options, err := unmountArgs(env, jName, jServer, jContext, jOptions)
 	if err != nil {
@@ -185,9 +185,9 @@ func deleteArgs(env jutil.Env, jContext, jOptions C.jobject, jName C.jstring, jD
 }
 
 //export Java_io_v_impl_google_namespace_NamespaceImpl_nativeDelete
-func Java_io_v_impl_google_namespace_NamespaceImpl_nativeDelete(jenv *C.JNIEnv, jNamespaceClass C.jclass, goNamespacePtr C.jlong, jContext C.jobject, jName C.jstring, jDeleteSubtree C.jboolean, jOptions C.jobject, jCallbackObj C.jobject) {
+func Java_io_v_impl_google_namespace_NamespaceImpl_nativeDelete(jenv *C.JNIEnv, jNamespaceClass C.jclass, goRef C.jlong, jContext C.jobject, jName C.jstring, jDeleteSubtree C.jboolean, jOptions C.jobject, jCallbackObj C.jobject) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	n := *(*namespace.T)(jutil.NativePtr(goNamespacePtr))
+	n := *(*namespace.T)(jutil.GoRefValue(jutil.Ref(goRef)))
 	jCallback := jutil.Object(uintptr(unsafe.Pointer(jCallbackObj)))
 	context, options, name, deleteSubtree, err := deleteArgs(env, jContext, jOptions, jName, jDeleteSubtree)
 	if err != nil {
@@ -229,9 +229,9 @@ func doResolve(n namespace.T, context *context.T, name string, options []naming.
 }
 
 //export Java_io_v_impl_google_namespace_NamespaceImpl_nativeResolve
-func Java_io_v_impl_google_namespace_NamespaceImpl_nativeResolve(jenv *C.JNIEnv, jNamespaceClass C.jclass, goNamespacePtr C.jlong, jContext C.jobject, jName C.jstring, jOptions C.jobject, jCallbackObj C.jobject) {
+func Java_io_v_impl_google_namespace_NamespaceImpl_nativeResolve(jenv *C.JNIEnv, jNamespaceClass C.jclass, goRef C.jlong, jContext C.jobject, jName C.jstring, jOptions C.jobject, jCallbackObj C.jobject) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	n := *(*namespace.T)(jutil.NativePtr(goNamespacePtr))
+	n := *(*namespace.T)(jutil.GoRefValue(jutil.Ref(goRef)))
 	jCallback := jutil.Object(uintptr(unsafe.Pointer(jCallbackObj)))
 	context, name, options, err := resolveArgs(env, jName, jContext, jOptions)
 	if err != nil {
@@ -273,9 +273,9 @@ func doResolveToMountTable(n namespace.T, context *context.T, name string, optio
 }
 
 //export Java_io_v_impl_google_namespace_NamespaceImpl_nativeResolveToMountTable
-func Java_io_v_impl_google_namespace_NamespaceImpl_nativeResolveToMountTable(jenv *C.JNIEnv, jNamespaceClass C.jclass, goNamespacePtr C.jlong, jContext C.jobject, jName C.jstring, jOptions C.jobject, jCallbackObj C.jobject) {
+func Java_io_v_impl_google_namespace_NamespaceImpl_nativeResolveToMountTable(jenv *C.JNIEnv, jNamespaceClass C.jclass, goRef C.jlong, jContext C.jobject, jName C.jstring, jOptions C.jobject, jCallbackObj C.jobject) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	n := *(*namespace.T)(jutil.NativePtr(goNamespacePtr))
+	n := *(*namespace.T)(jutil.GoRefValue(jutil.Ref(goRef)))
 	jCallback := jutil.Object(uintptr(unsafe.Pointer(jCallbackObj)))
 	context, options, name, err := resolveToMountTableArgs(env, jContext, jOptions, jName)
 	if err != nil {
@@ -288,9 +288,9 @@ func Java_io_v_impl_google_namespace_NamespaceImpl_nativeResolveToMountTable(jen
 }
 
 //export Java_io_v_impl_google_namespace_NamespaceImpl_nativeFlushCacheEntry
-func Java_io_v_impl_google_namespace_NamespaceImpl_nativeFlushCacheEntry(jenv *C.JNIEnv, jNamespaceClass C.jclass, goNamespacePtr C.jlong, jContext C.jobject, jName C.jstring) C.jboolean {
+func Java_io_v_impl_google_namespace_NamespaceImpl_nativeFlushCacheEntry(jenv *C.JNIEnv, jNamespaceClass C.jclass, goRef C.jlong, jContext C.jobject, jName C.jstring) C.jboolean {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	n := *(*namespace.T)(jutil.NativePtr(goNamespacePtr))
+	n := *(*namespace.T)(jutil.GoRefValue(jutil.Ref(goRef)))
 	context, _, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jContext))))
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -305,9 +305,9 @@ func Java_io_v_impl_google_namespace_NamespaceImpl_nativeFlushCacheEntry(jenv *C
 }
 
 //export Java_io_v_impl_google_namespace_NamespaceImpl_nativeSetRoots
-func Java_io_v_impl_google_namespace_NamespaceImpl_nativeSetRoots(jenv *C.JNIEnv, jNamespaceClass C.jclass, goNamespacePtr C.jlong, jNames C.jobject) {
+func Java_io_v_impl_google_namespace_NamespaceImpl_nativeSetRoots(jenv *C.JNIEnv, jNamespaceClass C.jclass, goRef C.jlong, jNames C.jobject) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	n := *(*namespace.T)(jutil.NativePtr(goNamespacePtr))
+	n := *(*namespace.T)(jutil.GoRefValue(jutil.Ref(goRef)))
 	names, err := jutil.GoStringList(env, jutil.Object(uintptr(unsafe.Pointer(jNames))))
 	if err != nil {
 		jutil.JThrowV(env, err)
@@ -335,9 +335,9 @@ func setPermissionsArgs(env jutil.Env, jContext, jPermissions C.jobject, jName, 
 }
 
 //export Java_io_v_impl_google_namespace_NamespaceImpl_nativeSetPermissions
-func Java_io_v_impl_google_namespace_NamespaceImpl_nativeSetPermissions(jenv *C.JNIEnv, jNamespaceClass C.jclass, goNamespacePtr C.jlong, jContext C.jobject, jName C.jstring, jPermissions C.jobject, jVersion C.jstring, jOptions C.jobject, jCallbackObj C.jobject) {
+func Java_io_v_impl_google_namespace_NamespaceImpl_nativeSetPermissions(jenv *C.JNIEnv, jNamespaceClass C.jclass, goRef C.jlong, jContext C.jobject, jName C.jstring, jPermissions C.jobject, jVersion C.jstring, jOptions C.jobject, jCallbackObj C.jobject) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	n := *(*namespace.T)(jutil.NativePtr(goNamespacePtr))
+	n := *(*namespace.T)(jutil.GoRefValue(jutil.Ref(goRef)))
 	jCallback := jutil.Object(uintptr(unsafe.Pointer(jCallbackObj)))
 	context, permissions, name, version, options, err := setPermissionsArgs(env, jContext, jPermissions, jName, jVersion, jOptions)
 	if err != nil {
@@ -385,9 +385,9 @@ func doGetPermissions(n namespace.T, context *context.T, name string, options []
 }
 
 //export Java_io_v_impl_google_namespace_NamespaceImpl_nativeGetPermissions
-func Java_io_v_impl_google_namespace_NamespaceImpl_nativeGetPermissions(jenv *C.JNIEnv, jNamespaceClass C.jclass, goNamespacePtr C.jlong, jContext C.jobject, jName C.jstring, jOptions C.jobject, jCallbackObj C.jobject) {
+func Java_io_v_impl_google_namespace_NamespaceImpl_nativeGetPermissions(jenv *C.JNIEnv, jNamespaceClass C.jclass, goRef C.jlong, jContext C.jobject, jName C.jstring, jOptions C.jobject, jCallbackObj C.jobject) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	n := *(*namespace.T)(jutil.NativePtr(goNamespacePtr))
+	n := *(*namespace.T)(jutil.GoRefValue(jutil.Ref(goRef)))
 	jCallback := jutil.Object(uintptr(unsafe.Pointer(jCallbackObj)))
 	context, name, options, err := getPermissionsArgs(env, jContext, jName, jOptions)
 	if err != nil {
@@ -400,6 +400,6 @@ func Java_io_v_impl_google_namespace_NamespaceImpl_nativeGetPermissions(jenv *C.
 }
 
 //export Java_io_v_impl_google_namespace_NamespaceImpl_nativeFinalize
-func Java_io_v_impl_google_namespace_NamespaceImpl_nativeFinalize(jenv *C.JNIEnv, jNamespace C.jobject, goNamespacePtr C.jlong) {
-	jutil.GoUnref(jutil.NativePtr(goNamespacePtr))
+func Java_io_v_impl_google_namespace_NamespaceImpl_nativeFinalize(jenv *C.JNIEnv, jNamespace C.jobject, goRef C.jlong) {
+	jutil.GoDecRef(jutil.Ref(goRef))
 }

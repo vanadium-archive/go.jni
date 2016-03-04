@@ -24,11 +24,12 @@ func GoAuthorizer(env jutil.Env, jAuth jutil.Object) (security.Authorizer, error
 		return nil, nil
 	}
 	if jutil.IsInstanceOf(env, jAuth, jPermissionsAuthorizerClass) {
-		ptr, err := jutil.JLongField(env, jAuth, "nativePtr")
+		// Called with our implementation of Authorizer, which maintains a Go reference - use it.
+		ref, err := jutil.JLongField(env, jAuth, "nativeRef")
 		if err != nil {
 			return nil, err
 		}
-		return *(*security.Authorizer)(jutil.NativePtr(ptr)), nil
+		return *(*security.Authorizer)(jutil.GoRefValue(jutil.Ref(ref))), nil
 	}
 	// Reference Java dispatcher; it will be de-referenced when the go
 	// dispatcher created below is garbage-collected (through the finalizer

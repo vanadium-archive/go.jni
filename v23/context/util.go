@@ -27,17 +27,18 @@ type goContextValue struct {
 // If the provided cancel function is nil, Java VContext won't be
 // cancelable.
 func JavaContext(env jutil.Env, ctx *context.T, cancel context.CancelFunc) (jutil.Object, error) {
-	var cancelPtr int64
+	ctxRef := jutil.GoNewRef(ctx) // Un-refed when the Java context object is finalized.
+	cancelRef := jutil.NullRef
 	if cancel != nil {
-		cancelPtr = int64(jutil.PtrValue(&cancel))
+		cancelRef = jutil.GoNewRef(&cancel) // Un-refed when the Java context object is finalized.
 	}
-	jCtx, err := jutil.NewObject(env, jVContextClass, []jutil.Sign{jutil.LongSign, jutil.LongSign}, int64(jutil.PtrValue(ctx)), cancelPtr)
+	jCtx, err := jutil.NewObject(env, jVContextClass, []jutil.Sign{jutil.LongSign, jutil.LongSign}, int64(ctxRef), int64(cancelRef))
 	if err != nil {
+		jutil.GoDecRef(ctxRef)
+		if cancel != nil {
+			jutil.GoDecRef(cancelRef)
+		}
 		return jutil.NullObject, err
-	}
-	jutil.GoRef(ctx) // Un-refed when the Java context object is finalized.
-	if cancel != nil {
-		jutil.GoRef(&cancel)
 	}
 	return jCtx, err
 }
@@ -48,19 +49,21 @@ func GoContext(env jutil.Env, jContext jutil.Object) (*context.T, context.Cancel
 	if jContext.IsNull() {
 		return nil, nil, nil
 	}
-	goCtxPtr, err := jutil.CallLongMethod(env, jContext, "nativePtr", nil)
+	goCtxRefVal, err := jutil.CallLongMethod(env, jContext, "nativeRef", nil)
 	if err != nil {
 		return nil, nil, err
 	}
-	goCancelPtr, err := jutil.CallLongMethod(env, jContext, "nativeCancelPtr", nil)
+	goCtxRef := jutil.Ref(goCtxRefVal)
+	goCancelRefVal, err := jutil.CallLongMethod(env, jContext, "nativeCancelRef", nil)
 	if err != nil {
 		return nil, nil, err
 	}
+	goCancelRef := jutil.Ref(goCancelRefVal)
 	var cancel context.CancelFunc
-	if goCancelPtr != 0 {
-		cancel = *(*context.CancelFunc)(jutil.NativePtr(goCancelPtr))
+	if goCancelRef != jutil.NullRef {
+		cancel = *(*context.CancelFunc)(jutil.GoRefValue(goCancelRef))
 	}
-	return (*context.T)(jutil.NativePtr(goCtxPtr)), cancel, nil
+	return (*context.T)(jutil.GoRefValue(goCtxRef)), cancel, nil
 }
 
 // GoContextValue returns the Go Context value given the Java Context value.

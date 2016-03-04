@@ -59,39 +59,46 @@ func IsLocalRef(env Env, obj Object) bool {
 	return obj.IsNull() || C.GetObjectRefType(env.value(), obj.value()) == C.JNILocalRefType
 }
 
-// GoRef creates a new reference to the value addressed by the provided pointer.
-// The value will remain referenced until it is explicitly unreferenced using
-// goUnref().
-func GoRef(valptr interface{}) {
+// GoNewRef creates a new reference for the given Go pointer, setting its
+// reference count to 1.  The Go pointer isn't garbage collected as long as
+// the reference count remains greater than zero.  The reference counts can
+// be modified using GoIncRef and GoDecRef functions below.
+//
+// Note that it is legal to create multiple references for the same Go pointer:
+// the Go pointer will not be garbage collected as long as some reference's
+// ref count is greater than zero.
+func GoNewRef(valptr interface{}) Ref {
 	if !IsPointer(valptr) {
-		panic("must pass pointer value to goRef")
+		panic(fmt.Sprintf("Must pass pointer value to GoNewRef; instead got %v of type %T", valptr, valptr))
 	}
-	goRefs.ref(valptr)
+	return goRefs.newRef(valptr)
 }
 
-// GoUnref removes a previously added reference to the value addressed by the
-// provided pointer.  If the value hasn't been ref-ed (a bug?), this unref will
-// be a no-op.
-func GoUnref(valptr interface{}) {
-	if !IsPointer(valptr) {
-		panic("must pass pointer value to goUnref")
+// GoIncRef increments the reference count for the given reference by 1.
+func GoIncRef(ref Ref) {
+	goRefs.incRef(ref)
+}
+
+// GoDecRef decrements the reference count for the given reference by 1.
+func GoDecRef(ref Ref) {
+	goRefs.decRef(ref)
+}
+
+// GoRefValue returns the Go pointer associated with the given reference
+// as an unsafe.Pointer (so that it can be easily cast into its right type).
+func GoRefValue(ref Ref) unsafe.Pointer {
+	valptr := goRefs.getVal(ref)
+	v := reflect.ValueOf(valptr)
+	if v.Kind() != reflect.Ptr && v.Kind() != reflect.UnsafePointer {
+		panic(fmt.Sprintf("must pass pointer value to PtrValue, was %v ", v.Type()))
 	}
-	goRefs.unref(valptr)
+	return unsafe.Pointer(v.Pointer())
 }
 
 // IsPointer returns true iff the provided value is a pointer.
 func IsPointer(val interface{}) bool {
 	v := reflect.ValueOf(val)
 	return v.Kind() == reflect.Ptr || v.Kind() == reflect.UnsafePointer
-}
-
-// PtrValue returns the value of the pointer as a uintptr.
-func PtrValue(ptr interface{}) uintptr {
-	v := reflect.ValueOf(ptr)
-	if v.Kind() != reflect.Ptr && v.Kind() != reflect.UnsafePointer {
-		panic(fmt.Sprintf("must pass pointer value to PtrValue, was %v ", v.Type()))
-	}
-	return v.Pointer()
 }
 
 // DerefOrDie dereferences the provided (pointer) value, or panic-s if the value
@@ -102,15 +109,6 @@ func DerefOrDie(i interface{}) interface{} {
 		panic(fmt.Sprintf("want reflect.Ptr value for %v, have %v", i, v.Type()))
 	}
 	return v.Elem().Interface()
-}
-
-// NativePtr returns the value of the provided Go pointer as an unsafe.Pointer.
-// This function should only be used for converting Go pointers that have been
-// passed in to Java and then back into Go, and are of (local-package) type
-// C.jlong.
-func NativePtr(goPtr interface{}) unsafe.Pointer {
-	v := reflect.ValueOf(goPtr)
-	return unsafe.Pointer(uintptr(v.Int()))
 }
 
 // goRefs stores references to instances of various Go types, namely instances
@@ -126,50 +124,66 @@ type refData struct {
 // newSafeRefCounter returns a new instance of a thread-safe reference counter.
 func newSafeRefCounter() *safeRefCounter {
 	return &safeRefCounter{
-		refs: make(map[uintptr]*refData),
+		seq:  1, // must be > 0, as 0 is a special value
+		refs: make(map[Ref]*refData),
 	}
 }
 
 // safeRefCounter is a thread-safe reference counter.
 type safeRefCounter struct {
-	lock sync.Mutex
-	refs map[uintptr]*refData
+	lock sync.RWMutex
+	seq  Ref
+	refs map[Ref]*refData
 }
 
-// ref increases the reference count to the given valptr by 1.
-func (c *safeRefCounter) ref(valptr interface{}) {
-	p := PtrValue(valptr)
+// newRef creates a new reference to a given Go pointer and sets its ref count to 1.
+func (c *safeRefCounter) newRef(valptr interface{}) Ref {
 	c.lock.Lock()
 	defer c.lock.Unlock()
-	ref, ok := c.refs[p]
+	ref := c.seq
+	c.seq++
+	c.refs[ref] = &refData{
+		instance: valptr,
+		count:    1,
+	}
+	return ref
+}
+
+// ref increases the reference count for the given reference by 1.
+func (c *safeRefCounter) incRef(ref Ref) {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+	data, ok := c.refs[ref]
 	if !ok {
-		c.refs[p] = &refData{
-			instance: valptr,
-			count:    1,
-		}
-	} else {
-		ref.count++
+		panic(fmt.Sprintf("Reference %d doesn't exist", ref))
+	}
+	data.count++
+}
+
+// unref decreases the reference count for the given reference by 1.
+func (c *safeRefCounter) decRef(ref Ref) {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+	data, ok := c.refs[ref]
+	if !ok {
+		panic(fmt.Sprintf("Reference %d doesn't exist", ref))
+	}
+	if data.count == 0 {
+		panic(fmt.Sprintf("Reference %d exists, but doesn't have a count of 0.", ref))
+	}
+	data.count--
+	if data.count == 0 {
+		delete(c.refs, ref)
 	}
 }
 
-// unref decreases the reference count of the given valptr by 1, returning
-// the new reference count value.
-func (c *safeRefCounter) unref(valptr interface{}) int {
-	c.lock.Lock()
-	defer c.lock.Unlock()
-	p := PtrValue(valptr)
-	ref, ok := c.refs[p]
+// getVal returns the value for the given reference.
+func (c *safeRefCounter) getVal(ref Ref) interface{} {
+	c.lock.RLock()
+	defer c.lock.RUnlock()
+	data, ok := c.refs[ref]
 	if !ok {
-		panic(fmt.Sprintf("Unrefing pointer %d of type %T that hasn't been refed before", int64(p), valptr))
+		panic(fmt.Sprintf("Reference %d doesn't exist.", ref))
 	}
-	count := ref.count
-	if count == 0 {
-		panic(fmt.Sprintf("Ref count for pointer %d of type %T is zero", int64(p), valptr))
-	}
-	if count > 1 {
-		ref.count--
-		return ref.count
-	}
-	delete(c.refs, p)
-	return 0
+	return data.instance
 }

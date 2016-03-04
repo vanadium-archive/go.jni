@@ -58,8 +58,10 @@ func (p *plugin) Scan(ctx *context.T, interfaceName string, ch chan<- *idiscover
 	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
 
-	jNativeScanHandler, err := jutil.NewObject(env, jNativeScanHandlerClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&ch)))
+	chRef := jutil.GoNewRef(&ch) // Un-refed when jNativeScanHandler is finalized.
+	jNativeScanHandler, err := jutil.NewObject(env, jNativeScanHandlerClass, []jutil.Sign{jutil.LongSign}, int64(chRef))
 	if err != nil {
+		jutil.GoDecRef(chRef)
 		done()
 		return err
 	}
@@ -69,7 +71,6 @@ func (p *plugin) Scan(ctx *context.T, interfaceName string, ch chan<- *idiscover
 		return err
 	}
 
-	jutil.GoRef(&ch) // Will be unrefed when jNativeScanHandler is finalized.
 	jNativeScanHandler = jutil.NewGlobalRef(env, jNativeScanHandler)
 	stop := func() {
 		env, freeFunc := jutil.GetEnv()

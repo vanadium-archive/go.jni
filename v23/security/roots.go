@@ -20,11 +20,12 @@ import "C"
 // JavaBlessingRoots creates an instance of Java BlessingRoots that uses the provided Go
 // BlessingRoots as its underlying implementation.
 func JavaBlessingRoots(env jutil.Env, roots security.BlessingRoots) (jutil.Object, error) {
-	jRoots, err := jutil.NewObject(env, jBlessingRootsImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&roots)))
+	ref := jutil.GoNewRef(&roots) // Un-refed when the Java BlessingRootsImpl is finalized.
+	jRoots, err := jutil.NewObject(env, jBlessingRootsImplClass, []jutil.Sign{jutil.LongSign}, int64(ref))
 	if err != nil {
+		jutil.GoDecRef(ref)
 		return jutil.NullObject, err
 	}
-	jutil.GoRef(&roots) // Un-refed when the Java BlessingRootsImpl is finalized.
 	return jRoots, nil
 }
 
@@ -35,12 +36,12 @@ func GoBlessingRoots(env jutil.Env, jBlessingRoots jutil.Object) (security.Bless
 		return nil, nil
 	}
 	if jutil.IsInstanceOf(env, jBlessingRoots, jBlessingRootsImplClass) {
-		// Called with our implementation of BlessingRoots, which maintains a Go pointer - use it.
-		goPtr, err := jutil.CallLongMethod(env, jBlessingRoots, "nativePtr", nil)
+		// Called with our implementation of BlessingRoots, which maintains a Go reference - use it.
+		ref, err := jutil.CallLongMethod(env, jBlessingRoots, "nativeRef", nil)
 		if err != nil {
 			return nil, err
 		}
-		return (*(*security.BlessingRoots)(jutil.NativePtr(goPtr))), nil
+		return (*(*security.BlessingRoots)(jutil.GoRefValue(jutil.Ref(ref)))), nil
 	}
 	// Reference Java BlessingRoots; it will be de-referenced when the Go
 	// BlessingRoots created below is garbage-collected (through the finalizer

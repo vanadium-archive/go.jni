@@ -40,23 +40,23 @@ func Init(env jutil.Env) error {
 }
 
 //export Java_io_v_impl_google_channel_InputChannelImpl_nativeRecv
-func Java_io_v_impl_google_channel_InputChannelImpl_nativeRecv(jenv *C.JNIEnv, jInputChannelImpl C.jobject, goRecvPtr C.jlong, jCallbackObj C.jobject) {
+func Java_io_v_impl_google_channel_InputChannelImpl_nativeRecv(jenv *C.JNIEnv, jInputChannelImpl C.jobject, goRecvRef C.jlong, jCallbackObj C.jobject) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	recv := *(*func() (jutil.Object, error))(jutil.NativePtr(goRecvPtr))
+	recv := *(*func() (jutil.Object, error))(jutil.GoRefValue(jutil.Ref(goRecvRef)))
 	jCallback := jutil.Object(uintptr(unsafe.Pointer(jCallbackObj)))
 	jutil.DoAsyncCall(env, jCallback, recv)
 }
 
 //export Java_io_v_impl_google_channel_InputChannelImpl_nativeFinalize
-func Java_io_v_impl_google_channel_InputChannelImpl_nativeFinalize(jenv *C.JNIEnv, jInputChannelImpl C.jobject, goRecvPtr C.jlong) {
-	jutil.GoUnref(jutil.NativePtr(goRecvPtr))
+func Java_io_v_impl_google_channel_InputChannelImpl_nativeFinalize(jenv *C.JNIEnv, jInputChannelImpl C.jobject, goRecvRef C.jlong) {
+	jutil.GoDecRef(jutil.Ref(goRecvRef))
 }
 
 //export Java_io_v_impl_google_channel_OutputChannelImpl_nativeSend
-func Java_io_v_impl_google_channel_OutputChannelImpl_nativeSend(jenv *C.JNIEnv, jOutputChannelClass C.jclass, goConvertPtr C.jlong, goSendPtr C.jlong, jItemObj C.jobject, jCallbackObj C.jobject) {
+func Java_io_v_impl_google_channel_OutputChannelImpl_nativeSend(jenv *C.JNIEnv, jOutputChannelClass C.jclass, goConvertRef C.jlong, goSendRef C.jlong, jItemObj C.jobject, jCallbackObj C.jobject) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	convert := *(*func(jutil.Object) (interface{}, error))(jutil.NativePtr(goConvertPtr))
-	send := *(*func(interface{}) error)(jutil.NativePtr(goSendPtr))
+	convert := *(*func(jutil.Object) (interface{}, error))(jutil.GoRefValue(jutil.Ref(goConvertRef)))
+	send := *(*func(interface{}) error)(jutil.GoRefValue(jutil.Ref(goSendRef)))
 	jItem := jutil.Object(uintptr(unsafe.Pointer(jItemObj)))
 	jCallback := jutil.Object(uintptr(unsafe.Pointer(jCallbackObj)))
 	// NOTE(spetrovic): Conversion must be done outside of DoAsyncCall as it references a Java
@@ -72,9 +72,9 @@ func Java_io_v_impl_google_channel_OutputChannelImpl_nativeSend(jenv *C.JNIEnv, 
 }
 
 //export Java_io_v_impl_google_channel_OutputChannelImpl_nativeClose
-func Java_io_v_impl_google_channel_OutputChannelImpl_nativeClose(jenv *C.JNIEnv, jOutputChannelClass C.jclass, goClosePtr C.jlong, jCallbackObj C.jobject) {
+func Java_io_v_impl_google_channel_OutputChannelImpl_nativeClose(jenv *C.JNIEnv, jOutputChannelClass C.jclass, goCloseRef C.jlong, jCallbackObj C.jobject) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	close := *(*func() error)(jutil.NativePtr(goClosePtr))
+	close := *(*func() error)(jutil.GoRefValue(jutil.Ref(goCloseRef)))
 	jCallback := jutil.Object(uintptr(unsafe.Pointer(jCallbackObj)))
 	jutil.DoAsyncCall(env, jCallback, func() (jutil.Object, error) {
 		return jutil.NullObject, close()
@@ -82,8 +82,8 @@ func Java_io_v_impl_google_channel_OutputChannelImpl_nativeClose(jenv *C.JNIEnv,
 }
 
 //export Java_io_v_impl_google_channel_OutputChannelImpl_nativeFinalize
-func Java_io_v_impl_google_channel_OutputChannelImpl_nativeFinalize(jenv *C.JNIEnv, jOutputChannelClass C.jclass, goConvertPtr C.jlong, goSendPtr C.jlong, goClosePtr C.jlong) {
-	jutil.GoUnref(jutil.NativePtr(goConvertPtr))
-	jutil.GoUnref(jutil.NativePtr(goSendPtr))
-	jutil.GoUnref(jutil.NativePtr(goClosePtr))
+func Java_io_v_impl_google_channel_OutputChannelImpl_nativeFinalize(jenv *C.JNIEnv, jOutputChannelClass C.jclass, goConvertRef C.jlong, goSendRef C.jlong, goCloseRef C.jlong) {
+	jutil.GoDecRef(jutil.Ref(goConvertRef))
+	jutil.GoDecRef(jutil.Ref(goSendRef))
+	jutil.GoDecRef(jutil.Ref(goCloseRef))
 }

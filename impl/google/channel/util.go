@@ -27,11 +27,12 @@ func JavaInputChannel(env jutil.Env, ctx *context.T, ctxCancel func(), recv func
 	if err != nil {
 		return jutil.NullObject, err
 	}
-	jInputChannel, err := jutil.NewObject(env, jInputChannelImplClass, []jutil.Sign{contextSign, jutil.LongSign}, jContext, int64(jutil.PtrValue(&recv)))
+	ref := jutil.GoNewRef(&recv) // Un-refed when jInputChannel is finalized.
+	jInputChannel, err := jutil.NewObject(env, jInputChannelImplClass, []jutil.Sign{contextSign, jutil.LongSign}, jContext, int64(ref))
 	if err != nil {
+		jutil.GoDecRef(ref)
 		return jutil.NullObject, err
 	}
-	jutil.GoRef(&recv) // Un-refed when jInputChannel is finalized.
 	return jInputChannel, nil
 }
 
@@ -42,12 +43,15 @@ func JavaOutputChannel(env jutil.Env, ctx *context.T, ctxCancel func(), convert 
 	if err != nil {
 		return jutil.NullObject, err
 	}
-	jOutputChannel, err := jutil.NewObject(env, jOutputChannelImplClass, []jutil.Sign{contextSign, jutil.LongSign, jutil.LongSign, jutil.LongSign}, jContext, int64(jutil.PtrValue(&convert)), int64(jutil.PtrValue(&send)), int64(jutil.PtrValue(&close)))
+	convertRef := jutil.GoNewRef(&convert) // Un-refed when jOutputChannel is finalized.
+	sendRef := jutil.GoNewRef(&send)       // Un-refed when jOutputChannel is finalized.
+	closeRef := jutil.GoNewRef(&close)     // Un-refed when jOutputChannel is finalized.
+	jOutputChannel, err := jutil.NewObject(env, jOutputChannelImplClass, []jutil.Sign{contextSign, jutil.LongSign, jutil.LongSign, jutil.LongSign}, jContext, int64(convertRef), int64(sendRef), int64(closeRef))
 	if err != nil {
+		jutil.GoDecRef(convertRef)
+		jutil.GoDecRef(sendRef)
+		jutil.GoDecRef(closeRef)
 		return jutil.NullObject, err
 	}
-	jutil.GoRef(&convert) // Un-refed when jOutputChannel is finalized.
-	jutil.GoRef(&send)    // Un-refed when jOutputChannel is finalized.
-	jutil.GoRef(&close)   // Un-refed when jOutputChannel is finalized.
 	return jOutputChannel, nil
 }

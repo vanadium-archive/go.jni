@@ -24,11 +24,12 @@ func JavaPrincipal(env jutil.Env, principal security.Principal) (jutil.Object, e
 	if principal == nil {
 		return jutil.NullObject, nil
 	}
-	jPrincipal, err := jutil.NewObject(env, jVPrincipalImplClass, []jutil.Sign{jutil.LongSign, signerSign, blessingStoreSign, blessingRootsSign}, int64(jutil.PtrValue(&principal)), jutil.NullObject, jutil.NullObject, jutil.NullObject)
+	ref := jutil.GoNewRef(&principal) // Un-refed when the Java VPrincipalImpl is finalized.
+	jPrincipal, err := jutil.NewObject(env, jVPrincipalImplClass, []jutil.Sign{jutil.LongSign, signerSign, blessingStoreSign, blessingRootsSign}, int64(ref), jutil.NullObject, jutil.NullObject, jutil.NullObject)
 	if err != nil {
+		jutil.GoDecRef(ref)
 		return jutil.NullObject, err
 	}
-	jutil.GoRef(&principal) // Un-refed when the Java VPrincipalImpl is finalized.
 	return jPrincipal, nil
 }
 
@@ -38,12 +39,12 @@ func GoPrincipal(env jutil.Env, jPrincipal jutil.Object) (security.Principal, er
 		return nil, nil
 	}
 	if jutil.IsInstanceOf(env, jPrincipal, jVPrincipalImplClass) {
-		// Called with our implementation of VPrincipal, which maintains a Go pointer - use it.
-		goPtr, err := jutil.CallLongMethod(env, jPrincipal, "nativePtr", nil)
+		// Called with our implementation of VPrincipal, which maintains a Go reference - use it.
+		ref, err := jutil.CallLongMethod(env, jPrincipal, "nativeRef", nil)
 		if err != nil {
 			return nil, err
 		}
-		return (*(*security.Principal)(jutil.NativePtr(goPtr))), nil
+		return (*(*security.Principal)(jutil.GoRefValue(jutil.Ref(ref)))), nil
 	}
 
 	// Reference Java VPrincipal; it will be de-referenced when the Go Principal

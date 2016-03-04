@@ -23,11 +23,12 @@ func JavaNamespace(env jutil.Env, namespace namespace.T) (jutil.Object, error) {
 	if namespace == nil {
 		return jutil.NullObject, nil
 	}
-	jNamespace, err := jutil.NewObject(env, jNamespaceImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&namespace)))
+	ref := jutil.GoNewRef(&namespace) // Un-refed when the Java NamespaceImpl is finalized.
+	jNamespace, err := jutil.NewObject(env, jNamespaceImplClass, []jutil.Sign{jutil.LongSign}, int64(ref))
 	if err != nil {
+		jutil.GoDecRef(ref)
 		return jutil.NullObject, err
 	}
-	jutil.GoRef(&namespace) // Un-refed when the Java NamespaceImpl is finalized.
 	return jNamespace, nil
 }
 

@@ -21,11 +21,12 @@ import "C"
 // JavaBlessingStore creates an instance of Java BlessingStore that uses the provided Go
 // BlessingStore as its underlying implementation.
 func JavaBlessingStore(env jutil.Env, store security.BlessingStore) (jutil.Object, error) {
-	jObj, err := jutil.NewObject(env, jBlessingStoreImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&store)))
+	ref := jutil.GoNewRef(&store) // Un-refed when the Java BlessingStoreImpl is finalized.
+	jObj, err := jutil.NewObject(env, jBlessingStoreImplClass, []jutil.Sign{jutil.LongSign}, int64(ref))
 	if err != nil {
+		jutil.GoDecRef(ref)
 		return jutil.NullObject, err
 	}
-	jutil.GoRef(&store) // Un-refed when the Java BlessingStoreImpl is finalized.
 	return jObj, nil
 }
 
@@ -36,12 +37,12 @@ func GoBlessingStore(env jutil.Env, jBlessingStore jutil.Object) (security.Bless
 		return nil, nil
 	}
 	if jutil.IsInstanceOf(env, jBlessingStore, jBlessingStoreImplClass) {
-		// Called with our implementation of BlessingStore, which maintains a Go pointer - use it.
-		goPtr, err := jutil.JLongField(env, jBlessingStore, "nativePtr")
+		// Called with our implementation of BlessingStore, which maintains a Go reference - use it.
+		ref, err := jutil.JLongField(env, jBlessingStore, "nativeRef")
 		if err != nil {
 			return nil, err
 		}
-		return (*(*security.BlessingStore)(jutil.NativePtr(goPtr))), nil
+		return (*(*security.BlessingStore)(jutil.GoRefValue(jutil.Ref(ref)))), nil
 	}
 	// Reference Java BlessingStore; it will be de-referenced when the Go
 	// BlessingStore created below is garbage-collected (through the finalizer

@@ -407,12 +407,14 @@ func blockOnJavaCallback(succCh chan Object, errCh chan error) (Object, error) {
 // JavaNativeCallback creates a new Java Callback object that calls the provided Go functions
 // on success/failures.
 func JavaNativeCallback(env Env, success func(jResult Object), failure func(err error)) (Object, error) {
-	jCallback, err := NewObject(env, jNativeCallbackClass, []Sign{LongSign, LongSign}, int64(PtrValue(&success)), int64(PtrValue(&failure)))
+	succRef := GoNewRef(&success) // Un-refed when jCallback is finalized
+	failRef := GoNewRef(&failure) // Un-refed when jCallback is finalized
+	jCallback, err := NewObject(env, jNativeCallbackClass, []Sign{LongSign, LongSign}, int64(succRef), int64(failRef))
 	if err != nil {
+		GoDecRef(succRef)
+		GoDecRef(failRef)
 		return NullObject, err
 	}
-	GoRef(&success) // Un-refed when jCallback is finalized
-	GoRef(&failure) // Un-refed when jCallback is finalized
 	return jCallback, nil
 }
 

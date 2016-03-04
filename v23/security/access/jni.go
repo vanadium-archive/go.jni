@@ -48,19 +48,19 @@ func Java_io_v_v23_security_access_AccessList_nativeCreate(jenv *C.JNIEnv, jAcce
 		jutil.JThrowV(env, err)
 		return C.jlong(0)
 	}
-	jutil.GoRef(&acl) // Un-refed when the AccessList object is finalized
-	return C.jlong(jutil.PtrValue(&acl))
+	ref := jutil.GoNewRef(&acl) // Un-refed when the AccessList object is finalized
+	return C.jlong(ref)
 }
 
 //export Java_io_v_v23_security_access_AccessList_nativeIncludes
-func Java_io_v_v23_security_access_AccessList_nativeIncludes(jenv *C.JNIEnv, jAccessList C.jobject, goPtr C.jlong, jBlessings C.jobjectArray) C.jboolean {
+func Java_io_v_v23_security_access_AccessList_nativeIncludes(jenv *C.JNIEnv, jAccessList C.jobject, goRef C.jlong, jBlessings C.jobjectArray) C.jboolean {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	blessings, err := jutil.GoStringArray(env, jutil.Object(uintptr(unsafe.Pointer(jBlessings))))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return C.JNI_FALSE
 	}
-	ok := (*(*access.AccessList)(jutil.NativePtr(goPtr))).Includes(blessings...)
+	ok := (*(*access.AccessList)(jutil.GoRefValue(jutil.Ref(goRef)))).Includes(blessings...)
 	if ok {
 		return C.JNI_TRUE
 	}
@@ -68,7 +68,7 @@ func Java_io_v_v23_security_access_AccessList_nativeIncludes(jenv *C.JNIEnv, jAc
 }
 
 //export Java_io_v_v23_security_access_AccessList_nativeAuthorize
-func Java_io_v_v23_security_access_AccessList_nativeAuthorize(jenv *C.JNIEnv, jAccessList C.jobject, goPtr C.jlong, jCtx C.jobject, jCall C.jobject) {
+func Java_io_v_v23_security_access_AccessList_nativeAuthorize(jenv *C.JNIEnv, jAccessList C.jobject, goRef C.jlong, jCtx C.jobject, jCall C.jobject) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	ctx, _, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jCtx))))
 	if err != nil {
@@ -79,15 +79,15 @@ func Java_io_v_v23_security_access_AccessList_nativeAuthorize(jenv *C.JNIEnv, jA
 	if err != nil {
 		jutil.JThrowV(env, err)
 	}
-	if err := (*(*access.AccessList)(jutil.NativePtr(goPtr))).Authorize(ctx, call); err != nil {
+	if err := (*(*access.AccessList)(jutil.GoRefValue(jutil.Ref(goRef)))).Authorize(ctx, call); err != nil {
 		jutil.JThrowV(env, err)
 		return
 	}
 }
 
 //export Java_io_v_v23_security_access_AccessList_nativeFinalize
-func Java_io_v_v23_security_access_AccessList_nativeFinalize(jenv *C.JNIEnv, jAccessList C.jobject, goPtr C.jlong) {
-	jutil.GoUnref(jutil.NativePtr(goPtr))
+func Java_io_v_v23_security_access_AccessList_nativeFinalize(jenv *C.JNIEnv, jAccessList C.jobject, goRef C.jlong) {
+	jutil.GoDecRef(jutil.Ref(goRef))
 }
 
 //export Java_io_v_v23_security_access_PermissionsAuthorizer_nativeCreate
@@ -108,9 +108,10 @@ func Java_io_v_v23_security_access_PermissionsAuthorizer_nativeCreate(jenv *C.JN
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	jutil.GoRef(&authorizer) // Un-refed when the Java PermissionsAuthorizer is finalized
-	jAuthorizer, err := jutil.NewObject(env, jutil.Class(uintptr(unsafe.Pointer(jPermissionsAuthorizerClass))), []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&authorizer)))
+	ref := jutil.GoNewRef(&authorizer) // Un-refed when the Java PermissionsAuthorizer is finalized
+	jAuthorizer, err := jutil.NewObject(env, jutil.Class(uintptr(unsafe.Pointer(jPermissionsAuthorizerClass))), []jutil.Sign{jutil.LongSign}, int64(ref))
 	if err != nil {
+		jutil.GoDecRef(ref)
 		jutil.JThrowV(env, err)
 		return nil
 	}
@@ -118,7 +119,7 @@ func Java_io_v_v23_security_access_PermissionsAuthorizer_nativeCreate(jenv *C.JN
 }
 
 //export Java_io_v_v23_security_access_PermissionsAuthorizer_nativeAuthorize
-func Java_io_v_v23_security_access_PermissionsAuthorizer_nativeAuthorize(jenv *C.JNIEnv, jPermissionsAuthorizer C.jobject, goPtr C.jlong, jContext C.jobject, jCall C.jobject) {
+func Java_io_v_v23_security_access_PermissionsAuthorizer_nativeAuthorize(jenv *C.JNIEnv, jPermissionsAuthorizer C.jobject, goRef C.jlong, jContext C.jobject, jCall C.jobject) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	ctx, _, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jContext))))
 	if err != nil {
@@ -130,13 +131,13 @@ func Java_io_v_v23_security_access_PermissionsAuthorizer_nativeAuthorize(jenv *C
 		jutil.JThrowV(env, err)
 		return
 	}
-	if err := (*(*security.Authorizer)(jutil.NativePtr(goPtr))).Authorize(ctx, call); err != nil {
+	if err := (*(*security.Authorizer)(jutil.GoRefValue(jutil.Ref(goRef)))).Authorize(ctx, call); err != nil {
 		jutil.JThrowV(env, err)
 		return
 	}
 }
 
 //export Java_io_v_v23_security_access_PermissionsAuthorizer_nativeFinalize
-func Java_io_v_v23_security_access_PermissionsAuthorizer_nativeFinalize(jenv *C.JNIEnv, jPermissionsAuthorizer C.jobject, goPtr C.jlong) {
-	jutil.GoUnref(jutil.NativePtr(goPtr))
+func Java_io_v_v23_security_access_PermissionsAuthorizer_nativeFinalize(jenv *C.JNIEnv, jPermissionsAuthorizer C.jobject, goRef C.jlong) {
+	jutil.GoDecRef(jutil.Ref(goRef))
 }

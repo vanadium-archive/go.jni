@@ -43,11 +43,12 @@ func newJNIDatabase(env jutil.Env, db nosql.Database, parentFullName string, sch
 
 func javaDatabase(env jutil.Env, jdb *jniDatabase) (jutil.Object, error) {
 	schemaSign := jutil.ClassSign("io.v.v23.syncbase.nosql.Schema")
-	jDatabase, err := jutil.NewObject(env, jDatabaseImplClass, []jutil.Sign{jutil.LongSign, jutil.StringSign, jutil.StringSign, jutil.StringSign, schemaSign}, int64(jutil.PtrValue(jdb)), jdb.parentFullName, jdb.FullName(), jdb.Name(), jdb.jSchema)
+	ref := jutil.GoNewRef(jdb) // Un-refed when jDatabase is finalized
+	jDatabase, err := jutil.NewObject(env, jDatabaseImplClass, []jutil.Sign{jutil.LongSign, jutil.StringSign, jutil.StringSign, jutil.StringSign, schemaSign}, int64(ref), jdb.parentFullName, jdb.FullName(), jdb.Name(), jdb.jSchema)
 	if err != nil {
+		jutil.GoDecRef(ref)
 		return jutil.NullObject, err
 	}
-	jutil.GoRef(jdb) // Un-refed when jDatabase is finalized
 	return jDatabase, nil
 }
 

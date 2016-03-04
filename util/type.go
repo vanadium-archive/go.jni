@@ -34,11 +34,17 @@ type Object uintptr
 // package-local C.jclass type to Class and vice-versa.
 type Class uintptr
 
+// Ref represents a reference to a Go value that can be passed to the Java code
+// and then safely re-casted to a Go value back again.
+type Ref uint64
+
 const (
 	// NullObject represents an Object that holds a null C.jobject value.
 	NullObject = Object(0)
 	// NullClas represents a Class that holds a null C.jclass value.
 	NullClass = Class(0)
+	// NullRef represents a reference that points to nothing.
+	NullRef = Ref(0)
 )
 
 func (e Env) value() *C.JNIEnv {

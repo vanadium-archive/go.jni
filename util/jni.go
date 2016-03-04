@@ -165,20 +165,20 @@ func Init(env Env) error {
 }
 
 //export Java_io_v_util_NativeCallback_nativeOnSuccess
-func Java_io_v_util_NativeCallback_nativeOnSuccess(jenv *C.JNIEnv, jNativeCallback C.jobject, goSuccessPtr C.jlong, jResultObj C.jobject) {
+func Java_io_v_util_NativeCallback_nativeOnSuccess(jenv *C.JNIEnv, jNativeCallback C.jobject, goSuccessRef C.jlong, jResultObj C.jobject) {
 	jResult := Object(uintptr(unsafe.Pointer(jResultObj)))
-	(*(*func(Object))(NativePtr(goSuccessPtr)))(jResult)
+	(*(*func(Object))(GoRefValue(Ref(goSuccessRef))))(jResult)
 }
 
 //export Java_io_v_util_NativeCallback_nativeOnFailure
-func Java_io_v_util_NativeCallback_nativeOnFailure(jenv *C.JNIEnv, jNativeCallback C.jobject, goFailurePtr C.jlong, jVException C.jobject) {
+func Java_io_v_util_NativeCallback_nativeOnFailure(jenv *C.JNIEnv, jNativeCallback C.jobject, goFailureRef C.jlong, jVException C.jobject) {
 	env := Env(uintptr(unsafe.Pointer(jenv)))
 	err := GoError(env, Object(uintptr(unsafe.Pointer(jVException))))
-	(*(*func(error))(NativePtr(goFailurePtr)))(err)
+	(*(*func(error))(GoRefValue(Ref(goFailureRef))))(err)
 }
 
 //export Java_io_v_util_NativeCallback_nativeFinalize
-func Java_io_v_util_NativeCallback_nativeFinalize(jenv *C.JNIEnv, jNativeCallback C.jobject, goSuccessPtr C.jlong, goFailurePtr C.jlong) {
-	GoUnref(NativePtr(goSuccessPtr))
-	GoUnref(NativePtr(goFailurePtr))
+func Java_io_v_util_NativeCallback_nativeFinalize(jenv *C.JNIEnv, jNativeCallback C.jobject, goSuccessRef C.jlong, goFailureRef C.jlong) {
+	GoDecRef(Ref(goSuccessRef))
+	GoDecRef(Ref(goFailureRef))
 }

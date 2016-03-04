@@ -59,12 +59,12 @@ func (d *dispatcher) Lookup(ctx *context.T, suffix string) (interface{}, securit
 	if len(result) != 2 {
 		return nil, nil, fmt.Errorf("lookup returned %d elems, want 2", len(result))
 	}
-	invoker := *(*rpc.Invoker)(jutil.NativePtr(result[0]))
-	jutil.GoUnref(jutil.NativePtr(result[0]))
+	invoker := *(*rpc.Invoker)(jutil.GoRefValue(jutil.Ref(result[0])))
+	jutil.GoDecRef(jutil.Ref(result[0]))
 	authorizer := security.Authorizer(nil)
 	if result[1] != 0 {
-		authorizer = *(*security.Authorizer)(jutil.NativePtr(result[1]))
-		jutil.GoUnref(jutil.NativePtr(result[1]))
+		authorizer = *(*security.Authorizer)(jutil.GoRefValue(jutil.Ref(result[1])))
+		jutil.GoDecRef(jutil.Ref(result[1]))
 	}
 	return invoker, authorizer, nil
 }

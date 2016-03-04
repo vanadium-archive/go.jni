@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"log"
 	"runtime"
+	"sync"
 	"time"
 	"unicode"
 	"unicode/utf8"
@@ -35,6 +36,7 @@ var (
 	// processing function passed to GoOptions. It indicates that the
 	// option being processed should be skipped.
 	SkipOption = skipOptionType{}
+	envs       = newEnvCounter()
 )
 
 func (skipOptionType) Error() string {
@@ -112,14 +114,14 @@ func GetEnv() (env Env, free func()) {
 	if newCapacity := PushLocalFrame(env, localRefCapacity); newCapacity < 0 {
 		panic("PushLocalFrame(" + string(localRefCapacity) + ") returned < 0 (was " + string(newCapacity) + ")")
 	}
-	// Reference-count *env.  This is necessary to make GetEnv() re-entrant:
+	// Count *env.  This is necessary to make GetEnv() re-entrant:
 	// same goroutine should be allowed to call GetEnv() multiple times and
 	// the OS thread should only be released after the last call to the free
 	// function.
-	envRefs.ref(jenv)
+	envs.inc(jenv)
 	return env, func() {
 		PopLocalFrame(env, NullObject)
-		if envRefs.unref(jenv) == 0 {
+		if envs.dec(jenv) == 0 {
 			// Last call to free the env out of possibly many successive
 			// GetEnv() calls by the same goroutine: it is now safe to release
 			// the thread.
@@ -743,4 +745,43 @@ func jStaticFieldID(env Env, class Class, name string, sign Sign) (C.jfieldID, e
 		return nil, fmt.Errorf("couldn't find field %s: %v", name, err)
 	}
 	return fid, nil
+}
+
+func newEnvCounter() *envCounter {
+	return &envCounter{
+		envs: make(map[*C.JNIEnv]*int),
+	}
+}
+
+// envCounter counts, for each JNI environment, how many times has it been
+// requested (by the same goroutine).
+type envCounter struct {
+	lock sync.Mutex
+	envs map[*C.JNIEnv]*int
+}
+
+func (c *envCounter) inc(jenv *C.JNIEnv) {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+	count, ok := c.envs[jenv]
+	if !ok {
+		count := int(1)
+		c.envs[jenv] = &count
+	} else {
+		(*count)++
+	}
+}
+
+func (c *envCounter) dec(jenv *C.JNIEnv) int {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+	count, ok := c.envs[jenv]
+	if !ok {
+		panic("env entry with zero count")
+	}
+	(*count)--
+	if *count == 0 {
+		delete(c.envs, jenv)
+	}
+	return *count
 }

@@ -41,9 +41,9 @@ func Init(env jutil.Env) error {
 }
 
 //export Java_io_v_android_impl_google_discovery_plugins_NativeScanHandler_nativeHandleUpdate
-func Java_io_v_android_impl_google_discovery_plugins_NativeScanHandler_nativeHandleUpdate(jenv *C.JNIEnv, _ C.jobject, chPtr C.jlong, jAdInfoObj C.jobject) {
+func Java_io_v_android_impl_google_discovery_plugins_NativeScanHandler_nativeHandleUpdate(jenv *C.JNIEnv, _ C.jobject, goRef C.jlong, jAdInfoObj C.jobject) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
-	ch := (*(*chan<- *idiscovery.AdInfo)(jutil.NativePtr(chPtr)))
+	ch := (*(*chan<- *idiscovery.AdInfo)(jutil.GoRefValue(jutil.Ref(goRef))))
 
 	jAdInfo := jutil.Object(uintptr(unsafe.Pointer(jAdInfoObj)))
 
@@ -56,6 +56,6 @@ func Java_io_v_android_impl_google_discovery_plugins_NativeScanHandler_nativeHan
 }
 
 //export Java_io_v_android_impl_google_discovery_plugins_NativeScanHandler_nativeFinalize
-func Java_io_v_android_impl_google_discovery_plugins_NativeScanHandler_nativeFinalize(jenv *C.JNIEnv, _ C.jobject, chPtr C.jlong) {
-	jutil.GoUnref(jutil.NativePtr(chPtr))
+func Java_io_v_android_impl_google_discovery_plugins_NativeScanHandler_nativeFinalize(jenv *C.JNIEnv, _ C.jobject, goRef C.jlong) {
+	jutil.GoDecRef(jutil.Ref(goRef))
 }

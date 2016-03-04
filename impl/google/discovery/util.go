@@ -22,11 +22,12 @@ import (
 
 // JavaDiscovery converts a Go discovery instance into a Java discovery instance.
 func JavaDiscovery(env jutil.Env, d discovery.T) (jutil.Object, error) {
-	jDiscovery, err := jutil.NewObject(env, jDiscoveryImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&d)))
+	ref := jutil.GoNewRef(&d) // Un-refed when jDiscovery is finalized.
+	jDiscovery, err := jutil.NewObject(env, jDiscoveryImplClass, []jutil.Sign{jutil.LongSign}, int64(ref))
 	if err != nil {
+		jutil.GoDecRef(ref)
 		return jutil.NullObject, err
 	}
-	jutil.GoRef(&d) // Will be unrefed when jDiscovery is finalized.
 	return jDiscovery, nil
 }
 
@@ -36,11 +37,12 @@ func javaUpdate(env jutil.Env, update discovery.Update) (jutil.Object, error) {
 	if err != nil {
 		return jutil.NullObject, err
 	}
-	jUpdate, err := jutil.NewObject(env, jUpdateImplClass, []jutil.Sign{jutil.LongSign, jutil.BoolSign, advertisementSign}, int64(jutil.PtrValue(&update)), update.IsLost(), jAd)
+	ref := jutil.GoNewRef(&update) // Un-refed when jUpdate is finalized.
+	jUpdate, err := jutil.NewObject(env, jUpdateImplClass, []jutil.Sign{jutil.LongSign, jutil.BoolSign, advertisementSign}, int64(ref), update.IsLost(), jAd)
 	if err != nil {
+		jutil.GoDecRef(ref)
 		return jutil.NullObject, err
 	}
-	jutil.GoRef(&update) // Will be unrefed when jUpdate is finalized.
 	return jUpdate, nil
 }
 

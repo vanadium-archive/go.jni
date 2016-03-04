@@ -19,11 +19,12 @@ import "C"
 
 // JavaBlessings converts the provided Go Blessings into Java Blessings.
 func JavaBlessings(env jutil.Env, blessings security.Blessings) (jutil.Object, error) {
-	jBlessings, err := jutil.NewObject(env, jBlessingsClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&blessings)))
+	ref := jutil.GoNewRef(&blessings) // Un-refed when the Java Blessings object is finalized.
+	jBlessings, err := jutil.NewObject(env, jBlessingsClass, []jutil.Sign{jutil.LongSign}, int64(ref))
 	if err != nil {
+		jutil.GoDecRef(ref)
 		return jutil.NullObject, err
 	}
-	jutil.GoRef(&blessings) // Un-refed when the Java Blessings object is finalized.
 	return jBlessings, nil
 }
 
@@ -32,11 +33,11 @@ func GoBlessings(env jutil.Env, jBlessings jutil.Object) (security.Blessings, er
 	if jBlessings.IsNull() {
 		return security.Blessings{}, nil
 	}
-	goPtr, err := jutil.CallLongMethod(env, jBlessings, "nativePtr", nil)
+	ref, err := jutil.CallLongMethod(env, jBlessings, "nativeRef", nil)
 	if err != nil {
 		return security.Blessings{}, err
 	}
-	return (*(*security.Blessings)(jutil.NativePtr(goPtr))), nil
+	return (*(*security.Blessings)(jutil.GoRefValue(jutil.Ref(ref)))), nil
 }
 
 // GoBlessingsArray converts the provided Java Blessings array into a Go
@@ -136,11 +137,12 @@ func GoCaveats(env jutil.Env, jCaveats jutil.Object) ([]security.Caveat, error) 
 // JavaBlessingPattern converts the provided Go BlessingPattern into Java
 // BlessingPattern.
 func JavaBlessingPattern(env jutil.Env, pattern security.BlessingPattern) (jutil.Object, error) {
-	jPattern, err := jutil.NewObject(env, jBlessingPatternClass, []jutil.Sign{jutil.LongSign, jutil.StringSign}, int64(jutil.PtrValue(&pattern)), string(pattern))
+	ref := jutil.GoNewRef(&pattern) // Un-refed when the Java BlessingRootsImpl is finalized.
+	jPattern, err := jutil.NewObject(env, jBlessingPatternClass, []jutil.Sign{jutil.LongSign, jutil.StringSign}, int64(ref), string(pattern))
 	if err != nil {
+		jutil.GoDecRef(ref)
 		return jutil.NullObject, err
 	}
-	jutil.GoRef(&pattern) // Un-refed when the Java BlessingRootsImpl is finalized.
 	return jPattern, nil
 }
 
@@ -149,11 +151,11 @@ func GoBlessingPattern(env jutil.Env, jPattern jutil.Object) (pattern security.B
 	if jPattern.IsNull() {
 		return "", nil
 	}
-	goPtr, err := jutil.CallLongMethod(env, jPattern, "nativePtr", nil)
+	ref, err := jutil.CallLongMethod(env, jPattern, "nativeRef", nil)
 	if err != nil {
 		return "", err
 	}
-	return (*(*security.BlessingPattern)(jutil.NativePtr(goPtr))), nil
+	return (*(*security.BlessingPattern)(jutil.GoRefValue(jutil.Ref(ref)))), nil
 }
 
 // JavaPublicKey converts the provided Go PublicKey into Java PublicKey.

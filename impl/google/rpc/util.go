@@ -24,11 +24,12 @@ func JavaServer(env jutil.Env, server rpc.Server) (jutil.Object, error) {
 	if server == nil {
 		return jutil.NullObject, fmt.Errorf("Go Server value cannot be nil")
 	}
-	jServer, err := jutil.NewObject(env, jServerImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&server)))
+	ref := jutil.GoNewRef(&server) // Un-refed when the Java Server object is finalized.
+	jServer, err := jutil.NewObject(env, jServerImplClass, []jutil.Sign{jutil.LongSign}, int64(ref))
 	if err != nil {
+		jutil.GoDecRef(ref)
 		return jutil.NullObject, err
 	}
-	jutil.GoRef(&server) // Un-refed when the Java Server object is finalized.
 	return jServer, nil
 }
 
@@ -37,11 +38,12 @@ func JavaClient(env jutil.Env, client rpc.Client) (jutil.Object, error) {
 	if client == nil {
 		return jutil.NullObject, nil
 	}
-	jClient, err := jutil.NewObject(env, jClientImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&client)))
+	ref := jutil.GoNewRef(&client) // Un-refed when the Java Client object is finalized.
+	jClient, err := jutil.NewObject(env, jClientImplClass, []jutil.Sign{jutil.LongSign}, int64(ref))
 	if err != nil {
+		jutil.GoDecRef(ref)
 		return jutil.NullObject, err
 	}
-	jutil.GoRef(&client) // Un-refed when the Java Client object is finalized.
 	return jClient, nil
 }
 
@@ -60,11 +62,12 @@ func javaStreamServerCall(env jutil.Env, jContext jutil.Object, call rpc.StreamS
 		return jutil.NullObject, err
 	}
 	serverCallSign := jutil.ClassSign("io.v.v23.rpc.ServerCall")
-	jStreamServerCall, err := jutil.NewObject(env, jStreamServerCallImplClass, []jutil.Sign{jutil.LongSign, streamSign, serverCallSign}, int64(jutil.PtrValue(&call)), jStream, jServerCall)
+	ref := jutil.GoNewRef(&call) // Un-refed when the Java StreamServerCall object is finalized.
+	jStreamServerCall, err := jutil.NewObject(env, jStreamServerCallImplClass, []jutil.Sign{jutil.LongSign, streamSign, serverCallSign}, int64(ref), jStream, jServerCall)
 	if err != nil {
+		jutil.GoDecRef(ref)
 		return jutil.NullObject, err
 	}
-	jutil.GoRef(&call) // Un-refed when the Java StreamServerCall object is finalized.
 	return jStreamServerCall, nil
 }
 
@@ -77,21 +80,23 @@ func javaCall(env jutil.Env, jContext jutil.Object, call rpc.ClientCall) (jutil.
 	if err != nil {
 		return jutil.NullObject, err
 	}
-	jCall, err := jutil.NewObject(env, jClientCallImplClass, []jutil.Sign{contextSign, jutil.LongSign, streamSign}, jContext, int64(jutil.PtrValue(&call)), jStream)
+	ref := jutil.GoNewRef(&call) // Un-refed when the Java Call object is finalized.
+	jCall, err := jutil.NewObject(env, jClientCallImplClass, []jutil.Sign{contextSign, jutil.LongSign, streamSign}, jContext, int64(ref), jStream)
 	if err != nil {
+		jutil.GoDecRef(ref)
 		return jutil.NullObject, err
 	}
-	jutil.GoRef(&call) // Un-refed when the Java Call object is finalized.
 	return jCall, nil
 }
 
 // javaStream converts the provided Go stream into a Java Stream object.
 func javaStream(env jutil.Env, jContext jutil.Object, stream rpc.Stream) (jutil.Object, error) {
-	jStream, err := jutil.NewObject(env, jStreamImplClass, []jutil.Sign{contextSign, jutil.LongSign}, jContext, int64(jutil.PtrValue(&stream)))
+	ref := jutil.GoNewRef(&stream) // Un-refed when the Java stream object is finalized.
+	jStream, err := jutil.NewObject(env, jStreamImplClass, []jutil.Sign{contextSign, jutil.LongSign}, jContext, int64(ref))
 	if err != nil {
+		jutil.GoDecRef(ref)
 		return jutil.NullObject, err
 	}
-	jutil.GoRef(&stream) // Un-refed when the Java stream object is finalized.
 	return jStream, nil
 }
 
@@ -274,11 +279,12 @@ func GoListenAddrs(env jutil.Env, jAddrs jutil.Object) (rpc.ListenAddrs, error) 
 
 // JavaServerCall converts a Go rpc.ServerCall into a Java ServerCall object.
 func JavaServerCall(env jutil.Env, serverCall rpc.ServerCall) (jutil.Object, error) {
-	jServerCall, err := jutil.NewObject(env, jServerCallImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&serverCall)))
+	ref := jutil.GoNewRef(&serverCall) // Un-refed when the Java ServerCall object is finalized.
+	jServerCall, err := jutil.NewObject(env, jServerCallImplClass, []jutil.Sign{jutil.LongSign}, int64(ref))
 	if err != nil {
+		jutil.GoDecRef(ref)
 		return jutil.NullObject, err
 	}
-	jutil.GoRef(&serverCall) // Un-refed when the Java ServerCall object is finalized.
 	return jServerCall, nil
 }
 
@@ -345,11 +351,12 @@ func GoNetworkAddressArray(env jutil.Env, jAddrs jutil.Object) ([]net.Addr, erro
 // JavaAddressChooser converts a Go address chooser function into a Java
 // AddressChooser object.
 func JavaAddressChooser(env jutil.Env, chooser rpc.AddressChooser) (jutil.Object, error) {
-	jAddressChooser, err := jutil.NewObject(env, jAddressChooserImplClass, []jutil.Sign{jutil.LongSign}, int64(jutil.PtrValue(&chooser)))
+	ref := jutil.GoNewRef(&chooser) // Un-refed when the Java AddressChooser object is finalized.
+	jAddressChooser, err := jutil.NewObject(env, jAddressChooserImplClass, []jutil.Sign{jutil.LongSign}, int64(ref))
 	if err != nil {
+		jutil.GoDecRef(ref)
 		return jutil.NullObject, err
 	}
-	jutil.GoRef(&chooser) // Un-refed when the Java AddressChooser object is finalized.
 	return jAddressChooser, nil
 }
 

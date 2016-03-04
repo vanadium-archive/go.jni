@@ -95,7 +95,7 @@ func Java_io_v_impl_google_lib_discovery_UUIDUtil_attributeUUID(jenv *C.JNIEnv, 
 }
 
 //export Java_io_v_impl_google_lib_discovery_DiscoveryImpl_nativeAdvertise
-func Java_io_v_impl_google_lib_discovery_DiscoveryImpl_nativeAdvertise(jenv *C.JNIEnv, _ C.jobject, dPtr C.jlong, jCtx C.jobject, jAdObj C.jobject, jVisibilityObj C.jobject, jCbObj C.jobject) {
+func Java_io_v_impl_google_lib_discovery_DiscoveryImpl_nativeAdvertise(jenv *C.JNIEnv, _ C.jobject, goRef C.jlong, jCtx C.jobject, jAdObj C.jobject, jVisibilityObj C.jobject, jCbObj C.jobject) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	ctx, _, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jCtx))))
 	if err != nil {
@@ -103,7 +103,7 @@ func Java_io_v_impl_google_lib_discovery_DiscoveryImpl_nativeAdvertise(jenv *C.J
 		return
 	}
 
-	d := *(*discovery.T)(jutil.NativePtr(dPtr))
+	d := *(*discovery.T)(jutil.GoRefValue(jutil.Ref(goRef)))
 	jAd := jutil.Object(uintptr(unsafe.Pointer(jAdObj)))
 	jVisibility := jutil.Object(uintptr(unsafe.Pointer(jVisibilityObj)))
 
@@ -151,7 +151,7 @@ func Java_io_v_impl_google_lib_discovery_DiscoveryImpl_nativeAdvertise(jenv *C.J
 }
 
 //export Java_io_v_impl_google_lib_discovery_DiscoveryImpl_nativeScan
-func Java_io_v_impl_google_lib_discovery_DiscoveryImpl_nativeScan(jenv *C.JNIEnv, _ C.jobject, dPtr C.jlong, jCtx C.jobject, jQuery C.jstring) C.jobject {
+func Java_io_v_impl_google_lib_discovery_DiscoveryImpl_nativeScan(jenv *C.JNIEnv, _ C.jobject, goRef C.jlong, jCtx C.jobject, jQuery C.jstring) C.jobject {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	ctx, _, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jCtx))))
 	if err != nil {
@@ -159,7 +159,7 @@ func Java_io_v_impl_google_lib_discovery_DiscoveryImpl_nativeScan(jenv *C.JNIEnv
 		return nil
 	}
 
-	d := *(*discovery.T)(jutil.NativePtr(dPtr))
+	d := *(*discovery.T)(jutil.GoRefValue(jutil.Ref(goRef)))
 	query := jutil.GoString(env, jutil.Object(uintptr(unsafe.Pointer(jQuery))))
 
 	scanCh, err := d.Scan(ctx, query)
@@ -193,12 +193,12 @@ func Java_io_v_impl_google_lib_discovery_DiscoveryImpl_nativeScan(jenv *C.JNIEnv
 }
 
 //export Java_io_v_impl_google_lib_discovery_DiscoveryImpl_nativeFinalize
-func Java_io_v_impl_google_lib_discovery_DiscoveryImpl_nativeFinalize(jenv *C.JNIEnv, _ C.jobject, dPtr C.jlong) {
-	jutil.GoUnref(jutil.NativePtr(dPtr))
+func Java_io_v_impl_google_lib_discovery_DiscoveryImpl_nativeFinalize(jenv *C.JNIEnv, _ C.jobject, goRef C.jlong) {
+	jutil.GoDecRef(jutil.Ref(goRef))
 }
 
 //export Java_io_v_impl_google_lib_discovery_UpdateImpl_nativeAttachment
-func Java_io_v_impl_google_lib_discovery_UpdateImpl_nativeAttachment(jenv *C.JNIEnv, _ C.jobject, uPtr C.jlong, jCtx C.jobject, jName C.jstring, jCbObj C.jobject) {
+func Java_io_v_impl_google_lib_discovery_UpdateImpl_nativeAttachment(jenv *C.JNIEnv, _ C.jobject, goRef C.jlong, jCtx C.jobject, jName C.jstring, jCbObj C.jobject) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	ctx, _, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jCtx))))
 	if err != nil {
@@ -206,7 +206,7 @@ func Java_io_v_impl_google_lib_discovery_UpdateImpl_nativeAttachment(jenv *C.JNI
 		return
 	}
 
-	update := *(*discovery.Update)(jutil.NativePtr(uPtr))
+	update := *(*discovery.Update)(jutil.GoRefValue(jutil.Ref(goRef)))
 	name := jutil.GoString(env, jutil.Object(uintptr(unsafe.Pointer(jName))))
 
 	jCb := jutil.Object(uintptr(unsafe.Pointer(jCbObj)))
@@ -230,8 +230,8 @@ func Java_io_v_impl_google_lib_discovery_UpdateImpl_nativeAttachment(jenv *C.JNI
 }
 
 //export Java_io_v_impl_google_lib_discovery_UpdateImpl_nativeFinalize
-func Java_io_v_impl_google_lib_discovery_UpdateImpl_nativeFinalize(jenv *C.JNIEnv, _ C.jobject, uPtr C.jlong) {
-	jutil.GoUnref(jutil.NativePtr(uPtr))
+func Java_io_v_impl_google_lib_discovery_UpdateImpl_nativeFinalize(jenv *C.JNIEnv, _ C.jobject, goRef C.jlong) {
+	jutil.GoDecRef(jutil.Ref(goRef))
 }
 
 //export Java_io_v_impl_google_lib_discovery_DiscoveryTestUtil_injectMockDiscovery
