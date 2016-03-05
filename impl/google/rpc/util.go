@@ -109,15 +109,15 @@ func JavaServerStatus(env jutil.Env, status rpc.ServerStatus) (jutil.Object, err
 		return jutil.NullObject, err
 	}
 
-	// Create Java array of mounts.
-	mountarr := make([]jutil.Object, len(status.Mounts))
-	for i, mount := range status.Mounts {
+	// Create Java array of publisher entries.
+	pubarr := make([]jutil.Object, len(status.PublisherStatus))
+	for i, e := range status.PublisherStatus {
 		var err error
-		if mountarr[i], err = JavaMountStatus(env, mount); err != nil {
+		if pubarr[i], err = JavaMountStatus(env, e); err != nil {
 			return jutil.NullObject, err
 		}
 	}
-	jMounts, err := jutil.JObjectArray(env, mountarr, jMountStatusClass)
+	jPublisherStatus, err := jutil.JObjectArray(env, pubarr, jMountStatusClass)
 	if err != nil {
 		return jutil.NullObject, err
 	}
@@ -160,7 +160,7 @@ func JavaServerStatus(env jutil.Env, status rpc.ServerStatus) (jutil.Object, err
 
 	// Create final server status.
 	mountStatusSign := jutil.ClassSign("io.v.v23.rpc.MountStatus")
-	jServerStatus, err := jutil.NewObject(env, jServerStatusClass, []jutil.Sign{serverStateSign, jutil.BoolSign, jutil.ArraySign(mountStatusSign), jutil.ArraySign(jutil.StringSign), jutil.MapSign, jutil.MapSign}, jState, status.ServesMountTable, jMounts, eps, jLnErrors, jProxyErrors)
+	jServerStatus, err := jutil.NewObject(env, jServerStatusClass, []jutil.Sign{serverStateSign, jutil.BoolSign, jutil.ArraySign(mountStatusSign), jutil.ArraySign(jutil.StringSign), jutil.MapSign, jutil.MapSign}, jState, status.ServesMountTable, jPublisherStatus, eps, jLnErrors, jProxyErrors)
 	if err != nil {
 		return jutil.NullObject, err
 	}
@@ -184,10 +184,12 @@ func JavaServerState(env jutil.Env, state rpc.ServerState) (jutil.Object, error)
 	return jutil.CallStaticObjectMethod(env, jServerStateClass, "valueOf", []jutil.Sign{jutil.StringSign}, serverStateSign, name)
 }
 
-// JavaMountStatus converts the provided rpc.MountStatus value into a Java
+// JavaMountStatus converts the provided rpc.PublisherEntry value into a Java
 // MountStatus object.
-func JavaMountStatus(env jutil.Env, status rpc.MountStatus) (jutil.Object, error) {
-	jStatus, err := jutil.NewObject(env, jMountStatusClass, []jutil.Sign{jutil.StringSign, jutil.StringSign, jutil.DateTimeSign, jutil.VExceptionSign, jutil.DurationSign, jutil.DateTimeSign, jutil.VExceptionSign}, status.Name, status.Server, status.LastMount, status.LastMountErr, status.TTL, status.LastUnmount, status.LastUnmountErr)
+// TODO(suharshs): Convert the Java API from MountStatus to PublisherEntry and add PublisherEntry
+// to the Java PublisherEntry (maybe).
+func JavaMountStatus(env jutil.Env, entry rpc.PublisherEntry) (jutil.Object, error) {
+	jStatus, err := jutil.NewObject(env, jMountStatusClass, []jutil.Sign{jutil.StringSign, jutil.StringSign, jutil.DateTimeSign, jutil.VExceptionSign, jutil.DurationSign, jutil.DateTimeSign, jutil.VExceptionSign}, entry.Name, entry.Server, entry.LastMount, entry.LastMountErr, entry.TTL, entry.LastUnmount, entry.LastUnmountErr)
 	if err != nil {
 		return jutil.NullObject, err
 	}
