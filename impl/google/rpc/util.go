@@ -113,11 +113,11 @@ func JavaServerStatus(env jutil.Env, status rpc.ServerStatus) (jutil.Object, err
 	pubarr := make([]jutil.Object, len(status.PublisherStatus))
 	for i, e := range status.PublisherStatus {
 		var err error
-		if pubarr[i], err = JavaMountStatus(env, e); err != nil {
+		if pubarr[i], err = JavaPublisherEntry(env, e); err != nil {
 			return jutil.NullObject, err
 		}
 	}
-	jPublisherStatus, err := jutil.JObjectArray(env, pubarr, jMountStatusClass)
+	jPublisherStatus, err := jutil.JObjectArray(env, pubarr, jPublisherEntryClass)
 	if err != nil {
 		return jutil.NullObject, err
 	}
@@ -159,8 +159,8 @@ func JavaServerStatus(env jutil.Env, status rpc.ServerStatus) (jutil.Object, err
 	}
 
 	// Create final server status.
-	mountStatusSign := jutil.ClassSign("io.v.v23.rpc.MountStatus")
-	jServerStatus, err := jutil.NewObject(env, jServerStatusClass, []jutil.Sign{serverStateSign, jutil.BoolSign, jutil.ArraySign(mountStatusSign), jutil.ArraySign(jutil.StringSign), jutil.MapSign, jutil.MapSign}, jState, status.ServesMountTable, jPublisherStatus, eps, jLnErrors, jProxyErrors)
+	publisherEntrySign := jutil.ClassSign("io.v.v23.rpc.PublisherEntry")
+	jServerStatus, err := jutil.NewObject(env, jServerStatusClass, []jutil.Sign{serverStateSign, jutil.BoolSign, jutil.ArraySign(publisherEntrySign), jutil.ArraySign(jutil.StringSign), jutil.MapSign, jutil.MapSign}, jState, status.ServesMountTable, jPublisherStatus, eps, jLnErrors, jProxyErrors)
 	if err != nil {
 		return jutil.NullObject, err
 	}
@@ -184,12 +184,12 @@ func JavaServerState(env jutil.Env, state rpc.ServerState) (jutil.Object, error)
 	return jutil.CallStaticObjectMethod(env, jServerStateClass, "valueOf", []jutil.Sign{jutil.StringSign}, serverStateSign, name)
 }
 
-// JavaMountStatus converts the provided rpc.PublisherEntry value into a Java
-// MountStatus object.
-// TODO(suharshs): Convert the Java API from MountStatus to PublisherEntry and add PublisherEntry
-// to the Java PublisherEntry (maybe).
-func JavaMountStatus(env jutil.Env, entry rpc.PublisherEntry) (jutil.Object, error) {
-	jStatus, err := jutil.NewObject(env, jMountStatusClass, []jutil.Sign{jutil.StringSign, jutil.StringSign, jutil.DateTimeSign, jutil.VExceptionSign, jutil.DurationSign, jutil.DateTimeSign, jutil.VExceptionSign}, entry.Name, entry.Server, entry.LastMount, entry.LastMountErr, entry.TTL, entry.LastUnmount, entry.LastUnmountErr)
+// JavaPublisherEntry converts the provided rpc.PublisherEntry value into a Java
+// PublisherEntry object.
+// TODO(suharshs): Add PublisherState to the java publisher entry? May not make sense, since there is no
+// notification channel in Java.
+func JavaPublisherEntry(env jutil.Env, entry rpc.PublisherEntry) (jutil.Object, error) {
+	jStatus, err := jutil.NewObject(env, jPublisherEntryClass, []jutil.Sign{jutil.StringSign, jutil.StringSign, jutil.DateTimeSign, jutil.VExceptionSign, jutil.DurationSign, jutil.DateTimeSign, jutil.VExceptionSign}, entry.Name, entry.Server, entry.LastMount, entry.LastMountErr, entry.TTL, entry.LastUnmount, entry.LastUnmountErr)
 	if err != nil {
 		return jutil.NullObject, err
 	}

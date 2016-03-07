@@ -60,8 +60,8 @@ var (
 	jListenSpecClass jutil.Class
 	// Global reference for io.v.v23.rpc.ListenSpec$Address class.
 	jListenSpecAddressClass jutil.Class
-	// Global reference for io.v.v23.rpc.MountStatus class.
-	jMountStatusClass jutil.Class
+	// Global reference for io.v.v23.rpc.PublisherEntry class.
+	jPublisherEntryClass jutil.Class
 	// Global reference for io.v.v23.rpc.NetworkAddress class.
 	jNetworkAddressClass jutil.Class
 	// Global reference for io.v.v23.rpc.ProxyStatus class.
@@ -140,7 +140,7 @@ func Init(env jutil.Env) error {
 	if err != nil {
 		return err
 	}
-	jMountStatusClass, err = jutil.JFindClass(env, "io/v/v23/rpc/MountStatus")
+	jPublisherEntryClass, err = jutil.JFindClass(env, "io/v/v23/rpc/PublisherEntry")
 	if err != nil {
 		return err
 	}
