@@ -14,6 +14,7 @@ import (
 	"v.io/v23/verror"
 
 	idiscovery "v.io/x/ref/lib/discovery"
+	gdiscovery "v.io/x/ref/lib/discovery/global"
 
 	jchannel "v.io/x/jni/impl/google/channel"
 	jutil "v.io/x/jni/util"
@@ -234,13 +235,46 @@ func Java_io_v_impl_google_lib_discovery_UpdateImpl_nativeFinalize(jenv *C.JNIEn
 	jutil.GoDecRef(jutil.Ref(goRef))
 }
 
-//export Java_io_v_impl_google_lib_discovery_DiscoveryTestUtil_injectMockDiscovery
-func Java_io_v_impl_google_lib_discovery_DiscoveryTestUtil_injectMockDiscovery(jenv *C.JNIEnv, _ C.jclass, jCtx C.jobject) {
+//export Java_io_v_impl_google_lib_discovery_GlobalDiscovery_nativeNewDiscovery
+func Java_io_v_impl_google_lib_discovery_GlobalDiscovery_nativeNewDiscovery(jenv *C.JNIEnv, jRuntime C.jclass, jContext C.jobject, jPath C.jstring, jMountTTL, jScanInterval C.jobject) C.jobject {
+	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
+	ctx, _, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jContext))))
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	path := jutil.GoString(env, jutil.Object(uintptr(unsafe.Pointer(jPath))))
+	mountTTL, err := jutil.GoDuration(env, jutil.Object(uintptr(unsafe.Pointer(jMountTTL))))
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	scanInterval, err := jutil.GoDuration(env, jutil.Object(uintptr(unsafe.Pointer(jScanInterval))))
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+
+	discovery, err := gdiscovery.NewWithTTL(ctx, path, mountTTL, scanInterval)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	jDiscovery, err := JavaDiscovery(env, discovery)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	return C.jobject(unsafe.Pointer(jDiscovery))
+}
+
+//export Java_io_v_impl_google_lib_discovery_FactoryUtil_injectMockPlugin
+func Java_io_v_impl_google_lib_discovery_FactoryUtil_injectMockPlugin(jenv *C.JNIEnv, _ C.jclass, jCtx C.jobject) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	ctx, _, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jCtx))))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return
 	}
-	injectMockDiscovery(ctx)
+	injectMockPlugin(ctx)
 }

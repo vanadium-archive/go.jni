@@ -55,8 +55,8 @@ func javaUUID(env jutil.Env, uuid idiscovery.Uuid) (jutil.Object, error) {
 	return jutil.NewObject(env, jUUIDClass, []jutil.Sign{jutil.LongSign, jutil.LongSign}, high, low)
 }
 
-// injectMockDiscovery injects a discovery instance with a mock plugin into a runtime.
-func injectMockDiscovery(ctx *context.T) error {
+// injectMockPlugin injects a discovery factory with a mock plugin into a runtime.
+func injectMockPlugin(ctx *context.T) error {
 	df, err := idiscovery.NewFactory(ctx, mock.New())
 	if err != nil {
 		return err
