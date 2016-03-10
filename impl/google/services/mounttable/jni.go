@@ -11,8 +11,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"os"
-	"path/filepath"
 	"unsafe"
 
 	"v.io/v23"
@@ -65,13 +63,6 @@ func Java_io_v_impl_google_services_mounttable_MountTableServer_nativeWithNewSer
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
-	}
-	if rootDir == "" {
-		rootDir = filepath.Join(os.TempDir(), "mounttable")
-		if err := os.Mkdir(rootDir, 0755); err != nil && !os.IsExist(err) {
-			jutil.JThrowV(env, err)
-			return nil
-		}
 	}
 	permsJMap, err := jutil.CallMapMethod(env, jParams, "getPermissions", nil)
 	if err != nil {
