@@ -133,6 +133,7 @@ func (t *ComplexErrorParamTarget) FinishField(_, _ vdl.Target) error {
 	return nil
 }
 func (t *ComplexErrorParamTarget) FinishFields(_ vdl.FieldsTarget) error {
+
 	return nil
 }
 
@@ -160,6 +161,7 @@ func (t *fortune5b5d75696e743332Target) FinishElem(elem vdl.Target) error {
 	return nil
 }
 func (t *fortune5b5d75696e743332Target) FinishList(elem vdl.ListTarget) error {
+
 	return nil
 }
 
