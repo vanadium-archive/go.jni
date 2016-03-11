@@ -8,6 +8,7 @@
 package fortune
 
 import (
+	"fmt"
 	"io"
 	"v.io/v23"
 	"v.io/v23/context"
@@ -30,7 +31,6 @@ func (ComplexErrorParam) __VDLReflect(struct {
 }
 
 func (m *ComplexErrorParam) FillVDLTarget(t vdl.Target, tt *vdl.Type) error {
-
 	if __VDLType_fortune_v_io_x_jni_test_fortune_ComplexErrorParam == nil || __VDLTypefortune0 == nil {
 		panic("Initialization order error: types generated for FillVDLTarget not initialized. Consider moving caller to an init() block.")
 	}
@@ -99,6 +99,67 @@ func (m *ComplexErrorParam) FillVDLTarget(t vdl.Target, tt *vdl.Type) error {
 }
 
 func (m *ComplexErrorParam) MakeVDLTarget() vdl.Target {
+	return &ComplexErrorParamTarget{Value: m}
+}
+
+type ComplexErrorParamTarget struct {
+	Value *ComplexErrorParam
+	vdl.TargetBase
+	vdl.FieldsTargetBase
+}
+
+func (t *ComplexErrorParamTarget) StartFields(tt *vdl.Type) (vdl.FieldsTarget, error) {
+	if !vdl.Compatible(tt, __VDLType_fortune_v_io_x_jni_test_fortune_ComplexErrorParam) {
+		return nil, fmt.Errorf("type %v incompatible with %v", tt, __VDLType_fortune_v_io_x_jni_test_fortune_ComplexErrorParam)
+	}
+	return t, nil
+}
+func (t *ComplexErrorParamTarget) StartField(name string) (key, field vdl.Target, _ error) {
+	switch name {
+	case "Str":
+		val, err := &vdl.StringTarget{Value: &t.Value.Str}, error(nil)
+		return nil, val, err
+	case "Num":
+		val, err := &vdl.Int32Target{Value: &t.Value.Num}, error(nil)
+		return nil, val, err
+	case "List":
+		val, err := &fortune5b5d75696e743332Target{Value: &t.Value.List}, error(nil)
+		return nil, val, err
+	default:
+		return nil, nil, fmt.Errorf("field %s not in struct %v", name, __VDLType_fortune_v_io_x_jni_test_fortune_ComplexErrorParam)
+	}
+}
+func (t *ComplexErrorParamTarget) FinishField(_, _ vdl.Target) error {
+	return nil
+}
+func (t *ComplexErrorParamTarget) FinishFields(_ vdl.FieldsTarget) error {
+	return nil
+}
+
+type fortune5b5d75696e743332Target struct {
+	Value *[]uint32
+	vdl.TargetBase
+	vdl.ListTargetBase
+}
+
+func (t *fortune5b5d75696e743332Target) StartList(tt *vdl.Type, len int) (vdl.ListTarget, error) {
+	if !vdl.Compatible(tt, __VDLTypefortune1) {
+		return nil, fmt.Errorf("type %v incompatible with %v", tt, __VDLTypefortune1)
+	}
+	if cap(*t.Value) < len {
+		*t.Value = make([]uint32, len)
+	} else {
+		*t.Value = (*t.Value)[:len]
+	}
+	return t, nil
+}
+func (t *fortune5b5d75696e743332Target) StartElem(index int) (elem vdl.Target, _ error) {
+	return &vdl.Uint32Target{Value: &(*t.Value)[index]}, error(nil)
+}
+func (t *fortune5b5d75696e743332Target) FinishElem(elem vdl.Target) error {
+	return nil
+}
+func (t *fortune5b5d75696e743332Target) FinishList(elem vdl.ListTarget) error {
 	return nil
 }
 
