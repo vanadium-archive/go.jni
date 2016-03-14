@@ -103,7 +103,10 @@ func (m *ComplexErrorParam) MakeVDLTarget() vdl.Target {
 }
 
 type ComplexErrorParamTarget struct {
-	Value *ComplexErrorParam
+	Value      *ComplexErrorParam
+	strTarget  vdl.StringTarget
+	numTarget  vdl.Int32Target
+	listTarget unnamed_5b5d75696e743332Target
 	vdl.TargetBase
 	vdl.FieldsTargetBase
 }
@@ -117,14 +120,17 @@ func (t *ComplexErrorParamTarget) StartFields(tt *vdl.Type) (vdl.FieldsTarget, e
 func (t *ComplexErrorParamTarget) StartField(name string) (key, field vdl.Target, _ error) {
 	switch name {
 	case "Str":
-		val, err := &vdl.StringTarget{Value: &t.Value.Str}, error(nil)
-		return nil, val, err
+		t.strTarget.Value = &t.Value.Str
+		target, err := &t.strTarget, error(nil)
+		return nil, target, err
 	case "Num":
-		val, err := &vdl.Int32Target{Value: &t.Value.Num}, error(nil)
-		return nil, val, err
+		t.numTarget.Value = &t.Value.Num
+		target, err := &t.numTarget, error(nil)
+		return nil, target, err
 	case "List":
-		val, err := &unnamed_5b5d75696e743332_Target{Value: &t.Value.List}, error(nil)
-		return nil, val, err
+		t.listTarget.Value = &t.Value.List
+		target, err := &t.listTarget, error(nil)
+		return nil, target, err
 	default:
 		return nil, nil, fmt.Errorf("field %s not in struct %v", name, __VDLType_v_io_x_jni_test_fortune_ComplexErrorParam)
 	}
@@ -137,13 +143,15 @@ func (t *ComplexErrorParamTarget) FinishFields(_ vdl.FieldsTarget) error {
 	return nil
 }
 
-type unnamed_5b5d75696e743332_Target struct {
-	Value *[]uint32
+// []uint32
+type unnamed_5b5d75696e743332Target struct {
+	Value      *[]uint32
+	elemTarget vdl.Uint32Target
 	vdl.TargetBase
 	vdl.ListTargetBase
 }
 
-func (t *unnamed_5b5d75696e743332_Target) StartList(tt *vdl.Type, len int) (vdl.ListTarget, error) {
+func (t *unnamed_5b5d75696e743332Target) StartList(tt *vdl.Type, len int) (vdl.ListTarget, error) {
 	if !vdl.Compatible(tt, __VDLType1) {
 		return nil, fmt.Errorf("type %v incompatible with %v", tt, __VDLType1)
 	}
@@ -154,13 +162,15 @@ func (t *unnamed_5b5d75696e743332_Target) StartList(tt *vdl.Type, len int) (vdl.
 	}
 	return t, nil
 }
-func (t *unnamed_5b5d75696e743332_Target) StartElem(index int) (elem vdl.Target, _ error) {
-	return &vdl.Uint32Target{Value: &(*t.Value)[index]}, error(nil)
+func (t *unnamed_5b5d75696e743332Target) StartElem(index int) (elem vdl.Target, _ error) {
+	t.elemTarget.Value = &(*t.Value)[index]
+	target, err := &t.elemTarget, error(nil)
+	return target, err
 }
-func (t *unnamed_5b5d75696e743332_Target) FinishElem(elem vdl.Target) error {
+func (t *unnamed_5b5d75696e743332Target) FinishElem(elem vdl.Target) error {
 	return nil
 }
-func (t *unnamed_5b5d75696e743332_Target) FinishList(elem vdl.ListTarget) error {
+func (t *unnamed_5b5d75696e743332Target) FinishList(elem vdl.ListTarget) error {
 
 	return nil
 }
