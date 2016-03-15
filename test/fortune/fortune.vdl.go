@@ -19,6 +19,11 @@ import (
 	"v.io/v23/verror"
 )
 
+var _ = __VDLInit() // Must be first; see __VDLInit comments for details.
+
+//////////////////////////////////////////////////
+// Type definitions
+
 type ComplexErrorParam struct {
 	Str  string
 	Num  int32
@@ -31,9 +36,6 @@ func (ComplexErrorParam) __VDLReflect(struct {
 }
 
 func (m *ComplexErrorParam) FillVDLTarget(t vdl.Target, tt *vdl.Type) error {
-	if __VDLType_v_io_x_jni_test_fortune_ComplexErrorParam == nil || __VDLType0 == nil {
-		panic("Initialization order error: types generated for FillVDLTarget not initialized. Consider moving caller to an init() block.")
-	}
 	fieldsTarget1, err := t.StartFields(tt)
 	if err != nil {
 		return err
@@ -44,7 +46,7 @@ func (m *ComplexErrorParam) FillVDLTarget(t vdl.Target, tt *vdl.Type) error {
 		return err
 	}
 	if err != vdl.ErrFieldNoExist {
-		if err := fieldTarget3.FromString(string(m.Str), vdl.StringType); err != nil {
+		if err := fieldTarget3.FromString(string(m.Str), tt.NonOptional().Field(0).Type); err != nil {
 			return err
 		}
 		if err := fieldsTarget1.FinishField(keyTarget2, fieldTarget3); err != nil {
@@ -56,7 +58,7 @@ func (m *ComplexErrorParam) FillVDLTarget(t vdl.Target, tt *vdl.Type) error {
 		return err
 	}
 	if err != vdl.ErrFieldNoExist {
-		if err := fieldTarget5.FromInt(int64(m.Num), vdl.Int32Type); err != nil {
+		if err := fieldTarget5.FromInt(int64(m.Num), tt.NonOptional().Field(1).Type); err != nil {
 			return err
 		}
 		if err := fieldsTarget1.FinishField(keyTarget4, fieldTarget5); err != nil {
@@ -69,7 +71,7 @@ func (m *ComplexErrorParam) FillVDLTarget(t vdl.Target, tt *vdl.Type) error {
 	}
 	if err != vdl.ErrFieldNoExist {
 
-		listTarget8, err := fieldTarget7.StartList(__VDLType1, len(m.List))
+		listTarget8, err := fieldTarget7.StartList(tt.NonOptional().Field(2).Type, len(m.List))
 		if err != nil {
 			return err
 		}
@@ -78,7 +80,7 @@ func (m *ComplexErrorParam) FillVDLTarget(t vdl.Target, tt *vdl.Type) error {
 			if err != nil {
 				return err
 			}
-			if err := elemTarget9.FromUint(uint64(elem10), vdl.Uint32Type); err != nil {
+			if err := elemTarget9.FromUint(uint64(elem10), tt.NonOptional().Field(2).Type.Elem()); err != nil {
 				return err
 			}
 			if err := listTarget8.FinishElem(elemTarget9); err != nil {
@@ -113,8 +115,8 @@ type ComplexErrorParamTarget struct {
 
 func (t *ComplexErrorParamTarget) StartFields(tt *vdl.Type) (vdl.FieldsTarget, error) {
 
-	if !vdl.Compatible(tt, __VDLType_v_io_x_jni_test_fortune_ComplexErrorParam) {
-		return nil, fmt.Errorf("type %v incompatible with %v", tt, __VDLType_v_io_x_jni_test_fortune_ComplexErrorParam)
+	if ttWant := vdl.TypeOf((*ComplexErrorParam)(nil)).Elem(); !vdl.Compatible(tt, ttWant) {
+		return nil, fmt.Errorf("type %v incompatible with %v", tt, ttWant)
 	}
 	return t, nil
 }
@@ -133,7 +135,7 @@ func (t *ComplexErrorParamTarget) StartField(name string) (key, field vdl.Target
 		target, err := &t.listTarget, error(nil)
 		return nil, target, err
 	default:
-		return nil, nil, fmt.Errorf("field %s not in struct %v", name, __VDLType_v_io_x_jni_test_fortune_ComplexErrorParam)
+		return nil, nil, fmt.Errorf("field %s not in struct v.io/x/jni/test/fortune.ComplexErrorParam", name)
 	}
 }
 func (t *ComplexErrorParamTarget) FinishField(_, _ vdl.Target) error {
@@ -154,8 +156,8 @@ type unnamed_5b5d75696e743332Target struct {
 
 func (t *unnamed_5b5d75696e743332Target) StartList(tt *vdl.Type, len int) (vdl.ListTarget, error) {
 
-	if !vdl.Compatible(tt, __VDLType1) {
-		return nil, fmt.Errorf("type %v incompatible with %v", tt, __VDLType1)
+	if ttWant := vdl.TypeOf((*[]uint32)(nil)); !vdl.Compatible(tt, ttWant) {
+		return nil, fmt.Errorf("type %v incompatible with %v", tt, ttWant)
 	}
 	if cap(*t.Value) < len {
 		*t.Value = make([]uint32, len)
@@ -177,26 +179,12 @@ func (t *unnamed_5b5d75696e743332Target) FinishList(elem vdl.ListTarget) error {
 	return nil
 }
 
-func init() {
-	vdl.Register((*ComplexErrorParam)(nil))
-}
-
-var __VDLType0 *vdl.Type = vdl.TypeOf((*ComplexErrorParam)(nil))
-var __VDLType1 *vdl.Type = vdl.TypeOf([]uint32(nil))
-var __VDLType_v_io_x_jni_test_fortune_ComplexErrorParam *vdl.Type = vdl.TypeOf(ComplexErrorParam{})
-
-func __VDLEnsureNativeBuilt() {
-}
-
+//////////////////////////////////////////////////
+// Error definitions
 var (
 	ErrNoFortunes = verror.Register("v.io/x/jni/test/fortune.NoFortunes", verror.NoRetry, "{1:}{2:} no fortunes added")
 	ErrComplex    = verror.Register("v.io/x/jni/test/fortune.Complex", verror.NoRetry, "{1:}{2:} this is a complex error with params {3} {4} {5}")
 )
-
-func init() {
-	i18n.Cat().SetWithBase(i18n.LangID("en"), i18n.MsgID(ErrNoFortunes.ID), "{1:}{2:} no fortunes added")
-	i18n.Cat().SetWithBase(i18n.LangID("en"), i18n.MsgID(ErrComplex.ID), "{1:}{2:} this is a complex error with params {3} {4} {5}")
-}
 
 // NewErrNoFortunes returns an error with the ErrNoFortunes ID.
 func NewErrNoFortunes(ctx *context.T) error {
@@ -207,6 +195,9 @@ func NewErrNoFortunes(ctx *context.T) error {
 func NewErrComplex(ctx *context.T, first ComplexErrorParam, second string, third int32) error {
 	return verror.New(ErrComplex, ctx, first, second, third)
 }
+
+//////////////////////////////////////////////////
+// Interface definitions
 
 // FortuneClientMethods is the client interface
 // containing Fortune methods.
@@ -905,4 +896,34 @@ type implFortuneMultipleStreamingGetServerCallSend struct {
 
 func (s implFortuneMultipleStreamingGetServerCallSend) Send(item string) error {
 	return s.s.Send(item)
+}
+
+var __VDLInitCalled bool
+
+// __VDLInit performs vdl initialization.  It is safe to call multiple times.
+// If you have an init ordering issue, just insert the following line verbatim
+// into your source files in this package, right after the "package foo" clause:
+//
+//    var _ = __VDLInit()
+//
+// The purpose of this function is to ensure that vdl initialization occurs in
+// the right order, and very early in the init sequence.  In particular, vdl
+// registration and package variable initialization needs to occur before
+// functions like vdl.TypeOf will work properly.
+//
+// This function returns a dummy value, so that it can be used to initialize the
+// first var in the file, to take advantage of Go's defined init order.
+func __VDLInit() struct{} {
+	if __VDLInitCalled {
+		return struct{}{}
+	}
+
+	// Register types.
+	vdl.Register((*ComplexErrorParam)(nil))
+
+	// Set error format strings.
+	i18n.Cat().SetWithBase(i18n.LangID("en"), i18n.MsgID(ErrNoFortunes.ID), "{1:}{2:} no fortunes added")
+	i18n.Cat().SetWithBase(i18n.LangID("en"), i18n.MsgID(ErrComplex.ID), "{1:}{2:} this is a complex error with params {3} {4} {5}")
+
+	return struct{}{}
 }
