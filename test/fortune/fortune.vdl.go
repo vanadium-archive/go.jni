@@ -112,6 +112,7 @@ type ComplexErrorParamTarget struct {
 }
 
 func (t *ComplexErrorParamTarget) StartFields(tt *vdl.Type) (vdl.FieldsTarget, error) {
+
 	if !vdl.Compatible(tt, __VDLType_v_io_x_jni_test_fortune_ComplexErrorParam) {
 		return nil, fmt.Errorf("type %v incompatible with %v", tt, __VDLType_v_io_x_jni_test_fortune_ComplexErrorParam)
 	}
@@ -152,6 +153,7 @@ type unnamed_5b5d75696e743332Target struct {
 }
 
 func (t *unnamed_5b5d75696e743332Target) StartList(tt *vdl.Type, len int) (vdl.ListTarget, error) {
+
 	if !vdl.Compatible(tt, __VDLType1) {
 		return nil, fmt.Errorf("type %v incompatible with %v", tt, __VDLType1)
 	}
