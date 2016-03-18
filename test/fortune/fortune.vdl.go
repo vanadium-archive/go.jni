@@ -108,7 +108,7 @@ type ComplexErrorParamTarget struct {
 	Value      *ComplexErrorParam
 	strTarget  vdl.StringTarget
 	numTarget  vdl.Int32Target
-	listTarget unnamed_5b5d75696e743332Target
+	listTarget __VDLTarget1_list
 	vdl.TargetBase
 	vdl.FieldsTargetBase
 }
@@ -147,14 +147,14 @@ func (t *ComplexErrorParamTarget) FinishFields(_ vdl.FieldsTarget) error {
 }
 
 // []uint32
-type unnamed_5b5d75696e743332Target struct {
+type __VDLTarget1_list struct {
 	Value      *[]uint32
 	elemTarget vdl.Uint32Target
 	vdl.TargetBase
 	vdl.ListTargetBase
 }
 
-func (t *unnamed_5b5d75696e743332Target) StartList(tt *vdl.Type, len int) (vdl.ListTarget, error) {
+func (t *__VDLTarget1_list) StartList(tt *vdl.Type, len int) (vdl.ListTarget, error) {
 
 	if ttWant := vdl.TypeOf((*[]uint32)(nil)); !vdl.Compatible(tt, ttWant) {
 		return nil, fmt.Errorf("type %v incompatible with %v", tt, ttWant)
@@ -166,18 +166,23 @@ func (t *unnamed_5b5d75696e743332Target) StartList(tt *vdl.Type, len int) (vdl.L
 	}
 	return t, nil
 }
-func (t *unnamed_5b5d75696e743332Target) StartElem(index int) (elem vdl.Target, _ error) {
+func (t *__VDLTarget1_list) StartElem(index int) (elem vdl.Target, _ error) {
 	t.elemTarget.Value = &(*t.Value)[index]
 	target, err := &t.elemTarget, error(nil)
 	return target, err
 }
-func (t *unnamed_5b5d75696e743332Target) FinishElem(elem vdl.Target) error {
+func (t *__VDLTarget1_list) FinishElem(elem vdl.Target) error {
 	return nil
 }
-func (t *unnamed_5b5d75696e743332Target) FinishList(elem vdl.ListTarget) error {
+func (t *__VDLTarget1_list) FinishList(elem vdl.ListTarget) error {
 
 	return nil
 }
+
+// Create zero values for each type.
+var (
+	__VDLZeroComplexErrorParam = ComplexErrorParam{}
+)
 
 //////////////////////////////////////////////////
 // Error definitions
