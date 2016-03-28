@@ -14,7 +14,8 @@ import (
 	jsecurity "v.io/x/jni/v23/security"
 	jaccess "v.io/x/jni/v23/security/access"
 	jgroups "v.io/x/jni/v23/services/groups"
-	jnosql "v.io/x/jni/v23/syncbase/nosql"
+	// See TODO below.
+	//jsyncbase "v.io/x/jni/v23/syncbase"
 )
 
 // #include "jni.h"
@@ -42,8 +43,12 @@ func Init(env jutil.Env) error {
 	if err := jgroups.Init(env); err != nil {
 		return err
 	}
-	if err := jnosql.Init(env); err != nil {
-		return err
-	}
+	// TODO(sadovsky): Temporarily disable Syncbase Java code (as of 2016-03-28),
+	// while we update the code to the simplified API.
+	/*
+		if err := jsyncbase.Init(env); err != nil {
+			return err
+		}
+	*/
 	return nil
 }

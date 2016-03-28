@@ -4,13 +4,13 @@
 
 // +build java android
 
-package nosql
+package syncbase
 
 import (
 	"unsafe"
 
-	wire "v.io/v23/services/syncbase/nosql"
-	"v.io/v23/syncbase/nosql"
+	wire "v.io/v23/services/syncbase"
+	"v.io/v23/syncbase"
 
 	jutil "v.io/x/jni/util"
 	jcontext "v.io/x/jni/v23/context"
@@ -20,15 +20,15 @@ import (
 import "C"
 
 var (
-	// Global reference for io.v.v23.syncbase.nosql.DatabaseImpl class.
+	// Global reference for io.v.v23.syncbase.DatabaseImpl class.
 	jDatabaseImplClass jutil.Class
-	// Global reference for io.v.v23.syncbase.nosql.Conflict class.
+	// Global reference for io.v.v23.syncbase.Conflict class.
 	jConflictClass jutil.Class
-	// Global reference for io.v.v23.syncbase.nosql.Resolution class.
+	// Global reference for io.v.v23.syncbase.Resolution class.
 	jResolutionClass jutil.Class
-	// Global reference for io.v.v23.services.syncbase.nosql.BatchOptions class.
+	// Global reference for io.v.v23.services.syncbase.BatchOptions class.
 	jBatchOptionsClass jutil.Class
-	// Global reference for io.v.v23.services.syncbase.nosql.SchemaMetadata class.
+	// Global reference for io.v.v23.services.syncbase.SchemaMetadata class.
 	jSchemaMetadataClass jutil.Class
 )
 
@@ -37,31 +37,31 @@ var (
 // from the main Java thread (e.g., On_Load()).
 func Init(env jutil.Env) error {
 	var err error
-	jDatabaseImplClass, err = jutil.JFindClass(env, "io/v/v23/syncbase/nosql/DatabaseImpl")
+	jDatabaseImplClass, err = jutil.JFindClass(env, "io/v/v23/syncbase/DatabaseImpl")
 	if err != nil {
 		return err
 	}
-	jConflictClass, err = jutil.JFindClass(env, "io/v/v23/syncbase/nosql/Conflict")
+	jConflictClass, err = jutil.JFindClass(env, "io/v/v23/syncbase/Conflict")
 	if err != nil {
 		return err
 	}
-	jResolutionClass, err = jutil.JFindClass(env, "io/v/v23/syncbase/nosql/Resolution")
+	jResolutionClass, err = jutil.JFindClass(env, "io/v/v23/syncbase/Resolution")
 	if err != nil {
 		return err
 	}
-	jBatchOptionsClass, err = jutil.JFindClass(env, "io/v/v23/services/syncbase/nosql/BatchOptions")
+	jBatchOptionsClass, err = jutil.JFindClass(env, "io/v/v23/services/syncbase/BatchOptions")
 	if err != nil {
 		return err
 	}
-	jSchemaMetadataClass, err = jutil.JFindClass(env, "io/v/v23/services/syncbase/nosql/SchemaMetadata")
+	jSchemaMetadataClass, err = jutil.JFindClass(env, "io/v/v23/services/syncbase/SchemaMetadata")
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-//export Java_io_v_v23_syncbase_nosql_DatabaseImpl_nativeCreate
-func Java_io_v_v23_syncbase_nosql_DatabaseImpl_nativeCreate(jenv *C.JNIEnv, jDatabaseImplClass C.jclass, jParentFullName C.jstring, jRelativeName C.jstring, jSchemaObj C.jobject) C.jobject {
+//export Java_io_v_v23_syncbase_DatabaseImpl_nativeCreate
+func Java_io_v_v23_syncbase_DatabaseImpl_nativeCreate(jenv *C.JNIEnv, jDatabaseImplClass C.jclass, jParentFullName C.jstring, jRelativeName C.jstring, jSchemaObj C.jobject) C.jobject {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	parentFullName := jutil.GoString(env, jutil.Object(uintptr(unsafe.Pointer(jParentFullName))))
 	relativeName := jutil.GoString(env, jutil.Object(uintptr(unsafe.Pointer(jRelativeName))))
@@ -71,7 +71,7 @@ func Java_io_v_v23_syncbase_nosql_DatabaseImpl_nativeCreate(jenv *C.JNIEnv, jDat
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	db := nosql.NewDatabase(parentFullName, relativeName, schema)
+	db := syncbase.NewDatabase(parentFullName, relativeName, schema)
 	jdb := newJNIDatabase(env, db, parentFullName, schema, jSchema)
 	jDatabase, err := javaDatabase(env, jdb)
 	if err != nil {
@@ -81,8 +81,8 @@ func Java_io_v_v23_syncbase_nosql_DatabaseImpl_nativeCreate(jenv *C.JNIEnv, jDat
 	return C.jobject(unsafe.Pointer(jDatabase))
 }
 
-//export Java_io_v_v23_syncbase_nosql_DatabaseImpl_nativeBeginBatch
-func Java_io_v_v23_syncbase_nosql_DatabaseImpl_nativeBeginBatch(jenv *C.JNIEnv, jDatabaseImpl C.jobject, goRef C.jlong, jContext C.jobject, jBatchOptsObj C.jobject, jCallbackObj C.jobject) {
+//export Java_io_v_v23_syncbase_DatabaseImpl_nativeBeginBatch
+func Java_io_v_v23_syncbase_DatabaseImpl_nativeBeginBatch(jenv *C.JNIEnv, jDatabaseImpl C.jobject, goRef C.jlong, jContext C.jobject, jBatchOptsObj C.jobject, jCallbackObj C.jobject) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	jCallback := jutil.Object(uintptr(unsafe.Pointer(jCallbackObj)))
 	jBatchOpts := jutil.Object(uintptr(unsafe.Pointer(jBatchOptsObj)))
@@ -114,8 +114,8 @@ func Java_io_v_v23_syncbase_nosql_DatabaseImpl_nativeBeginBatch(jenv *C.JNIEnv, 
 	})
 }
 
-//export Java_io_v_v23_syncbase_nosql_DatabaseImpl_nativeEnforceSchema
-func Java_io_v_v23_syncbase_nosql_DatabaseImpl_nativeEnforceSchema(jenv *C.JNIEnv, jDatabaseImpl C.jobject, goRef C.jlong, jContext C.jobject, jCallbackObj C.jobject) {
+//export Java_io_v_v23_syncbase_DatabaseImpl_nativeEnforceSchema
+func Java_io_v_v23_syncbase_DatabaseImpl_nativeEnforceSchema(jenv *C.JNIEnv, jDatabaseImpl C.jobject, goRef C.jlong, jContext C.jobject, jCallbackObj C.jobject) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	jCallback := jutil.Object(uintptr(unsafe.Pointer(jCallbackObj)))
 	jdb := (*jniDatabase)(jutil.GoRefValue(jutil.Ref(goRef)))
@@ -129,7 +129,7 @@ func Java_io_v_v23_syncbase_nosql_DatabaseImpl_nativeEnforceSchema(jenv *C.JNIEn
 	})
 }
 
-//export Java_io_v_v23_syncbase_nosql_DatabaseImpl_nativeFinalize
-func Java_io_v_v23_syncbase_nosql_DatabaseImpl_nativeFinalize(jenv *C.JNIEnv, jDatabaseImpl C.jobject, goRef C.jlong) {
+//export Java_io_v_v23_syncbase_DatabaseImpl_nativeFinalize
+func Java_io_v_v23_syncbase_DatabaseImpl_nativeFinalize(jenv *C.JNIEnv, jDatabaseImpl C.jobject, goRef C.jlong) {
 	jutil.GoDecRef(jutil.Ref(goRef))
 }

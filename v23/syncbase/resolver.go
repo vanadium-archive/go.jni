@@ -4,20 +4,21 @@
 
 // +build java android
 
-package nosql
+package syncbase
 
 import (
 	"runtime"
 
 	"v.io/v23/context"
-	"v.io/v23/syncbase/nosql"
+	"v.io/v23/syncbase"
 
 	jutil "v.io/x/jni/util"
 	jcontext "v.io/x/jni/v23/context"
 )
 
-// GoResolver converts a provided Java ConflictResolver into a Go ConflictResolver.
-func GoResolver(env jutil.Env, jResolver jutil.Object) nosql.ConflictResolver {
+// GoResolver converts a provided Java ConflictResolver into a Go
+// ConflictResolver.
+func GoResolver(env jutil.Env, jResolver jutil.Object) syncbase.ConflictResolver {
 	if jResolver.IsNull() {
 		return nil
 	}
@@ -40,7 +41,7 @@ type jniResolver struct {
 	jResolver jutil.Object
 }
 
-func (r *jniResolver) OnConflict(ctx *context.T, conflict *nosql.Conflict) nosql.Resolution {
+func (r *jniResolver) OnConflict(ctx *context.T, conflict *syncbase.Conflict) syncbase.Resolution {
 	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
 	jContext, err := jcontext.JavaContext(env, ctx, nil)
@@ -52,13 +53,13 @@ func (r *jniResolver) OnConflict(ctx *context.T, conflict *nosql.Conflict) nosql
 		panic("Couldn't create Java Conflict object: " + err.Error())
 	}
 	contextSign := jutil.ClassSign("io.v.v23.context.VContext")
-	conflictSign := jutil.ClassSign("io.v.v23.syncbase.nosql.Conflict")
-	resolutionSign := jutil.ClassSign("io.v.v23.syncbase.nosql.Resolution")
+	conflictSign := jutil.ClassSign("io.v.v23.syncbase.Conflict")
+	resolutionSign := jutil.ClassSign("io.v.v23.syncbase.Resolution")
 	jResolution, err := jutil.CallObjectMethod(env, r.jResolver, "onConflict", []jutil.Sign{contextSign, conflictSign}, resolutionSign, jContext, jConflict)
 	if err != nil {
 		panic("Error invoking Java ConflictResolver: " + err.Error())
 	}
-	var resolution nosql.Resolution
+	var resolution syncbase.Resolution
 	if err := jutil.GoVomCopy(env, jResolution, jResolutionClass, &resolution); err != nil {
 		panic("Couldn't create Go Resolution: " + err.Error())
 	}
