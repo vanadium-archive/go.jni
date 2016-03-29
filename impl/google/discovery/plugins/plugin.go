@@ -84,6 +84,13 @@ func (p *plugin) Scan(ctx *context.T, interfaceName string, ch chan<- *idiscover
 	return nil
 }
 
+func (p *plugin) Close() {
+	env, freeFunc := jutil.GetEnv()
+	defer freeFunc()
+
+	jutil.CallVoidMethod(env, p.jPlugin, "close", nil)
+}
+
 func newPluginFactory(env jutil.Env, jPluginClass jutil.Class) func(*context.T, string) (idiscovery.Plugin, error) {
 	return func(ctx *context.T, host string) (idiscovery.Plugin, error) {
 		env, freeFunc := jutil.GetEnv()
