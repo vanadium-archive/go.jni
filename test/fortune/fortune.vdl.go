@@ -217,6 +217,101 @@ func (t *__VDLTarget1_list) FinishList(elem vdl.ListTarget) error {
 	return nil
 }
 
+func (x *ComplexErrorParam) VDLRead(dec vdl.Decoder) error {
+	*x = ComplexErrorParam{}
+	var err error
+	if err = dec.StartValue(); err != nil {
+		return err
+	}
+	if dec.Type().Kind() != vdl.Struct {
+		return fmt.Errorf("incompatible struct %T, from %v", *x, dec.Type())
+	}
+	match := 0
+	for {
+		f, err := dec.NextField()
+		if err != nil {
+			return err
+		}
+		switch f {
+		case "":
+			if match == 0 && dec.Type().NumField() > 0 {
+				return fmt.Errorf("no matching fields in struct %T, from %v", *x, dec.Type())
+			}
+			return dec.FinishValue()
+		case "Str":
+			match++
+			if err = dec.StartValue(); err != nil {
+				return err
+			}
+			if x.Str, err = dec.DecodeString(); err != nil {
+				return err
+			}
+			if err = dec.FinishValue(); err != nil {
+				return err
+			}
+		case "Num":
+			match++
+			if err = dec.StartValue(); err != nil {
+				return err
+			}
+			tmp, err := dec.DecodeInt(32)
+			if err != nil {
+				return err
+			}
+			x.Num = int32(tmp)
+			if err = dec.FinishValue(); err != nil {
+				return err
+			}
+		case "List":
+			match++
+			if err = __VDLRead1_list(dec, &x.List); err != nil {
+				return err
+			}
+		default:
+			if err = dec.SkipValue(); err != nil {
+				return err
+			}
+		}
+	}
+}
+
+func __VDLRead1_list(dec vdl.Decoder, x *[]uint32) error {
+	var err error
+	if err = dec.StartValue(); err != nil {
+		return err
+	}
+	if k := dec.Type().Kind(); k != vdl.Array && k != vdl.List {
+		return fmt.Errorf("incompatible list %T, from %v", *x, dec.Type())
+	}
+	switch len := dec.LenHint(); {
+	case len == 0:
+		*x = nil
+	case len > 0:
+		*x = make([]uint32, 0, len)
+	}
+	for {
+		switch done, err := dec.NextEntry(); {
+		case err != nil:
+			return err
+		case done:
+			return dec.FinishValue()
+		}
+		var elem uint32
+		if err = dec.StartValue(); err != nil {
+			return err
+		}
+		tmp, err := dec.DecodeUint(32)
+		if err != nil {
+			return err
+		}
+		elem = uint32(tmp)
+		if err = dec.FinishValue(); err != nil {
+			return err
+		}
+		*x = append(*x, elem)
+	}
+}
+
 //////////////////////////////////////////////////
 // Error definitions
 var (
