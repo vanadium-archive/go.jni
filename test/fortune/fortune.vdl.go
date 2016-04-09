@@ -226,7 +226,6 @@ func (x *ComplexErrorParam) VDLRead(dec vdl.Decoder) error {
 	if (dec.StackDepth() == 1 || dec.IsAny()) && !vdl.Compatible(vdl.TypeOf(*x), dec.Type()) {
 		return fmt.Errorf("incompatible struct %T, from %v", *x, dec.Type())
 	}
-	match := 0
 	for {
 		f, err := dec.NextField()
 		if err != nil {
@@ -234,12 +233,8 @@ func (x *ComplexErrorParam) VDLRead(dec vdl.Decoder) error {
 		}
 		switch f {
 		case "":
-			if match == 0 && dec.Type().NumField() > 0 {
-				return fmt.Errorf("no matching fields in struct %T, from %v", *x, dec.Type())
-			}
 			return dec.FinishValue()
 		case "Str":
-			match++
 			if err = dec.StartValue(); err != nil {
 				return err
 			}
@@ -250,7 +245,6 @@ func (x *ComplexErrorParam) VDLRead(dec vdl.Decoder) error {
 				return err
 			}
 		case "Num":
-			match++
 			if err = dec.StartValue(); err != nil {
 				return err
 			}
@@ -263,7 +257,6 @@ func (x *ComplexErrorParam) VDLRead(dec vdl.Decoder) error {
 				return err
 			}
 		case "List":
-			match++
 			if err = __VDLRead1_list(dec, &x.List); err != nil {
 				return err
 			}
@@ -284,10 +277,10 @@ func __VDLRead1_list(dec vdl.Decoder, x *[]uint32) error {
 		return fmt.Errorf("incompatible list %T, from %v", *x, dec.Type())
 	}
 	switch len := dec.LenHint(); {
-	case len == 0:
-		*x = nil
 	case len > 0:
 		*x = make([]uint32, 0, len)
+	default:
+		*x = nil
 	}
 	for {
 		switch done, err := dec.NextEntry(); {
