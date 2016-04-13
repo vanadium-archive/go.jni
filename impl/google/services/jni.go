@@ -9,8 +9,7 @@ package services
 import (
 	jgroups "v.io/x/jni/impl/google/services/groups"
 	jmounttable "v.io/x/jni/impl/google/services/mounttable"
-	// See TODO below.
-	//jsyncbase "v.io/x/jni/impl/google/services/syncbase"
+	jsyncbase "v.io/x/jni/impl/google/services/syncbase"
 	jutil "v.io/x/jni/util"
 )
 
@@ -27,12 +26,9 @@ func Init(env jutil.Env) error {
 	if err := jmounttable.Init(env); err != nil {
 		return err
 	}
-	// TODO(sadovsky): Temporarily disable Syncbase Java code (as of 2016-03-28),
-	// while we update the code to the simplified API.
-	/*
-		if err := jsyncbase.Init(env); err != nil {
-			return err
-		}
-	*/
+	if err := jsyncbase.Init(env); err != nil {
+		return err
+	}
+
 	return nil
 }
