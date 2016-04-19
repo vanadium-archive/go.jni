@@ -361,7 +361,13 @@ func __VDLWrite1_list(enc vdl.Encoder, x *[]uint32) error {
 	if err := enc.StartValue(vdl.TypeOf((*[]uint32)(nil))); err != nil {
 		return err
 	}
+	if err := enc.SetLenHint(len(*x)); err != nil {
+		return err
+	}
 	for i := 0; i < len(*x); i++ {
+		if err := enc.NextEntry(false); err != nil {
+			return err
+		}
 		if err := enc.StartValue(vdl.TypeOf((*uint32)(nil))); err != nil {
 			return err
 		}
@@ -380,6 +386,7 @@ func __VDLWrite1_list(enc vdl.Encoder, x *[]uint32) error {
 
 //////////////////////////////////////////////////
 // Error definitions
+
 var (
 	ErrNoFortunes = verror.Register("v.io/x/jni/test/fortune.NoFortunes", verror.NoRetry, "{1:}{2:} no fortunes added")
 	ErrComplex    = verror.Register("v.io/x/jni/test/fortune.Complex", verror.NoRetry, "{1:}{2:} this is a complex error with params {3} {4} {5}")
