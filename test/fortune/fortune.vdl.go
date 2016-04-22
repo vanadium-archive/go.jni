@@ -217,10 +217,95 @@ func (t *__VDLTarget1_list) FinishList(elem vdl.ListTarget) error {
 	return nil
 }
 
+func (x ComplexErrorParam) VDLIsZero() (bool, error) {
+	if x.Str != "" {
+		return false, nil
+	}
+	if x.Num != 0 {
+		return false, nil
+	}
+	if len(x.List) != 0 {
+		return false, nil
+	}
+	return true, nil
+}
+
+func (x ComplexErrorParam) VDLWrite(enc vdl.Encoder) error {
+	if err := enc.StartValue(vdl.TypeOf((*ComplexErrorParam)(nil)).Elem()); err != nil {
+		return err
+	}
+	if x.Str != "" {
+		if err := enc.NextField("Str"); err != nil {
+			return err
+		}
+		if err := enc.StartValue(vdl.TypeOf((*string)(nil))); err != nil {
+			return err
+		}
+		if err := enc.EncodeString(x.Str); err != nil {
+			return err
+		}
+		if err := enc.FinishValue(); err != nil {
+			return err
+		}
+	}
+	if x.Num != 0 {
+		if err := enc.NextField("Num"); err != nil {
+			return err
+		}
+		if err := enc.StartValue(vdl.TypeOf((*int32)(nil))); err != nil {
+			return err
+		}
+		if err := enc.EncodeInt(int64(x.Num)); err != nil {
+			return err
+		}
+		if err := enc.FinishValue(); err != nil {
+			return err
+		}
+	}
+	if len(x.List) != 0 {
+		if err := enc.NextField("List"); err != nil {
+			return err
+		}
+		if err := __VDLWriteAnon_list_1(enc, x.List); err != nil {
+			return err
+		}
+	}
+	if err := enc.NextField(""); err != nil {
+		return err
+	}
+	return enc.FinishValue()
+}
+
+func __VDLWriteAnon_list_1(enc vdl.Encoder, x []uint32) error {
+	if err := enc.StartValue(vdl.TypeOf((*[]uint32)(nil))); err != nil {
+		return err
+	}
+	if err := enc.SetLenHint(len(x)); err != nil {
+		return err
+	}
+	for i := 0; i < len(x); i++ {
+		if err := enc.NextEntry(false); err != nil {
+			return err
+		}
+		if err := enc.StartValue(vdl.TypeOf((*uint32)(nil))); err != nil {
+			return err
+		}
+		if err := enc.EncodeUint(uint64(x[i])); err != nil {
+			return err
+		}
+		if err := enc.FinishValue(); err != nil {
+			return err
+		}
+	}
+	if err := enc.NextEntry(true); err != nil {
+		return err
+	}
+	return enc.FinishValue()
+}
+
 func (x *ComplexErrorParam) VDLRead(dec vdl.Decoder) error {
 	*x = ComplexErrorParam{}
-	var err error
-	if err = dec.StartValue(); err != nil {
+	if err := dec.StartValue(); err != nil {
 		return err
 	}
 	if (dec.StackDepth() == 1 || dec.IsAny()) && !vdl.Compatible(vdl.TypeOf(*x), dec.Type()) {
@@ -235,17 +320,18 @@ func (x *ComplexErrorParam) VDLRead(dec vdl.Decoder) error {
 		case "":
 			return dec.FinishValue()
 		case "Str":
-			if err = dec.StartValue(); err != nil {
+			if err := dec.StartValue(); err != nil {
 				return err
 			}
+			var err error
 			if x.Str, err = dec.DecodeString(); err != nil {
 				return err
 			}
-			if err = dec.FinishValue(); err != nil {
+			if err := dec.FinishValue(); err != nil {
 				return err
 			}
 		case "Num":
-			if err = dec.StartValue(); err != nil {
+			if err := dec.StartValue(); err != nil {
 				return err
 			}
 			tmp, err := dec.DecodeInt(32)
@@ -253,24 +339,23 @@ func (x *ComplexErrorParam) VDLRead(dec vdl.Decoder) error {
 				return err
 			}
 			x.Num = int32(tmp)
-			if err = dec.FinishValue(); err != nil {
+			if err := dec.FinishValue(); err != nil {
 				return err
 			}
 		case "List":
-			if err = __VDLRead1_list(dec, &x.List); err != nil {
+			if err := __VDLReadAnon_list_1(dec, &x.List); err != nil {
 				return err
 			}
 		default:
-			if err = dec.SkipValue(); err != nil {
+			if err := dec.SkipValue(); err != nil {
 				return err
 			}
 		}
 	}
 }
 
-func __VDLRead1_list(dec vdl.Decoder, x *[]uint32) error {
-	var err error
-	if err = dec.StartValue(); err != nil {
+func __VDLReadAnon_list_1(dec vdl.Decoder, x *[]uint32) error {
+	if err := dec.StartValue(); err != nil {
 		return err
 	}
 	if (dec.StackDepth() == 1 || dec.IsAny()) && !vdl.Compatible(vdl.TypeOf(*x), dec.Type()) {
@@ -290,7 +375,7 @@ func __VDLRead1_list(dec vdl.Decoder, x *[]uint32) error {
 			return dec.FinishValue()
 		}
 		var elem uint32
-		if err = dec.StartValue(); err != nil {
+		if err := dec.StartValue(); err != nil {
 			return err
 		}
 		tmp, err := dec.DecodeUint(32)
@@ -298,90 +383,11 @@ func __VDLRead1_list(dec vdl.Decoder, x *[]uint32) error {
 			return err
 		}
 		elem = uint32(tmp)
-		if err = dec.FinishValue(); err != nil {
+		if err := dec.FinishValue(); err != nil {
 			return err
 		}
 		*x = append(*x, elem)
 	}
-}
-
-func (x ComplexErrorParam) VDLWrite(enc vdl.Encoder) error {
-	if err := enc.StartValue(vdl.TypeOf((*ComplexErrorParam)(nil)).Elem()); err != nil {
-		return err
-	}
-	var1 := (x.Str == "")
-	if !(var1) {
-		if err := enc.NextField("Str"); err != nil {
-			return err
-		}
-		if err := enc.StartValue(vdl.TypeOf((*string)(nil))); err != nil {
-			return err
-		}
-		if err := enc.EncodeString(x.Str); err != nil {
-			return err
-		}
-		if err := enc.FinishValue(); err != nil {
-			return err
-		}
-	}
-	var2 := (x.Num == int32(0))
-	if !(var2) {
-		if err := enc.NextField("Num"); err != nil {
-			return err
-		}
-		if err := enc.StartValue(vdl.TypeOf((*int32)(nil))); err != nil {
-			return err
-		}
-		if err := enc.EncodeInt(int64(x.Num)); err != nil {
-			return err
-		}
-		if err := enc.FinishValue(); err != nil {
-			return err
-		}
-	}
-	var var3 bool
-	if len(x.List) == 0 {
-		var3 = true
-	}
-	if !(var3) {
-		if err := enc.NextField("List"); err != nil {
-			return err
-		}
-		if err := __VDLWrite1_list(enc, &x.List); err != nil {
-			return err
-		}
-	}
-	if err := enc.NextField(""); err != nil {
-		return err
-	}
-	return enc.FinishValue()
-}
-
-func __VDLWrite1_list(enc vdl.Encoder, x *[]uint32) error {
-	if err := enc.StartValue(vdl.TypeOf((*[]uint32)(nil))); err != nil {
-		return err
-	}
-	if err := enc.SetLenHint(len(*x)); err != nil {
-		return err
-	}
-	for i := 0; i < len(*x); i++ {
-		if err := enc.NextEntry(false); err != nil {
-			return err
-		}
-		if err := enc.StartValue(vdl.TypeOf((*uint32)(nil))); err != nil {
-			return err
-		}
-		if err := enc.EncodeUint(uint64((*x)[i])); err != nil {
-			return err
-		}
-		if err := enc.FinishValue(); err != nil {
-			return err
-		}
-	}
-	if err := enc.NextEntry(true); err != nil {
-		return err
-	}
-	return enc.FinishValue()
 }
 
 //////////////////////////////////////////////////
