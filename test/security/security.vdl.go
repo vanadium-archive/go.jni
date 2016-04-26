@@ -38,7 +38,7 @@ var TestCaveat = security.CaveatDescriptor{
 		128,
 		0,
 	},
-	ParamType: vdl.TypeOf((*string)(nil)),
+	ParamType: vdl.StringType,
 }
 
 var __VDLInitCalled bool

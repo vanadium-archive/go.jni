@@ -217,17 +217,17 @@ func (t *__VDLTarget1_list) FinishList(elem vdl.ListTarget) error {
 	return nil
 }
 
-func (x ComplexErrorParam) VDLIsZero() (bool, error) {
+func (x ComplexErrorParam) VDLIsZero() bool {
 	if x.Str != "" {
-		return false, nil
+		return false
 	}
 	if x.Num != 0 {
-		return false, nil
+		return false
 	}
 	if len(x.List) != 0 {
-		return false, nil
+		return false
 	}
-	return true, nil
+	return true
 }
 
 func (x ComplexErrorParam) VDLWrite(enc vdl.Encoder) error {
@@ -238,7 +238,7 @@ func (x ComplexErrorParam) VDLWrite(enc vdl.Encoder) error {
 		if err := enc.NextField("Str"); err != nil {
 			return err
 		}
-		if err := enc.StartValue(vdl.TypeOf((*string)(nil))); err != nil {
+		if err := enc.StartValue(vdl.StringType); err != nil {
 			return err
 		}
 		if err := enc.EncodeString(x.Str); err != nil {
@@ -252,7 +252,7 @@ func (x ComplexErrorParam) VDLWrite(enc vdl.Encoder) error {
 		if err := enc.NextField("Num"); err != nil {
 			return err
 		}
-		if err := enc.StartValue(vdl.TypeOf((*int32)(nil))); err != nil {
+		if err := enc.StartValue(vdl.Int32Type); err != nil {
 			return err
 		}
 		if err := enc.EncodeInt(int64(x.Num)); err != nil {
@@ -287,7 +287,7 @@ func __VDLWriteAnon_list_1(enc vdl.Encoder, x []uint32) error {
 		if err := enc.NextEntry(false); err != nil {
 			return err
 		}
-		if err := enc.StartValue(vdl.TypeOf((*uint32)(nil))); err != nil {
+		if err := enc.StartValue(vdl.Uint32Type); err != nil {
 			return err
 		}
 		if err := enc.EncodeUint(uint64(x[i])); err != nil {
