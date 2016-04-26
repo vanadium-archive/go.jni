@@ -158,7 +158,7 @@ func (t *ComplexErrorParamTarget) StartField(name string) (key, field vdl.Target
 		target, err := &t.listTarget, error(nil)
 		return nil, target, err
 	default:
-		return nil, nil, fmt.Errorf("field %s not in struct v.io/x/jni/test/fortune.ComplexErrorParam", name)
+		return nil, nil, vdl.ErrFieldNoExist
 	}
 }
 func (t *ComplexErrorParamTarget) FinishField(_, _ vdl.Target) error {
@@ -176,7 +176,7 @@ func (t *ComplexErrorParamTarget) ZeroField(name string) error {
 		t.Value.List = []uint32(nil)
 		return nil
 	default:
-		return fmt.Errorf("field %s not in struct v.io/x/jni/test/fortune.ComplexErrorParam", name)
+		return vdl.ErrFieldNoExist
 	}
 }
 func (t *ComplexErrorParamTarget) FinishFields(_ vdl.FieldsTarget) error {
