@@ -204,8 +204,8 @@ func Java_io_v_impl_google_rt_VRuntimeImpl_nativeGetPrincipal(jenv *C.JNIEnv, jR
 	return C.jobject(unsafe.Pointer(jPrincipal))
 }
 
-//export Java_io_v_impl_google_rt_VRuntimeImpl_nativeWithNamespace
-func Java_io_v_impl_google_rt_VRuntimeImpl_nativeWithNamespace(jenv *C.JNIEnv, jRuntime C.jclass, jContext C.jobject, jRoots C.jobjectArray) C.jobject {
+//export Java_io_v_impl_google_rt_VRuntimeImpl_nativeWithNewNamespace
+func Java_io_v_impl_google_rt_VRuntimeImpl_nativeWithNewNamespace(jenv *C.JNIEnv, jRuntime C.jclass, jContext C.jobject, jRoots C.jobjectArray) C.jobject {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	ctx, cancel, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jContext))))
 	if err != nil {

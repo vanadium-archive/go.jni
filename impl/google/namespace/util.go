@@ -11,6 +11,7 @@ import (
 	"v.io/v23/naming"
 	"v.io/v23/options"
 	"v.io/v23/security"
+
 	jutil "v.io/x/jni/util"
 )
 
@@ -32,35 +33,29 @@ func JavaNamespace(env jutil.Env, namespace namespace.T) (jutil.Object, error) {
 	return jNamespace, nil
 }
 
-func javaToGoOptions(env jutil.Env, key string, jValue jutil.Object) (interface{}, error) {
-	switch key {
-	case "io.v.v23.SKIP_SERVER_ENDPOINT_AUTHORIZATION":
-		value, err := jutil.CallBooleanMethod(env, jValue, "booleanValue", []jutil.Sign{})
-		if err != nil {
-			return nil, err
-		}
-		if value {
-			// TODO(ashankar): The Java APIs need to reflect the
-			// change in the Go APIs: any authorization policy can
-			// be providfed as an option?
-			return options.NameResolutionAuthorizer{security.AllowEveryone()}, nil
-		}
-	}
-	// Otherwise we don't know what this option is, ignore it.
-	return nil, jutil.SkipOption
-}
-
-func namespaceOptions(env jutil.Env, jOptions jutil.Object) ([]naming.NamespaceOpt, error) {
-	opts, err := jutil.GoOptions(env, jOptions, javaToGoOptions)
+func goNamespaceOptions(env jutil.Env, jOptions jutil.Object) ([]naming.NamespaceOpt, error) {
+	var opts []naming.NamespaceOpt
+	r, err := jutil.GetBooleanOption(env, jOptions, "io.v.v23.naming.REPLACE_MOUNT")
 	if err != nil {
 		return nil, err
 	}
-	var actualOpts []naming.NamespaceOpt
-	for _, opt := range opts {
-		switch opt := opt.(type) {
-		case naming.NamespaceOpt:
-			actualOpts = append(actualOpts, opt)
-		}
+	opts = append(opts, naming.ReplaceMount(r))
+	s, err := jutil.GetBooleanOption(env, jOptions, "io.v.v23.naming.SERVES_MOUNT_TABLE")
+	if err != nil {
+		return nil, err
 	}
-	return actualOpts, nil
+	opts = append(opts, naming.ServesMountTable(s))
+	l, err := jutil.GetBooleanOption(env, jOptions, "io.v.v23.naming.IS_LEAF")
+	if err != nil {
+		return nil, err
+	}
+	opts = append(opts, naming.IsLeaf(l))
+	e, err := jutil.GetBooleanOption(env, jOptions, "io.v.v23.SKIP_SERVER_ENDPOINT_AUTHORIZATION")
+	if err != nil {
+		return nil, err
+	}
+	if e {
+		opts = append(opts, options.NameResolutionAuthorizer{security.AllowEveryone()})
+	}
+	return opts, nil
 }

@@ -7,6 +7,7 @@
 package util
 
 import (
+	"errors"
 	"fmt"
 )
 
@@ -30,6 +31,16 @@ func GetOption(env Env, jOpts Object, key string) (Object, error) {
 	return CallObjectMethod(env, jOpts, "get", []Sign{StringSign}, ObjectSign, key)
 }
 
+// SetOption associates the given value with the provided key in the provided options.
+func SetOption(env Env, jOpts Object, key string, jValue Object) error {
+	if jOpts.IsNull() {
+		return errors.New("Couldn't set option on a null options object.")
+	}
+	optionsSign := ClassSign("io.v.v23.Options")
+	_, err := CallObjectMethod(env, jOpts, "set", []Sign{StringSign, ObjectSign}, optionsSign, key, jValue)
+	return err
+}
+
 // GetIntOption returns the integer option with the given key.  It returns 0 if the option
 // doesn't exist.
 func GetIntOption(env Env, jOpts Object, key string) (int, error) {
@@ -44,6 +55,16 @@ func GetIntOption(env Env, jOpts Object, key string) (int, error) {
 		return 0, fmt.Errorf("Expected option with key %s to be of Integer type", key)
 	}
 	return CallIntMethod(env, jVal, "intValue", nil)
+}
+
+// SetIntOption associates the given integer value with the provided key
+// in the provided options.
+func SetIntOption(env Env, jOpts Object, key string, value int) error {
+	jValue, err := NewObject(env, jIntegerClass, []Sign{IntSign}, value)
+	if err != nil {
+		return err
+	}
+	return SetOption(env, jOpts, key, jValue)
 }
 
 // GetBooleanOption returns the boolean option with the given key.  It returns 'false' if the option
@@ -62,6 +83,16 @@ func GetBooleanOption(env Env, jOpts Object, key string) (bool, error) {
 	return CallBooleanMethod(env, jVal, "booleanValue", nil)
 }
 
+// SetBooleanOption associates the given boolean value with the provided key
+// in the provided options.
+func SetBooleanOption(env Env, jOpts Object, key string, value bool) error {
+	jValue, err := NewObject(env, jBooleanClass, []Sign{BoolSign}, value)
+	if err != nil {
+		return err
+	}
+	return SetOption(env, jOpts, key, jValue)
+}
+
 // StringOption returns the string option with the given key.  It returns an empty string if the
 // option doesn't exist.
 func GetStringOption(env Env, jOpts Object, key string) (string, error) {
@@ -76,4 +107,11 @@ func GetStringOption(env Env, jOpts Object, key string) (string, error) {
 		return "", fmt.Errorf("Expected option with key %s to be of String type", key)
 	}
 	return GoString(env, jVal), nil
+}
+
+// SetStringOption associates the given string value with the provided key
+// in the provided options.
+func SetStringOption(env Env, jOpts Object, key string, value string) error {
+	jValue := JString(env, value)
+	return SetOption(env, jOpts, key, jValue)
 }

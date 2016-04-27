@@ -38,7 +38,6 @@ func Init(env jutil.Env) error {
 	if err := jservices.Init(env); err != nil {
 		return err
 	}
-
 	if err := jdiscovery.Init(env); err != nil {
 		return err
 	}

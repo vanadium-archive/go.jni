@@ -220,6 +220,30 @@ func Java_io_v_impl_google_rpc_ServerImpl_nativeGetStatus(jenv *C.JNIEnv, jServe
 	return C.jobject(unsafe.Pointer(jStatus))
 }
 
+//export Java_io_v_impl_google_rpc_ServerImpl_nativeAllPublished
+func Java_io_v_impl_google_rpc_ServerImpl_nativeAllPublished(jenv *C.JNIEnv, jServer C.jobject, goRef C.jlong, jContext C.jobject, jCallbackObj C.jobject) {
+	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
+	server := *(*rpc.Server)(jutil.GoRefValue(jutil.Ref(goRef)))
+	jCallback := jutil.Object(uintptr(unsafe.Pointer(jCallbackObj)))
+	jutil.DoAsyncCall(env, jCallback, func() (jutil.Object, error) {
+		for {
+			status := server.Status()
+			done := true
+			for _, pub := range status.PublisherStatus {
+				if pub.LastState != pub.DesiredState {
+					done = false
+					break
+				}
+			}
+			if done {
+				break
+			}
+			<-status.Dirty
+		}
+		return jutil.NullObject, nil
+	})
+}
+
 //export Java_io_v_impl_google_rpc_ServerImpl_nativeFinalize
 func Java_io_v_impl_google_rpc_ServerImpl_nativeFinalize(jenv *C.JNIEnv, jServer C.jobject, goRef C.jlong) {
 	jutil.GoDecRef(jutil.Ref(goRef))

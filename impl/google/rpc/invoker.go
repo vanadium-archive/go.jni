@@ -66,9 +66,8 @@ func (i *invoker) Prepare(ctx *context.T, method string, numArgs int) (argptrs [
 	}
 	env, freeFunc = jutil.GetEnv()
 	defer freeFunc()
-	jVomTagsLocal := jutil.NewLocalRef(env, jVomTags)
-	jutil.DeleteGlobalRef(env, jVomTags)
-	vomTags, err := jutil.GoByteArrayArray(env, jVomTagsLocal)
+	defer jutil.DeleteGlobalRef(env, jVomTags)
+	vomTags, err := jutil.GoByteArrayArray(env, jVomTags)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -110,9 +109,8 @@ func (i *invoker) Invoke(ctx *context.T, call rpc.StreamServerCall, method strin
 	}
 	env, freeFunc = jutil.GetEnv()
 	defer freeFunc()
-	jResultLocal := jutil.NewLocalRef(env, jResult)
-	jutil.DeleteGlobalRef(env, jResult)
-	vomResults, err := jutil.GoByteArrayArray(env, jResultLocal)
+	defer jutil.DeleteGlobalRef(env, jResult)
+	vomResults, err := jutil.GoByteArrayArray(env, jResult)
 	if err != nil {
 		return nil, err
 	}
@@ -140,6 +138,7 @@ func (i *invoker) Signature(ctx *context.T, call rpc.ServerCall) ([]signature.In
 	}
 	env, freeFunc = jutil.GetEnv()
 	defer freeFunc()
+	defer jutil.DeleteGlobalRef(env, jInterfaces)
 	interfacesArr, err := jutil.GoObjectArray(env, jInterfaces)
 	if err != nil {
 		return nil, err
@@ -168,6 +167,7 @@ func (i *invoker) MethodSignature(ctx *context.T, call rpc.ServerCall, method st
 	}
 	env, freeFunc = jutil.GetEnv()
 	defer freeFunc()
+	defer jutil.DeleteGlobalRef(env, jMethod)
 	var result signature.Method
 	err = jutil.GoVomCopy(env, jMethod, jMethodClass, &result)
 	if err != nil {

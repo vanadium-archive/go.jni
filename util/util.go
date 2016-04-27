@@ -398,6 +398,16 @@ func GoStringList(env Env, list Object) ([]string, error) {
 	return ret, nil
 }
 
+// JStringList converts the provided slice of Go strings into a Java
+// List<String>.
+func JStringList(env Env, strs []string) (Object, error) {
+	strArr := make([]Object, len(strs))
+	for i, str := range strs {
+		strArr[i] = JString(env, str)
+	}
+	return JObjectList(env, strArr, jStringClass)
+}
+
 // JStringArray converts the provided slice of Go strings into a Java array of
 // strings.
 func JStringArray(env Env, strs []string) (Object, error) {

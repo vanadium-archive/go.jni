@@ -63,7 +63,7 @@ func globArgs(env jutil.Env, jContext C.jobject, jPattern C.jstring, jOptions C.
 	if err != nil {
 		return
 	}
-	opts, err = namespaceOptions(env, jutil.Object(uintptr(unsafe.Pointer(jOptions))))
+	opts, err = goNamespaceOptions(env, jutil.Object(uintptr(unsafe.Pointer(jOptions))))
 	if err != nil {
 		return
 	}
@@ -125,7 +125,7 @@ func mountArgs(env jutil.Env, jContext C.jobject, jName, jServer C.jstring, jDur
 	if err != nil {
 		return
 	}
-	options, err = namespaceOptions(env, jutil.Object(uintptr(unsafe.Pointer(jOptions))))
+	options, err = goNamespaceOptions(env, jutil.Object(uintptr(unsafe.Pointer(jOptions))))
 	return
 }
 
@@ -151,7 +151,7 @@ func unmountArgs(env jutil.Env, jName, jServer C.jstring, jContext, jOptions C.j
 	if err != nil {
 		return
 	}
-	options, err = namespaceOptions(env, jutil.Object(uintptr(unsafe.Pointer(jOptions))))
+	options, err = goNamespaceOptions(env, jutil.Object(uintptr(unsafe.Pointer(jOptions))))
 	return
 }
 
@@ -175,7 +175,7 @@ func deleteArgs(env jutil.Env, jContext, jOptions C.jobject, jName C.jstring, jD
 	if err != nil {
 		return
 	}
-	options, err = namespaceOptions(env, jutil.Object(uintptr(unsafe.Pointer(jOptions))))
+	options, err = goNamespaceOptions(env, jutil.Object(uintptr(unsafe.Pointer(jOptions))))
 	if err != nil {
 		return
 	}
@@ -204,7 +204,7 @@ func resolveArgs(env jutil.Env, jName C.jstring, jContext, jOptions C.jobject) (
 	if err != nil {
 		return
 	}
-	options, err = namespaceOptions(env, jutil.Object(uintptr(unsafe.Pointer(jOptions))))
+	options, err = goNamespaceOptions(env, jutil.Object(uintptr(unsafe.Pointer(jOptions))))
 	if err != nil {
 		return
 	}
@@ -248,7 +248,7 @@ func resolveToMountTableArgs(env jutil.Env, jContext, jOptions C.jobject, jName 
 	if err != nil {
 		return
 	}
-	options, err = namespaceOptions(env, jutil.Object(uintptr(unsafe.Pointer(jOptions))))
+	options, err = goNamespaceOptions(env, jutil.Object(uintptr(unsafe.Pointer(jOptions))))
 	if err != nil {
 		return
 	}
@@ -287,6 +287,27 @@ func Java_io_v_impl_google_namespace_NamespaceImpl_nativeResolveToMountTable(jen
 	})
 }
 
+//export Java_io_v_impl_google_namespace_NamespaceImpl_nativeSetCachingPolicy
+func Java_io_v_impl_google_namespace_NamespaceImpl_nativeSetCachingPolicy(jenv *C.JNIEnv, jNamespaceClass C.jclass, goRef C.jlong, jDoCaching C.jboolean) C.jboolean {
+	n := *(*namespace.T)(jutil.GoRefValue(jutil.Ref(goRef)))
+	disable := naming.DisableCache(false)
+	if jDoCaching == C.JNI_FALSE {
+		disable = naming.DisableCache(true)
+	}
+	oldCtls := n.CacheCtl(disable)
+	var oldDisable naming.DisableCache
+	for _, ctl := range oldCtls {
+		switch value := ctl.(type) {
+		case naming.DisableCache:
+			oldDisable = value
+		}
+	}
+	if oldDisable {
+		return C.JNI_FALSE
+	}
+	return C.JNI_TRUE
+}
+
 //export Java_io_v_impl_google_namespace_NamespaceImpl_nativeFlushCacheEntry
 func Java_io_v_impl_google_namespace_NamespaceImpl_nativeFlushCacheEntry(jenv *C.JNIEnv, jNamespaceClass C.jclass, goRef C.jlong, jContext C.jobject, jName C.jstring) C.jboolean {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
@@ -319,6 +340,19 @@ func Java_io_v_impl_google_namespace_NamespaceImpl_nativeSetRoots(jenv *C.JNIEnv
 	}
 }
 
+//export Java_io_v_impl_google_namespace_NamespaceImpl_nativeGetRoots
+func Java_io_v_impl_google_namespace_NamespaceImpl_nativeGetRoots(jenv *C.JNIEnv, jNamespaceClass C.jclass, goRef C.jlong) C.jobject {
+	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
+	n := *(*namespace.T)(jutil.GoRefValue(jutil.Ref(goRef)))
+	roots := n.Roots()
+	jRoots, err := jutil.JStringList(env, roots)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return nil
+	}
+	return C.jobject(unsafe.Pointer(jRoots))
+}
+
 func setPermissionsArgs(env jutil.Env, jContext, jPermissions C.jobject, jName, jVersion C.jstring, jOptions C.jobject) (context *context.T, permissions access.Permissions, name, version string, options []naming.NamespaceOpt, err error) {
 	context, _, err = jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jContext))))
 	if err != nil {
@@ -328,7 +362,7 @@ func setPermissionsArgs(env jutil.Env, jContext, jPermissions C.jobject, jName, 
 	if err != nil {
 		return
 	}
-	options, err = namespaceOptions(env, jutil.Object(uintptr(unsafe.Pointer(jOptions))))
+	options, err = goNamespaceOptions(env, jutil.Object(uintptr(unsafe.Pointer(jOptions))))
 	name = jutil.GoString(env, jutil.Object(uintptr(unsafe.Pointer(jName))))
 	version = jutil.GoString(env, jutil.Object(uintptr(unsafe.Pointer(jVersion))))
 	return
@@ -354,7 +388,7 @@ func getPermissionsArgs(env jutil.Env, jContext C.jobject, jName C.jstring, jOpt
 	if err != nil {
 		return
 	}
-	options, err = namespaceOptions(env, jutil.Object(uintptr(unsafe.Pointer(jOptions))))
+	options, err = goNamespaceOptions(env, jutil.Object(uintptr(unsafe.Pointer(jOptions))))
 	if err != nil {
 		return
 	}
