@@ -14,9 +14,11 @@ import (
 	"v.io/v23/options"
 	"v.io/v23/rpc"
 	"v.io/v23/vdl"
-	"v.io/v23/vom"
-
 	"v.io/v23/verror"
+	"v.io/v23/vom"
+	"v.io/x/lib/vlog"
+
+	jble "v.io/x/jni/impl/google/rpc/protocols/ble"
 	jbt "v.io/x/jni/impl/google/rpc/protocols/bt"
 	jutil "v.io/x/jni/util"
 	jcontext "v.io/x/jni/v23/context"
@@ -91,6 +93,11 @@ var (
 func Init(env jutil.Env) error {
 	if err := jbt.Init(env); err != nil {
 		return err
+	}
+	if err := jble.Init(env); err != nil {
+		// The BLE protocol isn't always compiled in, so don't fail if it
+		// isn't available.
+		vlog.Infof("Unable to initialize BLE protocol: %v", err)
 	}
 	// Cache global references to all Java classes used by the package.  This is
 	// necessary because JNI gets access to the class loader only in the system
