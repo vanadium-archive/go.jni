@@ -14,7 +14,6 @@ import (
 	jutil "v.io/x/jni/util"
 	jcontext "v.io/x/jni/v23/context"
 
-	"v.io/v23"
 	"v.io/v23/context"
 	"v.io/v23/naming"
 	"v.io/v23/security"
@@ -119,10 +118,10 @@ func (c *callImpl) RemoteDischarges() map[string]security.Discharge {
 
 func (c *callImpl) LocalEndpoint() naming.Endpoint {
 	epStr := c.callStringMethod("localEndpoint")
-	ep, err := v23.NewEndpoint(epStr)
+	ep, err := naming.ParseEndpoint(epStr)
 	if err != nil {
 		log.Printf("Couldn't parse endpoint string %q: %v", epStr, err)
-		return nil
+		return naming.Endpoint{}
 	}
 	return ep
 }
@@ -177,10 +176,10 @@ func (c *callImpl) RemoteBlessings() security.Blessings {
 
 func (c *callImpl) RemoteEndpoint() naming.Endpoint {
 	epStr := c.callStringMethod("remoteEndpoint")
-	ep, err := v23.NewEndpoint(epStr)
+	ep, err := naming.ParseEndpoint(epStr)
 	if err != nil {
 		log.Printf("Couldn't parse endpoint string %q: %v", epStr, err)
-		return nil
+		return naming.Endpoint{}
 	}
 	return ep
 }
