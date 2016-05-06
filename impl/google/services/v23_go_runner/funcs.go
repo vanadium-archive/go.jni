@@ -9,6 +9,7 @@ package v23_go_runner
 import (
 	"fmt"
 	"strconv"
+	"time"
 
 	"v.io/v23"
 	"v.io/v23/context"
@@ -31,7 +32,7 @@ const (
 var btServerName = naming.Endpoint{
 	Protocol: "bt",
 	Address:  btAddress + "/" + strconv.Itoa(btPortNum),
-}.WithBlessingNames([]string{btBlessings}).String()
+}.WithBlessingNames([]string{btBlessings}).Name()
 
 // v23GoRunnerFuncs is a map containing go functions keys by unique strings
 // intended to be run by java/android applications using V23GoRunner.run(key).
@@ -46,28 +47,24 @@ var v23GoRunnerFuncs = map[string]func(*context.T) error{
 
 func tcpServerFunc(ctx *context.T) error {
 	ctx = v23.WithListenSpec(ctx, rpc.ListenSpec{Proxy: "proxy"})
-	if _, _, err := v23.WithNewServer(ctx, tcpServerName, &echoServer{}, security.AllowEveryone()); err != nil {
-		return err
-	}
-	return nil
+	return runServer(ctx, tcpServerName)
 }
 
 func tcpClientFunc(ctx *context.T) error {
-	message := "hi there"
-	var got string
-	if err := v23.GetClient(ctx).Call(ctx, tcpServerName, "Echo", []interface{}{message}, []interface{}{&got}); err != nil {
-		return err
-	}
-	if want := message; got != want {
-		return fmt.Errorf("got %s, want %s", got, want)
-	}
-	ctx.Info("Client successfully executed rpc")
-	return nil
+	return runClient(ctx, tcpServerName)
 }
 
 func btServerFunc(ctx *context.T) error {
 	ctx = v23.WithListenSpec(ctx, rpc.ListenSpec{Addrs: rpc.ListenAddrs{{Protocol: "bt", Address: "/" + strconv.Itoa(btPortNum)}}})
-	_, server, err := v23.WithNewServer(ctx, "", &echoServer{}, security.AllowEveryone())
+	return runServer(ctx, "")
+}
+
+func btClientFunc(ctx *context.T) error {
+	return runClient(ctx, btServerName)
+}
+
+func runServer(ctx *context.T, name string) error {
+	_, server, err := v23.WithNewServer(ctx, name, &echoServer{}, security.AllowEveryone())
 	if err != nil {
 		return err
 	}
@@ -76,15 +73,31 @@ func btServerFunc(ctx *context.T) error {
 	return nil
 }
 
-func btClientFunc(ctx *context.T) error {
-	message := "hi there"
-	var got string
-	if err := v23.GetClient(ctx).Call(ctx, btServerName, "Echo", []interface{}{message}, []interface{}{&got}); err != nil {
+func runClient(ctx *context.T, name string) error {
+	elapsed, err := runTimedCall(ctx, name)
+	if err != nil {
 		return err
 	}
-	if want := message; got != want {
-		return fmt.Errorf("got %s, want %s", got, want)
+	ctx.Infof("Client successfully executed rpc on new connection in %s.", elapsed.String())
+
+	elapsed, err = runTimedCall(ctx, name)
+	if err != nil {
+		return err
 	}
-	ctx.Info("Client successfully executed rpc")
+	ctx.Infof("Client successfully executed rpc on cached connection in %s.", elapsed.String())
 	return nil
+}
+
+func runTimedCall(ctx *context.T, name string) (time.Duration, error) {
+	message := "hi there"
+	var got string
+	start := time.Now()
+	if err := v23.GetClient(ctx).Call(ctx, name, "Echo", []interface{}{message}, []interface{}{&got}); err != nil {
+		return 0, err
+	}
+	elapsed := time.Now().Sub(start)
+	if want := message; got != want {
+		return 0, fmt.Errorf("got %s, want %s", got, want)
+	}
+	return elapsed, nil
 }
