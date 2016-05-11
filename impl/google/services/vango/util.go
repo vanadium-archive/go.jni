@@ -4,7 +4,7 @@
 
 // +build java android
 
-package v23_go_runner
+package vango
 
 import (
 	"v.io/v23/context"

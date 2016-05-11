@@ -10,7 +10,7 @@ import (
 	jgroups "v.io/x/jni/impl/google/services/groups"
 	jmounttable "v.io/x/jni/impl/google/services/mounttable"
 	jsyncbase "v.io/x/jni/impl/google/services/syncbase"
-	_ "v.io/x/jni/impl/google/services/v23_go_runner"
+	_ "v.io/x/jni/impl/google/services/vango"
 	jutil "v.io/x/jni/util"
 )
 

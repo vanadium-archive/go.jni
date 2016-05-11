@@ -4,7 +4,7 @@
 
 // +build java android
 
-package v23_go_runner
+package vango
 
 import (
 	"fmt"
@@ -17,8 +17,8 @@ import (
 // #include "jni.h"
 import "C"
 
-//export Java_io_v_android_util_V23GoRunner_nativeGoContextCall
-func Java_io_v_android_util_V23GoRunner_nativeGoContextCall(jenv *C.JNIEnv, jV23GoRunner C.jobject, jContext C.jobject, jKey C.jstring) {
+//export Java_io_v_android_util_Vango_nativeGoContextCall
+func Java_io_v_android_util_Vango_nativeGoContextCall(jenv *C.JNIEnv, jVango C.jobject, jContext C.jobject, jKey C.jstring) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	key := jutil.GoString(env, jutil.Object(uintptr(unsafe.Pointer(jKey))))
 	ctx, _, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jContext))))
@@ -26,9 +26,9 @@ func Java_io_v_android_util_V23GoRunner_nativeGoContextCall(jenv *C.JNIEnv, jV23
 		jutil.JThrowV(env, err)
 		return
 	}
-	f, ok := v23GoRunnerFuncs[key]
+	f, ok := vangoFuncs[key]
 	if !ok {
-		jutil.JThrowV(env, fmt.Errorf("v23GoRunnerFunc key %q doesn't exist", key))
+		jutil.JThrowV(env, fmt.Errorf("vangoFunc key %q doesn't exist", key))
 		return
 	}
 	if err := f(ctx); err != nil {

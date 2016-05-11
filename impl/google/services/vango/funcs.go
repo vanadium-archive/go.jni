@@ -4,7 +4,7 @@
 
 // +build java android
 
-package v23_go_runner
+package vango
 
 import (
 	"fmt"
@@ -26,11 +26,11 @@ var bleServerName = naming.Endpoint{
 	Protocol: "ble",
 }.Name()
 
-// v23GoRunnerFuncs is a map containing go functions keys by unique strings
-// intended to be run by java/android applications using V23GoRunner.run(key).
+// vangoFuncs is a map containing go functions keys by unique strings
+// intended to be run by java/android applications using Vango.run(key).
 // Users must add function entries to this map and rebuild lib/android-lib in
 // the vanadium java repository.
-var v23GoRunnerFuncs = map[string]func(*context.T) error{
+var vangoFuncs = map[string]func(*context.T) error{
 	"tcp-server": tcpServerFunc,
 	"tcp-client": tcpClientFunc,
 	"bt-client":  btClientFunc,
