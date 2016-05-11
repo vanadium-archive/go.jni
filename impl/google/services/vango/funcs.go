@@ -7,14 +7,10 @@
 package vango
 
 import (
-	"fmt"
-	"time"
-
 	"v.io/v23"
 	"v.io/v23/context"
 	"v.io/v23/naming"
 	"v.io/v23/rpc"
-	"v.io/v23/security"
 )
 
 const (
@@ -31,8 +27,8 @@ var bleServerName = naming.Endpoint{
 // Users must add function entries to this map and rebuild lib/android-lib in
 // the vanadium java repository.
 var vangoFuncs = map[string]func(*context.T) error{
-	"tcp-server": tcpServerFunc,
 	"tcp-client": tcpClientFunc,
+	"tcp-server": tcpServerFunc,
 	"bt-client":  btClientFunc,
 	"bt-server":  btServerFunc,
 	"ble-client": bleClientFunc,
@@ -55,45 +51,6 @@ func btServerFunc(ctx *context.T) error {
 
 func btClientFunc(ctx *context.T) error {
 	return runClient(ctx, btServerName)
-}
-
-func runServer(ctx *context.T, name string) error {
-	_, server, err := v23.WithNewServer(ctx, name, &echoServer{}, security.AllowEveryone())
-	if err != nil {
-		return err
-	}
-	ctx.Infof("Server listening on %v", server.Status().Endpoints)
-	ctx.Infof("Server listen errors: %v", server.Status().ListenErrors)
-	return nil
-}
-
-func runClient(ctx *context.T, name string) error {
-	elapsed, err := runTimedCall(ctx, name)
-	if err != nil {
-		return err
-	}
-	ctx.Infof("Client successfully executed rpc on new connection in %s.", elapsed.String())
-
-	elapsed, err = runTimedCall(ctx, name)
-	if err != nil {
-		return err
-	}
-	ctx.Infof("Client successfully executed rpc on cached connection in %s.", elapsed.String())
-	return nil
-}
-
-func runTimedCall(ctx *context.T, name string) (time.Duration, error) {
-	message := "hi there"
-	var got string
-	start := time.Now()
-	if err := v23.GetClient(ctx).Call(ctx, name, "Echo", []interface{}{message}, []interface{}{&got}); err != nil {
-		return 0, err
-	}
-	elapsed := time.Now().Sub(start)
-	if want := message; got != want {
-		return 0, fmt.Errorf("got %s, want %s", got, want)
-	}
-	return elapsed, nil
 }
 
 func bleServerFunc(ctx *context.T) error {
