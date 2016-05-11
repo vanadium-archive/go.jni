@@ -97,7 +97,7 @@ func runTimedCall(ctx *context.T, name string) (time.Duration, error) {
 }
 
 func bleServerFunc(ctx *context.T) error {
-	ctx = v23.WithListenSpec(ctx, rpc.ListenSpec{Addrs: rpc.ListenAddrs{{Protocol: "ble"}}})
+	ctx = v23.WithListenSpec(ctx, rpc.ListenSpec{Addrs: rpc.ListenAddrs{{Protocol: "ble", Address: "na"}}})
 	return runServer(ctx, "")
 }
 
