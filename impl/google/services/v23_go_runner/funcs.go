@@ -12,6 +12,7 @@ import (
 
 	"v.io/v23"
 	"v.io/v23/context"
+	"v.io/v23/naming"
 	"v.io/v23/rpc"
 	"v.io/v23/security"
 )
@@ -20,6 +21,10 @@ const (
 	tcpServerName = "tmp/tcpServerName"
 	btServerName  = "tmp/btServerName"
 )
+
+var bleServerName = naming.Endpoint{
+	Protocol: "ble",
+}.Name()
 
 // v23GoRunnerFuncs is a map containing go functions keys by unique strings
 // intended to be run by java/android applications using V23GoRunner.run(key).
@@ -30,6 +35,8 @@ var v23GoRunnerFuncs = map[string]func(*context.T) error{
 	"tcp-client": tcpClientFunc,
 	"bt-client":  btClientFunc,
 	"bt-server":  btServerFunc,
+	"ble-client": bleClientFunc,
+	"ble-server": bleServerFunc,
 }
 
 func tcpServerFunc(ctx *context.T) error {
@@ -87,4 +94,13 @@ func runTimedCall(ctx *context.T, name string) (time.Duration, error) {
 		return 0, fmt.Errorf("got %s, want %s", got, want)
 	}
 	return elapsed, nil
+}
+
+func bleServerFunc(ctx *context.T) error {
+	ctx = v23.WithListenSpec(ctx, rpc.ListenSpec{Addrs: rpc.ListenAddrs{{Protocol: "ble"}}})
+	return runServer(ctx, "")
+}
+
+func bleClientFunc(ctx *context.T) error {
+	return runClient(ctx, bleServerName)
 }
