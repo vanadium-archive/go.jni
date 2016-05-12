@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// +build java android
-
 package vango
 
 import (
@@ -12,6 +10,9 @@ import (
 
 	"v.io/v23"
 	"v.io/v23/context"
+	"v.io/v23/conventions"
+	"v.io/v23/flow"
+	"v.io/v23/naming"
 	"v.io/v23/rpc"
 	"v.io/v23/security"
 )
@@ -34,30 +35,56 @@ func runServer(ctx *context.T, name string) error {
 }
 
 func runClient(ctx *context.T, name string) error {
-	elapsed, err := runTimedCall(ctx, name)
+	summary, err := runTimedCall(ctx, name, "new connection")
 	if err != nil {
 		return err
 	}
-	ctx.Infof("Client successfully executed rpc on new connection in %s.", elapsed.String())
+	ctx.Infof("Client success: %v", summary)
 
-	elapsed, err = runTimedCall(ctx, name)
+	summary, err = runTimedCall(ctx, name, "cached connection")
 	if err != nil {
 		return err
 	}
-	ctx.Infof("Client successfully executed rpc on cached connection in %s.", elapsed.String())
+	ctx.Infof("Client success: %v", summary)
 	return nil
 }
 
-func runTimedCall(ctx *context.T, name string) (time.Duration, error) {
-	message := "hi there"
-	var got string
+func runTimedCall(ctx *context.T, name, message string) (string, error) {
+	summary := fmt.Sprintf("[%s] to %v", message, name)
 	start := time.Now()
-	if err := v23.GetClient(ctx).Call(ctx, name, "Echo", []interface{}{message}, []interface{}{&got}); err != nil {
-		return 0, err
+	call, err := v23.GetClient(ctx).StartCall(ctx, name, "Echo", []interface{}{message})
+	if err != nil {
+		return summary, err
+	}
+	var recvd string
+	if err := call.Finish(&recvd); err != nil {
+		return summary, err
 	}
 	elapsed := time.Now().Sub(start)
-	if want := message; got != want {
-		return 0, fmt.Errorf("got %s, want %s", got, want)
+	if recvd != message {
+		return summary, fmt.Errorf("got [%s], want [%s]", recvd, message)
 	}
-	return elapsed, nil
+	me := security.LocalBlessingNames(ctx, call.Security())
+	them, _ := call.RemoteBlessings()
+	return fmt.Sprintf("%s in %v (THEM:%v EP:%v) (ME:%v)", summary, elapsed, them, call.Security().RemoteEndpoint(), me), nil
+}
+
+func mountName(ctx *context.T, addendums ...string) string {
+	var (
+		p     = v23.GetPrincipal(ctx)
+		b, _  = p.BlessingStore().Default()
+		names = conventions.ParseBlessingNames(security.BlessingNames(p, b)...)
+	)
+	if len(names) == 0 {
+		return ""
+	}
+	return naming.Join(append([]string{names[0].Home()}, addendums...)...)
+}
+
+func addRegisteredProto(ls *rpc.ListenSpec, proto, addr string) {
+	for _, p := range flow.RegisteredProtocols() {
+		if p == proto {
+			ls.Addrs = append(ls.Addrs, rpc.ListenAddrs{{Protocol: p, Address: addr}}...)
+		}
+	}
 }
