@@ -7,6 +7,7 @@
 package util
 
 import (
+	"fmt"
 	"reflect"
 	"time"
 )
@@ -54,7 +55,7 @@ import "C"
 var errJValue = C.jObjectValue(nil)
 
 // jValue converts a Go value into a Java value with the given sign.
-func jValue(env Env, v interface{}, sign Sign) (C.jvalue, bool) {
+func jValue(env Env, v interface{}, sign Sign) (C.jvalue, error) {
 	switch sign {
 	case BoolSign:
 		return jBoolValue(v)
@@ -87,153 +88,153 @@ func jValue(env Env, v interface{}, sign Sign) (C.jvalue, bool) {
 	}
 }
 
-func jBoolValue(v interface{}) (C.jvalue, bool) {
+func jBoolValue(v interface{}) (C.jvalue, error) {
 	val, ok := v.(bool)
 	if !ok {
-		return errJValue, false
+		return errJValue, fmt.Errorf("%#v isn't bool", v)
 	}
 	jBool := C.jboolean(C.JNI_FALSE)
 	if val {
 		jBool = C.jboolean(C.JNI_TRUE)
 	}
-	return C.jBoolValue(jBool), true
+	return C.jBoolValue(jBool), nil
 }
 
-func jByteValue(v interface{}) (C.jvalue, bool) {
+func jByteValue(v interface{}) (C.jvalue, error) {
 	val, ok := intValue(v)
 	if !ok {
-		return errJValue, false
+		return errJValue, fmt.Errorf("%#v isn't byte", v)
 	}
-	return C.jByteValue(C.jbyte(val)), true
+	return C.jByteValue(C.jbyte(val)), nil
 }
 
-func jCharValue(v interface{}) (C.jvalue, bool) {
+func jCharValue(v interface{}) (C.jvalue, error) {
 	val, ok := intValue(v)
 	if !ok {
-		return errJValue, false
+		return errJValue, fmt.Errorf("%#v isn't char", v)
 	}
-	return C.jCharValue(C.jchar(val)), true
+	return C.jCharValue(C.jchar(val)), nil
 }
 
-func jShortValue(v interface{}) (C.jvalue, bool) {
+func jShortValue(v interface{}) (C.jvalue, error) {
 	val, ok := intValue(v)
 	if !ok {
-		return errJValue, false
+		return errJValue, fmt.Errorf("%#v isn't short", v)
 	}
-	return C.jShortValue(C.jshort(val)), true
+	return C.jShortValue(C.jshort(val)), nil
 }
 
-func jIntValue(v interface{}) (C.jvalue, bool) {
+func jIntValue(v interface{}) (C.jvalue, error) {
 	val, ok := intValue(v)
 	if !ok {
-		return errJValue, false
+		return errJValue, fmt.Errorf("%#v isn't int", v)
 	}
-	return C.jIntValue(C.jint(val)), true
+	return C.jIntValue(C.jint(val)), nil
 }
 
-func jLongValue(v interface{}) (C.jvalue, bool) {
+func jLongValue(v interface{}) (C.jvalue, error) {
 	val, ok := intValue(v)
 	if !ok {
-		return errJValue, false
+		return errJValue, fmt.Errorf("%#v isn't long", v)
 	}
-	return C.jLongValue(C.jlong(val)), true
+	return C.jLongValue(C.jlong(val)), nil
 }
 
-func jStringValue(env Env, v interface{}) (C.jvalue, bool) {
+func jStringValue(env Env, v interface{}) (C.jvalue, error) {
 	str, ok := v.(string)
 	if !ok {
-		return errJValue, false
+		return errJValue, fmt.Errorf("%#v isn't string", v)
 	}
 	return jObjectValue(JString(env, str))
 }
 
-func jDateTimeValue(env Env, v interface{}) (C.jvalue, bool) {
+func jDateTimeValue(env Env, v interface{}) (C.jvalue, error) {
 	t, ok := v.(time.Time)
 	if !ok {
-		return errJValue, false
+		return errJValue, fmt.Errorf("%#v isn't time.Time", v)
 	}
 	jTime, err := JTime(env, t)
 	if err != nil {
-		return errJValue, false
+		return errJValue, err
 	}
 	return jObjectValue(jTime)
 }
 
-func jDurationValue(env Env, v interface{}) (C.jvalue, bool) {
+func jDurationValue(env Env, v interface{}) (C.jvalue, error) {
 	d, ok := v.(time.Duration)
 	if !ok {
-		return errJValue, false
+		return errJValue, fmt.Errorf("%#v isn't time.Duration", v)
 	}
 	jDuration, err := JDuration(env, d)
 	if err != nil {
-		return errJValue, false
+		return errJValue, err
 	}
 	return jObjectValue(jDuration)
 }
 
-func jVExceptionValue(env Env, v interface{}) (C.jvalue, bool) {
+func jVExceptionValue(env Env, v interface{}) (C.jvalue, error) {
 	if v == nil {
-		return C.jObjectValue(nil), true
+		return C.jObjectValue(nil), nil
 	}
-	err, ok := v.(error)
+	native, ok := v.(error)
 	if !ok {
-		return errJValue, false
+		return errJValue, fmt.Errorf("%#v isn't error", v)
 	}
-	jVException, err := JVException(env, err)
+	jVException, err := JVException(env, native)
 	if err != nil {
-		return errJValue, false
+		return errJValue, err
 	}
 	return jObjectValue(jVException)
 }
 
-func jByteArrayValue(env Env, v interface{}) (C.jvalue, bool) {
+func jByteArrayValue(env Env, v interface{}) (C.jvalue, error) {
 	arr, ok := v.([]byte)
 	if !ok {
-		return errJValue, false
+		return errJValue, fmt.Errorf("%#v isn't []byte", v)
 	}
 	jArr, err := JByteArray(env, arr)
 	if err != nil {
-		return errJValue, false
+		return errJValue, err
 	}
 	return jObjectValue(jArr)
 }
 
-func jStringArrayValue(env Env, v interface{}) (C.jvalue, bool) {
+func jStringArrayValue(env Env, v interface{}) (C.jvalue, error) {
 	arr, ok := v.([]string)
 	if !ok {
-		return errJValue, false
+		return errJValue, fmt.Errorf("%#v isn't []string", v)
 	}
 	jArr, err := JStringArray(env, arr)
 	if err != nil {
-		return errJValue, false
+		return errJValue, err
 	}
 	return jObjectValue(jArr)
 }
 
-func jByteArrayArrayValue(env Env, v interface{}) (C.jvalue, bool) {
+func jByteArrayArrayValue(env Env, v interface{}) (C.jvalue, error) {
 	arr, ok := v.([][]byte)
 	if !ok {
-		return errJValue, false
+		return errJValue, fmt.Errorf("%#v isn't [][]byte", v)
 	}
 	jArr, err := JByteArrayArray(env, arr)
 	if err != nil {
-		return errJValue, false
+		return errJValue, err
 	}
 	return jObjectValue(jArr)
 }
 
-func jObjectValue(v interface{}) (C.jvalue, bool) {
+func jObjectValue(v interface{}) (C.jvalue, error) {
 	rv := reflect.ValueOf(v)
 	if !rv.IsValid() { // nil value
-		return C.jObjectValue(nil), true
+		return C.jObjectValue(nil), nil
 	}
 	switch val := v.(type) {
 	case Object:
-		return C.jObjectValue(val.value()), true
+		return C.jObjectValue(val.value()), nil
 	case Class:
-		return C.jObjectValue(C.jobject(val.value())), true
+		return C.jObjectValue(C.jobject(val.value())), nil
 	default:
-		return errJValue, false
+		return errJValue, fmt.Errorf("%#v isn't Object or Class", v)
 	}
 }
 

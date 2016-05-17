@@ -129,6 +129,10 @@ jthrowable ExceptionOccurred(JNIEnv* env);
 // Clears any exception that is currently being thrown.
 void ExceptionClear(JNIEnv* env);
 
+// Prints an exception and a backtrace of the stack to a system error-reporting
+// channel, such as stderr.
+void ExceptionDescribe(JNIEnv* env);
+
 // Attaches the current thread to a Java VM.
 jint AttachCurrentThread(JavaVM* jvm, JNIEnv** env, void* args);
 

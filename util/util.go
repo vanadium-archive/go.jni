@@ -151,25 +151,25 @@ func JThrow(env Env, class Class, msg string) {
 }
 
 // JThrowV throws a new Java VException corresponding to the given error.
-func JThrowV(env Env, err error) {
-	if err == nil {
+func JThrowV(env Env, native error) {
+	if native == nil {
 		log.Printf("Couldn't throw exception: nil error")
 		return
 	}
-	obj, e := JVomCopy(env, err, jVExceptionClass)
-	if e != nil {
-		log.Printf("Couldn't throw exception %q: %v", err, e)
+	obj, err := JVomCopy(env, native, jVExceptionClass)
+	if err != nil {
+		log.Printf("Couldn't throw exception %#v: %v", native, err)
 		return
 	}
 	C.Throw(env.value(), C.jthrowable(obj.value()))
 }
 
 // JVException returns the Java VException given the Go error.
-func JVException(env Env, err error) (Object, error) {
-	if err == nil {
+func JVException(env Env, native error) (Object, error) {
+	if native == nil {
 		return NullObject, nil
 	}
-	return JVomCopy(env, err, jVExceptionClass)
+	return JVomCopy(env, native, jVExceptionClass)
 }
 
 // JExceptionMsg returns the exception message as a Go error, if an exception
@@ -179,6 +179,7 @@ func JExceptionMsg(env Env) error {
 	if jException.IsNull() { // no exception
 		return nil
 	}
+	C.ExceptionDescribe(env.value())
 	C.ExceptionClear(env.value())
 	return GoError(env, jException)
 }

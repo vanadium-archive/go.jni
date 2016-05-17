@@ -182,6 +182,10 @@ void ExceptionClear(JNIEnv* env) {
   return (*env)->ExceptionClear(env);
 }
 
+void ExceptionDescribe(JNIEnv* env) {
+  return (*env)->ExceptionDescribe(env);
+}
+
 jint AttachCurrentThread(JavaVM* jvm, JNIEnv** env, void* args) {
   return (*jvm)->AttachCurrentThread(jvm, (void**) env, args);
 }
