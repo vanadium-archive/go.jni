@@ -8,7 +8,6 @@
 package fortune
 
 import (
-	"fmt"
 	"io"
 	"v.io/v23"
 	"v.io/v23/context"
@@ -49,7 +48,7 @@ func (x ComplexErrorParam) VDLIsZero() bool {
 }
 
 func (x ComplexErrorParam) VDLWrite(enc vdl.Encoder) error {
-	if err := enc.StartValue(vdl.TypeOf((*ComplexErrorParam)(nil)).Elem()); err != nil {
+	if err := enc.StartValue(__VDLType_struct_1); err != nil {
 		return err
 	}
 	if x.Str != "" {
@@ -95,7 +94,7 @@ func (x ComplexErrorParam) VDLWrite(enc vdl.Encoder) error {
 }
 
 func __VDLWriteAnon_list_1(enc vdl.Encoder, x []uint32) error {
-	if err := enc.StartValue(vdl.TypeOf((*[]uint32)(nil))); err != nil {
+	if err := enc.StartValue(__VDLType_list_2); err != nil {
 		return err
 	}
 	if err := enc.SetLenHint(len(x)); err != nil {
@@ -123,11 +122,8 @@ func __VDLWriteAnon_list_1(enc vdl.Encoder, x []uint32) error {
 
 func (x *ComplexErrorParam) VDLRead(dec vdl.Decoder) error {
 	*x = ComplexErrorParam{}
-	if err := dec.StartValue(); err != nil {
+	if err := dec.StartValue(__VDLType_struct_1); err != nil {
 		return err
-	}
-	if (dec.StackDepth() == 1 || dec.IsAny()) && !vdl.Compatible(vdl.TypeOf(*x), dec.Type()) {
-		return fmt.Errorf("incompatible struct %T, from %v", *x, dec.Type())
 	}
 	for {
 		f, err := dec.NextField()
@@ -138,7 +134,7 @@ func (x *ComplexErrorParam) VDLRead(dec vdl.Decoder) error {
 		case "":
 			return dec.FinishValue()
 		case "Str":
-			if err := dec.StartValue(); err != nil {
+			if err := dec.StartValue(vdl.StringType); err != nil {
 				return err
 			}
 			var err error
@@ -149,7 +145,7 @@ func (x *ComplexErrorParam) VDLRead(dec vdl.Decoder) error {
 				return err
 			}
 		case "Num":
-			if err := dec.StartValue(); err != nil {
+			if err := dec.StartValue(vdl.Int32Type); err != nil {
 				return err
 			}
 			tmp, err := dec.DecodeInt(32)
@@ -173,11 +169,8 @@ func (x *ComplexErrorParam) VDLRead(dec vdl.Decoder) error {
 }
 
 func __VDLReadAnon_list_1(dec vdl.Decoder, x *[]uint32) error {
-	if err := dec.StartValue(); err != nil {
+	if err := dec.StartValue(__VDLType_list_2); err != nil {
 		return err
-	}
-	if (dec.StackDepth() == 1 || dec.IsAny()) && !vdl.Compatible(vdl.TypeOf(*x), dec.Type()) {
-		return fmt.Errorf("incompatible list %T, from %v", *x, dec.Type())
 	}
 	switch len := dec.LenHint(); {
 	case len > 0:
@@ -193,7 +186,7 @@ func __VDLReadAnon_list_1(dec vdl.Decoder, x *[]uint32) error {
 			return dec.FinishValue()
 		}
 		var elem uint32
-		if err := dec.StartValue(); err != nil {
+		if err := dec.StartValue(vdl.Uint32Type); err != nil {
 			return err
 		}
 		tmp, err := dec.DecodeUint(32)
@@ -928,6 +921,12 @@ func (s implFortuneMultipleStreamingGetServerCallSend) Send(item string) error {
 	return s.s.Send(item)
 }
 
+// Hold type definitions in package-level variables, for better performance.
+var (
+	__VDLType_struct_1 *vdl.Type
+	__VDLType_list_2   *vdl.Type
+)
+
 var __VDLInitCalled bool
 
 // __VDLInit performs vdl initialization.  It is safe to call multiple times.
@@ -951,6 +950,10 @@ func __VDLInit() struct{} {
 
 	// Register types.
 	vdl.Register((*ComplexErrorParam)(nil))
+
+	// Initialize type definitions.
+	__VDLType_struct_1 = vdl.TypeOf((*ComplexErrorParam)(nil)).Elem()
+	__VDLType_list_2 = vdl.TypeOf((*[]uint32)(nil))
 
 	// Set error format strings.
 	i18n.Cat().SetWithBase(i18n.LangID("en"), i18n.MsgID(ErrNoFortunes.ID), "{1:}{2:} no fortunes added")
