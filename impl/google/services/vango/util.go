@@ -6,13 +6,17 @@ package vango
 
 import (
 	"fmt"
+	"sort"
+	"strings"
 	"time"
 
 	"v.io/v23"
 	"v.io/v23/context"
 	"v.io/v23/conventions"
+	"v.io/v23/discovery"
 	"v.io/v23/flow"
 	"v.io/v23/naming"
+	"v.io/v23/options"
 	"v.io/v23/rpc"
 	"v.io/v23/security"
 )
@@ -69,6 +73,14 @@ func runTimedCall(ctx *context.T, name, message string) (string, error) {
 	return fmt.Sprintf("%s in %v (THEM:%v EP:%v) (ME:%v)", summary, elapsed, them, call.Security().RemoteEndpoint(), me), nil
 }
 
+func username(blessingNames []string) string {
+	var ret []string
+	for _, p := range conventions.ParseBlessingNames(blessingNames...) {
+		ret = append(ret, p.User)
+	}
+	return strings.Join(ret, ",")
+}
+
 func mountName(ctx *context.T, addendums ...string) string {
 	var (
 		p     = v23.GetPrincipal(ctx)
@@ -87,4 +99,82 @@ func addRegisteredProto(ls *rpc.ListenSpec, proto, addr string) {
 			ls.Addrs = append(ls.Addrs, rpc.ListenAddrs{{Protocol: p, Address: addr}}...)
 		}
 	}
+}
+
+func serverAddrs(status rpc.ServerStatus) []string {
+	var addrs []string
+	for _, ep := range status.Endpoints {
+		addrs = append(addrs, fmt.Sprintf("(%v, %v)", ep.Addr().Network(), ep.Addr()))
+	}
+	sort.Strings(addrs)
+	return addrs
+}
+
+func newPeer(ctx *context.T, u discovery.Update) (*peer, error) {
+	var (
+		addrs     []string
+		usernames = make(map[string]bool)
+		me        = naming.MountEntry{IsLeaf: true}
+		ns        = v23.GetNamespace(ctx)
+	)
+	for _, vname := range u.Addresses() {
+		entry, err := ns.Resolve(ctx, vname)
+		if err != nil {
+			ctx.Errorf("Failed to resolve advertised address [%v]: %v", vname, err)
+			continue
+		}
+		for _, s := range entry.Servers {
+			epstr, _ := naming.SplitAddressName(s.Server) // suffix should be empty since the server address is what is advertised.
+			ep, err := naming.ParseEndpoint(epstr)
+			if err != nil {
+				ctx.Errorf("Failed to resolve advertised address [%v] into an endpoint: %v", epstr, err)
+				continue
+			}
+			addrs = append(addrs, fmt.Sprintf("(%v, %v)", ep.Addr().Network(), ep.Addr()))
+			usernames[username(ep.BlessingNames())] = true
+			me.Servers = append(me.Servers, s)
+		}
+	}
+	if len(usernames) == 0 {
+		return nil, fmt.Errorf("could not determine user associated with AdId: %v, addrs: %v", u.Id(), u.Addresses())
+	}
+	ulist := make([]string, 0, len(usernames))
+	for u := range usernames {
+		ulist = append(ulist, u)
+	}
+	return &peer{
+		username:    strings.Join(ulist, ", "),
+		description: fmt.Sprintf("%v at %v (AdId: %v)", ulist, addrs, u.Id()),
+		adId:        u.Id(),
+		preresolved: options.Preresolved{&me},
+	}, nil
+
+}
+
+type peer struct {
+	username    string // Username claimed by the advertisement
+	description string
+	preresolved options.Preresolved
+	adId        discovery.AdId
+}
+
+func (p *peer) call(ctx *context.T, message string) (string, error) {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+	start := time.Now()
+	call, err := v23.GetClient(ctx).StartCall(ctx, "", "Echo", []interface{}{message}, p.preresolved)
+	if err != nil {
+		return "", err
+	}
+	var recvd string
+	if err := call.Finish(&recvd); err != nil {
+		return "", err
+	}
+	elapsed := time.Now().Sub(start)
+	if recvd != message {
+		return "", fmt.Errorf("got [%s], want [%s]", recvd, message)
+	}
+	them, _ := call.RemoteBlessings()
+	theiraddr := call.Security().RemoteEndpoint().Addr()
+	return fmt.Sprintf("Called %v at (%v, %v) in %v, and said [%v]", username(them), theiraddr.Network(), theiraddr, elapsed, message), nil
 }

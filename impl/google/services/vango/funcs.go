@@ -6,6 +6,7 @@ package vango
 
 import (
 	"fmt"
+	"io"
 	"time"
 
 	"v.io/v23"
@@ -30,7 +31,7 @@ var (
 	// intended to be run by java/android applications using Vango.run(key).
 	// Users must add function entries to this map and rebuild lib/android-lib in
 	// the vanadium java repository.
-	vangoFuncs = map[string]func(*context.T) error{
+	vangoFuncs = map[string]func(*context.T, io.Writer) error{
 		"tcp-client": tcpClientFunc,
 		"tcp-server": tcpServerFunc,
 		"bt-client":  btClientFunc,
@@ -41,40 +42,40 @@ var (
 	}
 )
 
-func tcpServerFunc(ctx *context.T) error {
+func tcpServerFunc(ctx *context.T, _ io.Writer) error {
 	ctx = v23.WithListenSpec(ctx, rpc.ListenSpec{Proxy: "proxy"})
 	return runServer(ctx, tcpServerName)
 }
 
-func tcpClientFunc(ctx *context.T) error {
+func tcpClientFunc(ctx *context.T, _ io.Writer) error {
 	return runClient(ctx, tcpServerName)
 }
 
-func btServerFunc(ctx *context.T) error {
+func btServerFunc(ctx *context.T, _ io.Writer) error {
 	ctx = v23.WithListenSpec(ctx, rpc.ListenSpec{Addrs: rpc.ListenAddrs{{Protocol: "bt", Address: "/0"}}})
 	return runServer(ctx, btServerName)
 }
 
-func btClientFunc(ctx *context.T) error {
+func btClientFunc(ctx *context.T, _ io.Writer) error {
 	return runClient(ctx, btServerName)
 }
 
-func bleServerFunc(ctx *context.T) error {
+func bleServerFunc(ctx *context.T, _ io.Writer) error {
 	ctx = v23.WithListenSpec(ctx, rpc.ListenSpec{Addrs: rpc.ListenAddrs{{Protocol: "ble", Address: "na"}}})
 	return runServer(ctx, "")
 }
 
-func bleClientFunc(ctx *context.T) error {
+func bleClientFunc(ctx *context.T, _ io.Writer) error {
 	return runClient(ctx, bleServerName)
 }
 
 // AllFunc runs a server, advertises it, scans for other servers and makes an
 // Echo RPC to every advertised remote server.
-func AllFunc(ctx *context.T) error {
+func AllFunc(ctx *context.T, output io.Writer) error {
 	ls := rpc.ListenSpec{Proxy: "proxy"}
 	addRegisteredProto(&ls, "tcp", ":0")
 	addRegisteredProto(&ls, "bt", "/0")
-	ctx.Infof("ListenSpec: %#v", ls)
+	fmt.Fprintf(output, "Listening on: %+v (and proxy)", ls.Addrs)
 	ctx, server, err := v23.WithNewServer(
 		v23.WithListenSpec(ctx, ls),
 		mountName(ctx, "all"),
@@ -102,41 +103,86 @@ func AllFunc(ctx *context.T) error {
 	if err != nil {
 		return err
 	}
-	status := server.Status()
-	ctx.Infof("My AdID: %v", ad.Id)
-	ctx.Infof("Status: %+v", status)
-	counter := 0
-	onDiscovered := func(addr, message string) {
-		ctx, cancel := context.WithTimeout(ctx, rpcTimeout)
-		defer cancel()
-		summary, err := runTimedCall(ctx, addr, message)
-		if err != nil {
-			ctx.Infof("%s: ERROR: %v", summary, err)
-			return
-		}
-		ctx.Infof("%s: SUCCESS", summary)
-	}
-	for {
+	var (
+		status      = server.Status()
+		counter     = 0
+		peerByAdId  = make(map[discovery.AdId]*peer)
+		callResults = make(chan string)
+		activeCalls = 0
+		quit        = false
+		myaddrs     = serverAddrs(status)
+	)
+	fmt.Fprintln(output, "My AdID:", ad.Id)
+	fmt.Fprintln(output, "My addrs:", myaddrs)
+	ctx.Infof("SERVER STATUS: %+v", status)
+	for !quit {
 		select {
 		case <-ctx.Done():
-			ctx.Infof("EXITING")
-			return nil
+			quit = true
 		case <-status.Dirty:
 			status = server.Status()
-			ctx.Infof("Status Changed: %+v", status)
-		case u := <-updates:
-			if u.IsLost() {
-				ctx.Infof("LOST: %v", u.Id())
+			newaddrs := serverAddrs(status)
+			changed := len(newaddrs) != len(myaddrs)
+			if !changed {
+				for i := range newaddrs {
+					if newaddrs[i] != myaddrs[i] {
+						changed = true
+						break
+					}
+				}
+			}
+			if changed {
+				myaddrs = newaddrs
+				fmt.Fprintln(output, "My addrs:", myaddrs)
+			}
+			ctx.Infof("SERVER STATUS: %+v", status)
+		case u, scanning := <-updates:
+			if !scanning {
+				fmt.Fprintln(output, "SCANNING STOPPED")
+				quit = true
 				break
 			}
-			counter++
-			ctx.Infof("FOUND(%d): %+v", counter, u.Advertisement())
-			for _, addr := range u.Addresses() {
-				go onDiscovered(addr, fmt.Sprintf("CALL #%03d", counter))
+			if u.IsLost() {
+				if p, ok := peerByAdId[u.Id()]; ok {
+					fmt.Fprintln(output, "LOST:", p.description)
+					delete(peerByAdId, u.Id())
+				}
+				break
 			}
+			p, err := newPeer(ctx, u)
+			if err != nil {
+				ctx.Info(err)
+				break
+			}
+			peerByAdId[p.adId] = p
+			counter++
+			fmt.Fprintln(output, "FOUND:", p.description)
+			activeCalls++
+			go func(msg string) {
+				summary, err := p.call(ctx, msg)
+				if err != nil {
+					callResults <- fmt.Sprintf("ERROR calling [%v]: %v", p.description, err)
+					return
+				}
+				callResults <- summary
+			}(fmt.Sprintf("Hello #%03d", counter))
+		case r := <-callResults:
+			activeCalls--
+			fmt.Fprintln(output, r)
 		case <-stoppedAd:
-			ctx.Infof("Stopped advertising")
-			return fmt.Errorf("stopped advertising")
+			fmt.Fprintln(output, "STOPPED ADVERTISING")
+			stoppedAd = nil
 		}
 	}
+	fmt.Println(output, "EXITING: Cleaning up")
+	for activeCalls > 0 {
+		<-callResults
+		activeCalls--
+	}
+	// Exhaust the scanned updates queue.
+	// (The channel will be closed as a by-product of the context being Done).
+	for range updates {
+	}
+	fmt.Fprintln(output, "EXITING: Done")
+	return nil
 }

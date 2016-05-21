@@ -8,6 +8,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	"v.io/v23"
 	"v.io/x/jni/impl/google/services/vango"
@@ -17,5 +18,5 @@ import (
 func main() {
 	ctx, shutdown := v23.Init()
 	defer shutdown()
-	fmt.Println(vango.AllFunc(ctx))
+	fmt.Println(vango.AllFunc(ctx, os.Stdout))
 }
