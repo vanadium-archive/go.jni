@@ -134,27 +134,18 @@ func (x *ComplexErrorParam) VDLRead(dec vdl.Decoder) error {
 		case "":
 			return dec.FinishValue()
 		case "Str":
-			if err := dec.StartValue(vdl.StringType); err != nil {
+			switch value, err := dec.ReadValueString(); {
+			case err != nil:
 				return err
-			}
-			var err error
-			if x.Str, err = dec.DecodeString(); err != nil {
-				return err
-			}
-			if err := dec.FinishValue(); err != nil {
-				return err
+			default:
+				x.Str = value
 			}
 		case "Num":
-			if err := dec.StartValue(vdl.Int32Type); err != nil {
+			switch value, err := dec.ReadValueInt(32); {
+			case err != nil:
 				return err
-			}
-			tmp, err := dec.DecodeInt(32)
-			if err != nil {
-				return err
-			}
-			x.Num = int32(tmp)
-			if err := dec.FinishValue(); err != nil {
-				return err
+			default:
+				x.Num = int32(value)
 			}
 		case "List":
 			if err := __VDLReadAnon_list_1(dec, &x.List); err != nil {
@@ -172,32 +163,20 @@ func __VDLReadAnon_list_1(dec vdl.Decoder, x *[]uint32) error {
 	if err := dec.StartValue(__VDLType_list_2); err != nil {
 		return err
 	}
-	switch len := dec.LenHint(); {
-	case len > 0:
+	if len := dec.LenHint(); len > 0 {
 		*x = make([]uint32, 0, len)
-	default:
+	} else {
 		*x = nil
 	}
 	for {
-		switch done, err := dec.NextEntry(); {
+		switch done, elem, err := dec.NextEntryValueUint(32); {
 		case err != nil:
 			return err
 		case done:
 			return dec.FinishValue()
+		default:
+			*x = append(*x, uint32(elem))
 		}
-		var elem uint32
-		if err := dec.StartValue(vdl.Uint32Type); err != nil {
-			return err
-		}
-		tmp, err := dec.DecodeUint(32)
-		if err != nil {
-			return err
-		}
-		elem = uint32(tmp)
-		if err := dec.FinishValue(); err != nil {
-			return err
-		}
-		*x = append(*x, elem)
 	}
 }
 
