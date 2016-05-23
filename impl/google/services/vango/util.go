@@ -159,7 +159,7 @@ type peer struct {
 }
 
 func (p *peer) call(ctx *context.T, message string) (string, error) {
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, rpcTimeout)
 	defer cancel()
 	start := time.Now()
 	call, err := v23.GetClient(ctx).StartCall(ctx, "", "Echo", []interface{}{message}, p.preresolved)

@@ -107,11 +107,27 @@ func AllFunc(ctx *context.T, output io.Writer) error {
 		status      = server.Status()
 		counter     = 0
 		peerByAdId  = make(map[discovery.AdId]*peer)
+		lastCall    = make(map[discovery.AdId]time.Time)
 		callResults = make(chan string)
 		activeCalls = 0
 		quit        = false
 		myaddrs     = serverAddrs(status)
+		ticker      = time.NewTicker(time.Second)
+		call        = func(p *peer) {
+			counter++
+			activeCalls++
+			lastCall[p.adId] = time.Now()
+			go func(msg string) {
+				summary, err := p.call(ctx, msg)
+				if err != nil {
+					callResults <- fmt.Sprintf("ERROR calling [%v]: %v", p.description, err)
+					return
+				}
+				callResults <- summary
+			}(fmt.Sprintf("Hello #%d", counter))
+		}
 	)
+	defer ticker.Stop()
 	fmt.Fprintln(output, "My AdID:", ad.Id)
 	fmt.Fprintln(output, "My addrs:", myaddrs)
 	ctx.Infof("SERVER STATUS: %+v", status)
@@ -145,8 +161,9 @@ func AllFunc(ctx *context.T, output io.Writer) error {
 			if u.IsLost() {
 				if p, ok := peerByAdId[u.Id()]; ok {
 					fmt.Fprintln(output, "LOST:", p.description)
-					delete(peerByAdId, u.Id())
 				}
+				delete(peerByAdId, u.Id())
+				delete(lastCall, u.Id())
 				break
 			}
 			p, err := newPeer(ctx, u)
@@ -155,23 +172,22 @@ func AllFunc(ctx *context.T, output io.Writer) error {
 				break
 			}
 			peerByAdId[p.adId] = p
-			counter++
 			fmt.Fprintln(output, "FOUND:", p.description)
-			activeCalls++
-			go func(msg string) {
-				summary, err := p.call(ctx, msg)
-				if err != nil {
-					callResults <- fmt.Sprintf("ERROR calling [%v]: %v", p.description, err)
-					return
-				}
-				callResults <- summary
-			}(fmt.Sprintf("Hello #%03d", counter))
+			call(p)
 		case r := <-callResults:
 			activeCalls--
 			fmt.Fprintln(output, r)
 		case <-stoppedAd:
 			fmt.Fprintln(output, "STOPPED ADVERTISING")
 			stoppedAd = nil
+		case <-ticker.C:
+			// Call all peers that haven't been called in a while
+			now := time.Now()
+			for id, t := range lastCall {
+				if now.Sub(t) > rpcTimeout {
+					call(peerByAdId[id])
+				}
+			}
 		}
 	}
 	fmt.Println(output, "EXITING: Cleaning up")
