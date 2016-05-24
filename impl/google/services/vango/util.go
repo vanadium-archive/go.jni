@@ -6,6 +6,7 @@ package vango
 
 import (
 	"fmt"
+	"net"
 	"sort"
 	"strings"
 	"time"
@@ -101,18 +102,68 @@ func addRegisteredProto(ls *rpc.ListenSpec, proto, addr string) {
 	}
 }
 
-func serverAddrs(status rpc.ServerStatus) []string {
-	var addrs []string
-	for _, ep := range status.Endpoints {
-		addrs = append(addrs, fmt.Sprintf("(%v, %v)", ep.Addr().Network(), ep.Addr()))
+type addrList []net.Addr
+
+func (l addrList) Len() int { return len(l) }
+func (l addrList) Less(i, j int) bool {
+	if l[i].Network() == l[j].Network() {
+		return addrString(l[i]) < addrString(l[j])
 	}
-	sort.Strings(addrs)
-	return addrs
+	return l[i].Network() < l[j].Network()
+}
+func (l addrList) Swap(i, j int) { l[i], l[j] = l[j], l[i] }
+
+func addrString(a net.Addr) string {
+	if !strings.HasPrefix(a.Network(), "tcp") && !strings.HasPrefix(a.Network(), "wsh") {
+		return a.String()
+	}
+	host, port, err := net.SplitHostPort(a.String())
+	if err != nil {
+		return a.String()
+	}
+	ip := net.ParseIP(host)
+	if ip == nil {
+		return a.String()
+	}
+	if ip.IsLoopback() {
+		host = "loopback"
+	}
+	if ip.IsLinkLocalUnicast() {
+		host = "linklocal"
+	}
+	if ip.IsMulticast() {
+		// Shouldn't happen
+		host = "multicast"
+	}
+	return net.JoinHostPort(host, port)
+}
+
+func serverAddrs(status rpc.ServerStatus) []string {
+	var addrs addrList
+	for _, ep := range status.Endpoints {
+		addrs = append(addrs, ep.Addr())
+	}
+	return prettyAddrList(addrs)
+}
+
+func prettyAddrList(addrs addrList) []string {
+	if len(addrs) == 0 {
+		return nil
+	}
+	sort.Sort(addrs)
+	var ret []string
+	for i, a := range addrs {
+		str := fmt.Sprintf("(%v, %v)", a.Network(), addrString(a))
+		if i == 0 || ret[len(ret)-1] != str {
+			ret = append(ret, str)
+		}
+	}
+	return ret
 }
 
 func newPeer(ctx *context.T, u discovery.Update) (*peer, error) {
 	var (
-		addrs     []string
+		addrs     addrList
 		usernames = make(map[string]bool)
 		me        = naming.MountEntry{IsLeaf: true}
 		ns        = v23.GetNamespace(ctx)
@@ -130,7 +181,7 @@ func newPeer(ctx *context.T, u discovery.Update) (*peer, error) {
 				ctx.Errorf("Failed to resolve advertised address [%v] into an endpoint: %v", epstr, err)
 				continue
 			}
-			addrs = append(addrs, fmt.Sprintf("(%v, %v)", ep.Addr().Network(), ep.Addr()))
+			addrs = append(addrs, ep.Addr())
 			usernames[username(ep.BlessingNames())] = true
 			me.Servers = append(me.Servers, s)
 		}
@@ -144,7 +195,7 @@ func newPeer(ctx *context.T, u discovery.Update) (*peer, error) {
 	}
 	return &peer{
 		username:    strings.Join(ulist, ", "),
-		description: fmt.Sprintf("%v at %v (AdId: %v)", ulist, addrs, u.Id()),
+		description: fmt.Sprintf("%v at %v (AdId: %v)", ulist, prettyAddrList(addrs), u.Id()),
 		adId:        u.Id(),
 		preresolved: options.Preresolved{&me},
 	}, nil

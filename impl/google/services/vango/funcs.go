@@ -5,6 +5,7 @@
 package vango
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"time"
@@ -16,12 +17,15 @@ import (
 	"v.io/v23/rpc"
 	"v.io/v23/security"
 	libdiscovery "v.io/x/ref/lib/discovery"
+	"v.io/x/ref/lib/stats"
 )
 
 const (
 	rpcTimeout    = 10 * time.Second
 	tcpServerName = "tmp/vango/tcp"
 	btServerName  = "tmp/vango/bt"
+	interfaceName = "v.io/x/jni/impl/google/services/vango.EchoServer"
+	vangoStat     = "vango"
 )
 
 var (
@@ -75,7 +79,7 @@ func AllFunc(ctx *context.T, output io.Writer) error {
 	ls := rpc.ListenSpec{Proxy: "proxy"}
 	addRegisteredProto(&ls, "tcp", ":0")
 	addRegisteredProto(&ls, "bt", "/0")
-	fmt.Fprintf(output, "Listening on: %+v (and proxy)", ls.Addrs)
+	fmt.Fprintf(output, "Listening on: %+v (and proxy)\n", ls.Addrs)
 	ctx, server, err := v23.WithNewServer(
 		v23.WithListenSpec(ctx, ls),
 		mountName(ctx, "all"),
@@ -84,7 +88,6 @@ func AllFunc(ctx *context.T, output io.Writer) error {
 	if err != nil {
 		return err
 	}
-	const interfaceName = "v.io/x/jni/impl/google/services/vango.EchoServer"
 	ad := &discovery.Advertisement{
 		InterfaceName: interfaceName,
 		Attributes: discovery.Attributes{
@@ -99,7 +102,7 @@ func AllFunc(ctx *context.T, output io.Writer) error {
 	if err != nil {
 		return err
 	}
-	updates, err := d.Scan(ctx, "")
+	updates, err := d.Scan(ctx, "v.InterfaceName=\""+interfaceName+"\"")
 	if err != nil {
 		return err
 	}
@@ -120,14 +123,22 @@ func AllFunc(ctx *context.T, output io.Writer) error {
 			go func(msg string) {
 				summary, err := p.call(ctx, msg)
 				if err != nil {
-					callResults <- fmt.Sprintf("ERROR calling [%v]: %v", p.description, err)
+					ctx.Infof("Failed to call [%v]: %v", p.description, err)
+					callResults <- ""
 					return
 				}
 				callResults <- summary
 			}(fmt.Sprintf("Hello #%d", counter))
 		}
+		statRequest = make(chan chan<- string)
 	)
 	defer ticker.Stop()
+	stats.NewStringFunc(vangoStat, func() string {
+		r := make(chan string)
+		statRequest <- r
+		return <-r
+	})
+	defer stats.Delete(vangoStat)
 	fmt.Fprintln(output, "My AdID:", ad.Id)
 	fmt.Fprintln(output, "My addrs:", myaddrs)
 	ctx.Infof("SERVER STATUS: %+v", status)
@@ -176,7 +187,9 @@ func AllFunc(ctx *context.T, output io.Writer) error {
 			call(p)
 		case r := <-callResults:
 			activeCalls--
-			fmt.Fprintln(output, r)
+			if len(r) > 0 {
+				fmt.Fprintln(output, r)
+			}
 		case <-stoppedAd:
 			fmt.Fprintln(output, "STOPPED ADVERTISING")
 			stoppedAd = nil
@@ -188,6 +201,15 @@ func AllFunc(ctx *context.T, output io.Writer) error {
 					call(peerByAdId[id])
 				}
 			}
+		case s := <-statRequest:
+			idx := 1
+			ret := new(bytes.Buffer)
+			fmt.Fprintln(ret, "ACTIVE CALLS:", activeCalls)
+			fmt.Fprintln(ret, "PEERS")
+			for id, p := range peerByAdId {
+				fmt.Fprintf(ret, "%2d) %s -- %v\n", idx, p.description, lastCall[id])
+			}
+			s <- ret.String()
 		}
 	}
 	fmt.Println(output, "EXITING: Cleaning up")
