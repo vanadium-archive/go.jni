@@ -52,30 +52,12 @@ func (x ComplexErrorParam) VDLWrite(enc vdl.Encoder) error {
 		return err
 	}
 	if x.Str != "" {
-		if err := enc.NextField("Str"); err != nil {
-			return err
-		}
-		if err := enc.StartValue(vdl.StringType); err != nil {
-			return err
-		}
-		if err := enc.EncodeString(x.Str); err != nil {
-			return err
-		}
-		if err := enc.FinishValue(); err != nil {
+		if err := enc.NextFieldValueString("Str", vdl.StringType, x.Str); err != nil {
 			return err
 		}
 	}
 	if x.Num != 0 {
-		if err := enc.NextField("Num"); err != nil {
-			return err
-		}
-		if err := enc.StartValue(vdl.Int32Type); err != nil {
-			return err
-		}
-		if err := enc.EncodeInt(int64(x.Num)); err != nil {
-			return err
-		}
-		if err := enc.FinishValue(); err != nil {
+		if err := enc.NextFieldValueInt("Num", vdl.Int32Type, int64(x.Num)); err != nil {
 			return err
 		}
 	}
@@ -100,17 +82,8 @@ func __VDLWriteAnon_list_1(enc vdl.Encoder, x []uint32) error {
 	if err := enc.SetLenHint(len(x)); err != nil {
 		return err
 	}
-	for i := 0; i < len(x); i++ {
-		if err := enc.NextEntry(false); err != nil {
-			return err
-		}
-		if err := enc.StartValue(vdl.Uint32Type); err != nil {
-			return err
-		}
-		if err := enc.EncodeUint(uint64(x[i])); err != nil {
-			return err
-		}
-		if err := enc.FinishValue(); err != nil {
+	for _, elem := range x {
+		if err := enc.NextEntryValueUint(vdl.Uint32Type, uint64(elem)); err != nil {
 			return err
 		}
 	}
