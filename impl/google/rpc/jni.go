@@ -294,7 +294,9 @@ func doStartCall(context *context.T, cancel func(), name, method string, opts []
 }
 
 //export Java_io_v_impl_google_rpc_ClientImpl_nativeStartCall
-func Java_io_v_impl_google_rpc_ClientImpl_nativeStartCall(jenv *C.JNIEnv, jClient C.jobject, goRef C.jlong, jContext C.jobject, jName C.jstring, jMethod C.jstring, jVomArgs C.jobjectArray, jNameResolutionAuthorizerObj, jServerAuthorizerObj C.jobject, jCallbackObj C.jobject) {
+func Java_io_v_impl_google_rpc_ClientImpl_nativeStartCall(jenv *C.JNIEnv, jClientObj C.jobject, goRef C.jlong,
+	jContext C.jobject, jName C.jstring, jMethod C.jstring, jVomArgs C.jobjectArray, jNameResolutionAuthorizerObj,
+	jServerAuthorizerObj C.jobject, jCallbackObj C.jobject) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	name := jutil.GoString(env, jutil.Object(uintptr(unsafe.Pointer(jName))))
 	method := jutil.GoString(env, jutil.Object(uintptr(unsafe.Pointer(jMethod))))
@@ -328,8 +330,17 @@ func Java_io_v_impl_google_rpc_ClientImpl_nativeStartCall(jenv *C.JNIEnv, jClien
 		}
 		opts = append(opts, options.ServerAuthorizer{auth})
 	}
+	// Create a global reference to the client object for the duration of the call
+	// so that the java object doesn't get garbage collected while the async call
+	// is happening. This is an issue because if the java object is garbage collected,
+	// the go ref will also be collected causing doStartCall to panic.
+	jClient := jutil.NewGlobalRef(env, jutil.Object(uintptr(unsafe.Pointer(jClientObj))))
 	jutil.DoAsyncCall(env, jCallback, func() (jutil.Object, error) {
-		return doStartCall(ctx, cancel, name, method, opts, goRef, args)
+		obj, err := doStartCall(ctx, cancel, name, method, opts, goRef, args)
+		env, freeFunc := jutil.GetEnv()
+		jutil.DeleteGlobalRef(env, jClient)
+		freeFunc()
+		return obj, err
 	})
 }
 
