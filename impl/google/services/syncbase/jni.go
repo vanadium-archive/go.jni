@@ -12,7 +12,9 @@ import (
 	"unsafe"
 
 	"v.io/v23"
+	"v.io/v23/options"
 	"v.io/x/ref/services/syncbase/server"
+	"v.io/x/ref/services/syncbase/vsync"
 
 	jrpc "v.io/x/jni/impl/google/rpc"
 	jutil "v.io/x/jni/util"
@@ -105,7 +107,7 @@ func Java_io_v_impl_google_services_syncbase_SyncbaseServer_nativeWithNewServer(
 		return nil
 	}
 	d := server.NewDispatcher(service)
-	newCtx, s, err := v23.WithNewDispatchingServer(ctx, name, d)
+	newCtx, s, err := v23.WithNewDispatchingServer(ctx, name, d, options.ChannelTimeout(vsync.NeighborConnectionTimeout))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
