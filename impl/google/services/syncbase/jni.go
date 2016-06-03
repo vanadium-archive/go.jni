@@ -13,6 +13,7 @@ import (
 
 	"v.io/v23"
 	"v.io/v23/options"
+	"v.io/x/ref/lib/dispatcher"
 	"v.io/x/ref/services/syncbase/server"
 	"v.io/x/ref/services/syncbase/vsync"
 
@@ -96,27 +97,37 @@ func Java_io_v_impl_google_services_syncbase_SyncbaseServer_nativeWithNewServer(
 		return nil
 	}
 
-	// Start the server.
+	// Create the rpc server before the service so that connections are shared between
+	// clients in the service and the rpc server. (i.e. connections are shared if the
+	// context returned from WithNewDispatchingServer is used for client calls).
+	d := dispatcher.NewDispatcherWrapper()
+	ctx, s, err := v23.WithNewDispatchingServer(ctx, name, d, options.ChannelTimeout(vsync.NeighborConnectionTimeout))
+	if err != nil {
+		cancel()
+		jutil.JThrowV(env, err)
+		return nil
+	}
+
 	service, err := server.NewService(ctx, server.ServiceOptions{
 		Perms:   perms,
 		RootDir: rootDir,
 		Engine:  engine,
 	})
 	if err != nil {
+		cancel()
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	d := server.NewDispatcher(service)
-	newCtx, s, err := v23.WithNewDispatchingServer(ctx, name, d, options.ChannelTimeout(vsync.NeighborConnectionTimeout))
-	if err != nil {
-		jutil.JThrowV(env, err)
-		return nil
-	}
+	// Set the dispatcher in the dispatcher wrapper for the server to start responding
+	// to incoming rpcs.
+	d.SetDispatcher(server.NewDispatcher(service))
+
 	if err := service.AddNames(ctx, s); err != nil {
+		cancel()
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	jNewCtx, err := jcontext.JavaContext(env, newCtx, cancel)
+	jNewCtx, err := jcontext.JavaContext(env, ctx, cancel)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
