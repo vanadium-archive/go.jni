@@ -9,6 +9,9 @@ package jni
 import (
 	"fmt"
 	"unsafe"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"v.io/v23/context"
 	"v.io/v23/namespace"
@@ -43,6 +46,11 @@ func Init(env jutil.Env) error {
 func Java_io_v_android_v23_V_nativeInitGlobalAndroid(jenv *C.JNIEnv, _ C.jclass, jOptions C.jobject) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	jOpts := jutil.Object(uintptr(unsafe.Pointer(jOptions)))
+
+	// Don't allow broken stderr/out to kill our program due to
+	// sigpipe.  Note that we just ignore all these signals.
+	ch := make(chan os.Signal)
+	signal.Notify(ch, syscall.SIGPIPE)
 
 	if err := Init(env); err != nil {
 		jutil.JThrowV(env, err)
