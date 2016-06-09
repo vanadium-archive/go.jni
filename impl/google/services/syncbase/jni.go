@@ -13,7 +13,9 @@ import (
 
 	"v.io/v23"
 	"v.io/v23/options"
+	wire "v.io/v23/services/syncbase"
 	"v.io/x/ref/lib/dispatcher"
+	"v.io/x/ref/services/syncbase/discovery"
 	"v.io/x/ref/services/syncbase/server"
 	"v.io/x/ref/services/syncbase/vsync"
 
@@ -31,8 +33,11 @@ var (
 	contextSign       = jutil.ClassSign("io.v.v23.context.VContext")
 	storageEngineSign = jutil.ClassSign("io.v.impl.google.services.syncbase.SyncbaseServer$StorageEngine")
 	serverSign        = jutil.ClassSign("io.v.v23.rpc.Server")
+	idSign            = jutil.ClassSign("io.v.v23.services.syncbase.Id")
+	inviteSign        = jutil.ClassSign("io.v.v23.syncbase.Invite")
 
 	jVRuntimeImplClass jutil.Class
+	jInviteClass       jutil.Class
 )
 
 // Init initializes the JNI code with the given Java environment.  This method
@@ -41,6 +46,10 @@ var (
 func Init(env jutil.Env) error {
 	var err error
 	jVRuntimeImplClass, err = jutil.JFindClass(env, "io/v/impl/google/rt/VRuntimeImpl")
+	if err != nil {
+		return err
+	}
+	jInviteClass, err = jutil.JFindClass(env, "io/v/v23/syncbase/Invite")
 	if err != nil {
 		return err
 	}
@@ -144,4 +153,70 @@ func Java_io_v_impl_google_services_syncbase_SyncbaseServer_nativeWithNewServer(
 		return nil
 	}
 	return C.jobject(unsafe.Pointer(jServerAttCtx))
+}
+
+//export Java_io_v_v23_syncbase_DatabaseImpl_nativeListenForInvites
+func Java_io_v_v23_syncbase_DatabaseImpl_nativeListenForInvites(jenv *C.JNIEnv, jDatabase C.jobject, jContext C.jobject, jInviteHandler C.jobject) {
+	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
+	database := jutil.Object(uintptr(unsafe.Pointer(jDatabase)))
+	handler := jutil.Object(uintptr(unsafe.Pointer(jInviteHandler)))
+
+	ctx, _, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jContext))))
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return
+	}
+
+	jDbId, err := jutil.CallObjectMethod(env, database, "id", nil, idSign)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return
+	}
+	dbName, err := jutil.CallStringMethod(env, jDbId, "getName", nil)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return
+	}
+	dbBlessing, err := jutil.CallStringMethod(env, jDbId, "getBlessing", nil)
+	if err != nil {
+		jutil.JThrowV(env, err)
+		return
+	}
+
+	dbId := wire.Id{Name: dbName, Blessing: dbBlessing}
+	// Note: There is no need to use a buffered channel here.  ListenForInvites
+	// spawns a goroutine for this listener that acts as an infinite buffer so we can
+	// process invites at our own pace.
+	ch := make(chan discovery.Invite)
+	if err := discovery.ListenForInvites(ctx, dbId, ch); err != nil {
+		jutil.JThrowV(env, err)
+		return
+	}
+
+	handler = jutil.NewGlobalRef(env, handler)
+	go func() {
+		for invite := range ch {
+			if err := handleInvite(invite, handler); err != nil {
+				// TODO(mattr): We should cancel the stream and return an error to
+				// the user here.
+				ctx.Errorf("couldn't call invite handler: %v", err)
+			}
+		}
+		env, free := jutil.GetEnv()
+		jutil.DeleteGlobalRef(env, handler)
+		free()
+	}()
+}
+
+func handleInvite(invite discovery.Invite, handler jutil.Object) error {
+	env, free := jutil.GetEnv()
+	defer free()
+	jInvite, err := jutil.NewObject(env, jInviteClass,
+		[]jutil.Sign{jutil.StringSign, jutil.StringSign},
+		invite.Syncgroup.Blessing, invite.Syncgroup.Name)
+	if err != nil {
+		return err
+	}
+	return jutil.CallVoidMethod(env, handler, "handleInvite",
+		[]jutil.Sign{inviteSign}, jInvite)
 }
