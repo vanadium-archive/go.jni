@@ -38,7 +38,8 @@ func javaUpdate(env jutil.Env, update discovery.Update) (jutil.Object, error) {
 		return jutil.NullObject, err
 	}
 	ref := jutil.GoNewRef(&update) // Un-refed when jUpdate is finalized.
-	jUpdate, err := jutil.NewObject(env, jUpdateImplClass, []jutil.Sign{jutil.LongSign, jutil.BoolSign, advertisementSign}, int64(ref), update.IsLost(), jAd)
+	jUpdate, err := jutil.NewObject(env, jUpdateImplClass, []jutil.Sign{jutil.LongSign, jutil.BoolSign, advertisementSign, jutil.LongSign},
+		int64(ref), update.IsLost(), jAd, update.Timestamp().UnixNano())
 	if err != nil {
 		jutil.GoDecRef(ref)
 		return jutil.NullObject, err
