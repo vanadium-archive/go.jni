@@ -47,18 +47,20 @@ type btProtocol struct{}
 
 func (btProtocol) Dial(ctx *context.T, protocol, address string, timeout time.Duration) (flow.Conn, error) {
 	env, freeFunc := jutil.GetEnv()
+	defer freeFunc()
+
 	jContext, err := jcontext.JavaContext(env, ctx, nil)
 	if err != nil {
-		freeFunc()
 		return nil, err
 	}
-	// This method will invoke the freeFunc().
-	jStream, err := jutil.CallStaticCallbackMethod(env, freeFunc, jBluetoothClass, "dial", []jutil.Sign{contextSign, jutil.StringSign, jutil.DurationSign}, jContext, address, timeout)
+	jStream, err := jutil.CallStaticObjectMethod(env, jBluetoothClass, "dial", []jutil.Sign{contextSign, jutil.StringSign, jutil.DurationSign}, streamSign, jContext, address, timeout)
 	if err != nil {
 		return nil, err
 	}
-	env, freeFunc = jutil.GetEnv()
-	defer freeFunc()
+	// Reference Java Stream; it will be de-referenced when the Go connection
+	// created below is garbage-collected (through the finalizer callback we
+	// setup just below).
+	jStream = jutil.NewGlobalRef(env, jStream)
 	return newConnection(env, jStream), nil
 }
 
@@ -100,13 +102,16 @@ type btListener struct {
 
 func (l *btListener) Accept(ctx *context.T) (flow.Conn, error) {
 	env, freeFunc := jutil.GetEnv()
-	// This method will invoke the freeFunc().
-	jStream, err := jutil.CallCallbackMethod(env, freeFunc, l.jListener, "accept", nil)
+	defer freeFunc()
+
+	jStream, err := jutil.CallObjectMethod(env, l.jListener, "accept", nil, streamSign)
 	if err != nil {
 		return nil, err
 	}
-	env, freeFunc = jutil.GetEnv()
-	defer freeFunc()
+	// Reference Java Stream; it will be de-referenced when the Go connection
+	// created below is garbage-collected (through the finalizer callback we
+	// setup just below).
+	jStream = jutil.NewGlobalRef(env, jStream)
 	return newConnection(env, jStream), nil
 }
 
@@ -155,22 +160,20 @@ type btReadWriteCloser struct {
 
 func (c *btReadWriteCloser) Read(b []byte) (n int, err error) {
 	env, freeFunc := jutil.GetEnv()
-	// This method will invoke the freeFunc().
-	jResult, err := jutil.CallCallbackMethod(env, freeFunc, c.jStream, "read", []jutil.Sign{jutil.IntSign}, len(b))
+	defer freeFunc()
+
+	data, err := jutil.CallByteArrayMethod(env, c.jStream, "read", []jutil.Sign{jutil.IntSign}, len(b))
 	if err != nil {
 		return 0, err
 	}
-	env, freeFunc = jutil.GetEnv()
-	defer freeFunc()
-	defer jutil.DeleteGlobalRef(env, jResult)
-	data := jutil.GoByteArray(env, jResult)
 	return copy(b, data), nil
 }
 
 func (c *btReadWriteCloser) Write(b []byte) (n int, err error) {
 	env, freeFunc := jutil.GetEnv()
-	// This method will invoke the freeFunc().
-	if _, err := jutil.CallCallbackMethod(env, freeFunc, c.jStream, "write", []jutil.Sign{jutil.ByteArraySign}, b); err != nil {
+	defer freeFunc()
+
+	if err := jutil.CallVoidMethod(env, c.jStream, "write", []jutil.Sign{jutil.ByteArraySign}, b); err != nil {
 		return 0, err
 	}
 	return len(b), nil
