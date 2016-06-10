@@ -52,24 +52,24 @@ func (x ComplexErrorParam) VDLWrite(enc vdl.Encoder) error {
 		return err
 	}
 	if x.Str != "" {
-		if err := enc.NextFieldValueString("Str", vdl.StringType, x.Str); err != nil {
+		if err := enc.NextFieldValueString(0, vdl.StringType, x.Str); err != nil {
 			return err
 		}
 	}
 	if x.Num != 0 {
-		if err := enc.NextFieldValueInt("Num", vdl.Int32Type, int64(x.Num)); err != nil {
+		if err := enc.NextFieldValueInt(1, vdl.Int32Type, int64(x.Num)); err != nil {
 			return err
 		}
 	}
 	if len(x.List) != 0 {
-		if err := enc.NextField("List"); err != nil {
+		if err := enc.NextField(2); err != nil {
 			return err
 		}
 		if err := __VDLWriteAnon_list_1(enc, x.List); err != nil {
 			return err
 		}
 	}
-	if err := enc.NextField(""); err != nil {
+	if err := enc.NextField(-1); err != nil {
 		return err
 	}
 	return enc.FinishValue()
@@ -98,34 +98,41 @@ func (x *ComplexErrorParam) VDLRead(dec vdl.Decoder) error {
 	if err := dec.StartValue(__VDLType_struct_1); err != nil {
 		return err
 	}
+	decType := dec.Type()
 	for {
-		f, err := dec.NextField()
-		if err != nil {
+		index, err := dec.NextField()
+		switch {
+		case err != nil:
 			return err
-		}
-		switch f {
-		case "":
+		case index == -1:
 			return dec.FinishValue()
-		case "Str":
+		}
+		if decType != __VDLType_struct_1 {
+			index = __VDLType_struct_1.FieldIndexByName(decType.Field(index).Name)
+			if index == -1 {
+				if err := dec.SkipValue(); err != nil {
+					return err
+				}
+				continue
+			}
+		}
+		switch index {
+		case 0:
 			switch value, err := dec.ReadValueString(); {
 			case err != nil:
 				return err
 			default:
 				x.Str = value
 			}
-		case "Num":
+		case 1:
 			switch value, err := dec.ReadValueInt(32); {
 			case err != nil:
 				return err
 			default:
 				x.Num = int32(value)
 			}
-		case "List":
+		case 2:
 			if err := __VDLReadAnon_list_1(dec, &x.List); err != nil {
-				return err
-			}
-		default:
-			if err := dec.SkipValue(); err != nil {
 				return err
 			}
 		}
