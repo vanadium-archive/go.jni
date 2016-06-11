@@ -732,6 +732,9 @@ func PopLocalFrame(env Env, result Object) Object {
 
 // jFieldID returns the Java field ID for the given object (i.e., non-static)
 // field, or an error if the field couldn't be found.
+// TODO(rosswang): Make these exported/cacheable (likely warrants refactor of corresponding
+// GetXField methods)
+// https://rkennke.wordpress.com/2007/07/24/efficient-jni-programming-ii-field-and-method-access/
 func jFieldID(env Env, class Class, name string, sign Sign) (C.jfieldID, error) {
 	cName := C.CString(name)
 	defer C.free(unsafe.Pointer(cName))

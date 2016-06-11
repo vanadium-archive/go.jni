@@ -11,13 +11,13 @@ import (
 
 	"v.io/v23"
 	"v.io/v23/context"
-	"v.io/v23/options"
 
 	jdiscovery "v.io/x/jni/impl/google/discovery"
 	jns "v.io/x/jni/impl/google/namespace"
 	jrpc "v.io/x/jni/impl/google/rpc"
 	jutil "v.io/x/jni/util"
 	jcontext "v.io/x/jni/v23/context"
+	jopts "v.io/x/jni/v23/options"
 	jsecurity "v.io/x/jni/v23/security"
 )
 
@@ -119,7 +119,7 @@ func Java_io_v_impl_google_rt_VRuntimeImpl_nativeGetClient(jenv *C.JNIEnv, jRunt
 }
 
 //export Java_io_v_impl_google_rt_VRuntimeImpl_nativeWithNewServer
-func Java_io_v_impl_google_rt_VRuntimeImpl_nativeWithNewServer(jenv *C.JNIEnv, jRuntime C.jclass, jContext C.jobject, jName C.jstring, jDispatcher C.jobject, jLameDuck C.jobject) C.jobject {
+func Java_io_v_impl_google_rt_VRuntimeImpl_nativeWithNewServer(jenv *C.JNIEnv, jRuntime C.jclass, jContext C.jobject, jName C.jstring, jDispatcher C.jobject, jOptions C.jobject) C.jobject {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	ctx, cancel, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jContext))))
 	if err != nil {
@@ -132,12 +132,12 @@ func Java_io_v_impl_google_rt_VRuntimeImpl_nativeWithNewServer(jenv *C.JNIEnv, j
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	timeout, err := jutil.GoDuration(env, jutil.Object(uintptr(unsafe.Pointer(jLameDuck))))
+	opts, err := jopts.GoRpcServerOpts(env, jutil.Object(uintptr(unsafe.Pointer(jOptions))))
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil
 	}
-	newCtx, server, err := v23.WithNewDispatchingServer(ctx, name, d, options.LameDuckTimeout(timeout))
+	newCtx, server, err := v23.WithNewDispatchingServer(ctx, name, d, opts...)
 	if err != nil {
 		jutil.JThrowV(env, err)
 		return nil

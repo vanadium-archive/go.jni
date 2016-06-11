@@ -30,7 +30,7 @@ var (
 	// Global reference for io.v.v23.naming.GlobReply class.
 	jGlobReplyClass jutil.Class
 	// Global reference for io.v.v23.naming.MountEntry class.
-	jMountEntryClass jutil.Class
+	JMountEntryClass jutil.Class
 	// Global reference for io.v.v23.security.access.Permissions
 	jPermissionsClass jutil.Class
 )
@@ -47,7 +47,7 @@ func Init(env jutil.Env) error {
 	if err != nil {
 		return err
 	}
-	jMountEntryClass, err = jutil.JFindClass(env, "io/v/v23/naming/MountEntry")
+	JMountEntryClass, err = jutil.JFindClass(env, "io/v/v23/naming/MountEntry")
 	if err != nil {
 		return err
 	}
@@ -219,7 +219,7 @@ func doResolve(n namespace.T, context *context.T, name string, options []naming.
 	}
 	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
-	jEntry, err := jutil.JVomCopy(env, entry, jMountEntryClass)
+	jEntry, err := jutil.JVomCopy(env, entry, JMountEntryClass)
 	if err != nil {
 		return jutil.NullObject, err
 	}
@@ -263,7 +263,7 @@ func doResolveToMountTable(n namespace.T, context *context.T, name string, optio
 	}
 	env, freeFunc := jutil.GetEnv()
 	defer freeFunc()
-	jEntry, err := jutil.JVomCopy(env, entry, jMountEntryClass)
+	jEntry, err := jutil.JVomCopy(env, entry, JMountEntryClass)
 	if err != nil {
 		return jutil.NullObject, err
 	}

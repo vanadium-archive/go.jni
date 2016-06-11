@@ -11,7 +11,6 @@ import (
 	"unsafe"
 
 	"v.io/v23/context"
-	"v.io/v23/options"
 	"v.io/v23/rpc"
 	"v.io/v23/vdl"
 	"v.io/v23/verror"
@@ -23,6 +22,7 @@ import (
 	jutil "v.io/x/jni/util"
 	jcontext "v.io/x/jni/v23/context"
 	jnaming "v.io/x/jni/v23/naming"
+	jopts "v.io/x/jni/v23/options"
 	jsecurity "v.io/x/jni/v23/security"
 )
 
@@ -295,11 +295,11 @@ func doStartCall(context *context.T, cancel func(), name, method string, opts []
 
 //export Java_io_v_impl_google_rpc_ClientImpl_nativeStartCall
 func Java_io_v_impl_google_rpc_ClientImpl_nativeStartCall(jenv *C.JNIEnv, jClientObj C.jobject, goRef C.jlong,
-	jContext C.jobject, jName C.jstring, jMethod C.jstring, jVomArgs C.jobjectArray, jNameResolutionAuthorizerObj,
-	jServerAuthorizerObj C.jobject, jCallbackObj C.jobject) {
+	jContext C.jobject, jName C.jstring, jMethod C.jstring, jVomArgs C.jobjectArray, jOptionsObj C.jobject, jCallbackObj C.jobject) {
 	env := jutil.Env(uintptr(unsafe.Pointer(jenv)))
 	name := jutil.GoString(env, jutil.Object(uintptr(unsafe.Pointer(jName))))
 	method := jutil.GoString(env, jutil.Object(uintptr(unsafe.Pointer(jMethod))))
+	jOptions := jutil.Object(uintptr(unsafe.Pointer(jOptionsObj)))
 	jCallback := jutil.Object(uintptr(unsafe.Pointer(jCallbackObj)))
 	ctx, cancel, err := jcontext.GoContext(env, jutil.Object(uintptr(unsafe.Pointer(jContext))))
 	if err != nil {
@@ -311,25 +311,13 @@ func Java_io_v_impl_google_rpc_ClientImpl_nativeStartCall(jenv *C.JNIEnv, jClien
 		jutil.CallbackOnFailure(env, jCallback, err)
 		return
 	}
-	var opts []rpc.CallOpt
-	jNameResolutionAuthorizer := jutil.Object(uintptr(unsafe.Pointer(jNameResolutionAuthorizerObj)))
-	if !jNameResolutionAuthorizer.IsNull() {
-		auth, err := jsecurity.GoAuthorizer(env, jNameResolutionAuthorizer)
-		if err != nil {
-			jutil.CallbackOnFailure(env, jCallback, err)
-			return
-		}
-		opts = append(opts, options.NameResolutionAuthorizer{auth})
+
+	opts, err := jopts.GoRpcOpts(env, jOptions)
+	if err != nil {
+		jutil.CallbackOnFailure(env, jCallback, err)
+		return
 	}
-	jServerAuthorizer := jutil.Object(uintptr(unsafe.Pointer(jServerAuthorizerObj)))
-	if !jServerAuthorizer.IsNull() {
-		auth, err := jsecurity.GoAuthorizer(env, jServerAuthorizer)
-		if err != nil {
-			jutil.CallbackOnFailure(env, jCallback, err)
-			return
-		}
-		opts = append(opts, options.ServerAuthorizer{auth})
-	}
+
 	// Create a global reference to the client object for the duration of the call
 	// so that the java object doesn't get garbage collected while the async call
 	// is happening. This is an issue because if the java object is garbage collected,
