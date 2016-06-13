@@ -54,10 +54,14 @@ func runClient(ctx *context.T, name string) error {
 	return nil
 }
 
-func runTimedCall(ctx *context.T, name, message string) (string, error) {
+type conner interface {
+	Conn() flow.ManagedConn
+}
+
+func runTimedCall(ctx *context.T, name, message string, opts ...rpc.CallOpt) (string, error) {
 	summary := fmt.Sprintf("[%s] to %v", message, name)
 	start := time.Now()
-	call, err := v23.GetClient(ctx).StartCall(ctx, name, "Echo", []interface{}{message})
+	call, err := v23.GetClient(ctx).StartCall(ctx, name, "Echo", []interface{}{message}, opts...)
 	if err != nil {
 		return summary, err
 	}
@@ -71,7 +75,11 @@ func runTimedCall(ctx *context.T, name, message string) (string, error) {
 	}
 	me := security.LocalBlessingNames(ctx, call.Security())
 	them, _ := call.RemoteBlessings()
-	return fmt.Sprintf("%s in %v (THEM:%v EP:%v) (ME:%v)", summary, elapsed, them, call.Security().RemoteEndpoint(), me), nil
+	connstr := "<unknown>"
+	if cn, ok := call.(conner); ok {
+		connstr = fmt.Sprintf("%p", cn.Conn())
+	}
+	return fmt.Sprintf("%s in %v (THEM:%v EP:%v) (ME:%v) conn %v", summary, elapsed, them, call.Security().RemoteEndpoint(), me, connstr), nil
 }
 
 func username(blessingNames []string) string {
