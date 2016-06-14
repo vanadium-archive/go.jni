@@ -13,16 +13,24 @@ import (
 
 	"v.io/v23/context"
 	"v.io/v23/flow"
-	"v.io/x/ref/runtime/protocols/lib/framer"
 
 	jutil "v.io/x/jni/util"
 	jcontext "v.io/x/jni/v23/context"
+	"v.io/x/ref/runtime/protocols/lib/framer"
+)
+
+const (
+	bluetoothWithPortClassName = "BluetoothWithPort"
+	bluetoothWithSdpClassName  = "BluetoothWithSdp"
+
+	// TODO(jhahn,suharshs): Which one is more reliable?
+	btClassName = bluetoothWithSdpClassName
 )
 
 var (
 	contextSign  = jutil.ClassSign("io.v.v23.context.VContext")
-	streamSign   = jutil.ClassSign("io.v.android.impl.google.rpc.protocols.bt.Bluetooth$Stream")
-	listenerSign = jutil.ClassSign("io.v.android.impl.google.rpc.protocols.bt.Bluetooth$Listener")
+	streamSign   = jutil.ClassSign("io.v.android.impl.google.rpc.protocols.bt." + btClassName + "$Stream")
+	listenerSign = jutil.ClassSign("io.v.android.impl.google.rpc.protocols.bt." + btClassName + "$Listener")
 
 	// Global reference for io.v.impl.google.rpc.protocols.bt.Bluetooth class.
 	jBluetoothClass jutil.Class
@@ -35,7 +43,7 @@ func Init(env jutil.Env) error {
 	// necessary because JNI gets access to the class loader only in the system
 	// thread, so we aren't able to invoke FindClass in other threads.
 	var err error
-	jBluetoothClass, err = jutil.JFindClass(env, "io/v/android/impl/google/rpc/protocols/bt/Bluetooth")
+	jBluetoothClass, err = jutil.JFindClass(env, "io/v/android/impl/google/rpc/protocols/bt/"+btClassName)
 	if err != nil {
 		return err
 	}
